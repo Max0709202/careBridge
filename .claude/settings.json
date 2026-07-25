@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:Path = \"C:\\\\Users\\\\root\\\\AppData\\\\Roaming\\\\npm;$env:Path\"; pnpm typecheck 2>&1 | Select-Object -Last 40)"
+    ]
+  }
+}
