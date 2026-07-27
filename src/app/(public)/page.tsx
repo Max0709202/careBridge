@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { CalendarCheck, CarFront, ClipboardList, HeartHandshake, ShieldCheck } from "lucide-react";
 
@@ -47,7 +48,7 @@ export default function HomePage() {
   return (
     <>
       <section className="border-b border-border">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:py-24">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 sm:py-24 lg:grid-cols-[1fr_auto]">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold tracking-wide text-primary uppercase">
               Coordinated by real people
@@ -74,6 +75,17 @@ export default function HomePage() {
               CareBridge is not a medical service and does not provide medical advice. In an
               emergency, call 911.
             </p>
+          </div>
+
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-foreground/10 lg:w-[26rem]">
+            <Image
+              src="/media/hero.jpg"
+              alt="A companion walks alongside an older adult on an evening stroll outdoors."
+              fill
+              priority
+              sizes="(min-width: 1024px) 26rem, 100vw"
+              className="object-cover"
+            />
           </div>
         </div>
       </section>
@@ -111,6 +123,37 @@ export default function HomePage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section aria-labelledby="journey-heading" className="mx-auto max-w-6xl px-5 pb-16 sm:pb-20">
+        <div className="grid items-center gap-10 lg:grid-cols-2">
+          <div className="max-w-xl">
+            <h2 id="journey-heading" className="text-3xl">
+              The ride, arranged before the day
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              A coordinator confirms the vehicle — wheelchair accessible when it is needed — and the
+              pickup, then shares the details with you. No app to flag down a stranger, no
+              guesswork on the morning of the appointment.
+            </p>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl ring-1 ring-foreground/10">
+            <video
+              className="aspect-video w-full bg-muted object-cover"
+              controls
+              muted
+              loop
+              playsInline
+              preload="none"
+              poster="/media/journey-poster.jpg"
+              aria-label="Illustrative footage of everyday traffic on an open road."
+            >
+              <source src="/media/journey.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
       </section>
 
       <section

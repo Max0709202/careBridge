@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 import { ContentBody, PageHeader } from "@/components/layout/page-header";
@@ -41,6 +42,18 @@ export default function HowItWorksPage() {
         title="One request, handled by a person"
         lead="CareBridge is a managed service, not a marketplace. Nothing is auto-matched and nothing is dispatched without a coordinator looking at it first."
       />
+
+      <div className="mx-auto max-w-3xl px-5 pt-12">
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl ring-1 ring-foreground/10">
+          <Image
+            src="/media/transport.jpg"
+            alt="A driver at the wheel on a city street at dusk."
+            fill
+            sizes="(min-width: 768px) 48rem, 100vw"
+            className="object-cover"
+          />
+        </div>
+      </div>
 
       <ContentBody>
         <section aria-labelledby="family-steps">
