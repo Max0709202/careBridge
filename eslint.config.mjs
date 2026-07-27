@@ -87,11 +87,14 @@ const eslintConfig = defineConfig([
     rules: { "no-restricted-syntax": "off" },
   },
 
-  // Config, scripts and tests may use process.env and console output.
+  // Config, standalone DB scripts, and tests may use process.env and console.
+  // These run under tsx/vitest, not in the app runtime or the browser bundle.
   {
     files: [
       "*.config.{ts,mts,js,mjs}",
       "scripts/**/*.{ts,mts}",
+      "src/server/db/migrate.ts",
+      "src/server/db/seed.ts",
       "tests/**/*.{ts,tsx}",
       "src/**/*.test.{ts,tsx}",
     ],

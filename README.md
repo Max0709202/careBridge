@@ -19,7 +19,7 @@ auto-matched and nothing is dispatched without a coordinator.
 | Phase | Scope                                                               | State          |
 | ----- | ------------------------------------------------------------------- | -------------- |
 | 1     | Scaffold, tooling, structure, env validation, docs, public pages     | ✅ Complete    |
-| 2     | Supabase, auth, roles, schema, migrations, seed, RLS, authz tests    | ⬜ Not started |
+| 2     | Supabase, auth, roles, schema, migrations, seed, RLS, authz tests    | ✅ Complete    |
 | 3     | Family portal, senior profiles, request workflow, audit events       | ⬜ Not started |
 | 4     | Caregiver portal, availability, assignments, check-in/out, incidents | ⬜ Not started |
 | 5     | Operations dashboard, review, manual assignment, notes, audit viewer | ⬜ Not started |
@@ -73,8 +73,14 @@ Full setup, including Windows + WSL 2, is in
 | `pnpm test:e2e`         | Playwright (builds and serves on port 3100)    |
 | `pnpm test:e2e:install` | Install Playwright browsers (first run only)   |
 | `pnpm check`            | lint + typecheck + unit tests                  |
+| `pnpm test:rls`         | RLS ownership tests (in-process, no Docker)    |
+| `pnpm supabase:start`   | Start the local Supabase Docker stack          |
+| `pnpm db:migrate`       | Apply Drizzle migrations                        |
+| `pnpm db:seed`          | Load fictional development data                 |
+| `pnpm db:reset`         | Drop, re-migrate, and re-seed the local DB      |
 
-Database commands (`db:generate`, `db:migrate`, `db:seed`) arrive in Phase 2.
+Database and auth setup (Docker + Supabase) is documented in
+[docs/DATABASE.md](docs/DATABASE.md).
 
 ---
 

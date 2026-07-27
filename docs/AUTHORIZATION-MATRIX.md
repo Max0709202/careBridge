@@ -99,12 +99,16 @@ A user has **exactly one** role. There is no hierarchy and no inheritance.
 
 ## Verification
 
-| Check                                              | Where                             |
-| -------------------------------------------------- | --------------------------------- |
-| Role permission per status transition               | `tests/unit/service-request-status.test.ts` |
-| Role permission per assignment transition           | `tests/unit/assignment-status.test.ts`      |
-| Family cannot read another family's records         | Phase 2–3 integration tests       |
-| Caregiver cannot read an unassigned request         | Phase 4 integration tests         |
-| Caregiver cannot read internal notes                | Phase 4–5 integration tests       |
-| Non-admin cannot assign a caregiver                 | Phase 5 integration tests         |
-| RLS blocks the same attempts at the database layer  | Phase 2 database tests            |
+| Check                                              | Where                                       | Status |
+| -------------------------------------------------- | ------------------------------------------- | ------ |
+| Role permission per status transition               | `tests/unit/service-request-status.test.ts` | ✅     |
+| Role permission per assignment transition           | `tests/unit/assignment-status.test.ts`      | ✅     |
+| Pure authz predicates (wrong family/caregiver/admin)| `tests/unit/authz-policy.test.ts`           | ✅     |
+| Family cannot read another family's records (RLS)   | `tests/integration/rls.test.ts`             | ✅     |
+| Caregiver cannot read an unassigned request (RLS)   | `tests/integration/rls.test.ts`             | ✅     |
+| Caregiver cannot read internal notes (RLS)          | `tests/integration/rls.test.ts`             | ✅     |
+| Non-admin cannot assign a caregiver (RLS)           | `tests/integration/rls.test.ts`             | ✅     |
+| Anonymous sees nothing (RLS)                        | `tests/integration/rls.test.ts`             | ✅     |
+| Audit trail is append-only and ops-read-only (RLS)  | `tests/integration/rls.test.ts`             | ✅     |
+| Signup cannot self-assign a role via user_metadata  | `tests/integration/rls.test.ts`             | ✅     |
+| App-layer ownership checks per feature action       | Phases 3–5 (as features land)               | ⬜     |

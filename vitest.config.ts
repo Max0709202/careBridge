@@ -17,8 +17,15 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: false,
-    include: ["tests/unit/**/*.test.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
+    include: [
+      "tests/unit/**/*.test.{ts,tsx}",
+      "tests/integration/**/*.test.{ts,tsx}",
+      "src/**/*.test.{ts,tsx}",
+    ],
     exclude: ["node_modules/**", ".next/**", "tests/e2e/**"],
+    // pglite spins up a WASM Postgres per integration file; give it room.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     coverage: {
       provider: "v8",
       reportsDirectory: "./coverage",

@@ -2,6 +2,8 @@
 # genuinely require a native/postinstall build step are allowed to run.
 #   sharp         - native image codecs used by Next.js image optimization
 #   unrs-resolver - native module resolver used by the ESLint import resolver
+#   esbuild       - bundler used by tsx (script runner) and drizzle-kit
 allowBuilds:
+  esbuild: true
   sharp: true
   unrs-resolver: true

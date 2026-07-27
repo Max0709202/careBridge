@@ -86,25 +86,35 @@ controls below are aimed at both.
 
 ---
 
+## Implemented in Phase 2
+
+| Control                                                            | Where                                   |
+| ----------------------------------------------------------------- | --------------------------------------- |
+| Supabase Auth, cookie-based sessions, per-request refresh          | `src/proxy.ts`, `src/server/supabase/*` |
+| Server-side authorization layer (role + ownership)                 | `src/server/authz/*`                    |
+| PostgreSQL Row Level Security on every table (verified)            | `drizzle/0001_*`, `tests/integration/`  |
+| Signup role from `app_metadata` only (no self-escalation)          | `handle_new_user` trigger               |
+| Content-Security-Policy header on every response                   | `src/server/security/csp.ts`, `proxy.ts`|
+| Append-only audit writer with metadata redaction                   | `src/server/audit/`                     |
+| Secrets isolated server-side; service-role key never in browser    | `src/server/supabase/admin.ts`          |
+
 ## Known gaps
 
 Tracked deliberately. Each has an owning phase.
 
-| Gap                                                              | Phase |
-| ---------------------------------------------------------------- | ----- |
-| Content-Security-Policy with per-request nonce (needs middleware) | 2     |
-| Authentication, secure cookie sessions, session rotation          | 2     |
-| Server-side authorization layer (`server/authz`)                  | 2     |
-| PostgreSQL Row Level Security policies                            | 2     |
-| Audit event writer and storage                                    | 2–3   |
-| CSRF posture review for server actions                            | 3     |
-| Rate-limiting interface for sensitive endpoints                   | 3     |
-| Stripe webhook signature verification and idempotency             | 6     |
-| Notification content review (no sensitive detail in SMS/email)    | 6     |
-| Sentry SDK wiring (seam exists, disabled without a DSN)           | 7     |
-| Dependency and supply-chain scanning in CI                        | 7     |
-| Backup, retention and deletion procedures                         | 7     |
-| Penetration test and independent review                           | 7     |
+| Gap                                                                    | Phase |
+| --------------------------------------------------------------------- | ----- |
+| CSP hardening to nonce + `strict-dynamic` (see DECISIONS #8)           | 7     |
+| Audit events wired into every mutation path (writer exists)            | 3–5   |
+| CSRF posture review for server actions                                 | 3     |
+| Rate-limiting interface for sensitive endpoints                        | 3     |
+| Stripe webhook signature verification and idempotency                  | 6     |
+| Notification content review (no sensitive detail in SMS/email)         | 6     |
+| MFA for operations accounts                                            | 7     |
+| Sentry SDK wiring (seam exists, disabled without a DSN)                | 7     |
+| Dependency and supply-chain scanning in CI                             | 7     |
+| Backup, retention and deletion procedures                              | 7     |
+| Penetration test and independent review                                | 7     |
 
 ---
 

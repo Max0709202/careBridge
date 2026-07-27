@@ -75,6 +75,22 @@ test.describe("public pages", () => {
     expect(headers["x-frame-options"]).toBe("DENY");
     expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
     expect(headers["x-powered-by"]).toBeUndefined();
+
+    // CSP is set by the proxy on every response.
+    const csp = headers["content-security-policy"];
+    expect(csp).toBeTruthy();
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).toContain("script-src 'self'");
+    expect(csp).toContain("object-src 'none'");
+  });
+
+  test("interactive pages still hydrate under the CSP", async ({ page }) => {
+    // If the nonce-based CSP blocked Next's scripts, the client menu toggle
+    // would never wire up. This guards that regression.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await expect(page.locator("#mobile-nav").getByRole("link", { name: "Safety" })).toBeVisible();
   });
 
   test("unknown routes return a 404 page rather than an error", async ({ page }) => {

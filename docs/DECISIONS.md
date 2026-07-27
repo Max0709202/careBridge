@@ -119,3 +119,47 @@ with body-sized label text and a 17px root font size.
 Users are adult children coordinating care under stress, often one-handed on a
 phone, and caregivers tapping check-in outside in the cold. Small controls are
 a real failure mode here, not a stylistic preference.
+
+---
+
+## 7. Server authz is primary; RLS is defence in depth
+
+**Date:** Phase 2 · **Status:** Accepted
+
+The app's Drizzle connection uses a privileged Postgres role, so Row Level
+Security does **not** constrain the app's own queries. Authorization on that
+path is enforced by the server `authz` layer, which every action/query consults
+before touching data.
+
+RLS is still enabled on every table, with policies scoped to `authenticated`.
+It protects any access through the Supabase data API, and RLS-scoped app access
+via `withUserRls` (which sets `role`/`request.jwt.claims` in a transaction, so
+policies apply even over the privileged connection).
+
+**Why not RLS-only for app queries?** It would require connecting as
+`authenticator` and threading JWT claims through every request — more moving
+parts to get exactly right, for a second copy of rules the server already
+enforces. The chosen split keeps one authoritative check (server) plus a
+database backstop, and is what the `pnpm test:rls` suite verifies.
+
+---
+
+## 8. CSP uses `script-src 'self' 'unsafe-inline'`, not nonce+strict-dynamic (yet)
+
+**Date:** Phase 2 · **Status:** Accepted · **Revisit:** Phase 7
+
+A nonce + `strict-dynamic` script policy is stronger, but Next only stamps a
+per-request nonce on **dynamically rendered** pages. The static marketing pages
+carry inline scripts with no nonce, so `strict-dynamic` blocks them and
+hydration breaks (verified: the mobile menu stopped working).
+
+Rather than force every page dynamic (losing static optimization) or ship a
+strict CSP on the authenticated app that cannot be end-to-end verified in this
+environment, the CSP uses `script-src 'self' 'unsafe-inline'`. This still blocks
+the primary XSS vector — loading script from another origin — plus
+`object-src 'none'`, `frame-ancestors 'none'`, `base-uri`/`form-action 'self'`.
+Combined with React's output escaping and no `dangerouslySetInnerHTML`, inline
+injection risk is low.
+
+Tightening to nonce + `strict-dynamic` (making the pages that render sensitive
+data dynamic, and verifying hydration against the running app) is Phase 7 work.
