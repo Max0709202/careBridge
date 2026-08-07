@@ -1,0 +1,528 @@
+{
+  "user": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "email": "sarah@example.com",
+    "fullName": "Sarah Whitfield",
+    "phone": "+1 614 555 0148"
+  },
+  "patients": [
+    {
+      "id": "00000000-0000-4000-8000-000000000010",
+      "preferredName": "Eleanor",
+      "legalName": "Eleanor M. Whitfield",
+      "phone": "+1 614 555 0193",
+      "homeAddress": {
+        "label": "Home",
+        "line1": "184 Maplewood Drive",
+        "line2": null,
+        "city": "Grandview Heights",
+        "state": "OH",
+        "postalCode": "43212",
+        "accessNotes": "Blue front door. Please ring the bell and wait — it takes Eleanor a couple of minutes to reach the door.",
+        "latitude": 39.9925,
+        "longitude": -83.0281
+      },
+      "ageBand": "from75to84",
+      "preferredLanguage": "English",
+      "mobilityNeeds": [
+        "walker",
+        "escortToDoor"
+      ],
+      "mobilityNotes": "Steady on level ground with the walker, but needs an arm on kerbs and steps. Hard of hearing on the left side.",
+      "emergencyContacts": [
+        {
+          "id": "bdd7358a-1b81-44bb-bd9f-71dd72d9ac61",
+          "name": "Sarah Whitfield",
+          "relationship": "Daughter",
+          "phone": "+1 614 555 0148",
+          "isPrimary": true
+        },
+        {
+          "id": "8dc25f85-f759-493b-a867-c94216a74dd8",
+          "name": "Dennis Whitfield",
+          "relationship": "Son",
+          "phone": "+1 614 555 0176",
+          "isPrimary": false
+        }
+      ],
+      "preferredClinicId": "00000000-0000-4000-8000-000000000020",
+      "archivedAt": null
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "preferredName": "Frank",
+      "legalName": null,
+      "phone": "+1 614 555 0157",
+      "homeAddress": {
+        "label": "Home",
+        "line1": "9 Cedarbrook Court, Apt 2B",
+        "line2": null,
+        "city": "Upper Arlington",
+        "state": "OH",
+        "postalCode": "43221",
+        "accessNotes": "Ground-floor flat, ramp at the side entrance. Gate code 4417.",
+        "latitude": 40.0192,
+        "longitude": -83.0624
+      },
+      "ageBand": "over85",
+      "preferredLanguage": "English",
+      "mobilityNeeds": [
+        "wheelchair",
+        "transferAssistance"
+      ],
+      "mobilityNotes": "Uses a manual wheelchair and needs help transferring. A wheelchair-accessible vehicle is required for every trip.",
+      "emergencyContacts": [
+        {
+          "id": "48c8d354-f492-47c3-9f74-f970561e3fef",
+          "name": "Sarah Whitfield",
+          "relationship": "Daughter",
+          "phone": "+1 614 555 0148",
+          "isPrimary": true
+        }
+      ],
+      "preferredClinicId": "00000000-0000-4000-8000-000000000021",
+      "archivedAt": null
+    }
+  ],
+  "access": {
+    "00000000-0000-4000-8000-000000000010": {
+      "userId": "00000000-0000-4000-8000-000000000001",
+      "patientId": "00000000-0000-4000-8000-000000000010",
+      "relationship": "daughter",
+      "permissions": [
+        "viewProfile",
+        "scheduleAppointments",
+        "requestTransport",
+        "makePayments",
+        "manageAccess"
+      ],
+      "grantedAt": "2026-05-03T08:17:48.846Z",
+      "grantedByUserId": null,
+      "revokedAt": null
+    },
+    "00000000-0000-4000-8000-000000000011": {
+      "userId": "00000000-0000-4000-8000-000000000001",
+      "patientId": "00000000-0000-4000-8000-000000000011",
+      "relationship": "daughter",
+      "permissions": [
+        "viewProfile",
+        "scheduleAppointments",
+        "requestTransport",
+        "makePayments",
+        "manageAccess"
+      ],
+      "grantedAt": "2026-05-03T08:17:48.846Z",
+      "grantedByUserId": null,
+      "revokedAt": null
+    }
+  },
+  "clinics": [
+    {
+      "id": "00000000-0000-4000-8000-000000000021",
+      "name": "Northside Family Medicine",
+      "phone": "+1 614 555 0129",
+      "address": {
+        "label": "Northside Family Medicine",
+        "line1": "41 Kenny Road",
+        "line2": null,
+        "city": "Columbus",
+        "state": "OH",
+        "postalCode": "43220",
+        "accessNotes": null,
+        "latitude": 40.0341,
+        "longitude": -83.0512
+      },
+      "entranceNotes": "Step-free entrance on the east side of the building.",
+      "operatingNotes": "Mon–Sat, 7:30am–6pm."
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000020",
+      "name": "Riverbend Cardiology",
+      "phone": "+1 614 555 0110",
+      "address": {
+        "label": "Riverbend Cardiology",
+        "line1": "2200 Olentangy River Road",
+        "line2": "Suite 300",
+        "city": "Columbus",
+        "state": "OH",
+        "postalCode": "43210",
+        "accessNotes": null,
+        "latitude": 39.9612,
+        "longitude": -82.9988
+      },
+      "entranceNotes": "Drop-off is at the North entrance, not the main lobby. The multi-storey car park entrance looks similar — it is not it.",
+      "operatingNotes": "Mon–Fri, 8am–5pm. Ask for the cardiology desk on floor 3."
+    }
+  ],
+  "appointments": [
+    {
+      "id": "00000000-0000-4000-8000-000000000052",
+      "patientId": "00000000-0000-4000-8000-000000000010",
+      "clinicId": "00000000-0000-4000-8000-000000000020",
+      "startsAt": "2026-07-17T09:15:00.000Z",
+      "expectedDurationMinutes": 60,
+      "type": "specialist",
+      "status": "completed",
+      "coordinationNotes": null,
+      "transportRequired": true,
+      "timeZoneLabel": "clinic time",
+      "history": [
+        {
+          "at": "2026-07-08T08:17:48.846Z",
+          "from": "draft",
+          "to": "scheduled",
+          "actor": "Sarah Whitfield",
+          "reason": null
+        },
+        {
+          "at": "2026-07-17T10:25:00.000Z",
+          "from": "patientArrived",
+          "to": "completed",
+          "actor": "CareBridge",
+          "reason": null
+        }
+      ],
+      "createdAt": "2026-07-08T08:17:48.846Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000050",
+      "patientId": "00000000-0000-4000-8000-000000000010",
+      "clinicId": "00000000-0000-4000-8000-000000000020",
+      "startsAt": "2026-08-09T10:40:00.000Z",
+      "expectedDurationMinutes": 45,
+      "type": "followUp",
+      "status": "transportationScheduled",
+      "coordinationNotes": "Bring the walker. Dr Osei asked for the blood-pressure diary — it is on the kitchen counter.",
+      "transportRequired": true,
+      "timeZoneLabel": "clinic time",
+      "history": [
+        {
+          "at": "2026-08-01T08:17:48.846Z",
+          "from": "draft",
+          "to": "scheduled",
+          "actor": "Sarah Whitfield",
+          "reason": null
+        },
+        {
+          "at": "2026-08-02T08:17:48.846Z",
+          "from": "scheduled",
+          "to": "transportationScheduled",
+          "actor": "CareBridge",
+          "reason": null
+        }
+      ],
+      "createdAt": "2026-08-01T08:17:48.846Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000051",
+      "patientId": "00000000-0000-4000-8000-000000000011",
+      "clinicId": "00000000-0000-4000-8000-000000000021",
+      "startsAt": "2026-08-16T14:15:00.000Z",
+      "expectedDurationMinutes": 30,
+      "type": "primaryCare",
+      "status": "scheduled",
+      "coordinationNotes": "Annual check. Wheelchair-accessible vehicle needed.",
+      "transportRequired": false,
+      "timeZoneLabel": "clinic time",
+      "history": [
+        {
+          "at": "2026-08-05T08:17:48.846Z",
+          "from": "draft",
+          "to": "scheduled",
+          "actor": "Sarah Whitfield",
+          "reason": null
+        }
+      ],
+      "createdAt": "2026-08-05T08:17:48.846Z"
+    }
+  ],
+  "rides": [
+    {
+      "id": "00000000-0000-4000-8000-000000000062",
+      "patientId": "00000000-0000-4000-8000-000000000010",
+      "appointmentId": "00000000-0000-4000-8000-000000000052",
+      "roundTripGroupId": null,
+      "direction": "outbound",
+      "pickup": {
+        "label": "Home",
+        "line1": "184 Maplewood Drive",
+        "line2": null,
+        "city": "Grandview Heights",
+        "state": "OH",
+        "postalCode": "43212",
+        "accessNotes": "Blue front door. Please ring the bell and wait — it takes Eleanor a couple of minutes to reach the door.",
+        "latitude": 39.9925,
+        "longitude": -83.0281
+      },
+      "destination": {
+        "label": "Riverbend Cardiology",
+        "line1": "2200 Olentangy River Road",
+        "line2": "Suite 300",
+        "city": "Columbus",
+        "state": "OH",
+        "postalCode": "43210",
+        "accessNotes": null,
+        "latitude": 39.9612,
+        "longitude": -82.9988
+      },
+      "scheduledPickupAt": "2026-07-17T08:35:00.000Z",
+      "flexibleReturn": false,
+      "status": "completed",
+      "wheelchairRequired": false,
+      "assistanceRequired": true,
+      "notesForDriver": null,
+      "driver": {
+        "id": "00000000-0000-4000-8000-000000000030",
+        "displayName": "Marcus T.",
+        "rating": 4.9,
+        "yearsDriving": 6,
+        "vehicle": {
+          "make": "Toyota",
+          "model": "Sienna",
+          "color": "Silver",
+          "licensePlate": "OH·4KJ 219",
+          "isWheelchairAccessible": false
+        }
+      },
+      "estimate": {
+        "ruleVersion": "v1-pilot",
+        "distanceMiles": 3.5,
+        "durationMinutes": 15,
+        "baseCents": 1200,
+        "distanceChargeCents": 788,
+        "timeChargeCents": 675,
+        "surcharges": [
+          {
+            "label": "Door-through-door assistance",
+            "amountCents": 800
+          }
+        ],
+        "totalCents": 3463,
+        "minimumApplied": false
+      },
+      "isDelayed": false,
+      "delayReason": null,
+      "cancellationReason": null,
+      "events": [
+        {
+          "at": "2026-07-17T08:33:00.000Z",
+          "title": "Driver arrived at pickup",
+          "detail": null,
+          "isException": false
+        },
+        {
+          "at": "2026-07-17T08:39:00.000Z",
+          "title": "Picked up safely",
+          "detail": null,
+          "isException": false
+        },
+        {
+          "at": "2026-07-17T09:03:00.000Z",
+          "title": "Arrived at the clinic",
+          "detail": null,
+          "isException": false
+        },
+        {
+          "at": "2026-07-17T09:05:00.000Z",
+          "title": "Ride completed",
+          "detail": null,
+          "isException": false
+        }
+      ],
+      "history": [],
+      "lastKnownPosition": null,
+      "etaMinutes": null,
+      "createdAt": "2026-07-08T08:17:48.846Z",
+      "simulationActive": false
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000060",
+      "patientId": "00000000-0000-4000-8000-000000000010",
+      "appointmentId": "00000000-0000-4000-8000-000000000050",
+      "roundTripGroupId": "00000000-0000-4000-8000-000000000070",
+      "direction": "outbound",
+      "pickup": {
+        "label": "Home",
+        "line1": "184 Maplewood Drive",
+        "line2": null,
+        "city": "Grandview Heights",
+        "state": "OH",
+        "postalCode": "43212",
+        "accessNotes": "Blue front door. Please ring the bell and wait — it takes Eleanor a couple of minutes to reach the door.",
+        "latitude": 39.9925,
+        "longitude": -83.0281
+      },
+      "destination": {
+        "label": "Riverbend Cardiology",
+        "line1": "2200 Olentangy River Road",
+        "line2": "Suite 300",
+        "city": "Columbus",
+        "state": "OH",
+        "postalCode": "43210",
+        "accessNotes": null,
+        "latitude": 39.9612,
+        "longitude": -82.9988
+      },
+      "scheduledPickupAt": "2026-08-09T10:00:00.000Z",
+      "flexibleReturn": false,
+      "status": "awaitingAssignment",
+      "wheelchairRequired": false,
+      "assistanceRequired": true,
+      "notesForDriver": "Please ring the bell and allow a couple of minutes. Eleanor is hard of hearing on the left side.",
+      "driver": null,
+      "estimate": {
+        "ruleVersion": "v1-pilot",
+        "distanceMiles": 3.5,
+        "durationMinutes": 15,
+        "baseCents": 1200,
+        "distanceChargeCents": 788,
+        "timeChargeCents": 675,
+        "surcharges": [
+          {
+            "label": "Door-through-door assistance",
+            "amountCents": 800
+          }
+        ],
+        "totalCents": 3463,
+        "minimumApplied": false
+      },
+      "isDelayed": false,
+      "delayReason": null,
+      "cancellationReason": null,
+      "events": [
+        {
+          "at": "2026-08-02T08:17:48.846Z",
+          "title": "Looking for a driver",
+          "detail": null,
+          "isException": false
+        },
+        {
+          "at": "2026-08-02T08:17:48.846Z",
+          "title": "Ride requested",
+          "detail": null,
+          "isException": false
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-08-02T08:17:48.846Z",
+          "from": "draft",
+          "to": "requested",
+          "actor": "Sarah Whitfield",
+          "reason": null
+        },
+        {
+          "at": "2026-08-02T08:17:48.846Z",
+          "from": "requested",
+          "to": "awaitingAssignment",
+          "actor": "CareBridge",
+          "reason": null
+        }
+      ],
+      "lastKnownPosition": null,
+      "etaMinutes": null,
+      "createdAt": "2026-08-02T08:17:48.846Z",
+      "simulationActive": false
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000061",
+      "patientId": "00000000-0000-4000-8000-000000000010",
+      "appointmentId": "00000000-0000-4000-8000-000000000050",
+      "roundTripGroupId": "00000000-0000-4000-8000-000000000070",
+      "direction": "returnTrip",
+      "pickup": {
+        "label": "Riverbend Cardiology",
+        "line1": "2200 Olentangy River Road",
+        "line2": "Suite 300",
+        "city": "Columbus",
+        "state": "OH",
+        "postalCode": "43210",
+        "accessNotes": null,
+        "latitude": 39.9612,
+        "longitude": -82.9988
+      },
+      "destination": {
+        "label": "Home",
+        "line1": "184 Maplewood Drive",
+        "line2": null,
+        "city": "Grandview Heights",
+        "state": "OH",
+        "postalCode": "43212",
+        "accessNotes": "Blue front door. Please ring the bell and wait — it takes Eleanor a couple of minutes to reach the door.",
+        "latitude": 39.9925,
+        "longitude": -83.0281
+      },
+      "scheduledPickupAt": "2026-08-09T11:25:00.000Z",
+      "flexibleReturn": true,
+      "status": "requested",
+      "wheelchairRequired": false,
+      "assistanceRequired": true,
+      "notesForDriver": null,
+      "driver": null,
+      "estimate": {
+        "ruleVersion": "v1-pilot",
+        "distanceMiles": 3.5,
+        "durationMinutes": 15,
+        "baseCents": 1200,
+        "distanceChargeCents": 788,
+        "timeChargeCents": 675,
+        "surcharges": [
+          {
+            "label": "Door-through-door assistance",
+            "amountCents": 800
+          }
+        ],
+        "totalCents": 3463,
+        "minimumApplied": false
+      },
+      "isDelayed": false,
+      "delayReason": null,
+      "cancellationReason": null,
+      "events": [
+        {
+          "at": "2026-08-02T08:17:48.846Z",
+          "title": "Return ride requested",
+          "detail": "Pickup time is flexible — we will send a car when the visit ends.",
+          "isException": false
+        }
+      ],
+      "history": [
+        {
+          "at": "2026-08-02T08:17:48.846Z",
+          "from": "draft",
+          "to": "requested",
+          "actor": "Sarah Whitfield",
+          "reason": null
+        }
+      ],
+      "lastKnownPosition": null,
+      "etaMinutes": null,
+      "createdAt": "2026-08-02T08:17:48.846Z",
+      "simulationActive": false
+    }
+  ],
+  "notifications": [
+    {
+      "id": "9ecf6cbf-66c5-4894-9337-e1a002feb2e6",
+      "kind": "appointmentReminder",
+      "title": "Appointment in two days",
+      "body": "A reminder about an upcoming appointment. Open CareBridge for details.",
+      "createdAt": "2026-08-07T04:17:48.846Z",
+      "readAt": null,
+      "rideId": null,
+      "appointmentId": "00000000-0000-4000-8000-000000000050"
+    },
+    {
+      "id": "ceff284b-2014-4491-839c-ac8d94832fd8",
+      "kind": "rideRequested",
+      "title": "Round trip requested",
+      "body": "We are finding a driver. You will be notified when one is assigned.",
+      "createdAt": "2026-08-02T08:17:48.846Z",
+      "readAt": "2026-08-02T08:17:48.846Z",
+      "rideId": "00000000-0000-4000-8000-000000000060",
+      "appointmentId": null
+    }
+  ],
+  "selectedPatientId": "00000000-0000-4000-8000-000000000010",
+  "simplifiedMode": false
+}

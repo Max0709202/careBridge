@@ -60,10 +60,13 @@ class _ClinicFormState extends State<_ClinicForm> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final clinic = Clinic(
+      // Placeholder only. The server assigns the real id, and `addClinic`
+      // hands back the stored record — which is what the appointment form
+      // then selects.
       id: newId(),
       name: _name.text.trim(),
       phone: _phone.text.trim(),
@@ -78,8 +81,13 @@ class _ClinicFormState extends State<_ClinicForm> {
           _entrance.text.trim().isEmpty ? null : _entrance.text.trim(),
     );
 
-    widget.ref.read(careProvider.notifier).addClinic(clinic);
-    Navigator.of(context).pop(clinic);
+    try {
+      final saved = await widget.ref.read(careProvider.notifier).addClinic(clinic);
+      if (!mounted) return;
+      Navigator.of(context).pop(saved);
+    } catch (error) {
+      if (mounted) showFailure(context, error);
+    }
   }
 
   @override

@@ -8,10 +8,16 @@ import '../../widgets/common.dart';
 
 /// Stand-in controls for the driver app and the dispatch service.
 ///
-/// Nothing here is a shortcut: "Run the trip" drives the ride through exactly
-/// the same `advanceRide` state machine a real driver's transitions will, and
-/// "Report a delay" sets the same flag a dispatcher would. When `apps/api` and
-/// the driver app exist, this widget is deleted and nothing else changes.
+/// Nothing here is a shortcut. "Run the trip" asks the **server** to drive the
+/// ride through exactly the same transition endpoint a real driver's app will
+/// call, and "Report a delay" sets the same flag a dispatcher would. Neither
+/// has a privileged path: an illegal transition is rejected here exactly as it
+/// would be from a phone.
+///
+/// The trip runs server-side, so closing this tab does not stop it and a
+/// refresh does not lose it — which is also how it will behave when a real
+/// driver is holding the phone. When `apps/mobile_driver` exists, this widget
+/// is deleted and nothing else changes.
 ///
 /// It is visually marked as a preview tool so it can never be mistaken for a
 /// family-facing feature.
@@ -27,7 +33,17 @@ class DemoControls extends ConsumerWidget {
     final ride = ref.watch(careProvider).rideById(rideId);
     if (ride == null || ride.status.isTerminal) return const SizedBox.shrink();
 
-    final running = notifier.runningDemoRideId == rideId;
+    // Read from the server's snapshot rather than from a local flag, so the
+    // button says the right thing after a refresh or on a second device.
+    final running = notifier.isPreviewRunning(rideId);
+
+    Future<void> run(Future<void> Function() action) async {
+      try {
+        await action();
+      } catch (error) {
+        if (context.mounted) showFailure(context, error);
+      }
+    }
 
     return AppCard(
       borderColor: theme.colorScheme.outline,
@@ -51,8 +67,8 @@ class DemoControls extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             'The driver app and dispatch service do not exist yet. These stand '
-            'in for them, and drive the same state machine the server will '
-            'enforce.',
+            'in for them, and drive the same state machine on the same server '
+            'a real driver would.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -64,7 +80,7 @@ class DemoControls extends ConsumerWidget {
             children: [
               if (!running)
                 FilledButton.tonalIcon(
-                  onPressed: () => notifier.startDemoTrip(rideId),
+                  onPressed: () => run(() => notifier.startPreviewTrip(rideId)),
                   icon: const Icon(Icons.play_arrow),
                   label: Text(
                     ride.status == RideStatus.awaitingAssignment ||
@@ -75,22 +91,18 @@ class DemoControls extends ConsumerWidget {
                 )
               else
                 OutlinedButton.icon(
-                  onPressed: notifier.stopDemoTrip,
+                  onPressed: () => run(() => notifier.stopPreviewTrip(rideId)),
                   icon: const Icon(Icons.pause),
                   label: const Text('Pause'),
                 ),
               OutlinedButton.icon(
-                onPressed: () {
-                  try {
-                    notifier.setDelay(
-                      rideId,
-                      delayed: !ride.isDelayed,
-                      reason: ride.isDelayed ? null : 'Heavy traffic on Route 315',
-                    );
-                  } catch (error) {
-                    showFailure(context, error);
-                  }
-                },
+                onPressed: () => run(
+                  () => notifier.setDelay(
+                    rideId,
+                    delayed: !ride.isDelayed,
+                    reason: ride.isDelayed ? null : 'Heavy traffic on Route 315',
+                  ),
+                ),
                 icon: Icon(
                   ride.isDelayed
                       ? Icons.check_circle_outline

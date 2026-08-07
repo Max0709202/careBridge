@@ -1,6 +1,6 @@
 import 'package:carebridge_family/core/clock.dart';
+import 'package:carebridge_family/data/care_codec.dart';
 import 'package:carebridge_family/data/care_state.dart';
-import 'package:carebridge_family/data/seed.dart';
 import 'package:carebridge_family/features/rides/ride_timeline.dart';
 import 'package:carebridge_family/main.dart';
 import 'package:carebridge_family/state/providers.dart';
@@ -9,11 +9,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/fake_api.dart';
+
 void main() {
   final now = DateTime(2026, 7, 27, 9, 0);
+  final snapshotJson = loadSnapshotFixture();
 
+  late FakeApi fake;
+
+  setUp(() => fake = FakeApi(snapshot: snapshotJson));
+
+  /// The app wired to a canned server. `tokenStoreProvider` is overridden too:
+  /// there is no secure-storage platform channel under the test binding.
   Widget appWith(FixedClock clock) => ProviderScope(
-        overrides: [clockProvider.overrideWithValue(clock)],
+        overrides: [
+          clockProvider.overrideWithValue(clock),
+          careApiProvider.overrideWith((ref) => fake.build()),
+        ],
         child: const CareBridgeApp(),
       );
 
@@ -23,11 +35,14 @@ void main() {
 
     expect(find.text('Sign in'), findsWidgets);
     expect(find.text('Create an account'), findsOneWidget);
-    // The preview build must say plainly that credentials are not checked.
-    expect(find.textContaining('Credentials are not checked'), findsOneWidget);
+
+    // The notice must describe what the credentials actually are — a seeded
+    // account whose password is checked — and must not claim otherwise.
+    expect(find.textContaining('checked like any other'), findsOneWidget);
+    expect(find.textContaining('Credentials are not checked'), findsNothing);
   });
 
-  testWidgets('signing in lands on the dashboard with the patient in view',
+  testWidgets('signing in reaches the server and lands on the dashboard',
       (tester) async {
     await tester.pumpWidget(appWith(FixedClock(now)));
     await tester.pumpAndSettle();
@@ -35,6 +50,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
     await tester.pumpAndSettle();
 
+    expect(fake.requests, contains('POST /api/v1/auth/login'));
     expect(find.text('Eleanor'), findsWidgets);
     expect(find.text('Next appointment'), findsOneWidget);
   });
@@ -84,7 +100,19 @@ void main() {
     await tester.tap(submit);
     await tester.pumpAndSettle();
 
+    expect(fake.requests, contains('POST /api/v1/auth/register'));
     expect(find.text('Add the person you care for'), findsOneWidget);
+  });
+
+  testWidgets('a signed-out user is redirected away from a deep link',
+      (tester) async {
+    await tester.pumpWidget(appWith(FixedClock(now)));
+    await tester.pumpAndSettle();
+
+    // No session, so nothing patient-scoped may render — the router guard
+    // hides the screen and the server would refuse the data regardless.
+    expect(find.text('Sign in'), findsWidgets);
+    expect(find.text('Eleanor'), findsNothing);
   });
 
   group('status pill', () {
@@ -119,8 +147,8 @@ void main() {
     });
 
     testWidgets('renders the events of a completed ride', (tester) async {
-      final state = buildSeedState(now);
-      final ride = state.rideById('ride-past')!;
+      final state = careStateFromJson(snapshotJson);
+      final ride = state.rideById(Seeded.pastRide)!;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -139,15 +167,18 @@ void main() {
 
   group('CareState queries', () {
     test('active ride prefers the one being tracked', () {
-      final state = buildSeedState(now);
-      expect(state.activeRideFor('patient-eleanor')?.id, 'ride-upcoming');
+      final state = careStateFromJson(snapshotJson);
+      expect(state.activeRideFor(Seeded.eleanor)?.id, Seeded.outboundRide);
     });
 
     test('past appointments exclude upcoming ones', () {
-      final state = buildSeedState(now);
-      final past = state.pastFor('patient-eleanor', now);
-      expect(past.map((a) => a.id), contains('appt-past'));
-      expect(past.map((a) => a.id), isNot(contains('appt-followup')));
+      final state = careStateFromJson(snapshotJson);
+      final past = state.pastFor(Seeded.eleanor, now);
+      expect(past.map((a) => a.id), contains(Seeded.pastAppointment));
+      expect(
+        past.map((a) => a.id),
+        isNot(contains(Seeded.followUpAppointment)),
+      );
     });
 
     test('an unknown id yields nothing rather than throwing', () {

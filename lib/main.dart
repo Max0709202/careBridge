@@ -5,8 +5,23 @@ import 'app/router.dart';
 import 'app/theme.dart';
 import 'state/providers.dart';
 
-void main() {
-  runApp(const ProviderScope(child: CareBridgeApp()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // The stored session is restored *before* the first frame rather than in a
+  // widget's initState. GoRouter's redirect reads `isSignedIn` synchronously,
+  // so resolving it later would send a returning user to /sign-in and bounce
+  // them back a moment afterwards — a flash of the wrong screen on every cold
+  // start. It never throws; the worst case is starting signed out.
+  final container = ProviderContainer();
+  await container.read(careProvider.notifier).restoreSession();
+
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const CareBridgeApp(),
+    ),
+  );
 }
 
 class CareBridgeApp extends ConsumerWidget {

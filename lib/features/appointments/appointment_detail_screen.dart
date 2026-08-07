@@ -259,7 +259,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
     if (time == null || !context.mounted) return;
 
     try {
-      ref.read(careProvider.notifier).rescheduleAppointment(
+      await ref.read(careProvider.notifier).rescheduleAppointment(
             appointment.id,
             DateTime(date.year, date.month, date.day, time.hour, time.minute),
           );
@@ -290,7 +290,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
     if (!confirmed || !context.mounted) return;
 
     try {
-      ref.read(careProvider.notifier).cancelAppointment(appointment.id);
+      await ref.read(careProvider.notifier).cancelAppointment(appointment.id);
       if (context.mounted) {
         showConfirmationBanner(context, 'Appointment cancelled.');
         context.pop();

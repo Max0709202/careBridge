@@ -75,7 +75,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
     if (picked != null) setState(() => _time = picked);
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final patient = ref.read(careProvider).selectedPatient;
@@ -90,7 +90,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
     }
 
     try {
-      ref.read(careProvider.notifier).createAppointment(
+      await ref.read(careProvider.notifier).createAppointment(
             patientId: patient.id,
             clinicId: _clinicId!,
             startsAt: startsAt,

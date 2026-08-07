@@ -1,0 +1,68 @@
+# The whole product, in three containers.
+#
+#   docker compose up --build
+#   → http://localhost:8080
+#
+# Identical Postgres on every machine, so "works locally" means something. The
+# API image built here is the artefact that would be deployed — the same
+# container, not a re-built approximation of it.
+
+name: carebridge
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-carebridge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carebridge-local-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-carebridge}
+    volumes:
+      - carebridge-db:/var/lib/postgresql/data
+    ports:
+      # Exposed so you can attach psql or a GUI while developing. Bound to
+      # loopback only — a database on 0.0.0.0 is one misconfigured firewall
+      # away from being everybody's database.
+      - '127.0.0.1:${POSTGRES_PORT:-55432}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-carebridge} -d ${POSTGRES_DB:-carebridge}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  api:
+    build:
+      context: ./apps/api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: '3000'
+      DATABASE_URL: postgresql://${POSTGRES_USER:-carebridge}:${POSTGRES_PASSWORD:-carebridge-local-dev}@db:5432/${POSTGRES_DB:-carebridge}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set — copy .env.example to .env}
+      ACCESS_TOKEN_TTL_MINUTES: ${ACCESS_TOKEN_TTL_MINUTES:-15}
+      REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
+      # The browser talks to nginx, which proxies /api to this service, so
+      # every request is same-origin and CORS never enters the picture. The
+      # allowlist below is for `flutter run` against the host.
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      SEED_ON_START: ${SEED_ON_START:-true}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:${API_PORT:-3000}:3000'
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '${WEB_PORT:-8080}:80'
+
+volumes:
+  carebridge-db:

@@ -1,0 +1,13 @@
+.git
+.dart_tool
+.firebase
+build
+apps/api/node_modules
+apps/api/dist
+.env
+*.log
+android
+ios
+linux
+macos
+windows

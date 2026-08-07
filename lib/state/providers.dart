@@ -5,15 +5,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/clock.dart';
 import '../core/failures.dart';
 import '../core/geo.dart';
-import '../domain/appointment_status.dart';
+import '../data/care_api.dart';
+import '../data/care_state.dart';
+import '../data/token_store.dart';
 import '../domain/models.dart';
 import '../domain/permissions.dart';
-import '../domain/ride_status.dart';
-import '../data/care_operations.dart' as ops;
-import '../data/care_state.dart';
-import '../data/seed.dart';
 
 final clockProvider = Provider<Clock>((ref) => const SystemClock());
+
+/// Overridden in tests with an [InMemoryTokenStore]; there is no platform
+/// channel behind secure storage in a test binding.
+final tokenStoreProvider = Provider<TokenStore>((ref) => SecureTokenStore());
+
+final careApiProvider = Provider<CareApi>((ref) {
+  final api = CareApi(tokens: ref.watch(tokenStoreProvider));
+  ref.onDispose(api.dispose);
+  return api;
+});
 
 final careProvider = NotifierProvider<CareNotifier, CareState>(CareNotifier.new);
 
@@ -31,53 +39,83 @@ final simplifiedModeProvider = Provider<bool>(
   (ref) => ref.watch(careProvider).simplifiedMode,
 );
 
-/// Ticks once a second while a demo trip is running, so freshness ages ("updated
-/// 12 seconds ago") stay honest without every widget owning a timer.
+/// Ticks once a second so freshness ages ("updated 12 seconds ago") stay honest
+/// without every widget owning a timer.
 final tickerProvider = StreamProvider<DateTime>((ref) {
   final clock = ref.watch(clockProvider);
   return Stream<DateTime>.periodic(const Duration(seconds: 1), (_) => clock.now());
 });
 
+/// The state everything reads.
+///
+/// Unchanged in shape from the in-memory build: screens still watch a
+/// [CareState] and still read `canView` before rendering anyone. What changed is
+/// where it comes from. Every method here posts to the API and replaces the
+/// state with the snapshot the server returns, so the server — not this class —
+/// decides what a status change implies, which notifications it produces, and
+/// whether the caller was allowed to ask.
 class CareNotifier extends Notifier<CareState> {
-  Timer? _demoTimer;
-  int _demoElapsedSeconds = 0;
-  String? _demoRideId;
+  Timer? _pollTimer;
+  Set<String> _runningPreviews = const {};
 
   @override
   CareState build() {
-    ref.onDispose(() => _demoTimer?.cancel());
+    ref.onDispose(_stopPolling);
     return const CareState();
   }
 
-  DateTime get _now => ref.read(clockProvider).now();
+  CareApi get _api => ref.read(careApiProvider);
 
-  String? get runningDemoRideId => _demoRideId;
+  /// Ride ids the **server** is currently driving with the preview runner.
+  /// Read from the snapshot rather than tracked here, so the controls show the
+  /// right state after a page refresh or on a second device.
+  Set<String> get runningPreviewRides => _runningPreviews;
+
+  bool isPreviewRunning(String rideId) => _runningPreviews.contains(rideId);
 
   // ─── session ──────────────────────────────────────────────────────────────
 
-  /// Local-only sign-in against seeded demo data.
+  /// Restores a session from secure storage, if there is one.
   ///
-  /// There is no credential check here on purpose: this is a stand-in, and
-  /// pretending otherwise would be worse than being obvious about it. Real
-  /// authentication is server-side — argon2id, short-lived access tokens,
-  /// rotating refresh tokens. See docs/FOUNDATION.md §9.
-  void signIn({required String email, required String password}) {
+  /// Awaited in `main()` before the first frame, so the router never sees a
+  /// signed-in user as signed out — otherwise a returning user watches the
+  /// sign-in screen flash past before their dashboard appears.
+  ///
+  /// Never throws: a failure here means "start signed out", which is
+  /// recoverable, and an exception during startup is a white screen, which is
+  /// not.
+  Future<void> restoreSession() async {
+    try {
+      final snapshot = await _api.restore();
+      if (snapshot != null) _apply(snapshot);
+    } catch (_) {
+      state = const CareState();
+    }
+  }
+
+  Future<void> signIn({required String email, required String password}) async {
+    // Kept client-side so the form can point at the offending field before a
+    // round trip. The server validates independently — this is a courtesy.
     if (email.trim().isEmpty || !email.contains('@')) {
-      throw const ValidationFailure('Enter the email address you signed up with.', field: 'email');
+      throw const ValidationFailure(
+        'Enter the email address you signed up with.',
+        field: 'email',
+      );
     }
     if (password.isEmpty) {
       throw const ValidationFailure('Enter your password.', field: 'password');
     }
-    state = buildSeedState(_now);
+    _apply(await _api.signIn(email: email, password: password));
   }
 
-  /// Registers a new account. Starts genuinely empty — no patients, no
-  /// appointments — so the first-run experience is the one a real user gets.
-  void register({
+  /// Registers a new account. The state that comes back is genuinely empty —
+  /// no patients, no appointments — because a new account has nothing in it.
+  Future<void> register({
     required String fullName,
     required String email,
     required String password,
-  }) {
+    bool acceptedTerms = true,
+  }) async {
     if (fullName.trim().isEmpty) {
       throw const ValidationFailure('Enter your name.', field: 'fullName');
     }
@@ -90,42 +128,91 @@ class CareNotifier extends Notifier<CareState> {
         field: 'password',
       );
     }
-    state = CareState(
-      user: AppUser(
-        id: 'user-${email.hashCode.abs()}',
-        email: email.trim(),
-        fullName: fullName.trim(),
+    _apply(
+      await _api.register(
+        fullName: fullName,
+        email: email,
+        password: password,
+        acceptedTerms: acceptedTerms,
       ),
     );
   }
 
-  void signOut() {
-    _stopDemo();
+  Future<void> signOut() async {
+    _stopPolling();
+    await _api.signOut();
+    _runningPreviews = const {};
     state = const CareState();
+  }
+
+  /// Re-reads the snapshot. Used by pull-to-refresh and by the preview poll.
+  Future<void> refresh() async {
+    if (!state.isSignedIn) return;
+    _apply(await _api.state());
   }
 
   // ─── patients ─────────────────────────────────────────────────────────────
 
-  void selectPatient(String patientId) =>
-      state = ops.selectPatient(state, patientId);
+  Future<void> selectPatient(String patientId) async =>
+      _apply(await _api.selectPatient(patientId));
 
-  void savePatient(Patient patient) => state = ops.upsertPatient(state, patient);
+  Future<void> savePatient(Patient patient) async {
+    // A patient built by the form carries a locally generated id only when it
+    // is new; the server mints the real one. Anything already in state is an
+    // update.
+    final exists = state.patientById(patient.id) != null;
+    _apply(
+      exists
+          ? await _api.updatePatient(patient)
+          : await _api.createPatient(patient),
+    );
+  }
 
-  void archivePatient(String patientId) =>
-      state = ops.archivePatient(state, patientId, _now);
+  Future<void> archivePatient(String patientId) async =>
+      _apply(await _api.archivePatient(patientId));
 
-  void setPermissions(String patientId, Set<FamilyPermission> permissions) =>
-      state = ops.setAccessPermissions(
-        state,
-        patientId: patientId,
-        permissions: permissions,
-      );
+  Future<void> setPermissions(
+    String patientId,
+    Set<FamilyPermission> permissions,
+  ) async =>
+      _apply(await _api.setPermissions(patientId, permissions));
 
-  void addClinic(Clinic clinic) => state = ops.addClinic(state, clinic);
+  /// Adds a clinic and returns it **as the server stored it**.
+  ///
+  /// The caller needs the real id straight away — it adds a clinic from inside
+  /// the appointment form and immediately selects it. The id the form invented
+  /// locally is not the id the database assigned, and using it would fail the
+  /// very next request.
+  ///
+  /// Identified by diffing ids against the previous snapshot, then confirming
+  /// on the fields that were submitted: clinics are shared between accounts, so
+  /// another family adding one at the same moment could otherwise put a
+  /// stranger's clinic into this appointment.
+  Future<Clinic> addClinic(Clinic clinic) async {
+    final before = state.clinics.map((c) => c.id).toSet();
+    _apply(await _api.addClinic(clinic));
+
+    final added = state.clinics.where((c) => !before.contains(c.id)).toList();
+    final match = added.where(
+      (c) =>
+          c.name == clinic.name.trim() &&
+          c.address.line1 == clinic.address.line1.trim() &&
+          c.address.postalCode == clinic.address.postalCode.trim(),
+    );
+
+    if (match.isNotEmpty) return match.first;
+    if (added.isNotEmpty) return added.first;
+
+    // The write succeeded — the snapshot came back — but the clinic is not in
+    // it. Better to say so than to hand back an id that does not exist.
+    throw const NetworkFailure(
+      'The clinic was saved but could not be loaded. Pull to refresh.',
+    );
+  }
 
   // ─── appointments ─────────────────────────────────────────────────────────
 
-  void createAppointment({
+  Future<void> createAppointment({
     required String patientId,
     required String clinicId,
     required DateTime startsAt,
@@ -133,250 +220,119 @@ class CareNotifier extends Notifier<CareState> {
     required AppointmentType type,
     String? coordinationNotes,
     bool transportRequired = false,
-  }) {
-    state = ops.createAppointment(
-      state,
-      patientId: patientId,
-      clinicId: clinicId,
-      startsAt: startsAt,
-      expectedDuration: expectedDuration,
-      type: type,
-      coordinationNotes: coordinationNotes,
-      transportRequired: transportRequired,
-      now: _now,
-    );
-  }
-
-  void rescheduleAppointment(String appointmentId, DateTime startsAt) =>
-      state = ops.rescheduleAppointment(
-        state,
-        appointmentId: appointmentId,
-        startsAt: startsAt,
-        now: _now,
+  }) async =>
+      _apply(
+        await _api.createAppointment(
+          patientId: patientId,
+          clinicId: clinicId,
+          startsAt: startsAt,
+          expectedDuration: expectedDuration,
+          type: type,
+          coordinationNotes: coordinationNotes,
+          transportRequired: transportRequired,
+        ),
       );
 
-  void cancelAppointment(String appointmentId, {String? reason}) =>
-      state = ops.cancelAppointment(
-        state,
-        appointmentId: appointmentId,
-        now: _now,
-        reason: reason,
-      );
+  Future<void> rescheduleAppointment(
+    String appointmentId,
+    DateTime startsAt,
+  ) async =>
+      _apply(await _api.rescheduleAppointment(appointmentId, startsAt));
 
-  void setAppointmentStatus(String appointmentId, AppointmentStatus to) =>
-      state = ops.setAppointmentStatus(
-        state,
-        appointmentId: appointmentId,
-        to: to,
-        now: _now,
-        actor: state.user?.fullName ?? 'You',
-      );
+  Future<void> cancelAppointment(String appointmentId, {String? reason}) async =>
+      _apply(await _api.cancelAppointment(appointmentId, reason: reason));
 
   // ─── transportation ───────────────────────────────────────────────────────
 
-  void requestTransport({
+  Future<void> requestTransport({
     required String appointmentId,
     required DateTime pickupAt,
     required bool roundTrip,
     String? notesForDriver,
-  }) {
-    state = ops.requestTransport(
-      state,
-      appointmentId: appointmentId,
-      pickupAt: pickupAt,
-      roundTrip: roundTrip,
-      notesForDriver: notesForDriver,
-      now: _now,
-    );
-  }
-
-  void cancelRide(String rideId, String reason) {
-    if (_demoRideId == rideId) _stopDemo();
-    state = ops.cancelRide(state, rideId: rideId, reason: reason, now: _now);
-  }
-
-  void advanceRide(String rideId, RideStatus to, {Driver? driver, String? reason}) =>
-      state = ops.advanceRide(
-        state,
-        rideId: rideId,
-        to: to,
-        now: _now,
-        driver: driver,
-        reason: reason,
+  }) async =>
+      _apply(
+        await _api.requestTransport(
+          appointmentId: appointmentId,
+          pickupAt: pickupAt,
+          roundTrip: roundTrip,
+          notesForDriver: notesForDriver,
+        ),
       );
 
-  void setDelay(String rideId, {required bool delayed, String? reason}) =>
-      state = ops.setRideDelay(
-        state,
-        rideId: rideId,
-        delayed: delayed,
-        reason: reason,
-        now: _now,
-      );
+  Future<void> cancelRide(String rideId, String reason) async =>
+      _apply(await _api.cancelRide(rideId, reason));
+
+  Future<void> setDelay(
+    String rideId, {
+    required bool delayed,
+    String? reason,
+  }) async =>
+      _apply(await _api.setDelay(rideId, delayed: delayed, reason: reason));
 
   // ─── notifications & preferences ──────────────────────────────────────────
 
-  void markNotificationRead(String id) =>
-      state = ops.markNotificationRead(state, id, _now);
+  Future<void> markNotificationRead(String id) async =>
+      _apply(await _api.markNotificationRead(id));
 
-  void markAllNotificationsRead() =>
-      state = ops.markAllNotificationsRead(state, _now);
+  Future<void> markAllNotificationsRead() async =>
+      _apply(await _api.markAllNotificationsRead());
 
-  void setSimplifiedMode(bool enabled) =>
-      state = ops.setSimplifiedMode(state, enabled);
+  Future<void> setSimplifiedMode(bool enabled) async =>
+      _apply(await _api.setSimplifiedMode(enabled));
 
-  // ─── demo trip ────────────────────────────────────────────────────────────
+  // ─── preview trip ─────────────────────────────────────────────────────────
 
-  /// Drives a ride through its full lifecycle, emitting position reports.
+  /// Asks the **server** to drive a ride through its lifecycle.
   ///
-  /// This is a **stand-in for the driver app and the dispatch service**, not a
-  /// simulation of them. It exists so the family-side experience — assignment,
-  /// live position, staleness, arrival, completion — can be built and reviewed
-  /// before those pieces exist. It runs only when explicitly started, and it
-  /// goes through exactly the same `advanceRide` state machine the server will
-  /// enforce; it has no privileged path.
-  void startDemoTrip(String rideId) {
-    final ride = state.rideById(rideId);
-    if (ride == null || ride.status.isTerminal) return;
+  /// This stands in for the driver app and the dispatch service, and it runs
+  /// where their transitions would come from. The previous build ran the script
+  /// in a client-side timer, which meant closing the tab stopped the trip and a
+  /// refresh lost it. Here the trip carries on, and any family member watching
+  /// sees the same thing.
+  Future<void> startPreviewTrip(String rideId) async =>
+      _apply(await _api.startPreviewTrip(rideId));
 
-    _stopDemo();
-    _demoRideId = rideId;
-    _demoElapsedSeconds = 0;
+  Future<void> stopPreviewTrip(String rideId) async =>
+      _apply(await _api.stopPreviewTrip(rideId));
 
-    if (state.rideById(rideId)!.status == RideStatus.requested) {
-      advanceRide(rideId, RideStatus.awaitingAssignment);
-    }
+  // ─── plumbing ─────────────────────────────────────────────────────────────
 
-    _demoTimer = Timer.periodic(const Duration(seconds: 1), (_) => _demoTick());
+  void _apply(CareSnapshot snapshot) {
+    state = snapshot.state;
+    _runningPreviews = snapshot.runningPreviews;
+    _syncPolling();
   }
 
-  void stopDemoTrip() => _stopDemo();
-
-  void _stopDemo() {
-    _demoTimer?.cancel();
-    _demoTimer = null;
-    _demoRideId = null;
-    _demoElapsedSeconds = 0;
-  }
-
-  void _demoTick() {
-    final rideId = _demoRideId;
-    if (rideId == null) return;
-    final ride = state.rideById(rideId);
-    if (ride == null || ride.status.isTerminal) {
-      _stopDemo();
+  /// Polls only while the server is actually running a trip.
+  ///
+  /// A permanent poll would keep a phone awake and a database busy for the
+  /// 99% of the time when nothing is moving. Long-lived push over the
+  /// WebSocket gateway replaces this in Stage 3; until then, polling exactly
+  /// when there is something to see is the honest middle.
+  void _syncPolling() {
+    if (_runningPreviews.isEmpty) {
+      _stopPolling();
       return;
     }
-
-    _demoElapsedSeconds++;
-    final t = _demoElapsedSeconds;
-
-    // Status changes at fixed points in the script.
-    final next = switch (t) {
-      2 => RideStatus.assigned,
-      5 => RideStatus.driverAccepted,
-      8 => RideStatus.driverEnRoute,
-      30 => RideStatus.driverArrived,
-      36 => RideStatus.passengerOnboard,
-      39 => RideStatus.inProgress,
-      75 => RideStatus.arrivedAtDestination,
-      82 => RideStatus.completed,
-      _ => null,
-    };
-
-    if (next != null && canTransitionRide(ride.status, next)) {
-      advanceRide(
-        rideId,
-        next,
-        driver: next == RideStatus.assigned ? _demoDriver(ride) : null,
-        reason: 'Demo trip',
-      );
-    }
-
-    final current = state.rideById(rideId);
-    if (current == null) return;
-
-    // Position reports only while the ride is in a state that permits tracking.
-    if (current.status.allowsLocationSharing) {
-      final progress = _demoProgress(t, current.status);
-      final position = _demoPosition(current, progress);
-      if (position != null) {
-        final capturedAt = _now;
-        state = ops.updateRidePosition(
-          state,
-          rideId: rideId,
-          point: TrackingPoint(coordinates: position, capturedAt: capturedAt),
-          now: capturedAt,
-          etaMinutes: _demoEta(t, current.status),
-        );
-      }
-    }
-
-    if (state.rideById(rideId)?.status.isTerminal ?? true) _stopDemo();
+    _pollTimer ??= Timer.periodic(
+      const Duration(milliseconds: 1500),
+      (_) => unawaited(_poll()),
+    );
   }
 
-  Driver _demoDriver(Ride ride) => Driver(
-        id: 'driver-demo',
-        displayName: ride.wheelchairRequired ? 'Priya N.' : 'Marcus T.',
-        rating: 4.9,
-        yearsDriving: 6,
-        vehicle: ride.wheelchairRequired
-            ? const Vehicle(
-                make: 'Ford',
-                model: 'Transit',
-                color: 'White',
-                licensePlate: 'OH·8RT 660',
-                isWheelchairAccessible: true,
-              )
-            : const Vehicle(
-                make: 'Toyota',
-                model: 'Sienna',
-                color: 'Silver',
-                licensePlate: 'OH·4KJ 219',
-              ),
-      );
-
-  double _demoProgress(int t, RideStatus status) {
-    if (status == RideStatus.driverEnRoute) {
-      return ((t - 8) / 22).clamp(0.0, 1.0);
+  Future<void> _poll() async {
+    try {
+      _apply(await _api.state());
+    } catch (_) {
+      // A dropped poll is not worth interrupting the screen for. The next tick
+      // tries again, and the freshness label already tells the user the
+      // position is ageing.
     }
-    if (status == RideStatus.inProgress) {
-      return ((t - 39) / 36).clamp(0.0, 1.0);
-    }
-    if (status == RideStatus.driverArrived ||
-        status == RideStatus.passengerOnboard) {
-      return 0.0;
-    }
-    return 1.0;
   }
 
-  int? _demoEta(int t, RideStatus status) {
-    if (status == RideStatus.driverEnRoute) {
-      return (((30 - t) / 60) * 9).ceil().clamp(1, 15);
-    }
-    if (status == RideStatus.inProgress) {
-      return (((75 - t) / 60) * 14).ceil().clamp(1, 25);
-    }
-    return null;
-  }
-
-  /// Where the car is. On the way to pickup it approaches from a point about a
-  /// mile away; after pickup it runs from the pickup address to the destination.
-  Coordinates? _demoPosition(Ride ride, double progress) {
-    final pickup = ride.pickup.coordinates;
-    final destination = ride.destination.coordinates;
-    if (pickup == null || destination == null) return null;
-
-    return switch (ride.status) {
-      RideStatus.driverEnRoute => Coordinates(
-          pickup.latitude - 0.018,
-          pickup.longitude - 0.021,
-        ).lerp(pickup, progress),
-      RideStatus.driverArrived || RideStatus.passengerOnboard => pickup,
-      RideStatus.inProgress => pickup.lerp(destination, progress),
-      RideStatus.arrivedAtDestination => destination,
-      _ => null,
-    };
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
   }
 }
 

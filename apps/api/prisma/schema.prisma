@@ -1,0 +1,575 @@
+// CareBridge — data model.
+//
+// Mirrors lib/domain/models.dart, with the same two deliberate absences carried
+// through to the database: no date of birth anywhere, and no clinical field
+// anywhere. `ageBand` is coarse by design and `AppointmentType` is a
+// coordination label, never a condition. See docs/FOUNDATION.md §6 and §9.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── identity ────────────────────────────────────────────────────────────────
+
+model User {
+  id           String  @id @default(uuid())
+  email        String  @unique
+  passwordHash String
+  fullName     String
+  phone        String?
+
+  /// UI preferences, persisted per account so a browser refresh or a new device
+  /// lands the user back where they were.
+  selectedPatientId String?
+  simplifiedMode    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  access        PatientAccess[]
+  notifications Notification[]
+  consents      UserConsent[]
+
+  @@map("users")
+}
+
+/// Opaque refresh tokens, stored only as a hash.
+///
+/// `familyId` groups every token descended from one login. Presenting a token
+/// that has already been rotated revokes the whole family — the standard
+/// detection for a stolen refresh token, since the legitimate client and the
+/// thief cannot both hold the newest one.
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  familyId  String
+  tokenHash String    @unique
+  issuedAt  DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+enum ConsentType {
+  terms
+  privacy
+  locationSharing
+  notifications
+}
+
+/// Append-only. Consent is recorded, never inferred from use of the app.
+model UserConsent {
+  id              String      @id @default(uuid())
+  userId          String
+  type            ConsentType
+  documentVersion String
+  acceptedAt      DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_consents")
+}
+
+// ─── shared value objects ────────────────────────────────────────────────────
+
+/// Rows are owned by whatever references them. A ride's pickup and destination
+/// are **snapshots** taken at request time — copied, not shared — so that a
+/// patient moving house never rewrites where a completed ride actually went.
+model Address {
+  id          String  @id @default(uuid())
+  label       String
+  line1       String
+  line2       String?
+  city        String
+  state       String
+  postalCode  String
+  accessNotes String?
+  latitude    Float?
+  longitude   Float?
+
+  patientHomes         Patient[]
+  clinics              Clinic[]
+  ridePickups          Ride[]    @relation("RidePickup")
+  rideDestinations     Ride[]    @relation("RideDestination")
+
+  @@map("addresses")
+}
+
+// ─── patients and family access ──────────────────────────────────────────────
+
+enum AgeBand {
+  under65
+  from65to74
+  from75to84
+  over85
+}
+
+enum MobilityNeed {
+  walker
+  wheelchair
+  cane
+  oxygen
+  transferAssistance
+  escortToDoor
+  lowVision
+  hardOfHearing
+  memorySupport
+}
+
+model Patient {
+  id            String  @id @default(uuid())
+  preferredName String
+  legalName     String?
+  phone         String
+  homeAddressId String
+
+  ageBand           AgeBand?
+  preferredLanguage String         @default("English")
+  mobilityNeeds     MobilityNeed[]
+  mobilityNotes     String?
+  preferredClinicId String?
+
+  /// Soft delete: audit and dispute resolution need the record to survive.
+  archivedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  homeAddress       Address            @relation(fields: [homeAddressId], references: [id])
+  emergencyContacts EmergencyContact[]
+  access            PatientAccess[]
+  appointments      Appointment[]
+  rides             Ride[]
+
+  @@map("patients")
+}
+
+model EmergencyContact {
+  id           String  @id @default(uuid())
+  patientId    String
+  name         String
+  relationship String
+  phone        String
+  isPrimary    Boolean @default(false)
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("emergency_contacts")
+}
+
+enum FamilyPermission {
+  viewProfile
+  scheduleAppointments
+  requestTransport
+  makePayments
+  manageAccess
+}
+
+enum RelationshipType {
+  son
+  daughter
+  spouse
+  sibling
+  grandchild
+  friend
+  professionalCaregiver
+  other
+}
+
+/// The central authorisation edge. Every patient-scoped query on the server
+/// resolves through this table — a ride id is not a capability.
+model PatientAccess {
+  id           String             @id @default(uuid())
+  userId       String
+  patientId    String
+  relationship RelationshipType
+  permissions  FamilyPermission[]
+  grantedAt    DateTime           @default(now())
+
+  /// Null marks the organiser who created the patient record. They keep
+  /// `manageAccess` unconditionally, or a family could lock itself out of its
+  /// own patient with no recovery short of support.
+  grantedByUserId String?
+  revokedAt       DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, patientId])
+  @@index([patientId])
+  @@map("patient_access")
+}
+
+// ─── clinics ─────────────────────────────────────────────────────────────────
+
+model Clinic {
+  id             String  @id @default(uuid())
+  name           String
+  phone          String
+  addressId      String
+  entranceNotes  String?
+  operatingNotes String?
+  archivedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  address      Address       @relation(fields: [addressId], references: [id])
+  appointments Appointment[]
+
+  @@map("clinics")
+}
+
+// ─── appointments ────────────────────────────────────────────────────────────
+
+enum AppointmentType {
+  primaryCare
+  specialist
+  imaging
+  labWork
+  therapy
+  dental
+  vision
+  followUp
+  other
+}
+
+enum AppointmentStatus {
+  draft
+  scheduled
+  confirmed
+  patientPreparing
+  transportationScheduled
+  patientEnRoute
+  patientArrived
+  completed
+  canceled
+  missed
+}
+
+model Appointment {
+  id                      String            @id @default(uuid())
+  patientId               String
+  clinicId                String
+  startsAt                DateTime
+  expectedDurationMinutes Int
+  type                    AppointmentType
+  status                  AppointmentStatus
+  coordinationNotes       String?
+  transportRequired       Boolean           @default(false)
+  timeZoneLabel           String            @default("clinic time")
+
+  /// Optimistic locking, per FOUNDATION §6.
+  version Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient Patient                    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinic  Clinic                     @relation(fields: [clinicId], references: [id])
+  history AppointmentStatusHistory[]
+  rides   Ride[]
+
+  @@index([patientId])
+  @@index([startsAt])
+  @@map("appointments")
+}
+
+/// Append-only.
+model AppointmentStatusHistory {
+  id            String   @id @default(uuid())
+  appointmentId String
+  at            DateTime
+  fromStatus    String
+  toStatus      String
+  actor         String
+  reason        String?
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
+  @@map("appointment_status_history")
+}
+
+// ─── transportation ──────────────────────────────────────────────────────────
+
+model Vehicle {
+  id                    String  @id @default(uuid())
+  make                  String
+  model                 String
+  color                 String
+  licensePlate          String
+  isWheelchairAccessible Boolean @default(false)
+
+  drivers Driver[]
+
+  @@map("vehicles")
+}
+
+model Driver {
+  id String @id @default(uuid())
+
+  /// First name and last initial only. The family needs to recognise the person
+  /// at the kerb, not to be able to look them up.
+  displayName  String
+  rating       Float  @default(5)
+  yearsDriving Int    @default(1)
+  vehicleId    String
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  rides   Ride[]
+
+  @@map("drivers")
+}
+
+enum RideDirection {
+  outbound
+  returnTrip
+}
+
+/// Deliberately no `delayed` member: a driver stuck in traffic on the way to
+/// pickup is still `driverEnRoute`. Delay is a flag on the ride, so it can be
+/// raised and cleared without losing the state it must return to.
+enum RideStatus {
+  draft
+  requested
+  awaitingAssignment
+  assigned
+  driverAccepted
+  driverEnRoute
+  driverArrived
+  passengerOnboard
+  inProgress
+  arrivedAtDestination
+  completed
+  canceled
+  noShow
+  reassignmentRequired
+}
+
+model Ride {
+  id            String  @id @default(uuid())
+  patientId     String
+  appointmentId String?
+
+  /// A round trip is two rides sharing this id, not one ride with two legs.
+  roundTripGroupId String?
+
+  direction             RideDirection
+  pickupAddressId       String
+  destinationAddressId  String
+  scheduledPickupAt     DateTime
+  flexibleReturn        Boolean       @default(false)
+  status                RideStatus
+  wheelchairRequired    Boolean       @default(false)
+  assistanceRequired    Boolean       @default(false)
+  notesForDriver        String?
+  driverId              String?
+
+  isDelayed          Boolean @default(false)
+  delayReason        String?
+  cancellationReason String?
+
+  // Price estimate, itemised. Integer cents throughout — money never touches a
+  // float. Kept on the ride so a historical charge can always be explained.
+  priceRuleVersion    String
+  distanceMiles       Float
+  durationMinutes     Int
+  baseCents           Int
+  distanceChargeCents Int
+  timeChargeCents     Int
+  totalCents          Int
+  minimumApplied      Boolean @default(false)
+
+  // Last known position. Aged against `capturedAt` (when the device took the
+  // reading), never against when the server received it.
+  lastLatitude       Float?
+  lastLongitude      Float?
+  lastAccuracyMeters Float?
+  lastCapturedAt     DateTime?
+  etaMinutes         Int?
+
+  /// Preview-only trip runner, standing in for the driver app and dispatch.
+  /// Persisted so it survives an API restart and a browser refresh.
+  simulationActive         Boolean @default(false)
+  simulationElapsedSeconds Int     @default(0)
+
+  version Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient         Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointment     Appointment?        @relation(fields: [appointmentId], references: [id])
+  pickup          Address             @relation("RidePickup", fields: [pickupAddressId], references: [id])
+  destination     Address             @relation("RideDestination", fields: [destinationAddressId], references: [id])
+  driver          Driver?             @relation(fields: [driverId], references: [id])
+  surcharges      RideSurcharge[]
+  events          RideEvent[]
+  history         RideStatusHistory[]
+  locationSamples RideLocationSample[]
+
+  @@index([patientId])
+  @@index([appointmentId])
+  @@index([status])
+  @@map("rides")
+}
+
+model RideSurcharge {
+  id          String @id @default(uuid())
+  rideId      String
+  label       String
+  amountCents Int
+  position    Int    @default(0)
+
+  ride Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+
+  @@index([rideId])
+  @@map("ride_surcharges")
+}
+
+/// Append-only.
+model RideStatusHistory {
+  id         String   @id @default(uuid())
+  rideId     String
+  at         DateTime
+  fromStatus String
+  toStatus   String
+  actor      String
+  reason     String?
+
+  ride Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+
+  @@index([rideId])
+  @@map("ride_status_history")
+}
+
+/// The operational timeline the family reads back later.
+model RideEvent {
+  id          String   @id @default(uuid())
+  rideId      String
+  at          DateTime
+  title       String
+  detail      String?
+  isException Boolean  @default(false)
+
+  ride Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+
+  @@index([rideId])
+  @@map("ride_events")
+}
+
+/// Sampled position history, for dispute resolution. Thirty-day retention,
+/// enforced by the retention job — not by intention. The *live* position is the
+/// denormalised `last*` columns on Ride; this table is the audit trail.
+model RideLocationSample {
+  id             String   @id @default(uuid())
+  rideId         String
+  latitude       Float
+  longitude      Float
+  accuracyMeters Float
+  capturedAt     DateTime
+  receivedAt     DateTime @default(now())
+
+  ride Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+
+  @@index([rideId, capturedAt])
+  @@map("ride_location_samples")
+}
+
+// ─── notifications ───────────────────────────────────────────────────────────
+
+enum NotificationKind {
+  appointmentCreated
+  appointmentReminder
+  appointmentChanged
+  appointmentCanceled
+  rideRequested
+  driverAssigned
+  driverEnRoute
+  driverArrivingSoon
+  driverArrived
+  patientPickedUp
+  patientArrived
+  rideDelayed
+  rideCompleted
+  rideCanceled
+  accessGranted
+}
+
+/// Bodies carry no patient name, clinic name, address or time. A phone on a
+/// kitchen table is readable by whoever is in the room. Enforced by test.
+model Notification {
+  id            String           @id @default(uuid())
+  userId        String
+  kind          NotificationKind
+  title         String
+  body          String
+  createdAt     DateTime         @default(now())
+  readAt        DateTime?
+  rideId        String?
+  appointmentId String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ─── money ───────────────────────────────────────────────────────────────────
+
+/// Prices are configurable records, never constants in code — so a historical
+/// charge can always be explained by the rule that produced it.
+model PricingRule {
+  id                       String   @id @default(uuid())
+  version                  String   @unique
+  baseFareCents            Int
+  perMileCents             Int
+  perMinuteCents           Int
+  minimumFareCents         Int
+  wheelchairSurchargeCents Int
+  assistanceSurchargeCents Int
+  effectiveFrom            DateTime
+  active                   Boolean  @default(true)
+
+  @@map("pricing_rules")
+}
+
+// ─── audit ───────────────────────────────────────────────────────────────────
+
+/// Append-only: no update or delete path exists in the application.
+///
+/// Changed **field names** are recorded; changed **values** are not. Knowing
+/// that a phone number was edited is what an investigation needs; storing the
+/// old and new number would make the audit log a second copy of the data it
+/// exists to protect.
+model AuditLog {
+  id            String   @id @default(uuid())
+  at            DateTime @default(now())
+  actorUserId   String?
+  action        String
+  entityType    String
+  entityId      String?
+  correlationId String?
+  ip            String?
+  userAgent     String?
+  changedFields String[]
+
+  @@index([actorUserId, at])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

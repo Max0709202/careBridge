@@ -68,8 +68,15 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   child: SwitchListTile(
                     value: state.simplifiedMode,
-                    onChanged: (value) =>
-                        ref.read(careProvider.notifier).setSimplifiedMode(value),
+                    onChanged: (value) async {
+                      try {
+                        await ref
+                            .read(careProvider.notifier)
+                            .setSimplifiedMode(value);
+                      } catch (error) {
+                        if (context.mounted) showFailure(context, error);
+                      }
+                    },
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Simplified mode'),
                     subtitle: const Text(
@@ -199,7 +206,10 @@ class SettingsScreen extends ConsumerWidget {
                       destructive: false,
                     );
                     if (!confirmed || !context.mounted) return;
-                    ref.read(careProvider.notifier).signOut();
+                    // `signOut` swallows a server failure and clears the local
+                    // session regardless, so this cannot leave the user stuck
+                    // on a signed-in screen with no way out.
+                    await ref.read(careProvider.notifier).signOut();
                     if (context.mounted) context.go('/sign-in');
                   },
                   icon: const Icon(Icons.logout),

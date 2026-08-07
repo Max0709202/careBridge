@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+apps/api/node_modules/
+apps/api/dist/
+
+# Real configuration. Only .env.example is committed — a checked-in .env is how
+# a local password becomes a production one.
+.env
+.env.*
+!.env.example

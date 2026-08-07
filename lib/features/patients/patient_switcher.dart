@@ -114,9 +114,16 @@ class PatientSwitcher extends ConsumerWidget {
                         color: Theme.of(context).colorScheme.primary,
                       )
                     : null,
-                onTap: () {
-                  ref.read(careProvider.notifier).selectPatient(p.id);
+                onTap: () async {
+                  // Closed first: the switch is a preference write, and making
+                  // the sheet hang on a round trip would make choosing a person
+                  // feel slower than it is. A failure still surfaces.
                   Navigator.of(sheetContext).pop();
+                  try {
+                    await ref.read(careProvider.notifier).selectPatient(p.id);
+                  } catch (error) {
+                    if (context.mounted) showFailure(context, error);
+                  }
                 },
               ),
             const Divider(),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,8 +26,15 @@ class NotificationsScreen extends ConsumerWidget {
         actions: [
           if (state.unreadNotificationCount > 0)
             TextButton(
-              onPressed: () =>
-                  ref.read(careProvider.notifier).markAllNotificationsRead(),
+              onPressed: () async {
+                try {
+                  await ref
+                      .read(careProvider.notifier)
+                      .markAllNotificationsRead();
+                } catch (error) {
+                  if (context.mounted) showFailure(context, error);
+                }
+              },
               child: const Text('Mark all read'),
             ),
         ],
@@ -88,7 +97,14 @@ class _NotificationTile extends ConsumerWidget {
       semanticLabel: '${unread ? 'Unread. ' : ''}${notification.title}. '
           '${notification.body}',
       onTap: () {
-        ref.read(careProvider.notifier).markNotificationRead(notification.id);
+        // Navigation does not wait on the read receipt. Opening the update is
+        // what the user asked for; marking it read is bookkeeping, and the
+        // snapshot that comes back updates the badge a moment later.
+        unawaited(
+          ref
+              .read(careProvider.notifier)
+              .markNotificationRead(notification.id),
+        );
         final rideId = notification.rideId;
         final appointmentId = notification.appointmentId;
         if (rideId != null) {

@@ -164,7 +164,9 @@ class TrackingScreen extends ConsumerWidget {
     if (!confirmed || !context.mounted) return;
 
     try {
-      ref.read(careProvider.notifier).cancelRide(ride.id, 'Cancelled by family');
+      await ref
+          .read(careProvider.notifier)
+          .cancelRide(ride.id, 'Cancelled by family');
       if (context.mounted) {
         showConfirmationBanner(context, 'Ride cancelled.');
         context.pop();

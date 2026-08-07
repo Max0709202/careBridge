@@ -109,5 +109,24 @@ void main() {
       );
       expect(estimate.total, rule.minimumFare);
     });
+
+    test('rounds identically to the server, to the cent', () {
+      // The server is authoritative for fares, but the app renders the same
+      // itemised figures from the same integers. These cases are pinned in
+      // apps/api/src/domain/pricing.spec.ts as well: a one-cent disagreement
+      // would surface as a total that does not match its own line items.
+      //
+      // 225 × 4.1 is 922.4999… in binary floating point, not 922.5, so it
+      // rounds *down* — the intuitive answer is the wrong one here.
+      expect((const Money(225) * 4.1).cents, 922);
+      expect((const Money(45) * 17).cents, 765);
+
+      // Dart's `num.round()` goes half away from zero, which is what the
+      // server's helper reimplements. `Math.round` alone would not.
+      expect((const Money(100) * 0.005).cents, 1);
+      expect((const Money(-100) * 0.005).cents, -1);
+      expect((const Money(1) * 0.5).cents, 1);
+      expect((const Money(-1) * 0.5).cents, -1);
+    });
   });
 }

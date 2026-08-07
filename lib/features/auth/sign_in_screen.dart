@@ -146,9 +146,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 }
 
-/// Being explicit that this build has no server behind it. A sign-in form that
-/// silently accepts anything, with no explanation, is worse than one that says
-/// so plainly.
+/// What the pre-filled credentials are, and what they are not.
+///
+/// They are a **seeded demo account**, not a bypass: the password is checked
+/// against an argon2id hash like any other. Saying so plainly matters in both
+/// directions — a form that silently accepted anything would be worse, and so
+/// would leaving a reader to assume this one does.
 class _DemoNotice extends StatelessWidget {
   const _DemoNotice();
 
@@ -166,16 +169,16 @@ class _DemoNotice extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Local preview',
+                  'Demo account',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Credentials are not checked and data lives only in memory. '
-                  'Sign in to explore a seeded family; create an account to see '
-                  'the first-run experience.',
+                  'These credentials belong to a seeded family and are checked '
+                  'like any other — everything you do is saved to the database. '
+                  'Create an account to see the first-run experience.',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

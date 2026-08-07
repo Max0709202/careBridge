@@ -99,7 +99,7 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final address = Address(
@@ -150,7 +150,7 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     );
 
     try {
-      ref.read(careProvider.notifier).savePatient(patient);
+      await ref.read(careProvider.notifier).savePatient(patient);
       if (!mounted) return;
       showConfirmationBanner(
         context,

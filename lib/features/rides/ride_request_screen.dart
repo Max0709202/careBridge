@@ -313,7 +313,7 @@ class _RideRequestScreenState extends ConsumerState<RideRequestScreen> {
     );
   }
 
-  void _submit(Appointment appointment) {
+  Future<void> _submit(Appointment appointment) async {
     final time = _pickupTime;
     if (time == null) {
       showFailure(context, const ValidationFailure('Choose a pickup time.'));
@@ -329,7 +329,7 @@ class _RideRequestScreenState extends ConsumerState<RideRequestScreen> {
     );
 
     try {
-      ref.read(careProvider.notifier).requestTransport(
+      await ref.read(careProvider.notifier).requestTransport(
             appointmentId: appointment.id,
             pickupAt: pickupAt,
             roundTrip: _roundTrip,

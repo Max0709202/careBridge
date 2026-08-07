@@ -1,0 +1,38 @@
+# The family app, built for web and served by nginx.
+#
+# nginx also proxies /api to the API container, which makes every request from
+# the browser same-origin. That is worth more than it sounds: no CORS
+# preflights, no API host baked into the JavaScript bundle at build time, and
+# no third origin to add to an allowlist when this moves behind a real domain.
+
+# Pinned, not `stable`: a floating tag makes the bundle you ship depend on the
+# day you built it, and the published images trail the local SDK by a patch or
+# two — which is exactly what breaks a `pub get` at an awkward moment.
+FROM ghcr.io/cirruslabs/flutter:3.44.0 AS builder
+
+WORKDIR /app
+
+# Dependencies resolve on their own layer, so editing Dart source does not
+# re-run `pub get`.
+COPY pubspec.yaml pubspec.lock ./
+RUN flutter pub get
+
+COPY . .
+
+# The default base URL is relative (/api/v1), which is what the nginx proxy
+# below serves. Override with --build-arg for a deployment that puts the API on
+# its own host.
+ARG API_BASE_URL=/api/v1
+RUN flutter build web --release \
+    --dart-define=CAREBRIDGE_API_BASE_URL="${API_BASE_URL}"
+
+
+FROM nginx:1.27-alpine
+
+COPY --from=builder /app/build/web /usr/share/nginx/html
+COPY infrastructure/nginx/carebridge.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1
