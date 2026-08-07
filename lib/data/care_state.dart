@@ -40,12 +40,14 @@ class CareState {
 
   bool get isSignedIn => user != null;
 
-  List<Patient> get activePatients =>
-      patients.where((p) => !p.isArchived).toList(growable: false);
+  List<Patient> get activePatients => patients
+      .where((p) => !p.isArchived && canView(p.id))
+      .toList(growable: false);
 
   Patient? get selectedPatient {
-    if (selectedPatientId == null) return null;
-    return patientById(selectedPatientId!);
+    final id = selectedPatientId;
+    if (id == null || !canView(id)) return null;
+    return patientById(id);
   }
 
   Patient? patientById(String id) {
@@ -78,6 +80,16 @@ class CareState {
 
   bool can(String patientId, FamilyPermission permission) =>
       access[patientId]?.can(permission) ?? false;
+
+  /// Whether this account may see anything at all about a person.
+  ///
+  /// [patientById] and friends are plain lookups over what happens to be in
+  /// memory; they are not authorisation. Anything that puts a person, their
+  /// appointments or their rides on screen resolves through here first, so a
+  /// grant that was never given — or has since been revoked — closes every
+  /// surface at once rather than one screen at a time.
+  bool canView(String patientId) =>
+      can(patientId, FamilyPermission.viewProfile);
 
   /// Appointments for a patient, soonest first.
   List<Appointment> appointmentsFor(String patientId) {

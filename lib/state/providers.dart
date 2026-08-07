@@ -301,10 +301,12 @@ class CareNotifier extends Notifier<CareState> {
       final progress = _demoProgress(t, current.status);
       final position = _demoPosition(current, progress);
       if (position != null) {
+        final capturedAt = _now;
         state = ops.updateRidePosition(
           state,
           rideId: rideId,
-          point: TrackingPoint(coordinates: position, capturedAt: _now),
+          point: TrackingPoint(coordinates: position, capturedAt: capturedAt),
+          now: capturedAt,
           etaMinutes: _demoEta(t, current.status),
         );
       }

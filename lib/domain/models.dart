@@ -426,6 +426,29 @@ class RideEvent {
   final bool isException;
 }
 
+/// The bounds a position report is judged against, in one place.
+///
+/// Both halves of the tracking path read these: the **write** path rejects a
+/// point outside them so a forged or long-queued reading is never stored, and
+/// the **read** path uses the same numbers to decide when to warn and when to
+/// stop showing a position at all. Two copies of these thresholds would
+/// eventually disagree, and the disagreement would show up as a confident
+/// marker over a position nobody has heard from.
+abstract final class TrackingFreshness {
+  /// Roughly four missed reports at a 10-second cadence. Past this the screen
+  /// says the position may be out of date.
+  static const stale = Duration(seconds: 45);
+
+  /// Past this we stop presenting a position as current, and stop accepting one
+  /// stamped that long ago.
+  static const lost = Duration(minutes: 2);
+
+  /// A device clock may legitimately run slightly ahead of ours. Anything
+  /// further into the future is not skew — it is a reading that would render as
+  /// permanently fresh, which is exactly the false certainty we refuse to show.
+  static const maxClockSkew = Duration(seconds: 30);
+}
+
 /// A position report from the driver's device.
 class TrackingPoint {
   const TrackingPoint({
@@ -524,6 +547,7 @@ class Ride {
     int? etaMinutes,
     bool clearDriver = false,
     bool clearEta = false,
+    bool clearPosition = false,
   }) {
     return Ride(
       id: id,
@@ -546,7 +570,8 @@ class Ride {
       cancellationReason: cancellationReason ?? this.cancellationReason,
       events: events ?? this.events,
       history: history ?? this.history,
-      lastKnownPosition: lastKnownPosition ?? this.lastKnownPosition,
+      lastKnownPosition:
+          clearPosition ? null : (lastKnownPosition ?? this.lastKnownPosition),
       etaMinutes: clearEta ? null : (etaMinutes ?? this.etaMinutes),
       createdAt: createdAt,
     );

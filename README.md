@@ -11,17 +11,22 @@ security — is in [docs/FOUNDATION.md](docs/FOUNDATION.md).
 
 ## Run it
 
+Needs the **Flutter stable SDK, 3.44.x or newer** (Dart 3.12.2 — the constraint
+in `pubspec.yaml`). Nothing else: no API keys, no Docker, no backend.
+
 ```bash
 flutter pub get
 
 flutter run -d chrome     # or: -d windows
-flutter test              # 72 tests
+flutter test              # 81 tests
 flutter analyze           # clean
 flutter build web --release
 ```
 
-No API keys, no Docker, no backend. The app has no plugin dependencies, so it
-builds on any target without Developer Mode or native toolchain setup.
+The app has no plugin dependencies, so it builds on any target without Developer
+Mode or native toolchain setup. Running on `-d chrome` needs `CHROME_EXECUTABLE`
+set if Chrome is not on the default path; `-d linux` additionally needs
+`clang cmake ninja-build pkg-config libgtk-3-dev`, which the web target does not.
 
 **Sign in with the pre-filled credentials** to explore a seeded family, or
 **create an account** to see the genuine first-run empty state.
@@ -45,7 +50,7 @@ builds on any target without Developer Mode or native toolchain setup.
 | Real | Standing in |
 | ---- | ----------- |
 | Ride and appointment state machines, with illegal transitions rejected | The **driver app** — "Preview controls" drive the same state machine |
-| Per-patient permission model gating every action | The **dispatch service** — assignment is scripted |
+| Per-patient permission model gating every action, and every patient-scoped screen | The **dispatch service** — assignment is scripted |
 | Fare calculation in integer cents, itemised, versioned | The **NestJS API** — all state is in memory and resets on restart |
 | Contentless notifications, verified by test | Authentication — credentials are not checked, and the sign-in screen says so |
 | Location staleness, expiry, and tracking-window enforcement | Real GPS, maps, and routing — the route view is a schematic, deliberately |
@@ -101,7 +106,16 @@ the outbound leg is booked.
 **Stale location is shown as stale.** Position is aged against when the device
 took the reading, never when it was received. Past 45 seconds the screen says
 so; past two minutes it stops showing a position at all. False certainty about
-where a vulnerable person is would be worse than no map.
+where a vulnerable person is would be worse than no map. The same thresholds
+gate the write path: a reading stamped in the future — which would otherwise
+read as "just now" forever — or one that arrives already expired is refused, not
+stored.
+
+**A ride id is not a capability.** Access resolves up the graph: ride → patient
+→ grant. Every screen that renders a person, an appointment or a live position
+checks that grant first, so a revoked grant closes every surface at once. "Not
+found" and "not permitted" are the same screen, so neither can be used to probe
+for the other.
 
 **Money never touches a float.** Integer cents throughout.
 

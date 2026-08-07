@@ -28,12 +28,20 @@ import 'care_state.dart';
 
 CareState selectPatient(CareState state, String patientId) {
   if (state.patientById(patientId) == null) throw const NotFoundFailure();
+  if (!state.canView(patientId)) throw const AuthorizationFailure();
   return state.copyWith(selectedPatientId: patientId);
 }
 
 CareState upsertPatient(CareState state, Patient patient) {
   final existing = state.patientById(patient.id);
-  if (existing != null && !state.can(patient.id, FamilyPermission.viewProfile)) {
+
+  // Editing an existing profile takes `manageAccess`, not `viewProfile`. The
+  // profile is not a read-only description of someone: it holds the pickup
+  // address, the access notes a driver navigates by, and the mobility needs
+  // that decide which vehicle is sent. Someone who may only *look* at a person
+  // must not be able to redirect the car that collects them, or quietly drop a
+  // wheelchair requirement. Same bar as archiving, for the same reason.
+  if (existing != null && !state.can(patient.id, FamilyPermission.manageAccess)) {
     throw const AuthorizationFailure();
   }
 
@@ -85,10 +93,19 @@ CareState setAccessPermissions(
     throw const AuthorizationFailure();
   }
 
-  // The organiser keeps manageAccess whatever the UI submitted.
+  // This edits the caller's *own* grant, so two rules apply.
+  //
+  // The organiser keeps `manageAccess` whatever the UI submitted — otherwise a
+  // family can lock itself out of its own patient with no recovery path.
+  //
+  // A delegate may only narrow their grant, never widen it. `manageAccess` is
+  // the right to administer other people's access; letting it write arbitrary
+  // permissions back onto the holder's own record would turn it into a
+  // self-service route to spending rights the organiser never granted. Giving
+  // rights away stays available; taking new ones is not.
   final effective = current.isPrimary
       ? {...permissions, FamilyPermission.manageAccess}
-      : permissions;
+      : permissions.intersection(current.permissions);
 
   final access = {...state.access};
   access[patientId] = current.copyWith(permissions: effective);
@@ -290,8 +307,14 @@ CareState cancelAppointment(
   // Cancelling the appointment must cancel the rides booked for it. Leaving a
   // car to arrive for an appointment that is not happening is the kind of
   // failure that ends a pilot.
+  //
+  // A leg that has already delivered the passenger is the exception: there is
+  // nothing left to call off, and the state machine rightly forbids it. Skip it
+  // rather than letting it throw — otherwise the family loses the ability to
+  // cancel the appointment at all for the minutes between arrival and
+  // completion, which is precisely when they are most likely to try.
   for (final ride in next.ridesForAppointment(appointmentId)) {
-    if (ride.isActive) {
+    if (ride.isActive && canTransitionRide(ride.status, RideStatus.canceled)) {
       next = cancelRide(
         next,
         rideId: ride.id,
@@ -471,33 +494,15 @@ CareState advanceRide(
     events: event == null ? ride.events : [...ride.events, event],
   );
 
-  // Tracking stops the moment a ride reaches a terminal state, and the last
-  // known position goes with it. Nothing should be able to render a position
-  // for a finished ride.
+  // Tracking stops the moment a ride leaves a state where sharing is legal, and
+  // the last known position and ETA go with it. Nothing should be able to
+  // render a position for a finished ride.
+  //
+  // Done through `copyWith` rather than by rebuilding the ride field by field:
+  // a rebuild silently drops any field added to `Ride` later, which would make
+  // "we added a column and it vanished on completion" a bug waiting to happen.
   if (!to.allowsLocationSharing) {
-    updated = Ride(
-      id: updated.id,
-      patientId: updated.patientId,
-      appointmentId: updated.appointmentId,
-      roundTripGroupId: updated.roundTripGroupId,
-      direction: updated.direction,
-      pickup: updated.pickup,
-      destination: updated.destination,
-      scheduledPickupAt: updated.scheduledPickupAt,
-      flexibleReturn: updated.flexibleReturn,
-      status: updated.status,
-      wheelchairRequired: updated.wheelchairRequired,
-      assistanceRequired: updated.assistanceRequired,
-      notesForDriver: updated.notesForDriver,
-      driver: updated.driver,
-      estimate: updated.estimate,
-      isDelayed: updated.isDelayed,
-      delayReason: updated.delayReason,
-      cancellationReason: updated.cancellationReason,
-      events: updated.events,
-      history: updated.history,
-      createdAt: updated.createdAt,
-    );
+    updated = updated.copyWith(clearPosition: true, clearEta: true);
   }
 
   final rides = [...state.rides];
@@ -618,20 +623,45 @@ CareState setRideDelay(
 
 /// Records a position report for an active ride.
 ///
-/// Rejected unless the ride is in a state where tracking is legal. In production
-/// the server performs this same check — plus "is this device the driver
-/// currently assigned to this ride" — before accepting a point. A ride id is not
-/// a capability.
+/// Two checks, both of which the server repeats — along with "is this device the
+/// driver currently assigned to this ride", which only it can answer. A ride id
+/// is not a capability.
+///
+/// 1. The ride must be in a state where tracking is legal.
+/// 2. The reading's [TrackingPoint.capturedAt] must be sane.
+///
+/// The second matters more than it looks. Every freshness label in the app ages
+/// a position against `capturedAt`, so a point stamped in the future reads as
+/// "updated just now" indefinitely — a stale car rendered as a moving one, which
+/// is the single failure mode this product cannot have. A point that is already
+/// older than [TrackingFreshness.lost] is refused for the mirror-image reason:
+/// it would be stored as the latest known position and then immediately hidden
+/// as expired, so accepting it only overwrites better data with worse.
 CareState updateRidePosition(
   CareState state, {
   required String rideId,
   required TrackingPoint point,
+  required DateTime now,
   int? etaMinutes,
 }) {
   final ride = state.rideById(rideId);
   if (ride == null) throw const NotFoundFailure();
   if (!ride.status.allowsLocationSharing) {
     throw InvalidTransitionFailure(ride.status.name, 'locationUpdate');
+  }
+
+  final age = now.difference(point.capturedAt);
+  if (age.isNegative && age.abs() > TrackingFreshness.maxClockSkew) {
+    throw const ValidationFailure(
+      'That position reading is stamped in the future and cannot be trusted.',
+      field: 'capturedAt',
+    );
+  }
+  if (age > TrackingFreshness.lost) {
+    throw const ValidationFailure(
+      'That position reading is too old to show as a current location.',
+      field: 'capturedAt',
+    );
   }
 
   final rides = [...state.rides];

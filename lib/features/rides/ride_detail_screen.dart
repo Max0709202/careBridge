@@ -22,7 +22,10 @@ class RideDetailScreen extends ConsumerWidget {
     final ride = state.rideById(rideId);
     final theme = Theme.of(context);
 
-    if (ride == null) {
+    // A ride id is not a capability. Access resolves up the graph — ride to
+    // patient to grant — and "no such ride" and "not yours" are deliberately
+    // the same screen, so the difference cannot be used to probe for records.
+    if (ride == null || !state.canView(ride.patientId)) {
       return Scaffold(
         appBar: AppBar(),
         body: const EmptyState(

@@ -238,6 +238,7 @@ void main() {
             coordinates: const Coordinates(39.99, -83.02),
             capturedAt: now,
           ),
+          now: now,
         ),
         throwsA(isA<InvalidTransitionFailure>()),
       );
@@ -249,11 +250,62 @@ void main() {
           coordinates: const Coordinates(39.99, -83.02),
           capturedAt: now,
         ),
+        now: now,
         etaMinutes: 7,
       );
 
       expect(enRoute.rideById('ride-upcoming')!.lastKnownPosition, isNotNull);
       expect(enRoute.rideById('ride-upcoming')!.etaMinutes, 7);
+    });
+
+    test('refuses a reading stamped in the future', () {
+      // Every freshness label ages a position against `capturedAt`. A point
+      // stamped ahead of our clock would read as "updated just now" forever —
+      // a parked or fabricated car rendered as a moving one.
+      expect(
+        () => updateRidePosition(
+          toEnRoute(state),
+          rideId: 'ride-upcoming',
+          point: TrackingPoint(
+            coordinates: const Coordinates(39.99, -83.02),
+            capturedAt: now.add(const Duration(minutes: 5)),
+          ),
+          now: now,
+        ),
+        throwsA(isA<ValidationFailure>()),
+      );
+    });
+
+    test('tolerates a device clock a little ahead of ours', () {
+      final skewed = updateRidePosition(
+        toEnRoute(state),
+        rideId: 'ride-upcoming',
+        point: TrackingPoint(
+          coordinates: const Coordinates(39.99, -83.02),
+          capturedAt: now.add(const Duration(seconds: 5)),
+        ),
+        now: now,
+      );
+
+      expect(skewed.rideById('ride-upcoming')!.lastKnownPosition, isNotNull);
+    });
+
+    test('refuses a reading that is already expired', () {
+      // Storing it would overwrite the latest known position with something the
+      // screen must immediately hide as lost — strictly worse than keeping what
+      // we had.
+      expect(
+        () => updateRidePosition(
+          toEnRoute(state),
+          rideId: 'ride-upcoming',
+          point: TrackingPoint(
+            coordinates: const Coordinates(39.99, -83.02),
+            capturedAt: now.subtract(const Duration(minutes: 10)),
+          ),
+          now: now,
+        ),
+        throwsA(isA<ValidationFailure>()),
+      );
     });
 
     test('discards the last position when the ride ends', () {
@@ -264,6 +316,7 @@ void main() {
           coordinates: const Coordinates(39.99, -83.02),
           capturedAt: now,
         ),
+        now: now,
       );
       expect(tracked.rideById('ride-upcoming')!.lastKnownPosition, isNotNull);
 
@@ -362,6 +415,51 @@ void main() {
         ),
         throwsA(isA<AuthorizationFailure>()),
       );
+    });
+
+    test('still succeeds when a leg has already delivered the passenger', () {
+      // `arrivedAtDestination` is the one live state a ride cannot be cancelled
+      // from — the passenger is already there. That must not take the whole
+      // appointment cancellation down with it, which is what happened before:
+      // the family lost the ability to cancel exactly when they were most
+      // likely to reach for it.
+      var next = state;
+      for (final status in [
+        RideStatus.assigned,
+        RideStatus.driverAccepted,
+        RideStatus.driverEnRoute,
+        RideStatus.driverArrived,
+        RideStatus.passengerOnboard,
+        RideStatus.inProgress,
+        RideStatus.arrivedAtDestination,
+      ]) {
+        next = advanceRide(next, rideId: 'ride-upcoming', to: status, now: now);
+      }
+
+      final canceled = cancelAppointment(
+        next,
+        appointmentId: 'appt-followup',
+        now: now,
+        reason: 'Clinic closed',
+      );
+
+      expect(
+        canceled.appointmentById('appt-followup')!.status,
+        AppointmentStatus.canceled,
+      );
+      // The delivered leg keeps its own state; the return leg is called off.
+      expect(
+        canceled.rideById('ride-upcoming')!.status,
+        RideStatus.arrivedAtDestination,
+      );
+      for (final ride in canceled.ridesForAppointment('appt-followup')) {
+        expect(
+          ride.status == RideStatus.canceled ||
+              ride.status == RideStatus.arrivedAtDestination,
+          isTrue,
+          reason: '${ride.id} was left in ${ride.status.name}',
+        );
+      }
     });
   });
 
@@ -517,6 +615,115 @@ void main() {
           patientId: 'patient-eleanor',
           permissions: PatientAccess.all,
         ),
+        throwsA(isA<AuthorizationFailure>()),
+      );
+    });
+
+    test('a delegate cannot widen their own grant', () {
+      // `manageAccess` administers other people's access. It is not a
+      // self-service route to spending rights the organiser never granted.
+      final delegate = withPermissions(state, 'patient-eleanor', {
+        FamilyPermission.viewProfile,
+        FamilyPermission.manageAccess,
+      });
+
+      final next = setAccessPermissions(
+        delegate,
+        patientId: 'patient-eleanor',
+        permissions: PatientAccess.all,
+      );
+
+      final access = next.access['patient-eleanor']!;
+      expect(access.can(FamilyPermission.makePayments), isFalse);
+      expect(access.can(FamilyPermission.requestTransport), isFalse);
+      expect(access.can(FamilyPermission.viewProfile), isTrue);
+    });
+
+    test('a delegate may still give rights away', () {
+      final delegate = withPermissions(state, 'patient-eleanor', {
+        FamilyPermission.viewProfile,
+        FamilyPermission.requestTransport,
+        FamilyPermission.manageAccess,
+      });
+
+      final next = setAccessPermissions(
+        delegate,
+        patientId: 'patient-eleanor',
+        permissions: {FamilyPermission.viewProfile},
+      );
+
+      final access = next.access['patient-eleanor']!;
+      expect(access.can(FamilyPermission.requestTransport), isFalse);
+      expect(access.can(FamilyPermission.manageAccess), isFalse);
+    });
+
+    test('view-only access cannot edit the profile it can read', () {
+      // The profile holds the pickup address, the access notes a driver
+      // navigates by, and the mobility needs that pick the vehicle. Being
+      // allowed to look at someone is not being allowed to redirect their car.
+      final restricted = withPermissions(
+        state,
+        'patient-eleanor',
+        PatientAccess.viewOnly,
+      );
+      final eleanor = restricted.patientById('patient-eleanor')!;
+
+      expect(
+        () => upsertPatient(
+          restricted,
+          eleanor.copyWith(
+            homeAddress: const Address(
+              label: 'Home',
+              line1: '99 Somewhere Else',
+              city: 'Columbus',
+              state: 'OH',
+              postalCode: '43201',
+            ),
+          ),
+        ),
+        throwsA(isA<AuthorizationFailure>()),
+      );
+
+      expect(
+        restricted.patientById('patient-eleanor')!.homeAddress.line1,
+        eleanor.homeAddress.line1,
+      );
+    });
+
+    test('scheduling rights alone do not unlock profile edits', () {
+      final restricted = withPermissions(
+        state,
+        'patient-eleanor',
+        PatientAccess.defaultInvited,
+      );
+      final eleanor = restricted.patientById('patient-eleanor')!;
+
+      expect(
+        () => upsertPatient(
+          restricted,
+          eleanor.copyWith(mobilityNeeds: const {}),
+        ),
+        throwsA(isA<AuthorizationFailure>()),
+      );
+    });
+
+    test('a revoked grant hides the person from every surface', () {
+      final revoked = state.copyWith(
+        access: {
+          ...state.access,
+          'patient-eleanor':
+              state.access['patient-eleanor']!.copyWith(revokedAt: now),
+        },
+      );
+
+      expect(revoked.canView('patient-eleanor'), isFalse);
+      expect(
+        revoked.activePatients.map((p) => p.id),
+        isNot(contains('patient-eleanor')),
+      );
+      expect(revoked.selectedPatient, isNull);
+      expect(
+        () => selectPatient(revoked, 'patient-eleanor'),
         throwsA(isA<AuthorizationFailure>()),
       );
     });

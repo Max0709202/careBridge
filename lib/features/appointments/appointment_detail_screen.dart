@@ -22,7 +22,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
     final appointment = state.appointmentById(appointmentId);
     final theme = Theme.of(context);
 
-    if (appointment == null) {
+    if (appointment == null || !state.canView(appointment.patientId)) {
       return Scaffold(
         appBar: AppBar(),
         body: const EmptyState(

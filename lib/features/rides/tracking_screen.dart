@@ -29,9 +29,11 @@ class TrackingScreen extends ConsumerWidget {
 
   final String rideId;
 
-  /// Roughly four missed reports at a 10-second cadence.
-  static const _staleAfter = Duration(seconds: 45);
-  static const _lostAfter = Duration(minutes: 2);
+  /// The same thresholds the write path enforces — see [TrackingFreshness].
+  /// One definition, so what we refuse to store and what we refuse to show can
+  /// never drift apart.
+  static const _staleAfter = TrackingFreshness.stale;
+  static const _lostAfter = TrackingFreshness.lost;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,7 +45,10 @@ class TrackingScreen extends ConsumerWidget {
     final ride = state.rideById(rideId);
     final theme = Theme.of(context);
 
-    if (ride == null) {
+    // Live position is the most sensitive thing this app renders — where a
+    // vulnerable person physically is, right now. The grant is checked before
+    // anything is drawn, and an id alone never gets you here.
+    if (ride == null || !state.canView(ride.patientId)) {
       return Scaffold(
         appBar: AppBar(),
         body: const EmptyState(

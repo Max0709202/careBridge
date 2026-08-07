@@ -56,7 +56,7 @@ class _RideRequestScreenState extends ConsumerState<RideRequestScreen> {
     final theme = Theme.of(context);
     final appointment = state.appointmentById(widget.appointmentId);
 
-    if (appointment == null) {
+    if (appointment == null || !state.canView(appointment.patientId)) {
       return Scaffold(
         appBar: AppBar(),
         body: const EmptyState(

@@ -19,7 +19,10 @@ class PatientDetailScreen extends ConsumerWidget {
     final patient = state.patientById(patientId);
     final theme = Theme.of(context);
 
-    if (patient == null) {
+    // This screen shows a phone number, a home address and the notes a driver
+    // uses to find someone's front door. It opens only against a live grant —
+    // a revoked one closes it as surely as never having had one.
+    if (patient == null || !state.canView(patientId)) {
       return Scaffold(
         appBar: AppBar(),
         body: const EmptyState(
@@ -31,16 +34,21 @@ class PatientDetailScreen extends ConsumerWidget {
     }
 
     final access = state.access[patientId];
+    final canEdit = state.can(patientId, FamilyPermission.manageAccess);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(patient.preferredName),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit profile',
-            onPressed: () => context.push('/patients/$patientId/edit'),
-          ),
+          // Hidden rather than shown-and-refused: offering a control that the
+          // rules will reject teaches people the app is unreliable. The rule
+          // itself lives in `upsertPatient`; this only stops us asking.
+          if (canEdit)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit profile',
+              onPressed: () => context.push('/patients/$patientId/edit'),
+            ),
         ],
       ),
       body: SingleChildScrollView(
