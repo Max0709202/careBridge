@@ -5,16 +5,21 @@ import 'package:go_router/go_router.dart';
 import '../features/appointments/appointment_detail_screen.dart';
 import '../features/appointments/appointment_form_screen.dart';
 import '../features/appointments/appointments_screen.dart';
+import '../features/auth/accept_invitation_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/patients/patient_detail_screen.dart';
+import '../features/patients/care_circle_screen.dart';
 import '../features/patients/patient_form_screen.dart';
 import '../features/rides/ride_detail_screen.dart';
 import '../features/rides/ride_request_screen.dart';
 import '../features/rides/tracking_screen.dart';
+import '../features/settings/account_security_screen.dart';
+import '../features/settings/notification_preferences_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/settings/two_factor_screen.dart';
 import '../state/providers.dart';
 import '../widgets/common.dart';
 import 'home_shell.dart';
@@ -123,6 +128,23 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'security',
+                    builder: (context, state) => const AccountSecurityScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'two-factor',
+                        builder: (context, state) => const TwoFactorScreen(),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'notifications',
+                    builder: (context, state) =>
+                        const NotificationPreferencesScreen(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -131,6 +153,13 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Full-screen routes, outside the shell: tracking and forms deserve the
       // whole screen rather than competing with a navigation bar.
+      GoRoute(
+        path: '/accept-invitation',
+        parentNavigatorKey: _rootKey,
+        builder: (context, state) => AcceptInvitationScreen(
+          token: state.uri.queryParameters['token'] ?? '',
+        ),
+      ),
       GoRoute(
         path: '/patients/new',
         parentNavigatorKey: _rootKey,
@@ -143,6 +172,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           patientId: state.pathParameters['id']!,
         ),
         routes: [
+          GoRoute(
+            path: 'care-circle',
+            parentNavigatorKey: _rootKey,
+            builder: (context, state) => CareCircleScreen(
+              patientId: state.pathParameters['id']!,
+            ),
+          ),
           GoRoute(
             path: 'edit',
             parentNavigatorKey: _rootKey,

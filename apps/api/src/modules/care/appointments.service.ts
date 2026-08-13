@@ -12,6 +12,7 @@ import {
 } from '../../domain/appointment-status';
 import type { RequestContext } from '../../common/request-context';
 import { CareService } from './care.service';
+import { RemindersService } from './reminders.service';
 import type {
   CancelAppointmentDto,
   CreateAppointmentDto,
@@ -26,6 +27,7 @@ export class AppointmentsService {
     private readonly prisma: PrismaService,
     private readonly care: CareService,
     private readonly audit: AuditService,
+    private readonly reminders: RemindersService,
   ) {}
 
   async create(
@@ -38,21 +40,21 @@ export class AppointmentsService {
     const startsAt = new Date(dto.startsAt);
     const now = new Date();
     if (startsAt.getTime() < now.getTime()) {
-      throw new ValidationError(
-        'Choose a date and time in the future.',
-        'startsAt',
-      );
+      throw new ValidationError('Choose a date and time in the future.', 'startsAt');
     }
 
+    // The clinic's zone, not the server's and not the requester's. A reminder
+    // offset is measured from the appointment's local wall time, and the
+    // appointment happens where the clinic is.
     const clinic = await this.prisma.clinic.findFirst({
       where: { id: dto.clinicId, archivedAt: null },
-      select: { id: true },
+      select: { id: true, timeZone: true },
     });
     if (!clinic) throw new NotFoundError();
 
     const actor = await this.actorName(userId);
 
-    return this.prisma.$transaction(async (tx) => {
+    const appointmentId = await this.prisma.$transaction(async (tx) => {
       const appointment = await tx.appointment.create({
         data: {
           patientId: dto.patientId,
@@ -63,6 +65,7 @@ export class AppointmentsService {
           status: 'scheduled',
           coordinationNotes: dto.coordinationNotes?.trim() || null,
           transportRequired: dto.transportRequired ?? false,
+          timeZone: clinic.timeZone,
           history: {
             create: {
               at: now,
@@ -94,8 +97,24 @@ export class AppointmentsService {
         tx,
       );
 
+      await this.reminders.planFor(
+        tx,
+        {
+          id: appointment.id,
+          startsAt: appointment.startsAt,
+          timeZone: appointment.timeZone,
+        },
+        now,
+      );
+
       return appointment.id;
     });
+
+    // Timers are armed after the commit. Enqueuing inside the transaction
+    // would produce a job for a row a rollback then removes.
+    await this.reminders.enqueuePending(appointmentId);
+
+    return appointmentId;
   }
 
   async reschedule(
@@ -122,10 +141,7 @@ export class AppointmentsService {
     const startsAt = new Date(dto.startsAt);
     const now = new Date();
     if (startsAt.getTime() < now.getTime()) {
-      throw new ValidationError(
-        'Choose a date and time in the future.',
-        'startsAt',
-      );
+      throw new ValidationError('Choose a date and time in the future.', 'startsAt');
     }
 
     const actor = await this.actorName(userId);
@@ -172,7 +188,17 @@ export class AppointmentsService {
         },
         tx,
       );
+
+      // A rescheduled appointment must not keep the reminder for its old
+      // time. `planFor` cancels the outstanding ones and writes new rows.
+      await this.reminders.planFor(
+        tx,
+        { id: appointmentId, startsAt, timeZone: appointment.timeZone },
+        now,
+      );
     });
+
+    await this.reminders.enqueuePending(appointmentId);
   }
 
   async cancel(
@@ -222,6 +248,10 @@ export class AppointmentsService {
       for (const ride of rides) {
         await cancelRides(tx, ride.id, 'Appointment canceled');
       }
+
+      // No appointment, no reminder. A "your appointment is tomorrow" push for
+      // something already called off is worse than silence.
+      await this.reminders.cancelFor(tx, appointmentId);
 
       await this.audit.record(
         {

@@ -23,6 +23,23 @@ model User {
   fullName     String
   phone        String?
 
+  /// Null until the address is proven. Nothing is blocked on it in the MVP —
+  /// locking a family out of a ride they have already booked because a
+  /// verification email went to spam is a worse outcome than an unverified
+  /// address — but every invitation and access grant checks it.
+  emailVerifiedAt DateTime?
+
+  /// IANA zone, e.g. "America/New_York". Reminder scheduling is computed in
+  /// it, so "the day before at 6pm" means the user's evening and not the
+  /// server's. A UTC offset would be wrong twice a year.
+  timeZone String @default("America/New_York")
+  locale   String @default("en-US")
+
+  /// Bumped by "sign out everywhere" and by a password change. Access tokens
+  /// carry the version they were minted with, so raising it invalidates every
+  /// token already in the wild without waiting for it to expire.
+  tokenVersion Int @default(0)
+
   /// UI preferences, persisted per account so a browser refresh or a new device
   /// lands the user back where they were.
   selectedPatientId String?
@@ -31,12 +48,89 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  refreshTokens RefreshToken[]
-  access        PatientAccess[]
-  notifications Notification[]
-  consents      UserConsent[]
+  refreshTokens           RefreshToken[]
+  access                  PatientAccess[]
+  notifications           Notification[]
+  consents                UserConsent[]
+  credentialTokens        CredentialToken[]
+  mfaEnrolment            UserMfa?
+  deviceTokens            DeviceToken[]
+  notificationPreferences NotificationPreference[]
+  invitationsSent         PatientInvitation[]      @relation("InvitationInviter")
+  invitationsAccepted     PatientInvitation[]      @relation("InvitationAcceptor")
 
   @@map("users")
+}
+
+// ─── single-use credentials ──────────────────────────────────────────────────
+
+enum CredentialTokenType {
+  emailVerification
+  passwordReset
+}
+
+/// Email verification and password reset, in one table because they are the
+/// same object with a different purpose: a single-use, expiring, hashed
+/// secret sent to an address.
+///
+/// Stored as a SHA-256 digest, never in plaintext. These are high-entropy
+/// random values, not human-chosen passwords, so there is no dictionary for an
+/// attacker to work against and argon2's cost would buy nothing — but a
+/// database dump must not hand over a working set of password-reset links.
+model CredentialToken {
+  id        String              @id @default(uuid())
+  userId    String
+  type      CredentialTokenType
+  tokenHash String              @unique
+
+  /// The address the token was issued *for*. A reset link stays bound to the
+  /// address that requested it, so changing the account email mid-flight
+  /// cannot redirect a live reset to a new inbox.
+  email String
+
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  ip        String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([expiresAt])
+  @@map("credential_tokens")
+}
+
+// ─── multi-factor authentication ─────────────────────────────────────────────
+
+/// TOTP enrolment. Scaffolding in Stage 2 (FOUNDATION §5): the enrol/verify
+/// round trip and the storage are real, enforcement for staff and admin roles
+/// arrives with those roles.
+///
+/// The shared secret is encrypted at rest with AES-256-GCM under
+/// MFA_SECRET_KEY, which lives in Secrets Manager and not in this database.
+/// A stolen dump is then a box of ciphertext rather than a box of working
+/// second factors.
+model UserMfa {
+  userId String @id
+
+  secretCiphertext Bytes
+  secretIv         Bytes
+  secretAuthTag    Bytes
+
+  /// Enrolment is not complete until one code has been verified. Marking it
+  /// enabled at the moment the QR code is shown would lock out anyone whose
+  /// authenticator app failed to scan it.
+  confirmedAt DateTime?
+
+  /// Single-use, hashed, and the only way back in when the phone is gone.
+  recoveryCodeHashes String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_mfa")
 }
 
 /// Opaque refresh tokens, stored only as a hash.
@@ -54,6 +148,20 @@ model RefreshToken {
   expiresAt DateTime
   revokedAt DateTime?
   userAgent String?
+
+  /// What the session list shows. A person recognises "iPhone · Safari · last
+  /// used 10 minutes ago" and can act on it; they cannot act on a token id.
+  /// Carried forward across rotation so a session keeps one identity for its
+  /// whole life rather than appearing to be a new device every fifteen
+  /// minutes.
+  deviceLabel String?
+  ip          String?
+  lastUsedAt  DateTime @default(now())
+
+  /// Why it ended. Distinguishes a deliberate sign-out from the automatic
+  /// family-wide revocation that reuse detection triggers — which is a
+  /// security event a user should be told about, not a routine logout.
+  revokedReason String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -100,10 +208,21 @@ model Address {
   latitude    Float?
   longitude   Float?
 
-  patientHomes         Patient[]
-  clinics              Clinic[]
-  ridePickups          Ride[]    @relation("RidePickup")
-  rideDestinations     Ride[]    @relation("RideDestination")
+  /// How much to trust the pin, and where it came from.
+  ///
+  /// `approximate` means we located the postcode and not the building: the UI
+  /// must not draw a confident marker, and a driver needs `accessNotes` more
+  /// than usual. Recorded because a wrong pin is a support conversation, and
+  /// "which geocoder produced this, and did it claim rooftop accuracy" is the
+  /// first question in it.
+  geocodePrecision String?
+  geocodeSource    String?
+  geocodedAt       DateTime?
+
+  patientHomes     Patient[]
+  clinics          Clinic[]
+  ridePickups      Ride[]    @relation("RidePickup")
+  rideDestinations Ride[]    @relation("RideDestination")
 
   @@map("addresses")
 }
@@ -148,11 +267,12 @@ model Patient {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  homeAddress       Address            @relation(fields: [homeAddressId], references: [id])
+  homeAddress       Address             @relation(fields: [homeAddressId], references: [id])
   emergencyContacts EmergencyContact[]
   access            PatientAccess[]
   appointments      Appointment[]
   rides             Ride[]
+  invitations       PatientInvitation[]
 
   @@map("patients")
 }
@@ -214,16 +334,73 @@ model PatientAccess {
   @@map("patient_access")
 }
 
+/// Flagged in FOUNDATION §5 as an account-takeover vector, and treated as one.
+///
+/// Three properties do the work, and all three are enforced in the database
+/// rather than only in the service:
+///
+///   - **Single-use**  — `acceptedAt`/`revokedAt`, checked inside the same
+///     transaction that consumes the token.
+///   - **Expiring**    — `expiresAt`, short by default.
+///   - **Email-bound** — `email` must match the *verified* address of the
+///     account accepting it. Without that binding, anyone holding the link
+///     joins the family; the link then travels through forwarded mail, shared
+///     inboxes and screenshots, and grants access to a patient's home address
+///     and daily movements.
+///
+/// The token itself is stored only as a digest, so a database dump does not
+/// contain a set of live invitations.
+model PatientInvitation {
+  id        String @id @default(uuid())
+  patientId String
+  tokenHash String @unique
+
+  /// Lower-cased at write time; the uniqueness of an open invitation per
+  /// address depends on it.
+  email String
+
+  relationship RelationshipType
+  permissions  FamilyPermission[]
+
+  invitedByUserId String
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+
+  acceptedAt       DateTime?
+  acceptedByUserId String?
+  revokedAt        DateTime?
+  revokedReason    String?
+
+  /// Rate-limits guessing and gives support something to look at. Bounded by
+  /// the service, which revokes the invitation rather than letting it be
+  /// hammered.
+  attemptCount Int @default(0)
+
+  patient    Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  invitedBy  User    @relation("InvitationInviter", fields: [invitedByUserId], references: [id])
+  acceptedBy User?   @relation("InvitationAcceptor", fields: [acceptedByUserId], references: [id])
+
+  @@index([patientId])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("patient_invitations")
+}
+
 // ─── clinics ─────────────────────────────────────────────────────────────────
 
 model Clinic {
-  id             String  @id @default(uuid())
+  id             String    @id @default(uuid())
   name           String
   phone          String
   addressId      String
   entranceNotes  String?
   operatingNotes String?
   archivedAt     DateTime?
+
+  /// IANA zone of this clinic. Appointments inherit it, and reminder offsets
+  /// are measured against it — the appointment happens where the clinic is,
+  /// not where the server is or where the family member happens to be sitting.
+  timeZone String @default("America/New_York")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -271,7 +448,16 @@ model Appointment {
   status                  AppointmentStatus
   coordinationNotes       String?
   transportRequired       Boolean           @default(false)
-  timeZoneLabel           String            @default("clinic time")
+
+  /// The label a person reads ("clinic time"), kept separate from the zone the
+  /// scheduler computes in. They are not the same thing and conflating them is
+  /// how a reminder fires at 3am.
+  timeZoneLabel String @default("clinic time")
+
+  /// IANA zone of the clinic, e.g. "America/New_York". `startsAt` is stored in
+  /// UTC like everything else; this is what turns it back into the local wall
+  /// time a reminder offset is measured against.
+  timeZone String @default("America/New_York")
 
   /// Optimistic locking, per FOUNDATION §6.
   version Int @default(0)
@@ -279,10 +465,11 @@ model Appointment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  patient Patient                    @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  clinic  Clinic                     @relation(fields: [clinicId], references: [id])
-  history AppointmentStatusHistory[]
-  rides   Ride[]
+  patient   Patient                    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinic    Clinic                     @relation(fields: [clinicId], references: [id])
+  history   AppointmentStatusHistory[]
+  rides     Ride[]
+  reminders AppointmentReminder[]
 
   @@index([patientId])
   @@index([startsAt])
@@ -305,14 +492,53 @@ model AppointmentStatusHistory {
   @@map("appointment_status_history")
 }
 
+/// One row per scheduled reminder, written in the same transaction as the
+/// appointment that owns it.
+///
+/// The database row is the record of intent and the queue job is only the
+/// timer. That split is deliberate: Redis is a cache and may be lost
+/// (FOUNDATION §4), so on restart the scheduler re-reads this table and
+/// re-enqueues anything still pending. If the queue were the only record, a
+/// Redis flush would silently cancel every reminder in the system, and nobody
+/// would find out until a patient missed an appointment.
+model AppointmentReminder {
+  id            String @id @default(uuid())
+  appointmentId String
+
+  /// Minutes before `Appointment.startsAt`.
+  offsetMinutes Int
+
+  /// Absolute UTC instant, resolved once against the appointment's IANA zone
+  /// at scheduling time.
+  scheduledFor DateTime
+
+  sentAt      DateTime?
+  cancelledAt DateTime?
+
+  /// The BullMQ job id, so a rescheduled appointment can remove the timer it
+  /// already set rather than firing both.
+  jobId String?
+
+  createdAt DateTime @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  /// One reminder per offset per appointment. The constraint is what makes
+  /// rescheduling idempotent — a retried schedule cannot produce a second
+  /// copy of the same reminder.
+  @@unique([appointmentId, offsetMinutes])
+  @@index([scheduledFor, sentAt])
+  @@map("appointment_reminders")
+}
+
 // ─── transportation ──────────────────────────────────────────────────────────
 
 model Vehicle {
-  id                    String  @id @default(uuid())
-  make                  String
-  model                 String
-  color                 String
-  licensePlate          String
+  id                     String  @id @default(uuid())
+  make                   String
+  model                  String
+  color                  String
+  licensePlate           String
   isWheelchairAccessible Boolean @default(false)
 
   drivers Driver[]
@@ -369,16 +595,16 @@ model Ride {
   /// A round trip is two rides sharing this id, not one ride with two legs.
   roundTripGroupId String?
 
-  direction             RideDirection
-  pickupAddressId       String
-  destinationAddressId  String
-  scheduledPickupAt     DateTime
-  flexibleReturn        Boolean       @default(false)
-  status                RideStatus
-  wheelchairRequired    Boolean       @default(false)
-  assistanceRequired    Boolean       @default(false)
-  notesForDriver        String?
-  driverId              String?
+  direction            RideDirection
+  pickupAddressId      String
+  destinationAddressId String
+  scheduledPickupAt    DateTime
+  flexibleReturn       Boolean       @default(false)
+  status               RideStatus
+  wheelchairRequired   Boolean       @default(false)
+  assistanceRequired   Boolean       @default(false)
+  notesForDriver       String?
+  driverId             String?
 
   isDelayed          Boolean @default(false)
   delayReason        String?
@@ -413,11 +639,11 @@ model Ride {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  patient         Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  appointment     Appointment?        @relation(fields: [appointmentId], references: [id])
-  pickup          Address             @relation("RidePickup", fields: [pickupAddressId], references: [id])
-  destination     Address             @relation("RideDestination", fields: [destinationAddressId], references: [id])
-  driver          Driver?             @relation(fields: [driverId], references: [id])
+  patient         Patient              @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointment     Appointment?         @relation(fields: [appointmentId], references: [id])
+  pickup          Address              @relation("RidePickup", fields: [pickupAddressId], references: [id])
+  destination     Address              @relation("RideDestination", fields: [destinationAddressId], references: [id])
+  driver          Driver?              @relation(fields: [driverId], references: [id])
   surcharges      RideSurcharge[]
   events          RideEvent[]
   history         RideStatusHistory[]
@@ -511,6 +737,12 @@ enum NotificationKind {
   accessGranted
 }
 
+enum NotificationChannel {
+  inApp
+  email
+  push
+}
+
 /// Bodies carry no patient name, clinic name, address or time. A phone on a
 /// kitchen table is readable by whoever is in the room. Enforced by test.
 model Notification {
@@ -524,10 +756,105 @@ model Notification {
   rideId        String?
   appointmentId String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
 
   @@index([userId, createdAt])
   @@map("notifications")
+}
+
+enum DeliveryStatus {
+  pending
+  sent
+  failed
+  suppressed
+}
+
+/// What actually happened on each channel, per notification.
+///
+/// Separate from `Notification` because "the family was told" and "the email
+/// provider accepted it" are different facts, and a support conversation about
+/// a missed ride needs both. `suppressed` is a first-class outcome, not a
+/// failure: a user who turned email off did not have a delivery problem.
+model NotificationDelivery {
+  id             String              @id @default(uuid())
+  notificationId String
+  channel        NotificationChannel
+  status         DeliveryStatus      @default(pending)
+
+  attemptedAt DateTime  @default(now())
+  completedAt DateTime?
+
+  /// Vendor message id where there is one — the thing to quote when asking an
+  /// email provider what became of a message.
+  providerRef String?
+
+  /// A provider's own error text. Never the recipient address, never the body.
+  failureReason String?
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, channel])
+  @@index([status, attemptedAt])
+  @@map("notification_deliveries")
+}
+
+/// Per-user, per-event, per-channel. Absent means "use the default for this
+/// event kind" — storing a full matrix for every new user would mean a new
+/// notification kind ships switched off for everyone who registered before it
+/// existed.
+model NotificationPreference {
+  id      String              @id @default(uuid())
+  userId  String
+  kind    NotificationKind
+  channel NotificationChannel
+  enabled Boolean
+
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, channel])
+  @@map("notification_preferences")
+}
+
+enum DevicePlatform {
+  android
+  ios
+  web
+}
+
+enum AppTarget {
+  family
+  driver
+  ops
+}
+
+/// FCM registration tokens.
+///
+/// `appTarget` is recorded because the driver app and the family app are
+/// separate installs (D4) and a ride notification must not be pushed to the
+/// wrong one. Tokens rotate on their own schedule, so `lastSeenAt` drives the
+/// cleanup of ones no client has re-registered.
+model DeviceToken {
+  id        String         @id @default(uuid())
+  userId    String
+  token     String         @unique
+  platform  DevicePlatform
+  appTarget AppTarget      @default(family)
+
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  revokedAt  DateTime?
+
+  /// Set when FCM reports the token as permanently gone (UNREGISTERED), so we
+  /// stop paying to push to an app that has been uninstalled.
+  invalidatedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@map("device_tokens")
 }
 
 // ─── money ───────────────────────────────────────────────────────────────────

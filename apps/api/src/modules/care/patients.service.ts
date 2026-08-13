@@ -171,11 +171,7 @@ export class PatientsService {
   }
 
   /** Same bar as editing, and for the same reason. Soft delete only. */
-  async archive(
-    userId: string,
-    patientId: string,
-    ctx: RequestContext,
-  ): Promise<void> {
+  async archive(userId: string, patientId: string, ctx: RequestContext): Promise<void> {
     await this.care.requirePermission(userId, patientId, 'manageAccess');
 
     await this.prisma.$transaction(async (tx) => {
@@ -216,11 +212,7 @@ export class PatientsService {
     dto: SetPermissionsDto,
     ctx: RequestContext,
   ): Promise<void> {
-    const grant = await this.care.requirePermission(
-      userId,
-      patientId,
-      'manageAccess',
-    );
+    const grant = await this.care.requirePermission(userId, patientId, 'manageAccess');
 
     const requested = new Set(dto.permissions);
     const isPrimary = grant.grantedByUserId == null;
@@ -265,7 +257,9 @@ export class PatientsService {
   }
 }
 
-function addressCreate(input: AddressInput): Prisma.AddressCreateWithoutPatientHomesInput {
+function addressCreate(
+  input: AddressInput,
+): Prisma.AddressCreateWithoutPatientHomesInput {
   return {
     label: input.label.trim(),
     line1: input.line1.trim(),

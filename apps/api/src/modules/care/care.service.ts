@@ -53,34 +53,33 @@ export class CareService {
 
     const patientIds = grants.map((g) => g.patientId);
 
-    const [patients, clinics, appointments, rides, notifications] =
-      await Promise.all([
-        this.prisma.patient.findMany({
-          where: { id: { in: patientIds } },
-          include: PATIENT_INCLUDE,
-          orderBy: { preferredName: 'asc' },
-        }),
-        this.prisma.clinic.findMany({
-          where: { archivedAt: null },
-          include: CLINIC_INCLUDE,
-          orderBy: { name: 'asc' },
-        }),
-        this.prisma.appointment.findMany({
-          where: { patientId: { in: patientIds } },
-          include: APPOINTMENT_INCLUDE,
-          orderBy: { startsAt: 'asc' },
-        }),
-        this.prisma.ride.findMany({
-          where: { patientId: { in: patientIds } },
-          include: RIDE_INCLUDE,
-          orderBy: { scheduledPickupAt: 'asc' },
-        }),
-        this.prisma.notification.findMany({
-          where: { userId },
-          orderBy: { createdAt: 'desc' },
-          take: 200,
-        }),
-      ]);
+    const [patients, clinics, appointments, rides, notifications] = await Promise.all([
+      this.prisma.patient.findMany({
+        where: { id: { in: patientIds } },
+        include: PATIENT_INCLUDE,
+        orderBy: { preferredName: 'asc' },
+      }),
+      this.prisma.clinic.findMany({
+        where: { archivedAt: null },
+        include: CLINIC_INCLUDE,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.appointment.findMany({
+        where: { patientId: { in: patientIds } },
+        include: APPOINTMENT_INCLUDE,
+        orderBy: { startsAt: 'asc' },
+      }),
+      this.prisma.ride.findMany({
+        where: { patientId: { in: patientIds } },
+        include: RIDE_INCLUDE,
+        orderBy: { scheduledPickupAt: 'asc' },
+      }),
+      this.prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+      }),
+    ]);
 
     const access: CareStateDto['access'] = {};
     for (const grant of grants) {

@@ -46,6 +46,10 @@ AppUser _userFromJson(Map<String, dynamic> json) => AppUser(
       email: json['email'] as String,
       fullName: json['fullName'] as String,
       phone: json['phone'] as String?,
+      emailVerifiedAt: _dateOrNull(json['emailVerifiedAt'] as String?),
+      // Defaulted rather than required: a snapshot cached by an older build of
+      // the app must still decode after an upgrade.
+      timeZone: json['timeZone'] as String? ?? 'America/New_York',
     );
 
 Address _addressFromJson(Map<String, dynamic> json) => Address(

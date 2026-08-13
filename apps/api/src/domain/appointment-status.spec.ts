@@ -67,12 +67,10 @@ describe('appointment state machine', () => {
   });
 
   it('throws on an illegal transition', () => {
-    expect(() =>
-      assertAppointmentTransition('draft', 'completed'),
-    ).toThrow(InvalidTransitionError);
-    expect(() =>
-      assertAppointmentTransition('scheduled', 'confirmed'),
-    ).not.toThrow();
+    expect(() => assertAppointmentTransition('draft', 'completed')).toThrow(
+      InvalidTransitionError,
+    );
+    expect(() => assertAppointmentTransition('scheduled', 'confirmed')).not.toThrow();
   });
 
   describe('ride progress driving appointment progress', () => {
@@ -80,9 +78,7 @@ describe('appointment state machine', () => {
       expect(appointmentStatusForRide('assigned')).toBe('transportationScheduled');
       expect(appointmentStatusForRide('driverArrived')).toBe('patientPreparing');
       expect(appointmentStatusForRide('passengerOnboard')).toBe('patientEnRoute');
-      expect(appointmentStatusForRide('arrivedAtDestination')).toBe(
-        'patientArrived',
-      );
+      expect(appointmentStatusForRide('arrivedAtDestination')).toBe('patientArrived');
     });
 
     it('says nothing for ride states that imply nothing', () => {
@@ -106,9 +102,7 @@ describe('appointment state machine', () => {
       for (const rideStatus of RIDE_STATUSES as RideStatus[]) {
         const implied = appointmentStatusForRide(rideStatus);
         if (!implied) continue;
-        const reachable = ALL.some((from) =>
-          canTransitionAppointment(from, implied),
-        );
+        const reachable = ALL.some((from) => canTransitionAppointment(from, implied));
         expect(reachable).toBe(true);
       }
     });

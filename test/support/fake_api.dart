@@ -37,6 +37,10 @@ class FakeApi {
           'email': 'jordan@example.com',
           'fullName': 'Jordan Reyes',
           'phone': null,
+          // A brand-new account has not confirmed its address yet, which is
+          // exactly the state the verification banner exists for.
+          'emailVerifiedAt': null,
+          'timeZone': 'America/New_York',
         },
         'patients': <dynamic>[],
         'access': <String, dynamic>{},

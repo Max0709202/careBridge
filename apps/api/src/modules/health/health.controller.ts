@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   HealthCheck,
   HealthCheckService,
@@ -8,6 +9,7 @@ import {
 import { Public } from '../auth/auth.guard';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 
+@ApiTags('system')
 @Controller('health')
 export class HealthController {
   constructor(
@@ -22,6 +24,11 @@ export class HealthController {
    * turn a recoverable outage into a crash loop.
    */
   @Public()
+  @ApiOperation({
+    summary: 'Liveness',
+    description:
+      'Checks nothing external on purpose. A database blip must not get the container killed and restarted, which would turn a recoverable outage into a crash loop.',
+  })
   @Get('live')
   live(): { status: string } {
     return { status: 'ok' };
@@ -29,6 +36,9 @@ export class HealthController {
 
   /** Readiness: may this instance take traffic. This one *does* need the database. */
   @Public()
+  @ApiOperation({
+    summary: 'Readiness — may this instance take traffic',
+  })
   @Get('ready')
   @HealthCheck()
   ready() {

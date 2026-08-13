@@ -1,8 +1,10 @@
 .git
+.github
 .dart_tool
 .firebase
 build
-apps/api/node_modules
+node_modules
+**/node_modules
 apps/api/dist
 .env
 *.log
@@ -11,3 +13,4 @@ ios
 linux
 macos
 windows
+docs

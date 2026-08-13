@@ -1,0 +1,130 @@
+# Dependency, secret and container scanning.
+#
+# Separate from ci.yml because it runs on a schedule as well as on pull
+# requests: a dependency that was clean on Monday is not necessarily clean on
+# Friday, and nothing about our code has to change for that to happen.
+#
+# High and critical findings block. Anything lower is reported and triaged —
+# a gate that fails on every informational finding is a gate that gets turned
+# off within a month.
+
+name: Security scan
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Monday morning, so a finding lands at the start of a working week rather
+    # than on a Saturday when nobody will act on it.
+    - cron: '0 7 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  NODE_VERSION: '22.23.2'
+  PNPM_VERSION: '9.15.4'
+
+jobs:
+  dependencies:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Block on high and critical advisories
+        run: pnpm audit --audit-level high --prod
+
+      - name: Report everything else without blocking
+        if: always()
+        run: pnpm audit --audit-level low || true
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Gitleaks needs history to scan the commits a pull request adds, not
+          # just the tree it produces. A secret added and then removed in the
+          # same branch is still a secret that was pushed.
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  container:
+    name: Container scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          load: true
+          tags: carebridge-api:scan
+          cache-from: type=gha
+
+      - name: Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: carebridge-api:scan
+          format: sarif
+          output: trivy.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Upload to code scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy.sarif
+
+  # A standing check that no compliance claim has crept into the codebase.
+  # FOUNDATION §9 and L2: the architecture is "HIPAA-ready"; compliance
+  # requires a legal determination, executed BAAs, documented safeguards,
+  # training and access reviews — none of which are properties of source code.
+  claims:
+    name: No unearned compliance claims
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Search for "HIPAA compliant" and friends
+        run: |
+          # The second grep drops lines that are *stating the rule* rather than
+          # breaking it — FOUNDATION L2 says "we will never describe the product
+          # as HIPAA compliant", and a check that fails on its own policy
+          # document is a check that gets deleted.
+          hits=$(grep -rniE 'hipaa[- ]?compliant|hipaa[- ]?certified|fully[- ]?hipaa' \
+               --include='*.ts' --include='*.dart' --include='*.md' \
+               --include='*.yaml' --include='*.yml' --include='*.json' \
+               --exclude-dir=node_modules --exclude-dir=.git \
+               --exclude-dir=build --exclude-dir=.dart_tool \
+               --exclude='security-scan.yml' \
+               . | grep -viE 'never|not |hipaa-ready|no hipaa' || true)
+
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "::error::A HIPAA compliance claim appears above. We say 'HIPAA-ready architecture' and nothing stronger until legal, contractual and operational review is complete (FOUNDATION L2)."
+            exit 1
+          fi
+          echo "✓ no compliance claims"

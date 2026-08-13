@@ -1,0 +1,11 @@
+{
+  "name": "@carebridge/contracts",
+  "version": "0.2.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "The generated OpenAPI document. The single source of truth for every client — hand-editing it would make the server and the clients disagree in exactly the way the generation step exists to prevent.",
+  "main": "openapi.json",
+  "files": [
+    "openapi.json"
+  ]
+}

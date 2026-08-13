@@ -27,9 +27,7 @@ export class PreferencesService {
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        ...(dto.simplifiedMode != null
-          ? { simplifiedMode: dto.simplifiedMode }
-          : {}),
+        ...(dto.simplifiedMode != null ? { simplifiedMode: dto.simplifiedMode } : {}),
         ...(dto.selectedPatientId != null
           ? { selectedPatientId: dto.selectedPatientId }
           : {}),

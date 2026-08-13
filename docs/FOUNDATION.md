@@ -432,8 +432,7 @@ Identical Postgres, Redis, mail and object-storage services on every developer
 machine and in CI, so "works locally" is meaningful. Multi-stage production images
 that ship only compiled output and production dependencies, running as a non-root
 user with a `HEALTHCHECK`. Containers are also the deployment unit on ECS Fargate,
-so the image tested in CI is the artefact deployed to production. *Docker is not
-currently installed on this machine — installing it is task #1.*
+so the image tested in CI is the artefact deployed to production.
 
 ## Why AWS
 
@@ -540,8 +539,8 @@ interceptor, secure storage, accessible theme, error handling); GitHub Actions C
 
 **Dependencies:** Docker Desktop, Flutter SDK and Android SDK installed (task #1).
 
-**Risks:** toolchain absent on the dev machine (**blocking**); Flutter Web ops
-console unvalidated; scaffolding sprawl.
+**Risks:** ~~toolchain absent on the dev machine~~ (resolved 2026-08-12);
+Flutter Web ops console unvalidated; scaffolding sprawl.
 
 **Testing:** health endpoint integration test; config validation unit tests; one
 widget test and one router test per app; CI green from the first commit.
@@ -1153,7 +1152,7 @@ Ordered. Each ends in a working, committed state.
 
 | # | Task | Output |
 | - | ---- | ------ |
-| **1** | **Install prerequisites** — Docker Desktop (WSL2 backend), Flutter SDK (stable), Android SDK + emulator, JDK 17. *None are present on this machine; #5 and #12 are blocked until this is done, and it needs the user's action.* | `docker`, `flutter doctor` clean |
+| **1** | ~~**Install prerequisites**~~ — **Done, 2026-08-12.** Docker 29.7.2 and Flutter 3.44.0 / Dart 3.12.0 installed and verified end to end. Android SDK and the Linux desktop toolchain remain outstanding; they are needed for the driver app in Stage 3, not before. | ✅ `docker compose up` healthy; `flutter analyze` clean |
 | **2** | Initialise the monorepo — pnpm workspace, melos config, root scripts, Makefile, `.gitignore`, `.editorconfig`, Node/pnpm version pins, licence. | Repo skeleton, first commit |
 | **3** | Shared tooling packages — `typescript-config` (strict, `noUncheckedIndexedAccess`), `eslint-config` including module-boundary rules and a ban on direct `process.env`, Prettier, Dart analysis options. | `packages/{typescript-config,eslint-config}` |
 | **4** | Write the documentation set — the 8 product docs, 9 architecture docs, and ADRs 0001–0010 (monolith, Riverpod, auth strategy, map provider, background location, Stripe, Postgres+Prisma, Redis+BullMQ, AWS/ECS, multi-tenancy). Plus `CLAUDE.md`, `README`, `CONTRIBUTING`, `SECURITY`. | `docs/` populated |
@@ -1190,4 +1189,4 @@ first, tracking second, `ops-console` last.
 | **R5** | No web portal may block a family segment that will not install an app. | Measure in pilot; Next.js portal against the same API is the unblocked path. |
 | **R6** | Legal role determination (L1) is unresolved. | Architecture assumes strictest case; counsel engaged before Stage 4 pilot. |
 | **R7** | Card-only payment (B3) narrows the addressable market. | Accepted for pilot; insurance/Medicaid is a Stage 5 decision. |
-| **R8** | Docker and Flutter absent locally. | Task #1, blocking. |
+| **R8** | ~~Docker and Flutter absent locally.~~ | **Closed, 2026-08-12.** Docker 29.7.2 (user added to the `docker` group) and Flutter 3.44.0 / Dart 3.12.0 are installed and verified. `docker compose up` brings up six healthy containers; the API image builds and runs; `flutter analyze` and `flutter test` are clean. Android SDK and the Linux desktop toolchain are still absent — neither is needed until the driver app (Stage 3). |

@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { type Prisma } from '@prisma/client';
 import type {
   Address,
   EmergencyContact,
@@ -82,6 +82,8 @@ export function toUserDto(user: User): AppUserDto {
     email: user.email,
     fullName: user.fullName,
     phone: user.phone,
+    emailVerifiedAt: user.emailVerifiedAt?.toISOString() ?? null,
+    timeZone: user.timeZone,
   };
 }
 

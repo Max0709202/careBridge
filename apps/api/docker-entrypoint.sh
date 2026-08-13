@@ -8,7 +8,7 @@
 set -eu
 
 echo "[entrypoint] Applying database migrations…"
-npx prisma migrate deploy
+./node_modules/.bin/prisma migrate deploy
 
 if [ "${SEED_ON_START:-false}" = "true" ]; then
   echo "[entrypoint] Seeding demo data…"

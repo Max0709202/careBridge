@@ -130,12 +130,27 @@ class AppUser {
     required this.email,
     required this.fullName,
     this.phone,
+    this.emailVerifiedAt,
+    this.timeZone = 'America/New_York',
   });
 
   final String id;
   final String email;
   final String fullName;
   final String? phone;
+
+  /// Null until the address is proven.
+  ///
+  /// Nothing in the app is blocked on it — locking a family out of a ride they
+  /// have already booked because an email went to spam is the worse outcome —
+  /// but invitations require it, and the banner is the only reason an
+  /// unverified address ever becomes a verified one.
+  final DateTime? emailVerifiedAt;
+
+  /// IANA zone. Reminder scheduling for this account is computed in it.
+  final String timeZone;
+
+  bool get isEmailVerified => emailVerifiedAt != null;
 
   String get initials {
     final parts = fullName.trim().split(RegExp(r'\s+'));

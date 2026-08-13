@@ -1,0 +1,13 @@
+# Generated code is held to the same rules as the rest of the workspace.
+#
+# It is also `dart format`-ed as part of generation rather than exempted from
+# the check: the generator is deterministic, so formatting it adds no churn and
+# means the committed output satisfies exactly the same gate as hand-written
+# Dart.
+include: package:lints/recommended.yaml
+
+analyzer:
+  errors:
+    # The generator emits a doc comment on every field from the OpenAPI
+    # description. Where the API has none, there is nothing honest to write.
+    public_member_api_docs: ignore

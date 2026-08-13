@@ -4,6 +4,7 @@ import type { Request } from 'express';
 
 import { AuthService } from './auth.service';
 import { AuthenticationError } from '../../common/errors';
+import { setCurrentUserId } from '../../common/logging/correlation-store';
 
 export const IS_PUBLIC = 'carebridge:public';
 
@@ -13,6 +14,12 @@ export const Public = (): MethodDecorator => SetMetadata(IS_PUBLIC, true);
 declare module 'express-serve-static-core' {
   interface Request {
     userId?: string;
+    /**
+     * The refresh-token family the access token was minted under, so
+     * `/auth/sessions` can mark one row "this device". Opaque, and grants
+     * nothing on its own.
+     */
+    sessionFamilyId?: string;
   }
 }
 
@@ -42,7 +49,13 @@ export class AuthGuard implements CanActivate {
       throw new AuthenticationError();
     }
 
-    request.userId = await this.auth.verifyAccessToken(header.slice(7).trim());
+    const caller = await this.auth.verifyAccessToken(header.slice(7).trim());
+    request.userId = caller.userId;
+    request.sessionFamilyId = caller.familyId;
+
+    // Every log line for the rest of this request now names the actor — by id
+    // only, never by email, which is on the redaction denylist anyway.
+    setCurrentUserId(caller.userId);
     return true;
   }
 }

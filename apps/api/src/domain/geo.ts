@@ -25,8 +25,7 @@ export function distanceMiles(
   const lat2 = radians(b.latitude);
 
   const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+    Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
   const c = 2 * Math.asin(Math.min(1, Math.sqrt(h)));
 
   return earthRadiusMiles * c * detourFactor;

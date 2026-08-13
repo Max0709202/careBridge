@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "CareBridge NestJS service",
+  "extends": "./base.json",
+  "compilerOptions": {
+    // Nest's DI and class-validator both read design-time type metadata that
+    // only these two flags emit. Without them every @Injectable resolves to
+    // undefined at runtime, and the failure message names nothing useful.
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    // Nest constructs entities through the DI container and class-transformer,
+    // so definite initialisation cannot be proven by the compiler.
+    "strictPropertyInitialization": false
+  }
+}

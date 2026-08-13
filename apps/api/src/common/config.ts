@@ -3,15 +3,39 @@ import { z } from 'zod';
 /**
  * Environment, validated once at boot.
  *
- * Direct `process.env` reads are banned everywhere else: a typo in an env name
- * silently becomes `undefined` at the call site and surfaces as a runtime bug
- * hours later. Here it fails the container's first second, loudly.
+ * Direct `process.env` reads are banned everywhere else — by lint, not by
+ * convention (see packages/eslint-config). A typo in an env name silently
+ * becomes `undefined` at the call site and surfaces as a runtime bug hours
+ * later, on the one code path nobody exercised. Here it fails the container's
+ * first second, loudly, naming the variable.
  */
+
+/** Vendors sit behind interfaces; this is where the live adapter is chosen. */
+const mailDriver = z.enum(['smtp', 'log']).default('log');
+const pushDriver = z.enum(['fcm', 'log']).default('log');
+const mapsDriver = z.enum(['google', 'deterministic']).default('deterministic');
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
 
+  /** Stamped on every log line, so a line can be traced to a build. */
+  SERVICE_VERSION: z.string().default('0.2.0'),
+
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+
+  /**
+   * Queues, live location, idempotency and rate limiting.
+   *
+   * Optional on purpose. Without it the API runs with an in-process scheduler:
+   * correct on one developer machine, wrong the moment there are two
+   * instances, and it says exactly that at boot. Required in production.
+   */
+  REDIS_URL: z
+    .string()
+    .url()
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
 
   /**
    * Signing key for access tokens. Must be supplied — there is deliberately no
@@ -20,9 +44,30 @@ const schema = z.object({
    */
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
 
+  /**
+   * Encrypts TOTP shared secrets at rest, base64 of 32 bytes.
+   *
+   * Optional, and its absence disables MFA enrolment rather than degrading it:
+   * a TOTP secret stored in plaintext turns a database dump into a box of
+   * working second factors, which is worse than having no second factor,
+   * because the user believes they have one.
+   */
+  MFA_SECRET_KEY: z
+    .string()
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+
   /** Short by design. Revocation is immediate because the window is small. */
   ACCESS_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(15),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
+
+  /**
+   * Single-use credential lifetimes. Each is short enough that a link sitting
+   * in a forwarded email or a shared inbox stops being useful quickly.
+   */
+  EMAIL_VERIFICATION_TTL_HOURS: z.coerce.number().int().positive().default(24),
+  PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().default(30),
+  INVITATION_TTL_DAYS: z.coerce.number().int().positive().default(7),
 
   /**
    * Comma-separated allowlist. `*` is accepted only outside production, so a
@@ -33,11 +78,69 @@ const schema = z.object({
   /** Failed sign-ins per email+IP per window before lockout. */
   LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(8),
   LOGIN_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
+
+  // `silent` is a real pino level and the right one for a test run: the suite
+  // asserts on behaviour, and a thousand log lines between two failures is how
+  // a failing assertion becomes hard to find.
+  LOG_LEVEL: z
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+    .default('info'),
+  LOG_PRETTY: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+
+  /** Where a verification, reset or invitation link points. */
+  PUBLIC_APP_URL: z.string().url().default('http://localhost:8080'),
+
+  // ─── outbound adapters ─────────────────────────────────────────────────
+
+  MAIL_DRIVER: mailDriver,
+  MAIL_SMTP_HOST: z.string().default('127.0.0.1'),
+  MAIL_SMTP_PORT: z.coerce.number().int().positive().default(1025),
+  MAIL_SMTP_USER: z.string().optional(),
+  MAIL_SMTP_PASSWORD: z.string().optional(),
+  MAIL_FROM: z.string().default('CareBridge <no-reply@carebridge.local>'),
+
+  PUSH_DRIVER: pushDriver,
+  FCM_SERVICE_ACCOUNT_JSON: z.string().optional(),
+
+  MAPS_DRIVER: mapsDriver,
+  MAPS_API_KEY: z.string().optional(),
+
+  /**
+   * Reminder offsets in minutes before the appointment, e.g. "1440,120" for a
+   * day before and two hours before. Configuration rather than a constant,
+   * because the right answer is an operational finding from the pilot.
+   */
+  APPOINTMENT_REMINDER_OFFSETS: z
+    .string()
+    .default('1440,120')
+    .transform((raw, ctx) => {
+      const offsets = raw
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .map(Number);
+
+      if (offsets.some((n) => !Number.isInteger(n) || n <= 0)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'must be a comma-separated list of positive whole minutes',
+        });
+        return z.NEVER;
+      }
+      // Descending: the earliest reminder is scheduled first, which is the
+      // order a human reads them in when debugging a job queue.
+      return [...new Set(offsets)].sort((a, b) => b - a);
+    }),
 });
 
 export type AppConfig = z.infer<typeof schema> & {
   corsOrigins: string[] | true;
   isProduction: boolean;
+  /** Decoded once, so every consumer does not re-parse base64. */
+  mfaSecretKey: Buffer | null;
 };
 
 let cached: AppConfig | null = null;
@@ -55,6 +158,11 @@ let cached: AppConfig | null = null;
 export function appConfig(): AppConfig {
   cached ??= loadConfig();
   return cached;
+}
+
+/** Test-only: forget the memoised value so the next call re-validates. */
+export function resetConfigCache(): void {
+  cached = null;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -78,9 +186,63 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     throw new Error('CORS_ORIGINS may not be "*" in production.');
   }
 
+  // Production refuses the local adapters. Each of these silently succeeds
+  // while doing nothing, which is the failure mode that is hardest to notice:
+  // password resets that never arrive look identical to users not asking for
+  // any, and a geocoder that invents coordinates sends a driver to a plausible
+  // wrong address.
+  if (isProduction) {
+    const localAdapters: string[] = [];
+    if (config.MAIL_DRIVER === 'log') localAdapters.push('MAIL_DRIVER=log');
+    if (config.PUSH_DRIVER === 'log') localAdapters.push('PUSH_DRIVER=log');
+    if (config.MAPS_DRIVER === 'deterministic') {
+      localAdapters.push('MAPS_DRIVER=deterministic');
+    }
+    if (localAdapters.length > 0) {
+      throw new Error(
+        `These adapters do nothing but log, and must not run in production: ${localAdapters.join(', ')}.`,
+      );
+    }
+    if (!config.REDIS_URL) {
+      throw new Error(
+        'REDIS_URL is required in production: the in-process scheduler fallback loses every pending job on deploy and double-fires with more than one instance.',
+      );
+    }
+  }
+
+  if (config.MAIL_DRIVER === 'smtp' && !config.MAIL_SMTP_HOST) {
+    throw new Error('MAIL_SMTP_HOST is required when MAIL_DRIVER=smtp.');
+  }
+  if (config.PUSH_DRIVER === 'fcm' && !config.FCM_SERVICE_ACCOUNT_JSON) {
+    throw new Error('FCM_SERVICE_ACCOUNT_JSON is required when PUSH_DRIVER=fcm.');
+  }
+  if (config.MAPS_DRIVER === 'google' && !config.MAPS_API_KEY) {
+    throw new Error('MAPS_API_KEY is required when MAPS_DRIVER=google.');
+  }
+
+  const mfaSecretKey = decodeMfaKey(config.MFA_SECRET_KEY);
+
   return {
     ...config,
     isProduction,
     corsOrigins: origins.includes('*') ? true : origins,
+    mfaSecretKey,
   };
+}
+
+/**
+ * AES-256-GCM needs exactly 32 bytes. A short key is rejected rather than
+ * stretched: silently padding it would produce a system that encrypts, passes
+ * every test, and has a fraction of the key space its name implies.
+ */
+function decodeMfaKey(raw: string | undefined): Buffer | null {
+  if (!raw) return null;
+
+  const key = Buffer.from(raw, 'base64');
+  if (key.length !== 32) {
+    throw new Error(
+      `MFA_SECRET_KEY must be 32 bytes, base64-encoded (got ${key.length}). Generate one with: openssl rand -base64 32`,
+    );
+  }
+  return key;
 }

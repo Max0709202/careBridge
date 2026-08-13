@@ -145,6 +145,25 @@ class CareNotifier extends Notifier<CareState> {
     state = const CareState();
   }
 
+  /// Drops the local session without calling the server.
+  ///
+  /// For the cases where the server has *already* ended it — sign out
+  /// everywhere, or a password change — and calling `/auth/logout` afterwards
+  /// would be a request with a token that is deliberately already dead.
+  void forgetSession() {
+    _stopPolling();
+    _runningPreviews = const {};
+    state = const CareState();
+  }
+
+  /// Accepts an invitation and adopts the snapshot it returns.
+  ///
+  /// The response is the whole state, and it now contains a patient the caller
+  /// could not see a moment ago — which is exactly why acceptance returns a
+  /// snapshot rather than an id.
+  Future<void> acceptInvitation(String token) async =>
+      _apply(await _api.acceptInvitation(token));
+
   /// Re-reads the snapshot. Used by pull-to-refresh and by the preview poll.
   Future<void> refresh() async {
     if (!state.isSignedIn) return;

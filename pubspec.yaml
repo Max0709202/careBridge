@@ -3,6 +3,15 @@ description: "CareBridge — coordinate an older relative's medical appointments
 publish_to: 'none'
 version: 0.1.0+1
 
+# The Dart half of the monorepo.
+#
+# `workspace` is Dart's own mechanism, and melos 8 builds on it rather than
+# replacing it — one resolution across the app and the generated client, so the
+# two cannot end up on different versions of `http` and disagree about what a
+# response is.
+workspace:
+  - packages/dart/carebridge_api
+
 environment:
   # Widened from ^3.12.2 so the app builds on the newest published Flutter
   # container image (3.44.0 / Dart 3.12.0) as well as on a local 3.44.x SDK.
@@ -25,10 +34,71 @@ dependencies:
   # storage rather than a plaintext localStorage entry.
   flutter_secure_storage: ^11.0.0
 
+  # The generated API client, from packages/contracts/openapi.json.
+  #
+  # The app takes its **models** from here — the wire types stay in step with
+  # the server by construction, which is the whole point of generating them
+  # (FOUNDATION T7).
+  #
+  # It deliberately does **not** take the transport. `CareApi` owns the single
+  # HTTP client, because it owns refresh: two clients each refreshing on a 401
+  # will eventually both present the same rotated token, and reuse detection —
+  # correctly — revokes the whole family and signs the user out. One transport
+  # is the only safe number.
+  carebridge_api:
+    path: packages/dart/carebridge_api
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
+  # From melos 7 the tool is a dev dependency of the workspace root rather than
+  # a globally activated binary — so the version everyone runs is the version
+  # in the lockfile, and `dart run melos` is the only correct invocation.
+  melos: ^8.2.2
+
 flutter:
   uses-material-design: true
+
+# ─── melos ────────────────────────────────────────────────────────────────────
+#
+# Scripts over the Dart packages. `make` is the single entry point that runs
+# both halves of the monorepo; this is the half pnpm knows nothing about.
+melos:
+  name: carebridge
+
+  # Melos takes its package list from the `workspace:` key above, and a pub
+  # workspace root is never a member of itself. This root is both the
+  # workspace root *and* the family app, so melos covers the generated client
+  # and the Makefile drives the app directly with `flutter`.
+  #
+  # FOUNDATION §8 puts the app at apps/mobile_family/, which would make the
+  # root a pure workspace root and let melos cover everything. That relocation
+  # is a mechanical move of six platform directories, the web Dockerfile and
+  # the CI paths — worth doing, and worth doing on its own rather than folded
+  # into a feature change.
+
+  scripts:
+    analyze:
+      description: Static analysis across every Dart package.
+      run: dart run melos exec -- dart analyze
+
+    format:
+      description: Formatting check. Fails rather than rewrites, so CI is honest.
+      run: dart run melos exec -- dart format --output=none --set-exit-if-changed .
+
+    test:
+      description: Unit and widget tests for every package that has them.
+      run: dart run melos exec --dir-exists=test -- flutter test
+
+    api:generate:
+      description: >-
+        Regenerate carebridge_api from packages/contracts/openapi.json, then
+        prove the output compiles. Regenerating alone is not enough: a
+        generator bug that emits a missing type produces a perfectly stable
+        diff and a client nobody can build.
+      run: |
+        node scripts/generate-dart-client.mjs
+        dart format packages/dart/carebridge_api
+        dart run melos exec --scope=carebridge_api -- dart analyze

@@ -292,8 +292,7 @@ async function seedPatients(
       city: 'Upper Arlington',
       state: 'OH',
       postalCode: '43221',
-      accessNotes:
-        'Ground-floor flat, ramp at the side entrance. Gate code 4417.',
+      accessNotes: 'Ground-floor flat, ramp at the side entrance. Gate code 4417.',
       latitude: 40.0192,
       longitude: -83.0624,
     },
@@ -432,8 +431,7 @@ async function seedAppointmentsAndRides(input: {
       expectedDurationMinutes: 30,
       type: 'primaryCare',
       status: 'scheduled',
-      coordinationNotes:
-        'Annual check. Wheelchair-accessible vehicle needed.',
+      coordinationNotes: 'Annual check. Wheelchair-accessible vehicle needed.',
       createdAt: daysBefore(now, 2),
       history: {
         create: {
@@ -629,8 +627,7 @@ async function seedAppointmentsAndRides(input: {
         create: {
           at: daysBefore(now, 5),
           title: 'Return ride requested',
-          detail:
-            'Pickup time is flexible — we will send a car when the visit ends.',
+          detail: 'Pickup time is flexible — we will send a car when the visit ends.',
         },
       },
     },

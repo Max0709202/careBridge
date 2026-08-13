@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 
 import { AuthenticationError } from './errors';
@@ -15,6 +15,14 @@ export const CurrentUser = createParamDecorator(
     const request = ctx.switchToHttp().getRequest<Request>();
     if (!request.userId) throw new AuthenticationError();
     return request.userId;
+  },
+);
+
+/** The refresh-token family of the caller's session, or null. */
+export const CurrentSession = createParamDecorator(
+  (_data: unknown, ctx: ExecutionContext): string | null => {
+    const request = ctx.switchToHttp().getRequest<Request>();
+    return request.sessionFamilyId ?? null;
   },
 );
 

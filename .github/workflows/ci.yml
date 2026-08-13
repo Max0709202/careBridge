@@ -1,0 +1,266 @@
+# The pull-request gate.
+#
+# Every job here has a local equivalent (`make check`), and the local command is
+# the contract: if the two diverge, CI is what is wrong. A check that cannot be
+# reproduced on a laptop is a check people learn to re-run rather than fix.
+#
+# Jobs are split so a failure names the thing that broke. One monolithic job
+# that runs everything reports "CI failed", which is not information.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  # Superseded runs on the same branch are cancelled — the newest commit is the
+  # only one whose result anybody acts on.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22.23.2'
+  PNPM_VERSION: '9.15.4'
+
+jobs:
+  static:
+    name: Format, lint, typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The Prisma client is a generated type dependency: without it, typecheck
+      # fails on every model reference and reports nothing useful about the
+      # change under review.
+      - name: Generate the Prisma client
+        run: pnpm --filter @carebridge/api exec prisma generate
+
+      - run: pnpm run format
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @carebridge/api exec prisma generate
+      - run: pnpm run test
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+
+    # The same images the compose stack runs, so "works locally" means
+    # something. Redis is present here even though the suite runs with the
+    # in-process scheduler — the moment a test needs it, it is already there.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: carebridge
+          POSTGRES_PASSWORD: carebridge-ci
+          POSTGRES_DB: carebridge_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U carebridge -d carebridge_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://carebridge:carebridge-ci@127.0.0.1:5432/carebridge_test?schema=public
+      JWT_SECRET: integration-tests-only-secret-at-least-32-chars
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @carebridge/api exec prisma generate
+
+      # `migrate deploy`, never `migrate dev`: this asserts that the committed
+      # migrations apply to a clean database. A migration that only works
+      # because someone's local database already had the column is the failure
+      # this catches.
+      - name: Apply migrations to a clean database
+        run: pnpm --filter @carebridge/api exec prisma migrate deploy
+
+      # A schema that has drifted from its migrations means the next deploy
+      # applies something nobody reviewed.
+      - name: Assert the schema matches its migrations
+        run: |
+          pnpm --filter @carebridge/api exec prisma migrate diff \
+            --from-migrations ./prisma/migrations \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --shadow-database-url "$DATABASE_URL" \
+            --exit-code \
+          && echo "Schema and migrations agree." \
+          || (echo "::error::prisma/schema.prisma has changes with no migration. Run 'make migrate' and commit the result."; exit 1)
+
+      - run: pnpm run test:integration
+
+  contract:
+    name: API contract and Dart client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          cache: true
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @carebridge/api exec prisma generate
+
+      # The contract is generated from the decorators and committed, so a
+      # reviewer sees an API change in the diff. This is the job that stops the
+      # committed contract and the implementation drifting apart — the drift is
+      # otherwise discovered by a client developer, not by a test.
+      - name: Regenerate the contract and the client
+        env:
+          DATABASE_URL: postgresql://unused:unused@127.0.0.1:5432/unused
+          JWT_SECRET: contract-generation-only-not-a-real-secret
+        run: |
+          pnpm run openapi
+          node scripts/generate-dart-client.mjs
+          dart format packages/dart/carebridge_api
+
+      - name: Fail if either is stale
+        run: |
+          if ! git diff --quiet packages/contracts packages/dart; then
+            echo "::error::The committed API contract or Dart client is out of date. Run 'make dart-client' and commit the result."
+            git diff --stat packages/contracts packages/dart
+            exit 1
+          fi
+
+      # Regenerating is not enough: the output has to compile. A generator
+      # change that emits a missing type produces a perfectly stable diff and
+      # a client nobody can build.
+      - name: Analyse what was just generated
+        working-directory: packages/dart/carebridge_api
+        run: |
+          dart pub get
+          dart analyze
+
+  dart:
+    name: Dart analyze and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      # `dart format` is not yet enforced on the app: it predates the check and
+      # the Dart 3.12 formatter reflows enough of it that turning the gate on
+      # would be a forty-file whitespace commit. It is enforced on the
+      # generated client below, where the output is produced formatted and
+      # therefore stays clean for free.
+
+      # The generated client is analysed separately and on purpose. It is a
+      # pure Dart package, and it is the one place a generator bug surfaces as
+      # a compile error rather than as a test that quietly does not exist.
+      - name: Analyse the generated API client
+        working-directory: packages/dart/carebridge_api
+        run: |
+          dart pub get
+          dart analyze
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Built but not pushed. The point is that the artefact the deploy
+      # pipeline would ship is the one this pull request produces — a build
+      # that only happens at release time fails at release time.
+      - name: Build the API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          load: true
+          tags: carebridge-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check it starts and answers liveness
+        run: |
+          docker run -d --name api-smoke \
+            -e NODE_ENV=development \
+            -e DATABASE_URL=postgresql://unused:unused@127.0.0.1:5432/unused \
+            -e JWT_SECRET=smoke-test-secret-at-least-32-characters \
+            -e SEED_ON_START=false \
+            --entrypoint node \
+            -p 3000:3000 \
+            carebridge-api:ci dist/src/main.js
+
+          # Liveness only. Readiness needs a database, and this smoke test is
+          # about the image being runnable, not about the stack being up.
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/v1/health/live; then
+              echo "✓ image is runnable"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "::error::The image did not answer /health/live"
+          docker logs api-smoke
+          exit 1

@@ -243,10 +243,19 @@ Future<bool> confirmAction(
 /// Only [Failure.message] is ever surfaced — deliberately generic, and identical
 /// for "not found" and "not permitted" so the message cannot be used to probe
 /// whether a record exists.
+/// The user-safe text for a failure.
+///
+/// Only [Failure.message] is ever surfaced — deliberately generic, and
+/// identical for "not found" and "not permitted", so the message cannot be
+/// used to probe whether a record exists. Anything that is not a [Failure] is
+/// an unexpected exception, and its text belongs in a log rather than on
+/// somebody's screen.
+String failureMessage(Object error) => error is Failure
+    ? error.message
+    : 'Something went wrong. Please try again.';
+
 void showFailure(BuildContext context, Object error) {
-  final message = error is Failure
-      ? error.message
-      : 'Something went wrong. Please try again.';
+  final message = failureMessage(error);
   final scheme = Theme.of(context).colorScheme;
 
   ScaffoldMessenger.of(context)

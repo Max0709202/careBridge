@@ -283,15 +283,15 @@ class _AccessSection extends ConsumerWidget {
                     ],
                   ),
                 ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Inviting other relatives arrives with the server, so that an '
-                'invitation can be a single-use, expiring token rather than '
-                'something this app hands out.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              if (access.can(FamilyPermission.manageAccess)) ...[
+                const Divider(height: AppSpacing.lg),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      context.push('/patients/$patientId/care-circle'),
+                  icon: const Icon(Icons.group_outlined),
+                  label: const Text('Manage the care circle'),
                 ),
-              ),
+              ],
             ],
           ),
         ),

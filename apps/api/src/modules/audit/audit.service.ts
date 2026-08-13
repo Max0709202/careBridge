@@ -29,10 +29,7 @@ export class AuditService {
    * to succeed unaudited. If the audit write fails, the change it describes
    * rolls back with it.
    */
-  async record(
-    entry: AuditEntry,
-    tx?: Prisma.TransactionClient,
-  ): Promise<void> {
+  async record(entry: AuditEntry, tx?: Prisma.TransactionClient): Promise<void> {
     const client = tx ?? this.prisma;
     try {
       await client.auditLog.create({

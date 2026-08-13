@@ -188,4 +188,50 @@ void main() {
       expect(empty.appointmentsFor('nope'), isEmpty);
     });
   });
+
+  // ─── the verification banner ────────────────────────────────────────────
+
+  testWidgets('prompts an unverified account to confirm its address',
+      (tester) async {
+    // Registration deliberately does not block on verification — locking a
+    // family out of a ride they have already booked because an email went to
+    // spam is the worse outcome. Without this prompt, though, a user meets the
+    // invitation wall with no explanation of why.
+    await tester.pumpWidget(appWith(FixedClock(now)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Confirm your email address'), findsOneWidget);
+    expect(find.text('Send the link again'), findsOneWidget);
+  });
+
+  testWidgets('the banner says nothing once the address is confirmed',
+      (tester) async {
+    // It renders an empty box rather than a dismissible state, which is what
+    // makes it safe to leave at the top of any screen.
+    final verified = Map<String, dynamic>.from(snapshotJson);
+    verified['user'] = {
+      ...snapshotJson['user'] as Map<String, dynamic>,
+      'emailVerifiedAt': '2026-08-01T09:00:00.000Z',
+    };
+
+    final verifiedFake = FakeApi(snapshot: verified);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          clockProvider.overrideWithValue(FixedClock(now)),
+          careApiProvider.overrideWith((ref) => verifiedFake.build()),
+        ],
+        child: const CareBridgeApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Confirm your email address'), findsNothing);
+  });
 }

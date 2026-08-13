@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { NotFoundError, ValidationError } from '../../common/errors';

@@ -1,6 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+// Prefixed on purpose. The generated package carries the **wire** types, and
+// several of them share a name with this app's own domain enums —
+// `FamilyPermission`, `AppointmentType`. The prefix keeps the domain model
+// primary, which is the right way round: the UI is written against the domain,
+// and the wire shape is an implementation detail of this file.
+import 'package:carebridge_api/carebridge_api.dart' as wire;
 import 'package:http/http.dart' as http;
 
 import '../core/failures.dart';
@@ -154,6 +160,133 @@ class CareApi {
         }),
       );
 
+  // ─── the account ──────────────────────────────────────────────────────────
+  //
+  // Responses are decoded into the **generated** DTOs from `carebridge_api`.
+  // Those types come from the same OpenAPI document the server emits, so a
+  // field that changes shape on the server is a compile error here rather than
+  // a null at runtime on somebody's settings screen.
+
+  Future<List<wire.SessionSummaryDto>> sessions() async =>
+      (await _sendList('GET', '/auth/sessions'))
+          .map((e) => wire.SessionSummaryDto.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+  Future<void> revokeSession(String sessionId) async =>
+      _send('DELETE', '/auth/sessions/$sessionId');
+
+  /// Signs out everywhere, including this device.
+  ///
+  /// The local tokens are cleared regardless of what the server said: once the
+  /// call has gone out, the access token is dead on its next use anyway, and
+  /// keeping it would leave the app in a state where every request 401s.
+  Future<void> signOutEverywhere() async {
+    try {
+      await _send('POST', '/auth/logout-all');
+    } finally {
+      await tokens.clear();
+    }
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async =>
+      _send('POST', '/auth/password', body: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      });
+
+  Future<void> requestPasswordReset(String email) async => _send(
+        'POST',
+        '/auth/password-reset',
+        body: {'email': email.trim()},
+        authenticated: false,
+      );
+
+  Future<void> resendVerification(String email) async => _send(
+        'POST',
+        '/auth/resend-verification',
+        body: {'email': email.trim()},
+        authenticated: false,
+      );
+
+  Future<void> verifyEmail(String token) async => _send(
+        'POST',
+        '/auth/verify-email',
+        body: {'token': token},
+        authenticated: false,
+      );
+
+  // ─── two-factor authentication ────────────────────────────────────────────
+
+  Future<wire.MfaStatusDto> mfaStatus() async =>
+      wire.MfaStatusDto.fromJson(await _send('GET', '/auth/mfa'));
+
+  Future<wire.MfaEnrolmentDto> beginMfaEnrolment() async =>
+      wire.MfaEnrolmentDto.fromJson(await _send('POST', '/auth/mfa/enrol'));
+
+  Future<void> confirmMfa(String code) async =>
+      _send('POST', '/auth/mfa/confirm', body: {'code': code});
+
+  Future<void> disableMfa() async => _send('DELETE', '/auth/mfa');
+
+  // ─── notification preferences ─────────────────────────────────────────────
+
+  Future<List<wire.NotificationPreferenceDto>> notificationPreferences() async =>
+      (await _sendList('GET', '/notifications/preferences'))
+          .map((e) =>
+              wire.NotificationPreferenceDto.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+  Future<List<wire.NotificationPreferenceDto>> setNotificationPreference({
+    required String kind,
+    required String channel,
+    required bool enabled,
+  }) async =>
+      (await _sendList('PUT', '/notifications/preferences', body: {
+        'kind': kind,
+        'channel': channel,
+        'enabled': enabled,
+      }))
+          .map((e) =>
+              wire.NotificationPreferenceDto.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+  // ─── the care circle ──────────────────────────────────────────────────────
+
+  Future<List<wire.InvitationDto>> invitations(String patientId) async =>
+      (await _sendList('GET', '/patients/$patientId/invitations'))
+          .map((e) => wire.InvitationDto.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+  Future<wire.InvitationDto> invite({
+    required String patientId,
+    required String email,
+    required String relationship,
+    required List<String> permissions,
+  }) async =>
+      wire.InvitationDto.fromJson(
+        await _send('POST', '/patients/$patientId/invitations', body: {
+          'email': email.trim(),
+          'relationship': relationship,
+          'permissions': permissions,
+        }),
+      );
+
+  Future<void> revokeInvitation({
+    required String patientId,
+    required String invitationId,
+  }) async =>
+      _send('DELETE', '/patients/$patientId/invitations/$invitationId');
+
+  /// Accepting returns the whole snapshot — it now includes a patient the
+  /// caller could not see a moment ago.
+  Future<CareSnapshot> acceptInvitation(String token) async =>
+      _snapshot(await _send('POST', '/invitations/accept', body: {
+        'token': token,
+      }));
+
   // ─── clinics ──────────────────────────────────────────────────────────────
 
   Future<CareSnapshot> addClinic(Clinic clinic) async =>
@@ -283,6 +416,39 @@ class CareApi {
     return _decode(response);
   }
 
+  /// The list-shaped sibling of [_send].
+  ///
+  /// Kept separate rather than making [_send] return `dynamic`: every existing
+  /// caller decodes an object, and widening that return type would push a cast
+  /// into forty call sites to serve four.
+  Future<List<dynamic>> _sendList(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+    bool allowRetry = true,
+  }) async {
+    final response = await _request(method, path, body, true);
+
+    if (response.statusCode == 401 && allowRetry) {
+      if (await _refresh()) {
+        return _sendList(method, path, body: body, allowRetry: false);
+      }
+      await tokens.clear();
+      throw const AuthenticationFailure();
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final decoded = response.body.isEmpty
+          ? const <String, dynamic>{}
+          : jsonDecode(response.body) as Map<String, dynamic>;
+      throw _failureFrom(response.statusCode, decoded);
+    }
+
+    return response.body.isEmpty
+        ? const []
+        : jsonDecode(response.body) as List<dynamic>;
+  }
+
   Future<http.Response> _request(
     String method,
     String path,
@@ -309,6 +475,7 @@ class CareApi {
         'POST' => await _client.post(uri, headers: headers, body: encoded),
         'PUT' => await _client.put(uri, headers: headers, body: encoded),
         'PATCH' => await _client.patch(uri, headers: headers, body: encoded),
+        'DELETE' => await _client.delete(uri, headers: headers, body: encoded),
         _ => throw ArgumentError('Unsupported method $method'),
       };
     } on http.ClientException {

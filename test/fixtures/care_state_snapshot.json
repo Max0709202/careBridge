@@ -3,7 +3,9 @@
     "id": "00000000-0000-4000-8000-000000000001",
     "email": "sarah@example.com",
     "fullName": "Sarah Whitfield",
-    "phone": "+1 614 555 0148"
+    "phone": "+1 614 555 0148",
+    "emailVerifiedAt": null,
+    "timeZone": "America/New_York"
   },
   "patients": [
     {
@@ -31,14 +33,14 @@
       "mobilityNotes": "Steady on level ground with the walker, but needs an arm on kerbs and steps. Hard of hearing on the left side.",
       "emergencyContacts": [
         {
-          "id": "bdd7358a-1b81-44bb-bd9f-71dd72d9ac61",
+          "id": "61255379-7313-426c-be3b-c5aca21624cb",
           "name": "Sarah Whitfield",
           "relationship": "Daughter",
           "phone": "+1 614 555 0148",
           "isPrimary": true
         },
         {
-          "id": "8dc25f85-f759-493b-a867-c94216a74dd8",
+          "id": "2f2ba546-2885-46a9-bad7-e60f695fb6be",
           "name": "Dennis Whitfield",
           "relationship": "Son",
           "phone": "+1 614 555 0176",
@@ -73,7 +75,7 @@
       "mobilityNotes": "Uses a manual wheelchair and needs help transferring. A wheelchair-accessible vehicle is required for every trip.",
       "emergencyContacts": [
         {
-          "id": "48c8d354-f492-47c3-9f74-f970561e3fef",
+          "id": "6f043990-20b9-4ab5-a226-81bf3661e5c6",
           "name": "Sarah Whitfield",
           "relationship": "Daughter",
           "phone": "+1 614 555 0148",
@@ -96,7 +98,7 @@
         "makePayments",
         "manageAccess"
       ],
-      "grantedAt": "2026-05-03T08:17:48.846Z",
+      "grantedAt": "2026-05-07T09:30:59.034Z",
       "grantedByUserId": null,
       "revokedAt": null
     },
@@ -111,12 +113,30 @@
         "makePayments",
         "manageAccess"
       ],
-      "grantedAt": "2026-05-03T08:17:48.846Z",
+      "grantedAt": "2026-05-07T09:30:59.034Z",
       "grantedByUserId": null,
       "revokedAt": null
     }
   },
   "clinics": [
+    {
+      "id": "c18ae961-6698-4e56-a001-8ab6b7d43a2d",
+      "name": "Kings County Cardiology",
+      "phone": "+1-555-0180",
+      "address": {
+        "label": "Clinic",
+        "line1": "451 Clarkson Avenue",
+        "line2": null,
+        "city": "Brooklyn",
+        "state": "NY",
+        "postalCode": "11203",
+        "accessNotes": null,
+        "latitude": 42.980664,
+        "longitude": -78.237861
+      },
+      "entranceNotes": null,
+      "operatingNotes": null
+    },
     {
       "id": "00000000-0000-4000-8000-000000000021",
       "name": "Northside Family Medicine",
@@ -159,7 +179,7 @@
       "id": "00000000-0000-4000-8000-000000000052",
       "patientId": "00000000-0000-4000-8000-000000000010",
       "clinicId": "00000000-0000-4000-8000-000000000020",
-      "startsAt": "2026-07-17T09:15:00.000Z",
+      "startsAt": "2026-07-21T09:15:00.000Z",
       "expectedDurationMinutes": 60,
       "type": "specialist",
       "status": "completed",
@@ -168,27 +188,27 @@
       "timeZoneLabel": "clinic time",
       "history": [
         {
-          "at": "2026-07-08T08:17:48.846Z",
+          "at": "2026-07-12T09:30:59.034Z",
           "from": "draft",
           "to": "scheduled",
           "actor": "Sarah Whitfield",
           "reason": null
         },
         {
-          "at": "2026-07-17T10:25:00.000Z",
+          "at": "2026-07-21T10:25:00.000Z",
           "from": "patientArrived",
           "to": "completed",
           "actor": "CareBridge",
           "reason": null
         }
       ],
-      "createdAt": "2026-07-08T08:17:48.846Z"
+      "createdAt": "2026-07-12T09:30:59.034Z"
     },
     {
       "id": "00000000-0000-4000-8000-000000000050",
       "patientId": "00000000-0000-4000-8000-000000000010",
       "clinicId": "00000000-0000-4000-8000-000000000020",
-      "startsAt": "2026-08-09T10:40:00.000Z",
+      "startsAt": "2026-08-13T10:40:00.000Z",
       "expectedDurationMinutes": 45,
       "type": "followUp",
       "status": "transportationScheduled",
@@ -197,27 +217,27 @@
       "timeZoneLabel": "clinic time",
       "history": [
         {
-          "at": "2026-08-01T08:17:48.846Z",
+          "at": "2026-08-05T09:30:59.034Z",
           "from": "draft",
           "to": "scheduled",
           "actor": "Sarah Whitfield",
           "reason": null
         },
         {
-          "at": "2026-08-02T08:17:48.846Z",
+          "at": "2026-08-06T09:30:59.034Z",
           "from": "scheduled",
           "to": "transportationScheduled",
           "actor": "CareBridge",
           "reason": null
         }
       ],
-      "createdAt": "2026-08-01T08:17:48.846Z"
+      "createdAt": "2026-08-05T09:30:59.034Z"
     },
     {
       "id": "00000000-0000-4000-8000-000000000051",
       "patientId": "00000000-0000-4000-8000-000000000011",
       "clinicId": "00000000-0000-4000-8000-000000000021",
-      "startsAt": "2026-08-16T14:15:00.000Z",
+      "startsAt": "2026-08-20T14:15:00.000Z",
       "expectedDurationMinutes": 30,
       "type": "primaryCare",
       "status": "scheduled",
@@ -226,14 +246,14 @@
       "timeZoneLabel": "clinic time",
       "history": [
         {
-          "at": "2026-08-05T08:17:48.846Z",
+          "at": "2026-08-09T09:30:59.034Z",
           "from": "draft",
           "to": "scheduled",
           "actor": "Sarah Whitfield",
           "reason": null
         }
       ],
-      "createdAt": "2026-08-05T08:17:48.846Z"
+      "createdAt": "2026-08-09T09:30:59.034Z"
     }
   ],
   "rides": [
@@ -265,7 +285,7 @@
         "latitude": 39.9612,
         "longitude": -82.9988
       },
-      "scheduledPickupAt": "2026-07-17T08:35:00.000Z",
+      "scheduledPickupAt": "2026-07-21T08:35:00.000Z",
       "flexibleReturn": false,
       "status": "completed",
       "wheelchairRequired": false,
@@ -305,25 +325,25 @@
       "cancellationReason": null,
       "events": [
         {
-          "at": "2026-07-17T08:33:00.000Z",
+          "at": "2026-07-21T08:33:00.000Z",
           "title": "Driver arrived at pickup",
           "detail": null,
           "isException": false
         },
         {
-          "at": "2026-07-17T08:39:00.000Z",
+          "at": "2026-07-21T08:39:00.000Z",
           "title": "Picked up safely",
           "detail": null,
           "isException": false
         },
         {
-          "at": "2026-07-17T09:03:00.000Z",
+          "at": "2026-07-21T09:03:00.000Z",
           "title": "Arrived at the clinic",
           "detail": null,
           "isException": false
         },
         {
-          "at": "2026-07-17T09:05:00.000Z",
+          "at": "2026-07-21T09:05:00.000Z",
           "title": "Ride completed",
           "detail": null,
           "isException": false
@@ -332,7 +352,7 @@
       "history": [],
       "lastKnownPosition": null,
       "etaMinutes": null,
-      "createdAt": "2026-07-08T08:17:48.846Z",
+      "createdAt": "2026-07-12T09:30:59.034Z",
       "simulationActive": false
     },
     {
@@ -363,7 +383,7 @@
         "latitude": 39.9612,
         "longitude": -82.9988
       },
-      "scheduledPickupAt": "2026-08-09T10:00:00.000Z",
+      "scheduledPickupAt": "2026-08-13T10:00:00.000Z",
       "flexibleReturn": false,
       "status": "awaitingAssignment",
       "wheelchairRequired": false,
@@ -391,13 +411,13 @@
       "cancellationReason": null,
       "events": [
         {
-          "at": "2026-08-02T08:17:48.846Z",
+          "at": "2026-08-06T09:30:59.034Z",
           "title": "Looking for a driver",
           "detail": null,
           "isException": false
         },
         {
-          "at": "2026-08-02T08:17:48.846Z",
+          "at": "2026-08-06T09:30:59.034Z",
           "title": "Ride requested",
           "detail": null,
           "isException": false
@@ -405,14 +425,14 @@
       ],
       "history": [
         {
-          "at": "2026-08-02T08:17:48.846Z",
+          "at": "2026-08-06T09:30:59.034Z",
           "from": "draft",
           "to": "requested",
           "actor": "Sarah Whitfield",
           "reason": null
         },
         {
-          "at": "2026-08-02T08:17:48.846Z",
+          "at": "2026-08-06T09:30:59.034Z",
           "from": "requested",
           "to": "awaitingAssignment",
           "actor": "CareBridge",
@@ -421,7 +441,7 @@
       ],
       "lastKnownPosition": null,
       "etaMinutes": null,
-      "createdAt": "2026-08-02T08:17:48.846Z",
+      "createdAt": "2026-08-06T09:30:59.034Z",
       "simulationActive": false
     },
     {
@@ -452,7 +472,7 @@
         "latitude": 39.9925,
         "longitude": -83.0281
       },
-      "scheduledPickupAt": "2026-08-09T11:25:00.000Z",
+      "scheduledPickupAt": "2026-08-13T11:25:00.000Z",
       "flexibleReturn": true,
       "status": "requested",
       "wheelchairRequired": false,
@@ -480,7 +500,7 @@
       "cancellationReason": null,
       "events": [
         {
-          "at": "2026-08-02T08:17:48.846Z",
+          "at": "2026-08-06T09:30:59.034Z",
           "title": "Return ride requested",
           "detail": "Pickup time is flexible — we will send a car when the visit ends.",
           "isException": false
@@ -488,7 +508,7 @@
       ],
       "history": [
         {
-          "at": "2026-08-02T08:17:48.846Z",
+          "at": "2026-08-06T09:30:59.034Z",
           "from": "draft",
           "to": "requested",
           "actor": "Sarah Whitfield",
@@ -497,28 +517,28 @@
       ],
       "lastKnownPosition": null,
       "etaMinutes": null,
-      "createdAt": "2026-08-02T08:17:48.846Z",
+      "createdAt": "2026-08-06T09:30:59.034Z",
       "simulationActive": false
     }
   ],
   "notifications": [
     {
-      "id": "9ecf6cbf-66c5-4894-9337-e1a002feb2e6",
+      "id": "412a62ed-c046-4d0b-be27-7d29f5a64761",
       "kind": "appointmentReminder",
       "title": "Appointment in two days",
       "body": "A reminder about an upcoming appointment. Open CareBridge for details.",
-      "createdAt": "2026-08-07T04:17:48.846Z",
-      "readAt": null,
+      "createdAt": "2026-08-11T05:30:59.034Z",
+      "readAt": "2026-08-11T09:33:29.496Z",
       "rideId": null,
       "appointmentId": "00000000-0000-4000-8000-000000000050"
     },
     {
-      "id": "ceff284b-2014-4491-839c-ac8d94832fd8",
+      "id": "0a11cf6c-3d26-4b8a-9e52-280bfbb5660e",
       "kind": "rideRequested",
       "title": "Round trip requested",
       "body": "We are finding a driver. You will be notified when one is assigned.",
-      "createdAt": "2026-08-02T08:17:48.846Z",
-      "readAt": "2026-08-02T08:17:48.846Z",
+      "createdAt": "2026-08-06T09:30:59.034Z",
+      "readAt": "2026-08-06T09:30:59.034Z",
       "rideId": "00000000-0000-4000-8000-000000000060",
       "appointmentId": null
     }

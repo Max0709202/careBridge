@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayUnique,
@@ -48,25 +49,62 @@ const PERMISSIONS = [
 ] as const;
 
 export class EmergencyContactInput {
-  @IsString() @IsNotEmpty() @MaxLength(120) name!: string;
-  @IsString() @IsNotEmpty() @MaxLength(80) relationship!: string;
-  @IsString() @IsNotEmpty() @MaxLength(40) phone!: string;
-  @IsOptional() @IsBoolean() isPrimary?: boolean;
+  @ApiProperty({ maxLength: 120 })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(120)
+  name!: string;
+
+  @ApiProperty({ maxLength: 80, example: 'Neighbour' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(80)
+  relationship!: string;
+
+  @ApiProperty({ maxLength: 40 })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(40)
+  phone!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isPrimary?: boolean;
 }
 
 export class SavePatientDto {
   /** Required. Someone must be greeted by the name they actually use. */
-  @IsString() @IsNotEmpty({ message: 'Enter a preferred name.' }) @MaxLength(120)
+  @ApiProperty({
+    maxLength: 120,
+    description: 'Required. Someone must be greeted by the name they actually use.',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Enter a preferred name.' })
+  @MaxLength(120)
   preferredName!: string;
 
   /**
    * Optional, and collected only when a transport provider or clinic needs it
    * to match their records — never required of everyone.
    */
-  @IsOptional() @IsString() @MaxLength(160) legalName?: string;
+  @ApiPropertyOptional({
+    maxLength: 160,
+    description:
+      'Collected only when a transport provider or clinic needs it to match their records — never required of everyone.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  legalName?: string;
 
-  @IsString() @IsNotEmpty() @MaxLength(40) phone!: string;
+  @ApiProperty({ maxLength: 40 })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(40)
+  phone!: string;
 
+  @ApiProperty({ type: () => AddressInput })
   @ValidateNested()
   @Type(() => AddressInput)
   homeAddress!: AddressInput;
@@ -76,30 +114,66 @@ export class SavePatientDto {
    * name + address + DOB is the classic re-identification triple, and nothing
    * in arranging a car needs it.
    */
-  @IsOptional() @IsIn(AGE_BANDS) ageBand?: (typeof AGE_BANDS)[number];
+  @ApiPropertyOptional({
+    enum: AGE_BANDS,
+    enumName: 'AgeBand',
+    description:
+      'Coarse by design. There is no date-of-birth field anywhere in this API: name + address + DOB is the classic re-identification triple, and nothing in arranging a car needs it.',
+  })
+  @IsOptional()
+  @IsIn(AGE_BANDS)
+  ageBand?: (typeof AGE_BANDS)[number];
 
-  @IsOptional() @IsString() @MaxLength(80) preferredLanguage?: string;
+  @ApiPropertyOptional({ maxLength: 80, example: 'English' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  preferredLanguage?: string;
 
+  @ApiPropertyOptional({
+    enum: MOBILITY_NEEDS,
+    enumName: 'MobilityNeed',
+    isArray: true,
+    description:
+      'Operational, not diagnostic. What a driver and a vehicle need to know, and nothing about why.',
+  })
   @IsOptional()
   @IsArray()
   @ArrayUnique()
   @IsIn(MOBILITY_NEEDS, { each: true })
   mobilityNeeds?: (typeof MOBILITY_NEEDS)[number][];
 
-  @IsOptional() @IsString() @MaxLength(1000) mobilityNotes?: string;
+  @ApiPropertyOptional({ maxLength: 1000 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  mobilityNotes?: string;
 
+  @ApiPropertyOptional({ type: () => EmergencyContactInput, isArray: true })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => EmergencyContactInput)
   emergencyContacts?: EmergencyContactInput[];
 
-  @IsOptional() @IsUUID() preferredClinicId?: string;
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  preferredClinicId?: string;
 
-  @IsOptional() @IsIn(RELATIONSHIPS) relationship?: (typeof RELATIONSHIPS)[number];
+  @ApiPropertyOptional({
+    enum: RELATIONSHIPS,
+    enumName: 'RelationshipType',
+    description:
+      'The creator’s relationship to the patient, recorded on the access grant this call creates.',
+  })
+  @IsOptional()
+  @IsIn(RELATIONSHIPS)
+  relationship?: (typeof RELATIONSHIPS)[number];
 }
 
 export class SetPermissionsDto {
+  @ApiProperty({ enum: PERMISSIONS, enumName: 'FamilyPermission', isArray: true })
   @IsArray()
   @ArrayUnique()
   @IsIn(PERMISSIONS, { each: true })
@@ -107,7 +181,9 @@ export class SetPermissionsDto {
 }
 
 export class SelectPatientDto {
-  @IsUUID() patientId!: string;
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  patientId!: string;
 }
 
 /** Re-exported so services can reuse the literal unions. */

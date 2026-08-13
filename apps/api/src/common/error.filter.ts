@@ -56,7 +56,7 @@ export class ErrorFilter implements ExceptionFilter {
       // first one — a field-level hint the user can act on.
       const message =
         typeof body === 'object' && body !== null && 'message' in body
-          ? normaliseMessage((body as { message: unknown }).message)
+          ? normaliseMessage(body.message)
           : exception.message;
 
       this.logger.debug(

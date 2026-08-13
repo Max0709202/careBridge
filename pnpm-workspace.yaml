@@ -1,0 +1,9 @@
+# The TypeScript half of the workspace. The Dart half is melos.yaml; the two
+# are deliberately separate tools because pnpm has no idea what a pubspec is
+# and melos has no idea what a package.json is, and pretending otherwise
+# produces a build system nobody can debug.
+packages:
+  - 'apps/api'
+  - 'packages/typescript-config'
+  - 'packages/eslint-config'
+  - 'packages/contracts'

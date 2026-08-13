@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsIn,
@@ -18,47 +19,97 @@ import {
 import { RIDE_STATUSES } from '../../../domain/ride-status';
 
 export class RequestTransportDto {
-  @IsUUID() appointmentId!: string;
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  appointmentId!: string;
 
-  @IsISO8601() pickupAt!: string;
+  @ApiProperty({ format: 'date-time' })
+  @IsISO8601()
+  pickupAt!: string;
 
   /**
    * A round trip produces **two rides** sharing a group id, not one ride with
    * two legs: each is assigned, tracked, cancelled and priced independently.
    */
-  @IsBoolean() roundTrip!: boolean;
+  @ApiProperty({
+    description:
+      'A round trip produces **two rides** sharing a group id, not one ride with two legs: each is assigned, tracked, cancelled and priced independently.',
+  })
+  @IsBoolean()
+  roundTrip!: boolean;
 
-  @IsOptional() @IsString() @MaxLength(500) notesForDriver?: string;
+  @ApiPropertyOptional({ maxLength: 500 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  notesForDriver?: string;
 }
 
 export class CancelRideDto {
-  @IsString() @IsNotEmpty() @MaxLength(300) reason!: string;
+  @ApiProperty({ maxLength: 300 })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(300)
+  reason!: string;
 }
 
 export class TransitionRideDto {
-  @IsIn(RIDE_STATUSES as unknown as string[]) to!: string;
+  @ApiProperty({ enum: RIDE_STATUSES, enumName: 'RideStatus' })
+  @IsIn(RIDE_STATUSES)
+  to!: string;
 
-  @IsOptional() @IsString() @MaxLength(300) reason?: string;
+  @ApiPropertyOptional({ maxLength: 300 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  reason?: string;
 }
 
 export class SetDelayDto {
-  @IsBoolean() delayed!: boolean;
+  @ApiProperty()
+  @IsBoolean()
+  delayed!: boolean;
 
-  @IsOptional() @IsString() @MaxLength(300) reason?: string;
+  @ApiPropertyOptional({ maxLength: 300 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  reason?: string;
 }
 
 export class ReportLocationDto {
-  @IsLatitude() latitude!: number;
-  @IsLongitude() longitude!: number;
+  @ApiProperty()
+  @IsLatitude()
+  latitude!: number;
 
-  @IsOptional() @IsNumber() @Min(0) @Max(10000) accuracyMeters?: number;
+  @ApiProperty()
+  @IsLongitude()
+  longitude!: number;
+
+  @ApiPropertyOptional({ minimum: 0, maximum: 10000 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(10000)
+  accuracyMeters?: number;
 
   /**
    * When the **device** took the reading, not when the server received it.
    * Every freshness label ages against this, so the server judges it before
    * storing — see `checkPositionFreshness`.
    */
-  @IsISO8601() capturedAt!: string;
+  @ApiProperty({
+    format: 'date-time',
+    description:
+      'When the **device** took the reading, not when the server received it. Every freshness label ages against this, so the server judges it before storing.',
+  })
+  @IsISO8601()
+  capturedAt!: string;
 
-  @IsOptional() @IsInt() @Min(0) @Max(600) etaMinutes?: number;
+  @ApiPropertyOptional({ minimum: 0, maximum: 600 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(600)
+  etaMinutes?: number;
 }

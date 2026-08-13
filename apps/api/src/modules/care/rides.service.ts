@@ -179,8 +179,7 @@ export class RidesService {
 
       if (dto.roundTrip) {
         const endsAt = new Date(
-          appointment.startsAt.getTime() +
-            appointment.expectedDurationMinutes * 60_000,
+          appointment.startsAt.getTime() + appointment.expectedDurationMinutes * 60_000,
         );
         const returnAddresses = await snapshot();
 
@@ -290,11 +289,7 @@ export class RidesService {
   }
 
   /** Used by appointment cancellation, which cancels the rides it owns. */
-  async cancelWithinTransaction(
-    tx: Tx,
-    rideId: string,
-    reason: string,
-  ): Promise<void> {
+  async cancelWithinTransaction(tx: Tx, rideId: string, reason: string): Promise<void> {
     const ride = await tx.ride.findUnique({
       where: { id: rideId },
       select: { status: true },
@@ -377,9 +372,7 @@ export class RidesService {
               etaMinutes: null,
             }
           : {}),
-        ...(terminal
-          ? { simulationActive: false, simulationElapsedSeconds: 0 }
-          : {}),
+        ...(terminal ? { simulationActive: false, simulationElapsedSeconds: 0 } : {}),
         history: {
           create: {
             at: input.at,
@@ -436,7 +429,7 @@ export class RidesService {
     }
 
     const now = new Date();
-    const reason = dto.delayed ? (dto.reason?.trim() || null) : null;
+    const reason = dto.delayed ? dto.reason?.trim() || null : null;
 
     await this.prisma.$transaction(async (tx) => {
       await tx.ride.update({

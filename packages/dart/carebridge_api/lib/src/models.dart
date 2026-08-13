@@ -1,0 +1,70 @@
+// GENERATED — DO NOT EDIT.
+//
+// Produced by scripts/generate-dart-client.mjs from
+// packages/contracts/openapi.json. Run `make dart-client` to regenerate.
+// Hand-editing this file makes the client and the server disagree in exactly
+// the way generating it exists to prevent.
+
+export 'models/accept_invitation_dto.dart';
+export 'models/address_dto.dart';
+export 'models/address_input.dart';
+export 'models/age_band.dart';
+export 'models/app_target.dart';
+export 'models/app_user_dto.dart';
+export 'models/appointment_dto.dart';
+export 'models/appointment_type.dart';
+export 'models/cancel_appointment_dto.dart';
+export 'models/cancel_ride_dto.dart';
+export 'models/care_state_dto.dart';
+export 'models/change_password_dto.dart';
+export 'models/clinic_dto.dart';
+export 'models/configurable_channel.dart';
+export 'models/create_appointment_dto.dart';
+export 'models/create_invitation_dto.dart';
+export 'models/device_platform.dart';
+export 'models/device_token_dto.dart';
+export 'models/driver_dto.dart';
+export 'models/email_only_dto.dart';
+export 'models/emergency_contact_dto.dart';
+export 'models/emergency_contact_input.dart';
+export 'models/family_permission.dart';
+export 'models/invitation_dto.dart';
+export 'models/invitation_status.dart';
+export 'models/login_dto.dart';
+export 'models/logout_dto.dart';
+export 'models/mfa_code_dto.dart';
+export 'models/mfa_enrolment_dto.dart';
+export 'models/mfa_status_dto.dart';
+export 'models/mobility_need.dart';
+export 'models/notification_channel.dart';
+export 'models/notification_dto.dart';
+export 'models/notification_kind.dart';
+export 'models/notification_preference_dto.dart';
+export 'models/patient_access_dto.dart';
+export 'models/patient_dto.dart';
+export 'models/price_estimate_dto.dart';
+export 'models/refresh_dto.dart';
+export 'models/register_device_dto.dart';
+export 'models/register_device_dto_app_target.dart';
+export 'models/register_dto.dart';
+export 'models/relationship_type.dart';
+export 'models/report_location_dto.dart';
+export 'models/request_transport_dto.dart';
+export 'models/reschedule_appointment_dto.dart';
+export 'models/reset_password_dto.dart';
+export 'models/ride_dto.dart';
+export 'models/ride_event_dto.dart';
+export 'models/save_clinic_dto.dart';
+export 'models/save_patient_dto.dart';
+export 'models/session_response_dto.dart';
+export 'models/session_summary_dto.dart';
+export 'models/set_delay_dto.dart';
+export 'models/set_notification_preference_dto.dart';
+export 'models/set_permissions_dto.dart';
+export 'models/status_change_dto.dart';
+export 'models/surcharge_dto.dart';
+export 'models/token_dto.dart';
+export 'models/token_pair_dto.dart';
+export 'models/tracking_point_dto.dart';
+export 'models/update_preferences_dto.dart';
+export 'models/vehicle_dto.dart';

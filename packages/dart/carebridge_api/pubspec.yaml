@@ -1,0 +1,25 @@
+# GENERATED — DO NOT EDIT. See scripts/generate-dart-client.mjs.
+name: carebridge_api
+description: >-
+  Generated CareBridge API client. Produced from packages/contracts/openapi.json,
+  which is itself generated from the NestJS decorators — so there is exactly one
+  description of this API and it is the server code.
+version: 0.2.0
+publish_to: 'none'
+
+# Part of the Dart pub workspace declared in the root pubspec, so one
+# resolution covers the app and the client and they cannot drift onto two
+# versions of the same dependency.
+resolution: workspace
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  http: ^1.6.0
+
+dev_dependencies:
+  # The lints package, not flutter_lints: this is a pure Dart package with no
+  # Flutter dependency, and including a rule set it cannot resolve makes
+  # "dart analyze" warn about its own configuration.
+  lints: ^6.0.0

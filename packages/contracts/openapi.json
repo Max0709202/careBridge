@@ -1,0 +1,3664 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/care/state": {
+      "get": {
+        "operationId": "Care_state",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "care"
+        ]
+      }
+    },
+    "/me/preferences": {
+      "patch": {
+        "operationId": "Me_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePreferencesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "UI preferences: selected patient, simplified mode",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/me/devices": {
+      "get": {
+        "description": "The registration token itself is never returned — it is a capability to push to that device, and the list only needs to be recognisable.",
+        "operationId": "Me_listDevices",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceTokenDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Devices registered for push",
+        "tags": [
+          "me"
+        ]
+      },
+      "post": {
+        "operationId": "Me_registerDevice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDeviceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceTokenDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Register or refresh an FCM token for this device",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/me/devices/{id}": {
+      "delete": {
+        "operationId": "Me_revokeDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Stop pushing to a device",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/patients": {
+      "post": {
+        "operationId": "Patients_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePatientDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "patients"
+        ]
+      }
+    },
+    "/patients/{id}": {
+      "put": {
+        "operationId": "Patients_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePatientDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "patients"
+        ]
+      }
+    },
+    "/patients/{id}/archive": {
+      "post": {
+        "operationId": "Patients_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "patients"
+        ]
+      }
+    },
+    "/patients/{id}/permissions": {
+      "put": {
+        "operationId": "Patients_setPermissions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPermissionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "patients"
+        ]
+      }
+    },
+    "/patients/{id}/select": {
+      "post": {
+        "operationId": "Patients_select",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "patients"
+        ]
+      }
+    },
+    "/patients/{id}/invitations": {
+      "get": {
+        "operationId": "Patients_listInvitations",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InvitationDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Invitations issued for this patient",
+        "tags": [
+          "patients"
+        ]
+      },
+      "post": {
+        "description": "Requires manageAccess, a verified address on the inviter, and permissions no broader than the inviter’s own. The emailed link is single-use, expiring, and can only be accepted by a verified account with the invited address.",
+        "operationId": "Patients_invite",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvitationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Invite someone into this patient’s care circle",
+        "tags": [
+          "patients"
+        ]
+      }
+    },
+    "/patients/{id}/invitations/{invitationId}": {
+      "delete": {
+        "operationId": "Patients_revokeInvitation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "invitationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Revoke an invitation that has not been accepted",
+        "tags": [
+          "patients"
+        ]
+      }
+    },
+    "/clinics": {
+      "post": {
+        "operationId": "Clinics_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveClinicDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "clinics"
+        ]
+      }
+    },
+    "/appointments": {
+      "post": {
+        "operationId": "Appointments_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAppointmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/appointments/{id}/reschedule": {
+      "post": {
+        "operationId": "Appointments_reschedule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescheduleAppointmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/appointments/{id}/cancel": {
+      "post": {
+        "operationId": "Appointments_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelAppointmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "appointments"
+        ]
+      }
+    },
+    "/rides": {
+      "post": {
+        "operationId": "Rides_request",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestTransportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "rides"
+        ]
+      }
+    },
+    "/rides/{id}/cancel": {
+      "post": {
+        "operationId": "Rides_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelRideDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "rides"
+        ]
+      }
+    },
+    "/rides/{id}/delay": {
+      "post": {
+        "operationId": "Rides_delay",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetDelayDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "rides"
+        ]
+      }
+    },
+    "/rides/{id}/location": {
+      "post": {
+        "operationId": "Rides_location",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "rides"
+        ]
+      }
+    },
+    "/rides/{id}/preview/start": {
+      "post": {
+        "operationId": "Rides_startPreview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "rides"
+        ]
+      }
+    },
+    "/rides/{id}/preview/stop": {
+      "post": {
+        "operationId": "Rides_stopPreview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "rides"
+        ]
+      }
+    },
+    "/notifications/read-all": {
+      "post": {
+        "operationId": "Notifications_markAllRead",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/notifications/{id}/read": {
+      "post": {
+        "operationId": "Notifications_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareStateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/notifications/preferences": {
+      "get": {
+        "description": "Returned complete — defaults merged with the user’s changes — so the client never has to hold a second copy of the policy, which would be free to drift from the server’s.",
+        "operationId": "Notifications_listPreferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationPreferenceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The full notification matrix",
+        "tags": [
+          "notifications"
+        ]
+      },
+      "put": {
+        "description": "Only email and push are configurable. In-app is the record of what happened and is always on.",
+        "operationId": "Notifications_setPreference",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetNotificationPreferenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationPreferenceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Turn one channel on or off for one event kind",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/invitations/accept": {
+      "post": {
+        "description": "The signed-in account must be the invited address and must have verified it. Returns the full state snapshot, which now includes the newly shared patient.",
+        "operationId": "Invitations_accept",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInvitationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Accept an invitation",
+        "tags": [
+          "patients"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "description": "Signs the new account in immediately and sends a verification email. Nothing is blocked on verification — locking a family out of a ride they have already booked because an email went to spam is the worse outcome — but invitations require a verified address.",
+        "operationId": "Auth_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create an account",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "description": "Accounts with two-factor authentication confirmed must also send `mfaCode`. The code is checked only after the password, so an attacker without the password never learns whether an account has MFA at all.",
+        "operationId": "Auth_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sign in",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "description": "Single-use. Presenting one that has already been rotated revokes the whole family and forces a fresh sign-in: two parties hold tokens from one login and only one of them is legitimate.",
+        "operationId": "Auth_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenPairDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rotate the refresh token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "Auth_logout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Sign out of this device, or of all of them",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/logout-all": {
+      "post": {
+        "description": "Revokes every refresh token and raises the account’s token version, so access tokens already in the wild stop working on their next request rather than at their next expiry.",
+        "operationId": "Auth_logoutAll",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Sign out everywhere",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "operationId": "Auth_verifyEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Confirm an email address with the emailed token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/resend-verification": {
+      "post": {
+        "description": "Always accepted. Whether the address has an account, and whether it is already verified, are facts about a person that an unauthenticated caller does not get to read.",
+        "operationId": "Auth_resendVerification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailOnlyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "summary": "Send the verification email again",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/password-reset": {
+      "post": {
+        "description": "Always accepted, whether or not the address has an account. Anything else turns this endpoint into a way to enumerate the customer list — which for this product is a list of people with a vulnerable relative.",
+        "operationId": "Auth_requestPasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailOnlyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "summary": "Request a password reset link",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/password-reset/confirm": {
+      "post": {
+        "description": "Revokes every session and emails the account holder that it happened. A reset that leaves sessions alive hands an attacker who already has one a foothold the new password does not dislodge.",
+        "operationId": "Auth_confirmPasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Set a new password with the emailed token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/password": {
+      "post": {
+        "operationId": "Auth_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Change the password while signed in",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/sessions": {
+      "get": {
+        "description": "One row per sign-in, not per token. Tokens rotate every few minutes; the family id is stable for the life of a session, so it is what a person recognises and can act on.",
+        "operationId": "Auth_listSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessionSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "List active sessions",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/sessions/{id}": {
+      "delete": {
+        "operationId": "Auth_revokeSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Revoke one session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/mfa": {
+      "get": {
+        "operationId": "Auth_mfaStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Two-factor authentication status",
+        "tags": [
+          "auth"
+        ]
+      },
+      "delete": {
+        "operationId": "Auth_disableMfa",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Turn two-factor authentication off",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/mfa/enrol": {
+      "post": {
+        "description": "Returns the QR payload and the recovery codes, once. Enrolment is not active until a code is confirmed — marking it active here would lock out anyone whose authenticator app failed to scan the code, with no second factor to recover with.",
+        "operationId": "Auth_beginMfaEnrolment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaEnrolmentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Begin two-factor enrolment",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/mfa/confirm": {
+      "post": {
+        "operationId": "Auth_confirmMfa",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Confirm enrolment with one generated code",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/health/live": {
+      "get": {
+        "description": "Checks nothing external on purpose. A database blip must not get the container killed and restarted, which would turn a recoverable outage into a crash loop.",
+        "operationId": "Health_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Liveness",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "Health_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The Health Check is successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "info": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {},
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "details": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The Health Check is not successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "info": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "redis": {
+                          "status": "down",
+                          "message": "Could not connect"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "details": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        },
+                        "redis": {
+                          "status": "down",
+                          "message": "Could not connect"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Readiness — may this instance take traffic",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "Health_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The Health Check is successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "info": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {},
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "details": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The Health Check is not successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "info": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "redis": {
+                          "status": "down",
+                          "message": "Could not connect"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "details": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        },
+                        "redis": {
+                          "status": "down",
+                          "message": "Could not connect"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "system"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "CareBridge API",
+    "description": "Coordination for an older relative’s medical appointments and the transport to them.\n\nTwo conventions hold across every endpoint:\n\n- **Errors** use one envelope: `{ error: { code, message, correlationId, field? } }`.\n- **`404 not_found_or_forbidden` is deliberately ambiguous.** \"No such record\" and\n  \"not yours\" return an identical response, so the API cannot be used to probe for\n  the existence of a patient, a ride or an account.\n\nThis service stores no diagnoses, medications, clinical notes or dates of birth.\nSee `docs/FOUNDATION.md` §9.",
+    "version": "0.2.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Registration, sign-in, sessions, verification and recovery"
+    },
+    {
+      "name": "me",
+      "description": "The signed-in account: profile, preferences, devices, consents"
+    },
+    {
+      "name": "patients",
+      "description": "Patients, family access and invitations"
+    },
+    {
+      "name": "clinics",
+      "description": "Clinics and their geocoded locations"
+    },
+    {
+      "name": "appointments",
+      "description": "Appointments, rescheduling and reminders"
+    },
+    {
+      "name": "rides",
+      "description": "Transport requests and their timeline"
+    },
+    {
+      "name": "notifications",
+      "description": "The in-app centre and per-channel preferences"
+    },
+    {
+      "name": "care",
+      "description": "The one-shot state snapshot the app opens with"
+    },
+    {
+      "name": "system",
+      "description": "Health and readiness"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local API, direct"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Local, through the nginx proxy"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "access-token": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Short-lived access token from POST /auth/login. Carries the user id and nothing else — roles, organisations and patient grants are resolved server-side per request so revocation takes effect on the next call."
+      }
+    },
+    "schemas": {
+      "PatientAccessDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relationship": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grantedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "grantedByUserId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Null marks the organiser who created the patient record. They keep manageAccess unconditionally, or a family could lock itself out of its own patient."
+          },
+          "revokedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "userId",
+          "patientId",
+          "relationship",
+          "permissions",
+          "grantedAt",
+          "grantedByUserId",
+          "revokedAt"
+        ]
+      },
+      "AppUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailVerifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Null until the address is proven. Nothing is blocked on it except issuing and accepting invitations — but the app needs the fact to prompt, and a prompt is the only reason an unverified address ever gets verified."
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "IANA zone. Reminder scheduling for this user is computed in it."
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "fullName",
+          "phone",
+          "emailVerifiedAt",
+          "timeZone"
+        ]
+      },
+      "AddressDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "accessNotes": {
+            "type": "string",
+            "nullable": true,
+            "description": "What stops a driver waiting at the wrong entrance while a patient waits at the right one."
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "required": [
+          "label",
+          "line1",
+          "line2",
+          "city",
+          "state",
+          "postalCode",
+          "accessNotes",
+          "latitude",
+          "longitude"
+        ]
+      },
+      "EmergencyContactDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "relationship": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "isPrimary": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "relationship",
+          "phone",
+          "isPrimary"
+        ]
+      },
+      "PatientDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "preferredName": {
+            "type": "string"
+          },
+          "legalName": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "homeAddress": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "ageBand": {
+            "type": "string",
+            "nullable": true,
+            "description": "Coarse by design. There is no date of birth anywhere in this API."
+          },
+          "preferredLanguage": {
+            "type": "string"
+          },
+          "mobilityNeeds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mobilityNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "emergencyContacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmergencyContactDto"
+            }
+          },
+          "preferredClinicId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Soft delete. Audit and dispute resolution need the record to survive."
+          }
+        },
+        "required": [
+          "id",
+          "preferredName",
+          "legalName",
+          "phone",
+          "homeAddress",
+          "ageBand",
+          "preferredLanguage",
+          "mobilityNeeds",
+          "mobilityNotes",
+          "emergencyContacts",
+          "preferredClinicId",
+          "archivedAt"
+        ]
+      },
+      "ClinicDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "address": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "entranceNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "operatingNotes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "address",
+          "entranceNotes",
+          "operatingNotes"
+        ]
+      },
+      "StatusChangeDto": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "at",
+          "from",
+          "to",
+          "actor",
+          "reason"
+        ]
+      },
+      "AppointmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clinicId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expectedDurationMinutes": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "coordinationNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "transportRequired": {
+            "type": "boolean"
+          },
+          "timeZoneLabel": {
+            "type": "string",
+            "description": "The label a person reads, e.g. \"clinic time\" — not the IANA zone the scheduler computes in. Conflating the two is how a reminder fires at 3am."
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatusChangeDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "patientId",
+          "clinicId",
+          "startsAt",
+          "expectedDurationMinutes",
+          "type",
+          "status",
+          "coordinationNotes",
+          "transportRequired",
+          "timeZoneLabel",
+          "history",
+          "createdAt"
+        ]
+      },
+      "VehicleDto": {
+        "type": "object",
+        "properties": {
+          "make": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "licensePlate": {
+            "type": "string"
+          },
+          "isWheelchairAccessible": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "make",
+          "model",
+          "color",
+          "licensePlate",
+          "isWheelchairAccessible"
+        ]
+      },
+      "DriverDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "First name and last initial only. The family needs to recognise the person at the kerb, not to be able to look them up."
+          },
+          "rating": {
+            "type": "number",
+            "format": "double"
+          },
+          "yearsDriving": {
+            "type": "integer"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/VehicleDto"
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "rating",
+          "yearsDriving",
+          "vehicle"
+        ]
+      },
+      "SurchargeDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "amountCents"
+        ]
+      },
+      "PriceEstimateDto": {
+        "type": "object",
+        "properties": {
+          "ruleVersion": {
+            "type": "string",
+            "description": "The pricing rule that produced these numbers, so a historical charge can always be explained."
+          },
+          "distanceMiles": {
+            "type": "number",
+            "format": "double"
+          },
+          "durationMinutes": {
+            "type": "integer"
+          },
+          "baseCents": {
+            "type": "integer"
+          },
+          "distanceChargeCents": {
+            "type": "integer"
+          },
+          "timeChargeCents": {
+            "type": "integer"
+          },
+          "surcharges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SurchargeDto"
+            }
+          },
+          "totalCents": {
+            "type": "integer"
+          },
+          "minimumApplied": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ruleVersion",
+          "distanceMiles",
+          "durationMinutes",
+          "baseCents",
+          "distanceChargeCents",
+          "timeChargeCents",
+          "surcharges",
+          "totalCents",
+          "minimumApplied"
+        ]
+      },
+      "RideEventDto": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "title": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "isException": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "at",
+          "title",
+          "detail",
+          "isException"
+        ]
+      },
+      "TrackingPointDto": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "accuracyMeters": {
+            "type": "number",
+            "format": "double"
+          },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the device took the reading. Every freshness label ages against this and never against when the server received it — a stale position rendered as a confident moving car manufactures false certainty about a vulnerable person."
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude",
+          "accuracyMeters",
+          "capturedAt"
+        ]
+      },
+      "RideDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "appointmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "roundTripGroupId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "A round trip is two rides sharing this id, not one ride with two legs — each is assigned, tracked, cancelled and priced independently."
+          },
+          "direction": {
+            "type": "string"
+          },
+          "pickup": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "scheduledPickupAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "flexibleReturn": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string"
+          },
+          "wheelchairRequired": {
+            "type": "boolean"
+          },
+          "assistanceRequired": {
+            "type": "boolean"
+          },
+          "notesForDriver": {
+            "type": "string",
+            "nullable": true
+          },
+          "driver": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DriverDto"
+              }
+            ]
+          },
+          "estimate": {
+            "$ref": "#/components/schemas/PriceEstimateDto"
+          },
+          "isDelayed": {
+            "type": "boolean",
+            "description": "A flag rather than a status, so a delay can be raised and cleared without losing the state the ride must return to."
+          },
+          "delayReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RideEventDto"
+            }
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatusChangeDto"
+            }
+          },
+          "lastKnownPosition": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackingPointDto"
+              }
+            ]
+          },
+          "etaMinutes": {
+            "type": "integer",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "simulationActive": {
+            "type": "boolean",
+            "description": "Whether the preview trip runner is currently driving this ride. Removed when the driver app lands."
+          }
+        },
+        "required": [
+          "id",
+          "patientId",
+          "appointmentId",
+          "roundTripGroupId",
+          "direction",
+          "pickup",
+          "destination",
+          "scheduledPickupAt",
+          "flexibleReturn",
+          "status",
+          "wheelchairRequired",
+          "assistanceRequired",
+          "notesForDriver",
+          "driver",
+          "estimate",
+          "isDelayed",
+          "delayReason",
+          "cancellationReason",
+          "events",
+          "history",
+          "lastKnownPosition",
+          "etaMinutes",
+          "createdAt",
+          "simulationActive"
+        ]
+      },
+      "NotificationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "description": "Carries no patient name, clinic name, address or time. A phone on a kitchen table is readable by whoever is in the room."
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "rideId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "appointmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "body",
+          "createdAt",
+          "readAt",
+          "rideId",
+          "appointmentId"
+        ]
+      },
+      "CareStateDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AppUserDto"
+              }
+            ]
+          },
+          "patients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PatientDto"
+            }
+          },
+          "access": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PatientAccessDto"
+            },
+            "description": "Keyed by patient id. Only active grants appear — a revoked grant closes every surface at once, so the patient, their appointments, their rides and their live position all disappear from the next snapshot together."
+          },
+          "clinics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClinicDto"
+            }
+          },
+          "appointments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppointmentDto"
+            }
+          },
+          "rides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RideDto"
+            }
+          },
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationDto"
+            }
+          },
+          "selectedPatientId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "simplifiedMode": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "user",
+          "patients",
+          "access",
+          "clinics",
+          "appointments",
+          "rides",
+          "notifications",
+          "selectedPatientId",
+          "simplifiedMode"
+        ]
+      },
+      "UpdatePreferencesDto": {
+        "type": "object",
+        "properties": {
+          "simplifiedMode": {
+            "type": "boolean",
+            "description": "Larger type, higher contrast, fewer controls."
+          },
+          "selectedPatientId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Persisted per account so a refresh or a new device lands the user back where they were. A selection whose grant has since been revoked is dropped on read rather than stored forever."
+          }
+        }
+      },
+      "DevicePlatform": {
+        "type": "string",
+        "enum": [
+          "android",
+          "ios",
+          "web"
+        ]
+      },
+      "AppTarget": {
+        "type": "string",
+        "enum": [
+          "family",
+          "driver",
+          "ops"
+        ]
+      },
+      "DeviceTokenDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "platform": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DevicePlatform"
+              }
+            ]
+          },
+          "appTarget": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AppTarget"
+              }
+            ]
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "platform",
+          "appTarget",
+          "lastSeenAt"
+        ]
+      },
+      "RegisterDeviceDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The FCM registration token."
+          },
+          "platform": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DevicePlatform"
+              }
+            ]
+          },
+          "appTarget": {
+            "type": "string",
+            "enum": [
+              "family",
+              "driver",
+              "ops"
+            ],
+            "description": "Which install this token belongs to. The driver app is a separate binary (D4) with a separate token set — a family notification arriving on a driver’s phone would be both confusing and a disclosure."
+          }
+        },
+        "required": [
+          "token",
+          "platform"
+        ]
+      },
+      "AddressInput": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Home",
+            "maxLength": 80
+          },
+          "line1": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "line2": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "state": {
+            "type": "string",
+            "example": "NY",
+            "maxLength": 60
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "accessNotes": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Gate code 4417; flat is up one flight, no lift."
+          },
+          "latitude": {
+            "type": "number",
+            "description": "Supply a pin only when the client already has a good one — a dragged marker or an autocomplete pick. Supplying it suppresses server-side geocoding, which is the point: re-geocoding would silently move a marker the user set."
+          },
+          "longitude": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "label",
+          "line1",
+          "city",
+          "state",
+          "postalCode"
+        ]
+      },
+      "AgeBand": {
+        "type": "string",
+        "enum": [
+          "under65",
+          "from65to74",
+          "from75to84",
+          "over85"
+        ],
+        "description": "Coarse by design. There is no date-of-birth field anywhere in this API: name + address + DOB is the classic re-identification triple, and nothing in arranging a car needs it."
+      },
+      "MobilityNeed": {
+        "type": "string",
+        "enum": [
+          "walker",
+          "wheelchair",
+          "cane",
+          "oxygen",
+          "transferAssistance",
+          "escortToDoor",
+          "lowVision",
+          "hardOfHearing",
+          "memorySupport"
+        ],
+        "description": "Operational, not diagnostic. What a driver and a vehicle need to know, and nothing about why."
+      },
+      "EmergencyContactInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "relationship": {
+            "type": "string",
+            "maxLength": 80,
+            "example": "Neighbour"
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "isPrimary": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "relationship",
+          "phone"
+        ]
+      },
+      "RelationshipType": {
+        "type": "string",
+        "enum": [
+          "son",
+          "daughter",
+          "spouse",
+          "sibling",
+          "grandchild",
+          "friend",
+          "professionalCaregiver",
+          "other"
+        ],
+        "description": "The creator’s relationship to the patient, recorded on the access grant this call creates."
+      },
+      "SavePatientDto": {
+        "type": "object",
+        "properties": {
+          "preferredName": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Required. Someone must be greeted by the name they actually use."
+          },
+          "legalName": {
+            "type": "string",
+            "maxLength": 160,
+            "description": "Collected only when a transport provider or clinic needs it to match their records — never required of everyone."
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "homeAddress": {
+            "$ref": "#/components/schemas/AddressInput"
+          },
+          "ageBand": {
+            "description": "Coarse by design. There is no date-of-birth field anywhere in this API: name + address + DOB is the classic re-identification triple, and nothing in arranging a car needs it.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgeBand"
+              }
+            ]
+          },
+          "preferredLanguage": {
+            "type": "string",
+            "maxLength": 80,
+            "example": "English"
+          },
+          "mobilityNeeds": {
+            "type": "array",
+            "description": "Operational, not diagnostic. What a driver and a vehicle need to know, and nothing about why.",
+            "items": {
+              "$ref": "#/components/schemas/MobilityNeed"
+            }
+          },
+          "mobilityNotes": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "emergencyContacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmergencyContactInput"
+            }
+          },
+          "preferredClinicId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relationship": {
+            "description": "The creator’s relationship to the patient, recorded on the access grant this call creates.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RelationshipType"
+              }
+            ]
+          }
+        },
+        "required": [
+          "preferredName",
+          "phone",
+          "homeAddress"
+        ]
+      },
+      "FamilyPermission": {
+        "type": "string",
+        "enum": [
+          "viewProfile",
+          "scheduleAppointments",
+          "requestTransport",
+          "makePayments",
+          "manageAccess"
+        ]
+      },
+      "SetPermissionsDto": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyPermission"
+            }
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "InvitationStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "accepted",
+          "revoked",
+          "expired"
+        ]
+      },
+      "InvitationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "patientId": {
+            "type": "string"
+          },
+          "emailHint": {
+            "type": "string",
+            "example": "a••••@example.com",
+            "description": "Masked. Enough for the invitee to recognise their own address; not enough for the rest of the circle to harvest one."
+          },
+          "relationship": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RelationshipType"
+              }
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyPermission"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InvitationStatus"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "patientId",
+          "emailHint",
+          "relationship",
+          "permissions",
+          "createdAt",
+          "expiresAt",
+          "status"
+        ]
+      },
+      "CreateInvitationDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "The invitation is bound to this address: it can only be accepted by an account signed in as this address, with the address verified."
+          },
+          "relationship": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RelationshipType"
+              }
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "description": "Must include viewProfile, and may not exceed what the inviter holds — nobody hands out more access than they have.",
+            "items": {
+              "$ref": "#/components/schemas/FamilyPermission"
+            }
+          }
+        },
+        "required": [
+          "email",
+          "relationship",
+          "permissions"
+        ]
+      },
+      "SaveClinicDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "address": {
+            "$ref": "#/components/schemas/AddressInput"
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "America/New_York"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "address"
+        ]
+      },
+      "AppointmentType": {
+        "type": "string",
+        "enum": [
+          "primaryCare",
+          "specialist",
+          "imaging",
+          "labWork",
+          "therapy",
+          "dental",
+          "vision",
+          "followUp",
+          "other"
+        ],
+        "description": "Coarse on purpose. \"Specialist\" is enough to plan a visit’s length and transport; the specialty itself is clinical information this API does not accept."
+      },
+      "CreateAppointmentDto": {
+        "type": "object",
+        "properties": {
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clinicId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC. Reminder offsets are measured against the clinic’s local wall time, which the appointment inherits from the clinic record."
+          },
+          "expectedDurationMinutes": {
+            "type": "number",
+            "minimum": 5,
+            "maximum": 1440
+          },
+          "type": {
+            "description": "Coarse on purpose. \"Specialist\" is enough to plan a visit’s length and transport; the specialty itself is clinical information this API does not accept.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AppointmentType"
+              }
+            ]
+          },
+          "coordinationNotes": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Logistics only: \"bring the walker\", \"Dr Osei’s office is on floor 3\". Never symptoms, diagnoses or medication."
+          },
+          "transportRequired": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "patientId",
+          "clinicId",
+          "startsAt",
+          "expectedDurationMinutes",
+          "type"
+        ]
+      },
+      "RescheduleAppointmentDto": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "startsAt"
+        ]
+      },
+      "CancelAppointmentDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 300
+          }
+        }
+      },
+      "RequestTransportDto": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pickupAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "roundTrip": {
+            "type": "boolean",
+            "description": "A round trip produces **two rides** sharing a group id, not one ride with two legs: each is assigned, tracked, cancelled and priced independently."
+          },
+          "notesForDriver": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "appointmentId",
+          "pickupAt",
+          "roundTrip"
+        ]
+      },
+      "CancelRideDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "SetDelayDto": {
+        "type": "object",
+        "properties": {
+          "delayed": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "delayed"
+        ]
+      },
+      "ReportLocationDto": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "accuracyMeters": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the **device** took the reading, not when the server received it. Every freshness label ages against this, so the server judges it before storing."
+          },
+          "etaMinutes": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 600
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude",
+          "capturedAt"
+        ]
+      },
+      "NotificationKind": {
+        "type": "string",
+        "enum": [
+          "appointmentCreated",
+          "appointmentReminder",
+          "appointmentChanged",
+          "appointmentCanceled",
+          "rideRequested",
+          "driverAssigned",
+          "driverEnRoute",
+          "driverArrivingSoon",
+          "driverArrived",
+          "patientPickedUp",
+          "patientArrived",
+          "rideDelayed",
+          "rideCompleted",
+          "rideCanceled",
+          "accessGranted"
+        ]
+      },
+      "NotificationChannel": {
+        "type": "string",
+        "enum": [
+          "inApp",
+          "email",
+          "push"
+        ]
+      },
+      "NotificationPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationKind"
+              }
+            ]
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationChannel"
+              }
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "configurable": {
+            "type": "boolean",
+            "description": "False for in-app. The centre inside the app is the record of what happened; a timeline a user can switch off would lie by omission, and the timeline is what disputes are resolved with."
+          }
+        },
+        "required": [
+          "kind",
+          "channel",
+          "enabled",
+          "configurable"
+        ]
+      },
+      "ConfigurableChannel": {
+        "type": "string",
+        "enum": [
+          "email",
+          "push"
+        ]
+      },
+      "SetNotificationPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationKind"
+              }
+            ]
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfigurableChannel"
+              }
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "channel",
+          "enabled"
+        ]
+      },
+      "AcceptInvitationDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The single-use token from the invitation link."
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "example": "Ada Okonkwo",
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "example": "ada@example.com",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 256
+          },
+          "acceptedTerms": {
+            "type": "boolean",
+            "description": "Records a terms and privacy consent. Consent is an explicit act, never inferred from use of the app."
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "America/New_York",
+            "description": "IANA zone. Reminder scheduling is computed in it, so \"the evening before\" means the user’s evening."
+          }
+        },
+        "required": [
+          "fullName",
+          "email",
+          "password"
+        ]
+      },
+      "SessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Short-lived JWT. Carries the user id, a token version and the session id — never patient ids or a permission list, which are resolved server-side per request so revocation takes effect on the next call."
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Opaque, single-use, rotated on every refresh. Store it in the platform keychain, never in shared preferences."
+          },
+          "expiresInSeconds": {
+            "type": "integer"
+          },
+          "state": {
+            "description": "The whole snapshot, so the app has everything it needs to render its first screen without a second round trip. For a new account this is genuinely empty — the first-run experience should be the one a real user gets, not a seeded one.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CareStateDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "expiresInSeconds",
+          "state"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          },
+          "mfaCode": {
+            "type": "string",
+            "description": "Six-digit authenticator code, or a recovery code. Required only for accounts with two-factor authentication confirmed."
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RefreshDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "TokenPairDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Short-lived JWT. Carries the user id, a token version and the session id — never patient ids or a permission list, which are resolved server-side per request so revocation takes effect on the next call."
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Opaque, single-use, rotated on every refresh. Store it in the platform keychain, never in shared preferences."
+          },
+          "expiresInSeconds": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "expiresInSeconds"
+        ]
+      },
+      "LogoutDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          },
+          "allDevices": {
+            "type": "boolean",
+            "description": "Revoke every session for this account. Also raises the token version, so access tokens already issued stop working immediately rather than at their next expiry."
+          }
+        }
+      },
+      "TokenDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The single-use token from the emailed link."
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "EmailOnlyDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The single-use token from the emailed link."
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "SessionSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The refresh-token family id. Stable for the life of one sign-in, which is what makes it the thing a person recognises and revokes — individual tokens rotate every few minutes."
+          },
+          "deviceLabel": {
+            "type": "string",
+            "example": "iPhone · Safari"
+          },
+          "isCurrent": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "deviceLabel",
+          "isCurrent",
+          "createdAt",
+          "lastUsedAt",
+          "expiresAt"
+        ]
+      },
+      "MfaStatusDto": {
+        "type": "object",
+        "properties": {
+          "enrolled": {
+            "type": "boolean"
+          },
+          "confirmedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "recoveryCodesRemaining": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enrolled",
+          "confirmedAt",
+          "recoveryCodesRemaining"
+        ]
+      },
+      "MfaEnrolmentDto": {
+        "type": "object",
+        "properties": {
+          "otpauthUri": {
+            "type": "string",
+            "description": "Rendered as a QR code by the client. Returned exactly once — it cannot be read back, because a re-readable second factor is not one."
+          },
+          "secretBase32": {
+            "type": "string",
+            "description": "For manual entry when there is no camera."
+          },
+          "recoveryCodes": {
+            "description": "Shown once, stored only as digests. Support cannot read them back, which is the point — a recoverable recovery code is a social-engineering path.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "otpauthUri",
+          "secretBase32",
+          "recoveryCodes"
+        ]
+      },
+      "MfaCodeDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Six-digit authenticator code, or a recovery code."
+          }
+        },
+        "required": [
+          "code"
+        ]
+      }
+    }
+  }
+}

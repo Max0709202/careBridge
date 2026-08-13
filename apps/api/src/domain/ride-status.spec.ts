@@ -132,9 +132,7 @@ describe('ride state machine', () => {
     expect(() => assertRideTransition('completed', 'requested')).toThrow(
       InvalidTransitionError,
     );
-    expect(() =>
-      assertRideTransition('requested', 'awaitingAssignment'),
-    ).not.toThrow();
+    expect(() => assertRideTransition('requested', 'awaitingAssignment')).not.toThrow();
   });
 
   it('has no `delayed` status, because delay is a flag', () => {

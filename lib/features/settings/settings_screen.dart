@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../state/providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/verification_banner.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -23,6 +24,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const VerificationBanner(),
                 if (user != null)
                   AppCard(
                     child: Row(
@@ -132,6 +134,36 @@ class SettingsScreen extends ConsumerWidget {
                   onPressed: () => context.push('/patients/new'),
                   icon: const Icon(Icons.person_add_alt_1_outlined),
                   label: const Text('Add someone'),
+                ),
+
+                const SizedBox(height: AppSpacing.lg),
+                const SectionHeader('Your account'),
+                AppCard(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.xs,
+                  ),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.security_outlined),
+                        title: const Text('Account security'),
+                        subtitle: const Text(
+                          'Where you are signed in, and your password',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/settings/security'),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.notifications_outlined),
+                        title: const Text('Notifications'),
+                        subtitle: const Text(
+                          'Which events reach you by email and push',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/settings/notifications'),
+                      ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: AppSpacing.lg),

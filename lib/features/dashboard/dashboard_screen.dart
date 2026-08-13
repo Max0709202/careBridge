@@ -10,6 +10,7 @@ import '../../domain/permissions.dart';
 import '../../domain/ride_status.dart';
 import '../../state/providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/verification_banner.dart';
 import '../../widgets/status_pill.dart';
 import '../patients/patient_switcher.dart';
 
@@ -68,6 +69,7 @@ class DashboardScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const VerificationBanner(),
                   const PatientSwitcher(),
                   const SizedBox(height: AppSpacing.lg),
                   if (activeRide != null) ...[
