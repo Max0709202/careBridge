@@ -19,7 +19,7 @@ help: ## Show this help.
 .PHONY: install
 install: ## Install TypeScript and Dart dependencies.
 	$(PNPM) install
-	-$(MELOS) bootstrap
+	$(MELOS) bootstrap
 
 .PHONY: up
 up: ## Start Postgres, Redis, Mailpit and MinIO.
@@ -67,11 +67,11 @@ dart-client: openapi ## Regenerate the Dart client from the OpenAPI document.
 .PHONY: format
 format: ## Check formatting (does not rewrite).
 	$(PNPM) run format
-	@# The app is not yet `dart format` clean — it predates the check, and the
-	@# Dart 3.12 formatter reflows enough that running it would bury a feature
-	@# diff under forty files of whitespace. Formatting it is worth doing as
-	@# its own change; until then the gate covers the packages melos owns.
-	-$(MELOS) run format
+	@# The app is the pub workspace root and therefore not a melos member, so
+	@# it is checked directly. Fails rather than rewrites: a gate that edits
+	@# your tree tells you nothing about the commit you were about to push.
+	dart format --output=none --set-exit-if-changed lib test
+	$(MELOS) run format
 
 .PHONY: lint
 lint: ## ESLint over the API, dart analyze over the Dart packages.
@@ -79,7 +79,7 @@ lint: ## ESLint over the API, dart analyze over the Dart packages.
 	@# The family app is the pub *workspace root*, and a root is never a member
 	@# of its own workspace — so melos does not see it. Driven directly here.
 	flutter analyze
-	-$(MELOS) run analyze
+	$(MELOS) run analyze
 
 .PHONY: typecheck
 typecheck: ## TypeScript, no emit.
@@ -89,7 +89,7 @@ typecheck: ## TypeScript, no emit.
 test: ## Unit tests.
 	$(PNPM) run test
 	flutter test
-	-$(MELOS) run test
+	$(MELOS) run test
 
 .PHONY: test-integration
 test-integration: ## Integration tests against containerised Postgres and Redis.
