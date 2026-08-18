@@ -1,4 +1,11 @@
-import { base32Decode, base32Encode, generateTotp, totpUri, verifyTotp } from './totp';
+import {
+  base32Decode,
+  base32Encode,
+  constantTimeEquals,
+  generateTotp,
+  totpUri,
+  verifyTotp,
+} from './totp';
 
 /**
  * The RFC 6238 Appendix B secret: the ASCII string "12345678901234567890".
@@ -97,5 +104,15 @@ describe('otpauth URI', () => {
     expect(uri).toContain('algorithm=SHA1');
     expect(uri).toContain('digits=6');
     expect(uri).toContain('period=30');
+  });
+
+  it('compares codes of different lengths without throwing', () => {
+    // timingSafeEqual throws on a length mismatch, and a submitted code is
+    // whatever the user typed. The length check has to come first or a
+    // four-digit entry is a 500 rather than a rejection.
+    expect(constantTimeEquals('123456', '1234')).toBe(false);
+    expect(constantTimeEquals('123456', '123456')).toBe(true);
+    expect(constantTimeEquals('123456', '654321')).toBe(false);
+    expect(constantTimeEquals('', '')).toBe(true);
   });
 });

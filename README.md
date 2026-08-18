@@ -65,6 +65,8 @@ make check
 
 Format, lint, typecheck, unit tests and the API-contract drift check — exactly
 what CI runs, in CI's order. If the two ever diverge, CI is what is wrong.
+Nothing in it is allowed to fail silently: the unit run enforces coverage
+floors on both sides, and the pure rules in `domain/` are held at 100%.
 
 ```bash
 make test-integration        # 72 tests, real app against real Postgres
@@ -73,7 +75,7 @@ make test-integration        # 72 tests, real app against real Postgres
 Individually:
 
 ```bash
-pnpm --filter @carebridge/api test          # 110 unit tests
+pnpm --filter @carebridge/api test          # 141 unit tests, with coverage floors
 pnpm --filter @carebridge/api exec eslint . # boundaries, no-console, no process.env
 flutter analyze && flutter test             # the app
 ```

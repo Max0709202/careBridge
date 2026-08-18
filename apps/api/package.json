@@ -13,7 +13,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "seed": "ts-node prisma/seed.ts",
     "seed:prod": "node dist/prisma/seed.js",
-    "test": "jest",
+    "test": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -66,18 +66,5 @@
     "ts-jest": "29.4.12",
     "ts-node": "10.9.2",
     "typescript": "5.9.3"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "testEnvironment": "node"
   }
 }

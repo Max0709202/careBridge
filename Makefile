@@ -86,9 +86,13 @@ typecheck: ## TypeScript, no emit.
 	$(PNPM) run typecheck
 
 .PHONY: test
-test: ## Unit tests.
+test: ## Unit tests, with the coverage floors enforced.
+	@# `pnpm test` runs jest with --coverage: the thresholds in
+	@# apps/api/jest.config.js only apply when coverage is collected, and a
+	@# gate you have to remember a flag for is not a gate.
 	$(PNPM) run test
-	flutter test
+	flutter test --coverage
+	node scripts/check-dart-coverage.mjs
 	$(MELOS) run test
 
 .PHONY: test-integration

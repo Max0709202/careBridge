@@ -172,4 +172,17 @@ describe('zone handling', () => {
     });
     expect(reminders).toHaveLength(1);
   });
+
+  it('schedules nothing for an appointment whose start is not a real instant', () => {
+    // A NaN Date reaches Luxon as an invalid DateTime, and every arithmetic
+    // result from it is invalid too. Returning nothing is right: a reminder at
+    // an invalid time would either never fire or fire immediately.
+    const reminders = scheduleReminders({
+      startsAt: new Date('not a date'),
+      timeZone: 'America/New_York',
+      offsetMinutes: [1440, 120],
+      now: appointmentAt('2026-09-01T09:00'),
+    });
+    expect(reminders).toEqual([]);
+  });
 });
