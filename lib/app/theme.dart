@@ -80,6 +80,11 @@ class AppTheme {
       colorScheme: scheme,
       useMaterial3: true,
       visualDensity: VisualDensity.standard,
+      // The bundled family, not the engine's default of the same name — see
+      // the note in pubspec.yaml. Naming it here is what makes every text
+      // style resolve to an asset rather than to a font the web engine
+      // downloads from a third party.
+      fontFamily: 'Roboto',
     );
 
     final text = base.textTheme.copyWith(

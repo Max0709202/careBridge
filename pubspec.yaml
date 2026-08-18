@@ -61,6 +61,33 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # Roboto is bundled rather than left to the web engine, which otherwise
+  # fetches it from fonts.gstatic.com on first paint. Three consequences, in
+  # ascending order of how much they matter:
+  #
+  #   1. The app makes no third-party request, so the Content-Security-Policy
+  #      in infrastructure/nginx/security-headers.conf can be 'self' throughout
+  #      — an injected script has nowhere to send what it reads.
+  #   2. Nobody outside this deployment learns that a given IP opened a
+  #      medical-appointment app, or when. That request is unauthenticated and
+  #      uncacheable-by-us, and it is made before the user has consented to
+  #      anything.
+  #   3. CanvasKit has no system fonts to fall back on. If that download fails
+  #      — offline, blocked, or someone else's outage — the app renders every
+  #      screen with no text at all. Verified: it renders a blank sign-in form.
+  #
+  # 400/500/700 are the weights the theme asks for; w600 resolves to the
+  # nearest of them. Licence alongside the files.
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+
 # ─── melos ────────────────────────────────────────────────────────────────────
 #
 # Scripts over the Dart packages. `make` is the single entry point that runs

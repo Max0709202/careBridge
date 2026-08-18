@@ -192,7 +192,8 @@ lib/                          Flutter — family + patient  (the pub workspace r
                    settings (account security, two-factor, notification
                    preferences)
 
-infrastructure/nginx/         same-origin proxy + SPA fallback
+infrastructure/nginx/         same-origin proxy, SPA fallback, CSP and the
+                              other response headers the app is served with
 ```
 
 Dependencies point downward on both sides: `domain/` depends on nothing but
@@ -284,6 +285,19 @@ to the invited email address, and acceptable only by an account that has
 Nobody may hand out access broader than they hold. FOUNDATION flags this as an
 account-takeover vector; what it grants is standing access to a vulnerable
 person's home address and daily movements.
+
+**The app origin makes no third-party request, so its policy is `'self'`
+throughout.** CanvasKit is built into the image rather than pulled from gstatic
+at runtime, and Roboto is a bundled asset rather than the copy the web engine
+fetches from `fonts.gstatic.com` on first paint. What that buys is a
+Content-Security-Policy with no vendor in it: `connect-src 'self'` means a
+script injected into this page has nowhere to send what it reads. It also
+removes an unauthenticated request to a third party, made before the user has
+agreed to anything, that says an IP address opened a medical-appointment app
+and when. And it is what makes the app survive a bad network: CanvasKit has no
+system font to fall back on, so a blocked font download renders every screen
+with no text at all — verified, before the font was bundled, as a sign-in form
+with three empty boxes.
 
 **The redaction denylist is applied at the logger, not at call sites.** A
 denylist enforced by remembering to scrub before each call fails the first time
