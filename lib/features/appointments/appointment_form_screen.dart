@@ -33,7 +33,8 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
   void initState() {
     super.initState();
     final state = ref.read(careProvider);
-    _clinicId = state.selectedPatient?.preferredClinicId ??
+    _clinicId =
+        state.selectedPatient?.preferredClinicId ??
         (state.clinics.isNotEmpty ? state.clinics.first.id : null);
   }
 
@@ -90,14 +91,17 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
     }
 
     try {
-      await ref.read(careProvider.notifier).createAppointment(
+      await ref
+          .read(careProvider.notifier)
+          .createAppointment(
             patientId: patient.id,
             clinicId: _clinicId!,
             startsAt: startsAt,
             expectedDuration: _duration,
             type: _type,
-            coordinationNotes:
-                _notes.text.trim().isEmpty ? null : _notes.text.trim(),
+            coordinationNotes: _notes.text.trim().isEmpty
+                ? null
+                : _notes.text.trim(),
             transportRequired: _transportRequired,
           );
       if (!mounted) return;
@@ -215,7 +219,10 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
                     DropdownMenuItem(value: 30, child: Text('30 minutes')),
                     DropdownMenuItem(value: 45, child: Text('45 minutes')),
                     DropdownMenuItem(value: 60, child: Text('1 hour')),
-                    DropdownMenuItem(value: 90, child: Text('1 hour 30 minutes')),
+                    DropdownMenuItem(
+                      value: 90,
+                      child: Text('1 hour 30 minutes'),
+                    ),
                     DropdownMenuItem(value: 120, child: Text('2 hours')),
                   ],
                   onChanged: (value) => setState(
@@ -226,7 +233,8 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 const SectionHeader(
                   'What kind of visit',
-                  subtitle: 'Kept deliberately broad — CareBridge does not hold '
+                  subtitle:
+                      'Kept deliberately broad — CareBridge does not hold '
                       'medical details.',
                 ),
                 DropdownButtonFormField<AppointmentType>(
@@ -246,7 +254,8 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
                   maxLines: 3,
                   decoration: const InputDecoration(
                     labelText: 'Notes for coordination (optional)',
-                    helperText: 'Practical reminders only — what to bring, '
+                    helperText:
+                        'Practical reminders only — what to bring, '
                         'which floor. No symptoms or medication.',
                   ),
                 ),

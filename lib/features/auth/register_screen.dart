@@ -39,7 +39,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
     try {
-      ref.read(careProvider.notifier).register(
+      ref
+          .read(careProvider.notifier)
+          .register(
             fullName: _name.text,
             email: _email.text,
             password: _password.text,
@@ -80,8 +82,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     decoration: const InputDecoration(labelText: 'Your name'),
                     validator: (value) =>
                         (value == null || value.trim().isEmpty)
-                            ? 'Enter your name.'
-                            : null,
+                        ? 'Enter your name.'
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   TextFormField(

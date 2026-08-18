@@ -24,7 +24,10 @@ void main() {
 
     test('rounds once, at multiplication', () {
       expect((const Money(225) * 2.4).cents, 540);
-      expect((const Money(225) * 0.5).cents, 113); // 112.5 rounds away from zero
+      expect(
+        (const Money(225) * 0.5).cents,
+        113,
+      ); // 112.5 rounds away from zero
     });
   });
 

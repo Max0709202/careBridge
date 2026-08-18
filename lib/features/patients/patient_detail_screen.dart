@@ -212,7 +212,8 @@ class PatientDetailScreen extends ConsumerWidget {
                     ),
                   ),
               const SizedBox(height: AppSpacing.lg),
-              if (access != null) _AccessSection(patientId: patientId, access: access),
+              if (access != null)
+                _AccessSection(patientId: patientId, access: access),
               const SizedBox(height: AppSpacing.xl),
             ],
           ),

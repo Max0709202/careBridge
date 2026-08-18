@@ -50,9 +50,9 @@ class StatusPill extends StatelessWidget {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: ink,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: ink,
+                  fontWeight: FontWeight.w700,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -67,103 +67,99 @@ enum StatusEmphasis { filled, outlined }
 
 typedef StatusVisual = ({IconData icon, Color ink});
 
-StatusVisual rideStatusVisual(BuildContext context, RideStatus status) =>
-    switch (status) {
-      RideStatus.draft => (icon: Icons.edit_note, ink: context.neutralInk),
-      RideStatus.requested => (
-          icon: Icons.hourglass_empty,
-          ink: context.infoInk,
-        ),
-      RideStatus.awaitingAssignment => (
-          icon: Icons.search,
-          ink: context.infoInk,
-        ),
-      RideStatus.assigned => (
-          icon: Icons.person_pin_circle_outlined,
-          ink: context.infoInk,
-        ),
-      RideStatus.driverAccepted => (
-          icon: Icons.check_circle_outline,
-          ink: context.infoInk,
-        ),
-      RideStatus.driverEnRoute => (
-          icon: Icons.directions_car_filled_outlined,
-          ink: context.infoInk,
-        ),
-      RideStatus.driverArrived => (
-          icon: Icons.pin_drop_outlined,
-          ink: context.cautionInk,
-        ),
-      RideStatus.passengerOnboard => (
-          icon: Icons.event_seat_outlined,
-          ink: context.positiveInk,
-        ),
-      RideStatus.inProgress => (
-          icon: Icons.navigation_outlined,
-          ink: context.positiveInk,
-        ),
-      RideStatus.arrivedAtDestination => (
-          icon: Icons.local_hospital_outlined,
-          ink: context.positiveInk,
-        ),
-      RideStatus.completed => (
-          icon: Icons.task_alt,
-          ink: context.positiveInk,
-        ),
-      RideStatus.canceled => (icon: Icons.cancel_outlined, ink: context.neutralInk),
-      RideStatus.noShow => (
-          icon: Icons.error_outline,
-          ink: context.criticalInk,
-        ),
-      RideStatus.reassignmentRequired => (
-          icon: Icons.sync_problem_outlined,
-          ink: context.criticalInk,
-        ),
-    };
+StatusVisual rideStatusVisual(
+  BuildContext context,
+  RideStatus status,
+) => switch (status) {
+  RideStatus.draft => (icon: Icons.edit_note, ink: context.neutralInk),
+  RideStatus.requested => (icon: Icons.hourglass_empty, ink: context.infoInk),
+  RideStatus.awaitingAssignment => (icon: Icons.search, ink: context.infoInk),
+  RideStatus.assigned => (
+    icon: Icons.person_pin_circle_outlined,
+    ink: context.infoInk,
+  ),
+  RideStatus.driverAccepted => (
+    icon: Icons.check_circle_outline,
+    ink: context.infoInk,
+  ),
+  RideStatus.driverEnRoute => (
+    icon: Icons.directions_car_filled_outlined,
+    ink: context.infoInk,
+  ),
+  RideStatus.driverArrived => (
+    icon: Icons.pin_drop_outlined,
+    ink: context.cautionInk,
+  ),
+  RideStatus.passengerOnboard => (
+    icon: Icons.event_seat_outlined,
+    ink: context.positiveInk,
+  ),
+  RideStatus.inProgress => (
+    icon: Icons.navigation_outlined,
+    ink: context.positiveInk,
+  ),
+  RideStatus.arrivedAtDestination => (
+    icon: Icons.local_hospital_outlined,
+    ink: context.positiveInk,
+  ),
+  RideStatus.completed => (icon: Icons.task_alt, ink: context.positiveInk),
+  RideStatus.canceled => (icon: Icons.cancel_outlined, ink: context.neutralInk),
+  RideStatus.noShow => (icon: Icons.error_outline, ink: context.criticalInk),
+  RideStatus.reassignmentRequired => (
+    icon: Icons.sync_problem_outlined,
+    ink: context.criticalInk,
+  ),
+};
 
 StatusVisual appointmentStatusVisual(
   BuildContext context,
   AppointmentStatus status,
-) =>
-    switch (status) {
-      AppointmentStatus.draft => (icon: Icons.edit_note, ink: context.neutralInk),
-      AppointmentStatus.scheduled => (
-          icon: Icons.event_outlined,
-          ink: context.infoInk,
-        ),
-      AppointmentStatus.confirmed => (
-          icon: Icons.event_available_outlined,
-          ink: context.infoInk,
-        ),
-      AppointmentStatus.patientPreparing => (
-          icon: Icons.access_time,
-          ink: context.cautionInk,
-        ),
-      AppointmentStatus.transportationScheduled => (
-          icon: Icons.directions_car_outlined,
-          ink: context.infoInk,
-        ),
-      AppointmentStatus.patientEnRoute => (
-          icon: Icons.navigation_outlined,
-          ink: context.positiveInk,
-        ),
-      AppointmentStatus.patientArrived => (
-          icon: Icons.local_hospital_outlined,
-          ink: context.positiveInk,
-        ),
-      AppointmentStatus.completed => (icon: Icons.task_alt, ink: context.positiveInk),
-      AppointmentStatus.canceled => (
-          icon: Icons.cancel_outlined,
-          ink: context.neutralInk,
-        ),
-      AppointmentStatus.missed => (
-          icon: Icons.error_outline,
-          ink: context.criticalInk,
-        ),
-    };
+) => switch (status) {
+  AppointmentStatus.draft => (icon: Icons.edit_note, ink: context.neutralInk),
+  AppointmentStatus.scheduled => (
+    icon: Icons.event_outlined,
+    ink: context.infoInk,
+  ),
+  AppointmentStatus.confirmed => (
+    icon: Icons.event_available_outlined,
+    ink: context.infoInk,
+  ),
+  AppointmentStatus.patientPreparing => (
+    icon: Icons.access_time,
+    ink: context.cautionInk,
+  ),
+  AppointmentStatus.transportationScheduled => (
+    icon: Icons.directions_car_outlined,
+    ink: context.infoInk,
+  ),
+  AppointmentStatus.patientEnRoute => (
+    icon: Icons.navigation_outlined,
+    ink: context.positiveInk,
+  ),
+  AppointmentStatus.patientArrived => (
+    icon: Icons.local_hospital_outlined,
+    ink: context.positiveInk,
+  ),
+  AppointmentStatus.completed => (
+    icon: Icons.task_alt,
+    ink: context.positiveInk,
+  ),
+  AppointmentStatus.canceled => (
+    icon: Icons.cancel_outlined,
+    ink: context.neutralInk,
+  ),
+  AppointmentStatus.missed => (
+    icon: Icons.error_outline,
+    ink: context.criticalInk,
+  ),
+};
 
 class RideStatusPill extends StatelessWidget {
-  const RideStatusPill(this.status, {this.emphasis = StatusEmphasis.filled, super.key});
+  const RideStatusPill(
+    this.status, {
+    this.emphasis = StatusEmphasis.filled,
+    super.key,
+  });
 
   final RideStatus status;
   final StatusEmphasis emphasis;

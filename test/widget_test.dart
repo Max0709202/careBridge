@@ -22,12 +22,12 @@ void main() {
   /// The app wired to a canned server. `tokenStoreProvider` is overridden too:
   /// there is no secure-storage platform channel under the test binding.
   Widget appWith(FixedClock clock) => ProviderScope(
-        overrides: [
-          clockProvider.overrideWithValue(clock),
-          careApiProvider.overrideWith((ref) => fake.build()),
-        ],
-        child: const CareBridgeApp(),
-      );
+    overrides: [
+      clockProvider.overrideWithValue(clock),
+      careApiProvider.overrideWith((ref) => fake.build()),
+    ],
+    child: const CareBridgeApp(),
+  );
 
   testWidgets('opens on the sign-in screen when signed out', (tester) async {
     await tester.pumpWidget(appWith(FixedClock(now)));
@@ -42,8 +42,9 @@ void main() {
     expect(find.textContaining('Credentials are not checked'), findsNothing);
   });
 
-  testWidgets('signing in reaches the server and lands on the dashboard',
-      (tester) async {
+  testWidgets('signing in reaches the server and lands on the dashboard', (
+    tester,
+  ) async {
     await tester.pumpWidget(appWith(FixedClock(now)));
     await tester.pumpAndSettle();
 
@@ -55,8 +56,9 @@ void main() {
     expect(find.text('Next appointment'), findsOneWidget);
   });
 
-  testWidgets('the dashboard surfaces the active ride and its status',
-      (tester) async {
+  testWidgets('the dashboard surfaces the active ride and its status', (
+    tester,
+  ) async {
     await tester.pumpWidget(appWith(FixedClock(now)));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
@@ -65,8 +67,9 @@ void main() {
     expect(find.text('Finding a driver'), findsWidgets);
   });
 
-  testWidgets('a new account starts empty and asks for a profile',
-      (tester) async {
+  testWidgets('a new account starts empty and asks for a profile', (
+    tester,
+  ) async {
     await tester.pumpWidget(appWith(FixedClock(now)));
     await tester.pumpAndSettle();
 
@@ -104,8 +107,9 @@ void main() {
     expect(find.text('Add the person you care for'), findsOneWidget);
   });
 
-  testWidgets('a signed-out user is redirected away from a deep link',
-      (tester) async {
+  testWidgets('a signed-out user is redirected away from a deep link', (
+    tester,
+  ) async {
     await tester.pumpWidget(appWith(FixedClock(now)));
     await tester.pumpAndSettle();
 
@@ -116,8 +120,9 @@ void main() {
   });
 
   group('status pill', () {
-    testWidgets('carries an icon and a word, never colour alone',
-        (tester) async {
+    testWidgets('carries an icon and a word, never colour alone', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -136,8 +141,9 @@ void main() {
   });
 
   group('ride timeline', () {
-    testWidgets('shows an empty message rather than an empty box',
-        (tester) async {
+    testWidgets('shows an empty message rather than an empty box', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(body: RideTimeline(events: [])),
@@ -191,8 +197,9 @@ void main() {
 
   // ─── the verification banner ────────────────────────────────────────────
 
-  testWidgets('prompts an unverified account to confirm its address',
-      (tester) async {
+  testWidgets('prompts an unverified account to confirm its address', (
+    tester,
+  ) async {
     // Registration deliberately does not block on verification — locking a
     // family out of a ride they have already booked because an email went to
     // spam is the worse outcome. Without this prompt, though, a user meets the
@@ -207,8 +214,9 @@ void main() {
     expect(find.text('Send the link again'), findsOneWidget);
   });
 
-  testWidgets('the banner says nothing once the address is confirmed',
-      (tester) async {
+  testWidgets('the banner says nothing once the address is confirmed', (
+    tester,
+  ) async {
     // It renders an empty box rather than a dismissible state, which is what
     // makes it safe to leave at the top of any screen.
     final verified = Map<String, dynamic>.from(snapshotJson);

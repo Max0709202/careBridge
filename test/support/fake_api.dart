@@ -22,7 +22,7 @@ import 'package:http/testing.dart';
 /// ```
 class FakeApi {
   FakeApi({Map<String, dynamic>? snapshot})
-      : _snapshot = snapshot ?? loadSnapshotFixture();
+    : _snapshot = snapshot ?? loadSnapshotFixture();
 
   final Map<String, dynamic> _snapshot;
 
@@ -32,25 +32,25 @@ class FakeApi {
 
   /// The state a freshly registered account gets: genuinely empty.
   static Map<String, dynamic> emptySnapshot(Map<String, dynamic> template) => {
-        'user': {
-          'id': '00000000-0000-4000-8000-0000000000ff',
-          'email': 'jordan@example.com',
-          'fullName': 'Jordan Reyes',
-          'phone': null,
-          // A brand-new account has not confirmed its address yet, which is
-          // exactly the state the verification banner exists for.
-          'emailVerifiedAt': null,
-          'timeZone': 'America/New_York',
-        },
-        'patients': <dynamic>[],
-        'access': <String, dynamic>{},
-        'clinics': template['clinics'],
-        'appointments': <dynamic>[],
-        'rides': <dynamic>[],
-        'notifications': <dynamic>[],
-        'selectedPatientId': null,
-        'simplifiedMode': false,
-      };
+    'user': {
+      'id': '00000000-0000-4000-8000-0000000000ff',
+      'email': 'jordan@example.com',
+      'fullName': 'Jordan Reyes',
+      'phone': null,
+      // A brand-new account has not confirmed its address yet, which is
+      // exactly the state the verification banner exists for.
+      'emailVerifiedAt': null,
+      'timeZone': 'America/New_York',
+    },
+    'patients': <dynamic>[],
+    'access': <String, dynamic>{},
+    'clinics': template['clinics'],
+    'appointments': <dynamic>[],
+    'rides': <dynamic>[],
+    'notifications': <dynamic>[],
+    'selectedPatientId': null,
+    'simplifiedMode': false,
+  };
 
   CareApi build() {
     final client = MockClient((request) async {
@@ -91,10 +91,10 @@ class FakeApi {
   }
 
   http.Response _json(Object body) => http.Response(
-        jsonEncode(body),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
+    jsonEncode(body),
+    200,
+    headers: {'content-type': 'application/json'},
+  );
 }
 
 Map<String, dynamic> loadSnapshotFixture() {

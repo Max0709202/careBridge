@@ -106,9 +106,7 @@ class _TwoFactorScreenState extends ConsumerState<TwoFactorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Two-factor authentication')),
-      body: ListView(
-        children: [ScreenBody(child: _body(Theme.of(context)))],
-      ),
+      body: ListView(children: [ScreenBody(child: _body(Theme.of(context)))]),
     );
   }
 
@@ -139,168 +137,167 @@ class _TwoFactorScreenState extends ConsumerState<TwoFactorScreen> {
   }
 
   Widget _offState(ThemeData theme) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Off', style: theme.textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'With two-factor authentication on, signing in needs your '
-                  'password and a six-digit code from an app on your phone. '
-                  'Someone who learns your password still cannot get in.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                FilledButton.icon(
-                  onPressed: _busy ? null : _begin,
-                  icon: const Icon(Icons.shield_outlined),
-                  label: const Text('Set it up'),
-                ),
-              ],
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Off', style: theme.textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'With two-factor authentication on, signing in needs your '
+              'password and a six-digit code from an app on your phone. '
+              'Someone who learns your password still cannot get in.',
+              style: theme.textTheme.bodyMedium,
             ),
-          ),
-        ],
-      );
+            const SizedBox(height: AppSpacing.md),
+            FilledButton.icon(
+              onPressed: _busy ? null : _begin,
+              icon: const Icon(Icons.shield_outlined),
+              label: const Text('Set it up'),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 
   Widget _onState(ThemeData theme, MfaStatusDto status) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.verified_user, color: theme.colorScheme.primary),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text('On', style: theme.textTheme.titleMedium),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  '${status.recoveryCodesRemaining} recovery codes left. Each '
-                  'one works once, and they are the only way in if you lose '
-                  'your phone.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                OutlinedButton.icon(
-                  onPressed: _busy ? null : _disable,
-                  icon: const Icon(Icons.shield_outlined),
-                  label: const Text('Turn off'),
-                ),
+                Icon(Icons.verified_user, color: theme.colorScheme.primary),
+                const SizedBox(width: AppSpacing.sm),
+                Text('On', style: theme.textTheme.titleMedium),
               ],
             ),
-          ),
-        ],
-      );
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              '${status.recoveryCodesRemaining} recovery codes left. Each '
+              'one works once, and they are the only way in if you lose '
+              'your phone.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            OutlinedButton.icon(
+              onPressed: _busy ? null : _disable,
+              icon: const Icon(Icons.shield_outlined),
+              label: const Text('Turn off'),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 
   Widget _confirmStep(ThemeData theme, MfaEnrolmentDto enrolment) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SectionHeader('1 · Add it to your authenticator app'),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Type this key into an authenticator app — Google '
-                  'Authenticator, 1Password, or whatever you already use.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SelectableText(
-                  _grouped(enrolment.secretBase32),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontFamily: 'monospace',
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                TextButton.icon(
-                  onPressed: () async {
-                    await Clipboard.setData(
-                      ClipboardData(text: enrolment.secretBase32),
-                    );
-                    if (mounted) {
-                      showConfirmationBanner(context, 'Key copied.');
-                    }
-                  },
-                  icon: const Icon(Icons.copy_all_outlined),
-                  label: const Text('Copy the key'),
-                ),
-              ],
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const SectionHeader('1 · Add it to your authenticator app'),
+      AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Type this key into an authenticator app — Google '
+              'Authenticator, 1Password, or whatever you already use.',
+              style: theme.textTheme.bodyMedium,
             ),
-          ),
+            const SizedBox(height: AppSpacing.md),
+            SelectableText(
+              _grouped(enrolment.secretBase32),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontFamily: 'monospace',
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(
+                  ClipboardData(text: enrolment.secretBase32),
+                );
+                if (mounted) {
+                  showConfirmationBanner(context, 'Key copied.');
+                }
+              },
+              icon: const Icon(Icons.copy_all_outlined),
+              label: const Text('Copy the key'),
+            ),
+          ],
+        ),
+      ),
 
-          const SizedBox(height: AppSpacing.lg),
-          const SectionHeader('2 · Save your recovery codes'),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Shown once, and never again — not even to support. Put them '
-                  'somewhere that is not your phone.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SelectableText(
-                  enrolment.recoveryCodes.join('\n'),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ],
+      const SizedBox(height: AppSpacing.lg),
+      const SectionHeader('2 · Save your recovery codes'),
+      AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Shown once, and never again — not even to support. Put them '
+              'somewhere that is not your phone.',
+              style: theme.textTheme.bodyMedium,
             ),
-          ),
+            const SizedBox(height: AppSpacing.md),
+            SelectableText(
+              enrolment.recoveryCodes.join('\n'),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        ),
+      ),
 
-          const SizedBox(height: AppSpacing.lg),
-          const SectionHeader('3 · Confirm it works'),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Nothing changes until a code from your app is accepted. '
-                  'That is deliberate — turning it on before checking would '
-                  'lock you out if the app did not take the key.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextField(
-                  controller: _code,
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  autofillHints: const [AutofillHints.oneTimeCode],
-                  decoration: const InputDecoration(
-                    labelText: 'Six-digit code',
-                    counterText: '',
-                  ),
-                  onSubmitted: (_) => _busy ? null : _confirm(),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                FilledButton(
-                  onPressed: _busy ? null : _confirm,
-                  child: Text(_busy ? 'Checking…' : 'Turn on two-factor'),
-                ),
-                TextButton(
-                  onPressed:
-                      _busy ? null : () => setState(() => _enrolment = null),
-                  child: const Text('Cancel'),
-                ),
-              ],
+      const SizedBox(height: AppSpacing.lg),
+      const SectionHeader('3 · Confirm it works'),
+      AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Nothing changes until a code from your app is accepted. '
+              'That is deliberate — turning it on before checking would '
+              'lock you out if the app did not take the key.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-        ],
-      );
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _code,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              autofillHints: const [AutofillHints.oneTimeCode],
+              decoration: const InputDecoration(
+                labelText: 'Six-digit code',
+                counterText: '',
+              ),
+              onSubmitted: (_) => _busy ? null : _confirm(),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            FilledButton(
+              onPressed: _busy ? null : _confirm,
+              child: Text(_busy ? 'Checking…' : 'Turn on two-factor'),
+            ),
+            TextButton(
+              onPressed: _busy ? null : () => setState(() => _enrolment = null),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
 /// Grouped in fours because it is transcribed by hand, often onto paper.

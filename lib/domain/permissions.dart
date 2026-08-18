@@ -18,12 +18,12 @@ enum FamilyPermission {
   manageAccess;
 
   String get label => switch (this) {
-        FamilyPermission.viewProfile => 'View profile and history',
-        FamilyPermission.scheduleAppointments => 'Create and change appointments',
-        FamilyPermission.requestTransport => 'Request transportation',
-        FamilyPermission.makePayments => 'Pay for rides and subscription',
-        FamilyPermission.manageAccess => 'Invite and remove family members',
-      };
+    FamilyPermission.viewProfile => 'View profile and history',
+    FamilyPermission.scheduleAppointments => 'Create and change appointments',
+    FamilyPermission.requestTransport => 'Request transportation',
+    FamilyPermission.makePayments => 'Pay for rides and subscription',
+    FamilyPermission.manageAccess => 'Invite and remove family members',
+  };
 }
 
 enum RelationshipType {
@@ -37,15 +37,15 @@ enum RelationshipType {
   other;
 
   String get label => switch (this) {
-        RelationshipType.son => 'Son',
-        RelationshipType.daughter => 'Daughter',
-        RelationshipType.spouse => 'Spouse or partner',
-        RelationshipType.sibling => 'Sibling',
-        RelationshipType.grandchild => 'Grandchild',
-        RelationshipType.friend => 'Friend',
-        RelationshipType.professionalCaregiver => 'Professional caregiver',
-        RelationshipType.other => 'Other',
-      };
+    RelationshipType.son => 'Son',
+    RelationshipType.daughter => 'Daughter',
+    RelationshipType.spouse => 'Spouse or partner',
+    RelationshipType.sibling => 'Sibling',
+    RelationshipType.grandchild => 'Grandchild',
+    RelationshipType.friend => 'Friend',
+    RelationshipType.professionalCaregiver => 'Professional caregiver',
+    RelationshipType.other => 'Other',
+  };
 }
 
 /// A grant of access to one patient, held by one user.

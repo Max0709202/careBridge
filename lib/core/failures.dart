@@ -39,7 +39,7 @@ class NotFoundFailure extends Failure {
 /// offered that should not have been.
 class InvalidTransitionFailure extends Failure {
   const InvalidTransitionFailure(this.from, this.to)
-      : super('That change is not available right now.');
+    : super('That change is not available right now.');
 
   final String from;
   final String to;

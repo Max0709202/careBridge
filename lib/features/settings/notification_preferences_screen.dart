@@ -46,14 +46,13 @@ class _NotificationPreferencesScreenState
     }
   }
 
-  Future<void> _set(
-    NotificationPreferenceDto row,
-    bool enabled,
-  ) async {
+  Future<void> _set(NotificationPreferenceDto row, bool enabled) async {
     final key = '${row.kind.wireName}:${row.channel.wireName}';
     setState(() => _pending.add(key));
     try {
-      final updated = await ref.read(careApiProvider).setNotificationPreference(
+      final updated = await ref
+          .read(careApiProvider)
+          .setNotificationPreference(
             kind: row.kind.wireName,
             channel: row.channel.wireName,
             enabled: enabled,
@@ -125,7 +124,9 @@ class _NotificationPreferencesScreenState
           AppCard(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
             child: Column(
-              children: [for (final row in entry.value) _channelRow(theme, row)],
+              children: [
+                for (final row in entry.value) _channelRow(theme, row),
+              ],
             ),
           ),
         ],
@@ -142,7 +143,9 @@ class _NotificationPreferencesScreenState
         contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         leading: Icon(Icons.inbox_outlined, color: theme.colorScheme.primary),
         title: Text(channel),
-        subtitle: const Text('Always on — this is your record of what happened'),
+        subtitle: const Text(
+          'Always on — this is your record of what happened',
+        ),
       );
     }
 
@@ -164,27 +167,27 @@ class _NotificationPreferencesScreenState
 }
 
 String _channelLabel(NotificationChannel channel) => switch (channel) {
-      NotificationChannel.inApp => 'In the app',
-      NotificationChannel.email => 'Email',
-      NotificationChannel.push => 'Push',
-    };
+  NotificationChannel.inApp => 'In the app',
+  NotificationChannel.email => 'Email',
+  NotificationChannel.push => 'Push',
+};
 
 /// Plain language for each event. The wire names are for the API, not for a
 /// person reading a settings screen at eleven at night.
 String _label(NotificationKind kind) => switch (kind) {
-      NotificationKind.appointmentCreated => 'An appointment is added',
-      NotificationKind.appointmentReminder => 'An appointment is coming up',
-      NotificationKind.appointmentChanged => 'An appointment changes',
-      NotificationKind.appointmentCanceled => 'An appointment is cancelled',
-      NotificationKind.rideRequested => 'Transport is requested',
-      NotificationKind.driverAssigned => 'A driver is assigned',
-      NotificationKind.driverEnRoute => 'The driver sets off',
-      NotificationKind.driverArrivingSoon => 'The driver is arriving soon',
-      NotificationKind.driverArrived => 'The driver arrives',
-      NotificationKind.patientPickedUp => 'The passenger is picked up',
-      NotificationKind.patientArrived => 'The passenger arrives',
-      NotificationKind.rideDelayed => 'A ride is delayed',
-      NotificationKind.rideCompleted => 'A ride is finished',
-      NotificationKind.rideCanceled => 'A ride is cancelled',
-      NotificationKind.accessGranted => 'Someone joins the care circle',
-    };
+  NotificationKind.appointmentCreated => 'An appointment is added',
+  NotificationKind.appointmentReminder => 'An appointment is coming up',
+  NotificationKind.appointmentChanged => 'An appointment changes',
+  NotificationKind.appointmentCanceled => 'An appointment is cancelled',
+  NotificationKind.rideRequested => 'Transport is requested',
+  NotificationKind.driverAssigned => 'A driver is assigned',
+  NotificationKind.driverEnRoute => 'The driver sets off',
+  NotificationKind.driverArrivingSoon => 'The driver is arriving soon',
+  NotificationKind.driverArrived => 'The driver arrives',
+  NotificationKind.patientPickedUp => 'The passenger is picked up',
+  NotificationKind.patientArrived => 'The passenger arrives',
+  NotificationKind.rideDelayed => 'A ride is delayed',
+  NotificationKind.rideCompleted => 'A ride is finished',
+  NotificationKind.rideCanceled => 'A ride is cancelled',
+  NotificationKind.accessGranted => 'Someone joins the care circle',
+};

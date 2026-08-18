@@ -52,7 +52,10 @@ class DemoControls extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.science_outlined, color: theme.colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.science_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
@@ -100,7 +103,9 @@ class DemoControls extends ConsumerWidget {
                   () => notifier.setDelay(
                     rideId,
                     delayed: !ride.isDelayed,
-                    reason: ride.isDelayed ? null : 'Heavy traffic on Route 315',
+                    reason: ride.isDelayed
+                        ? null
+                        : 'Heavy traffic on Route 315',
                   ),
                 ),
                 icon: Icon(

@@ -32,8 +32,8 @@ class CareSnapshot {
 /// drifts out of step with the server that is supposed to be authoritative.
 class CareApi {
   CareApi({required this.tokens, String? baseUrl, http.Client? client})
-      : _baseUrl = _resolveBaseUrl(baseUrl ?? _configuredBaseUrl),
-        _client = client ?? http.Client();
+    : _baseUrl = _resolveBaseUrl(baseUrl ?? _configuredBaseUrl),
+      _client = client ?? http.Client();
 
   final TokenStore tokens;
   final Uri _baseUrl;
@@ -66,19 +66,17 @@ class CareApi {
     required String email,
     required String password,
     required bool acceptedTerms,
-  }) =>
-      _session('/auth/register', {
-        'fullName': fullName.trim(),
-        'email': email.trim(),
-        'password': password,
-        'acceptedTerms': acceptedTerms,
-      });
+  }) => _session('/auth/register', {
+    'fullName': fullName.trim(),
+    'email': email.trim(),
+    'password': password,
+    'acceptedTerms': acceptedTerms,
+  });
 
   Future<CareSnapshot> signIn({
     required String email,
     required String password,
-  }) =>
-      _session('/auth/login', {'email': email.trim(), 'password': password});
+  }) => _session('/auth/login', {'email': email.trim(), 'password': password});
 
   Future<CareSnapshot> _session(String path, Map<String, dynamic> body) async {
     final json = await _send('POST', path, body: body, authenticated: false);
@@ -129,10 +127,8 @@ class CareApi {
   // ─── preferences ──────────────────────────────────────────────────────────
 
   Future<CareSnapshot> setSimplifiedMode(bool enabled) async => _snapshot(
-        await _send('PATCH', '/me/preferences', body: {
-          'simplifiedMode': enabled,
-        }),
-      );
+    await _send('PATCH', '/me/preferences', body: {'simplifiedMode': enabled}),
+  );
 
   Future<CareSnapshot> selectPatient(String patientId) async =>
       _snapshot(await _send('POST', '/patients/$patientId/select'));
@@ -143,9 +139,8 @@ class CareApi {
       _snapshot(await _send('POST', '/patients', body: patientToJson(patient)));
 
   Future<CareSnapshot> updatePatient(Patient patient) async => _snapshot(
-        await _send('PUT', '/patients/${patient.id}',
-            body: patientToJson(patient)),
-      );
+    await _send('PUT', '/patients/${patient.id}', body: patientToJson(patient)),
+  );
 
   Future<CareSnapshot> archivePatient(String patientId) async =>
       _snapshot(await _send('POST', '/patients/$patientId/archive'));
@@ -153,12 +148,13 @@ class CareApi {
   Future<CareSnapshot> setPermissions(
     String patientId,
     Set<FamilyPermission> permissions,
-  ) async =>
-      _snapshot(
-        await _send('PUT', '/patients/$patientId/permissions', body: {
-          'permissions': permissions.map((p) => p.name).toList(),
-        }),
-      );
+  ) async => _snapshot(
+    await _send(
+      'PUT',
+      '/patients/$patientId/permissions',
+      body: {'permissions': permissions.map((p) => p.name).toList()},
+    ),
+  );
 
   // ─── the account ──────────────────────────────────────────────────────────
   //
@@ -169,7 +165,9 @@ class CareApi {
 
   Future<List<wire.SessionSummaryDto>> sessions() async =>
       (await _sendList('GET', '/auth/sessions'))
-          .map((e) => wire.SessionSummaryDto.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => wire.SessionSummaryDto.fromJson(e as Map<String, dynamic>),
+          )
           .toList();
 
   Future<void> revokeSession(String sessionId) async =>
@@ -191,32 +189,32 @@ class CareApi {
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
-  }) async =>
-      _send('POST', '/auth/password', body: {
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      });
+  }) async => _send(
+    'POST',
+    '/auth/password',
+    body: {'currentPassword': currentPassword, 'newPassword': newPassword},
+  );
 
   Future<void> requestPasswordReset(String email) async => _send(
-        'POST',
-        '/auth/password-reset',
-        body: {'email': email.trim()},
-        authenticated: false,
-      );
+    'POST',
+    '/auth/password-reset',
+    body: {'email': email.trim()},
+    authenticated: false,
+  );
 
   Future<void> resendVerification(String email) async => _send(
-        'POST',
-        '/auth/resend-verification',
-        body: {'email': email.trim()},
-        authenticated: false,
-      );
+    'POST',
+    '/auth/resend-verification',
+    body: {'email': email.trim()},
+    authenticated: false,
+  );
 
   Future<void> verifyEmail(String token) async => _send(
-        'POST',
-        '/auth/verify-email',
-        body: {'token': token},
-        authenticated: false,
-      );
+    'POST',
+    '/auth/verify-email',
+    body: {'token': token},
+    authenticated: false,
+  );
 
   // ─── two-factor authentication ────────────────────────────────────────────
 
@@ -233,10 +231,14 @@ class CareApi {
 
   // ─── notification preferences ─────────────────────────────────────────────
 
-  Future<List<wire.NotificationPreferenceDto>> notificationPreferences() async =>
+  Future<List<wire.NotificationPreferenceDto>>
+  notificationPreferences() async =>
       (await _sendList('GET', '/notifications/preferences'))
-          .map((e) =>
-              wire.NotificationPreferenceDto.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => wire.NotificationPreferenceDto.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList();
 
   Future<List<wire.NotificationPreferenceDto>> setNotificationPreference({
@@ -244,13 +246,16 @@ class CareApi {
     required String channel,
     required bool enabled,
   }) async =>
-      (await _sendList('PUT', '/notifications/preferences', body: {
-        'kind': kind,
-        'channel': channel,
-        'enabled': enabled,
-      }))
-          .map((e) =>
-              wire.NotificationPreferenceDto.fromJson(e as Map<String, dynamic>))
+      (await _sendList(
+            'PUT',
+            '/notifications/preferences',
+            body: {'kind': kind, 'channel': channel, 'enabled': enabled},
+          ))
+          .map(
+            (e) => wire.NotificationPreferenceDto.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList();
 
   // ─── the care circle ──────────────────────────────────────────────────────
@@ -265,27 +270,28 @@ class CareApi {
     required String email,
     required String relationship,
     required List<String> permissions,
-  }) async =>
-      wire.InvitationDto.fromJson(
-        await _send('POST', '/patients/$patientId/invitations', body: {
-          'email': email.trim(),
-          'relationship': relationship,
-          'permissions': permissions,
-        }),
-      );
+  }) async => wire.InvitationDto.fromJson(
+    await _send(
+      'POST',
+      '/patients/$patientId/invitations',
+      body: {
+        'email': email.trim(),
+        'relationship': relationship,
+        'permissions': permissions,
+      },
+    ),
+  );
 
   Future<void> revokeInvitation({
     required String patientId,
     required String invitationId,
-  }) async =>
-      _send('DELETE', '/patients/$patientId/invitations/$invitationId');
+  }) async => _send('DELETE', '/patients/$patientId/invitations/$invitationId');
 
   /// Accepting returns the whole snapshot — it now includes a patient the
   /// caller could not see a moment ago.
-  Future<CareSnapshot> acceptInvitation(String token) async =>
-      _snapshot(await _send('POST', '/invitations/accept', body: {
-        'token': token,
-      }));
+  Future<CareSnapshot> acceptInvitation(String token) async => _snapshot(
+    await _send('POST', '/invitations/accept', body: {'token': token}),
+  );
 
   // ─── clinics ──────────────────────────────────────────────────────────────
 
@@ -302,39 +308,44 @@ class CareApi {
     required AppointmentType type,
     String? coordinationNotes,
     bool transportRequired = false,
-  }) async =>
-      _snapshot(
-        await _send('POST', '/appointments', body: {
-          'patientId': patientId,
-          'clinicId': clinicId,
-          'startsAt': startsAt.toUtc().toIso8601String(),
-          'expectedDurationMinutes': expectedDuration.inMinutes,
-          'type': type.name,
-          if (coordinationNotes != null && coordinationNotes.isNotEmpty)
-            'coordinationNotes': coordinationNotes,
-          'transportRequired': transportRequired,
-        }),
-      );
+  }) async => _snapshot(
+    await _send(
+      'POST',
+      '/appointments',
+      body: {
+        'patientId': patientId,
+        'clinicId': clinicId,
+        'startsAt': startsAt.toUtc().toIso8601String(),
+        'expectedDurationMinutes': expectedDuration.inMinutes,
+        'type': type.name,
+        if (coordinationNotes != null && coordinationNotes.isNotEmpty)
+          'coordinationNotes': coordinationNotes,
+        'transportRequired': transportRequired,
+      },
+    ),
+  );
 
   Future<CareSnapshot> rescheduleAppointment(
     String appointmentId,
     DateTime startsAt,
-  ) async =>
-      _snapshot(
-        await _send('POST', '/appointments/$appointmentId/reschedule', body: {
-          'startsAt': startsAt.toUtc().toIso8601String(),
-        }),
-      );
+  ) async => _snapshot(
+    await _send(
+      'POST',
+      '/appointments/$appointmentId/reschedule',
+      body: {'startsAt': startsAt.toUtc().toIso8601String()},
+    ),
+  );
 
   Future<CareSnapshot> cancelAppointment(
     String appointmentId, {
     String? reason,
-  }) async =>
-      _snapshot(
-        await _send('POST', '/appointments/$appointmentId/cancel', body: {
-          if (reason != null && reason.isNotEmpty) 'reason': reason,
-        }),
-      );
+  }) async => _snapshot(
+    await _send(
+      'POST',
+      '/appointments/$appointmentId/cancel',
+      body: {if (reason != null && reason.isNotEmpty) 'reason': reason},
+    ),
+  );
 
   // ─── transportation ───────────────────────────────────────────────────────
 
@@ -343,16 +354,19 @@ class CareApi {
     required DateTime pickupAt,
     required bool roundTrip,
     String? notesForDriver,
-  }) async =>
-      _snapshot(
-        await _send('POST', '/rides', body: {
-          'appointmentId': appointmentId,
-          'pickupAt': pickupAt.toUtc().toIso8601String(),
-          'roundTrip': roundTrip,
-          if (notesForDriver != null && notesForDriver.isNotEmpty)
-            'notesForDriver': notesForDriver,
-        }),
-      );
+  }) async => _snapshot(
+    await _send(
+      'POST',
+      '/rides',
+      body: {
+        'appointmentId': appointmentId,
+        'pickupAt': pickupAt.toUtc().toIso8601String(),
+        'roundTrip': roundTrip,
+        if (notesForDriver != null && notesForDriver.isNotEmpty)
+          'notesForDriver': notesForDriver,
+      },
+    ),
+  );
 
   Future<CareSnapshot> cancelRide(String rideId, String reason) async =>
       _snapshot(
@@ -363,13 +377,16 @@ class CareApi {
     String rideId, {
     required bool delayed,
     String? reason,
-  }) async =>
-      _snapshot(
-        await _send('POST', '/rides/$rideId/delay', body: {
-          'delayed': delayed,
-          if (reason != null && reason.isNotEmpty) 'reason': reason,
-        }),
-      );
+  }) async => _snapshot(
+    await _send(
+      'POST',
+      '/rides/$rideId/delay',
+      body: {
+        'delayed': delayed,
+        if (reason != null && reason.isNotEmpty) 'reason': reason,
+      },
+    ),
+  );
 
   /// Starts the server-side preview trip — the stand-in for the driver app.
   Future<CareSnapshot> startPreviewTrip(String rideId) async =>
@@ -389,9 +406,9 @@ class CareApi {
   // ─── transport plumbing ───────────────────────────────────────────────────
 
   CareSnapshot _snapshot(Map<String, dynamic> json) => CareSnapshot(
-        state: careStateFromJson(json),
-        runningPreviews: runningPreviewRideIds(json),
-      );
+    state: careStateFromJson(json),
+    runningPreviews: runningPreviewRideIds(json),
+  );
 
   Future<Map<String, dynamic>> _send(
     String method,
@@ -406,8 +423,13 @@ class CareApi {
     // session into an infinite request storm against the auth endpoint.
     if (response.statusCode == 401 && authenticated && allowRetry) {
       if (await _refresh()) {
-        return _send(method, path,
-            body: body, authenticated: authenticated, allowRetry: false);
+        return _send(
+          method,
+          path,
+          body: body,
+          authenticated: authenticated,
+          allowRetry: false,
+        );
       }
       await tokens.clear();
       throw const AuthenticationFailure();
@@ -534,23 +556,30 @@ class CareApi {
 
     return switch (code) {
       'validation' => ValidationFailure(
-          message ?? 'That request could not be processed.',
-          field: field,
-        ),
+        message ?? 'That request could not be processed.',
+        field: field,
+      ),
       'authentication' => AuthenticationFailure(
-          message ?? 'Please sign in again.',
-        ),
+        message ?? 'Please sign in again.',
+      ),
       'not_found_or_forbidden' => const NotFoundFailure(),
-      'invalid_transition' => const InvalidTransitionFailure('unknown', 'unknown'),
-      'conflict' => ValidationFailure(message ?? 'That conflicts with something else.'),
+      'invalid_transition' => const InvalidTransitionFailure(
+        'unknown',
+        'unknown',
+      ),
+      'conflict' => ValidationFailure(
+        message ?? 'That conflicts with something else.',
+      ),
       _ => switch (status) {
-          400 => ValidationFailure(message ?? 'That request could not be processed.'),
-          401 => const AuthenticationFailure(),
-          403 || 404 => const NotFoundFailure(),
-          _ => NetworkFailure(
-              message ?? 'Something went wrong on our side. Please try again.',
-            ),
-        },
+        400 => ValidationFailure(
+          message ?? 'That request could not be processed.',
+        ),
+        401 => const AuthenticationFailure(),
+        403 || 404 => const NotFoundFailure(),
+        _ => NetworkFailure(
+          message ?? 'Something went wrong on our side. Please try again.',
+        ),
+      },
     };
   }
 }

@@ -42,9 +42,9 @@ class RouteMap extends StatelessWidget {
     return Semantics(
       label: driver == null
           ? 'Route diagram from pickup to destination. Vehicle position not '
-              'available.'
+                'available.'
           : 'Route diagram showing the vehicle between pickup and destination.'
-              '${isStale ? ' The position may be out of date.' : ''}',
+                '${isStale ? ' The position may be out of date.' : ''}',
       excludeSemantics: true,
       child: ClipRRect(
         borderRadius: AppRadius.cardAll,
@@ -66,9 +66,9 @@ class RouteMap extends StatelessWidget {
               markerColor: scheme.onSurface,
               vehicleColor: isStale ? scheme.outline : scheme.primary,
               labelStyle: Theme.of(context).textTheme.bodySmall!.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             child: const SizedBox.expand(),
           ),
@@ -170,7 +170,11 @@ class _RoutePainter extends CustomPainter {
   }
 
   void _paintEndpoint(Canvas canvas, Offset at, IconData icon, String label) {
-    canvas.drawCircle(at, 16, Paint()..color = markerColor.withValues(alpha: 0.10));
+    canvas.drawCircle(
+      at,
+      16,
+      Paint()..color = markerColor.withValues(alpha: 0.10),
+    );
     canvas.drawCircle(
       at,
       16,
@@ -188,7 +192,11 @@ class _RoutePainter extends CustomPainter {
     // Hollow when stale: a filled, confident marker for a position we no longer
     // trust is exactly the false certainty this screen exists to avoid.
     if (!isStale) {
-      canvas.drawCircle(at, 26, Paint()..color = vehicleColor.withValues(alpha: 0.16));
+      canvas.drawCircle(
+        at,
+        26,
+        Paint()..color = vehicleColor.withValues(alpha: 0.16),
+      );
     }
     canvas.drawCircle(
       at,

@@ -104,10 +104,11 @@ class CareState {
           .toList(growable: false);
 
   List<Appointment> pastFor(String patientId, DateTime now) {
-    final list = appointmentsFor(patientId)
-        .where((a) => !a.status.isUpcoming || a.endsAt.isBefore(now))
-        .toList()
-      ..sort((a, b) => b.startsAt.compareTo(a.startsAt));
+    final list =
+        appointmentsFor(patientId)
+            .where((a) => !a.status.isUpcoming || a.endsAt.isBefore(now))
+            .toList()
+          ..sort((a, b) => b.startsAt.compareTo(a.startsAt));
     return list;
   }
 
@@ -123,7 +124,9 @@ class CareState {
   }
 
   List<Ride> ridesForAppointment(String appointmentId) =>
-      rides.where((r) => r.appointmentId == appointmentId).toList(growable: false)
+      rides
+          .where((r) => r.appointmentId == appointmentId)
+          .toList(growable: false)
         ..sort((a, b) => a.scheduledPickupAt.compareTo(b.scheduledPickupAt));
 
   /// The one ride that deserves the top of the dashboard: in progress if there
@@ -194,7 +197,7 @@ StatusChange recordChange({
 }
 
 String _name(Object value) => switch (value) {
-      RideStatus s => s.name,
-      AppointmentStatus s => s.name,
-      _ => value.toString(),
-    };
+  RideStatus s => s.name,
+  AppointmentStatus s => s.name,
+  _ => value.toString(),
+};

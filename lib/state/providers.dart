@@ -23,7 +23,9 @@ final careApiProvider = Provider<CareApi>((ref) {
   return api;
 });
 
-final careProvider = NotifierProvider<CareNotifier, CareState>(CareNotifier.new);
+final careProvider = NotifierProvider<CareNotifier, CareState>(
+  CareNotifier.new,
+);
 
 /// The patient currently being viewed. Null until one is chosen, which is the
 /// empty state a brand-new account starts in.
@@ -43,7 +45,10 @@ final simplifiedModeProvider = Provider<bool>(
 /// without every widget owning a timer.
 final tickerProvider = StreamProvider<DateTime>((ref) {
   final clock = ref.watch(clockProvider);
-  return Stream<DateTime>.periodic(const Duration(seconds: 1), (_) => clock.now());
+  return Stream<DateTime>.periodic(
+    const Duration(seconds: 1),
+    (_) => clock.now(),
+  );
 });
 
 /// The state everything reads.
@@ -120,7 +125,10 @@ class CareNotifier extends Notifier<CareState> {
       throw const ValidationFailure('Enter your name.', field: 'fullName');
     }
     if (!email.contains('@')) {
-      throw const ValidationFailure('Enter a valid email address.', field: 'email');
+      throw const ValidationFailure(
+        'Enter a valid email address.',
+        field: 'email',
+      );
     }
     if (password.length < 10) {
       throw const ValidationFailure(
@@ -193,8 +201,7 @@ class CareNotifier extends Notifier<CareState> {
   Future<void> setPermissions(
     String patientId,
     Set<FamilyPermission> permissions,
-  ) async =>
-      _apply(await _api.setPermissions(patientId, permissions));
+  ) async => _apply(await _api.setPermissions(patientId, permissions));
 
   /// Adds a clinic and returns it **as the server stored it**.
   ///
@@ -239,26 +246,27 @@ class CareNotifier extends Notifier<CareState> {
     required AppointmentType type,
     String? coordinationNotes,
     bool transportRequired = false,
-  }) async =>
-      _apply(
-        await _api.createAppointment(
-          patientId: patientId,
-          clinicId: clinicId,
-          startsAt: startsAt,
-          expectedDuration: expectedDuration,
-          type: type,
-          coordinationNotes: coordinationNotes,
-          transportRequired: transportRequired,
-        ),
-      );
+  }) async => _apply(
+    await _api.createAppointment(
+      patientId: patientId,
+      clinicId: clinicId,
+      startsAt: startsAt,
+      expectedDuration: expectedDuration,
+      type: type,
+      coordinationNotes: coordinationNotes,
+      transportRequired: transportRequired,
+    ),
+  );
 
   Future<void> rescheduleAppointment(
     String appointmentId,
     DateTime startsAt,
-  ) async =>
-      _apply(await _api.rescheduleAppointment(appointmentId, startsAt));
+  ) async => _apply(await _api.rescheduleAppointment(appointmentId, startsAt));
 
-  Future<void> cancelAppointment(String appointmentId, {String? reason}) async =>
+  Future<void> cancelAppointment(
+    String appointmentId, {
+    String? reason,
+  }) async =>
       _apply(await _api.cancelAppointment(appointmentId, reason: reason));
 
   // ─── transportation ───────────────────────────────────────────────────────
@@ -268,15 +276,14 @@ class CareNotifier extends Notifier<CareState> {
     required DateTime pickupAt,
     required bool roundTrip,
     String? notesForDriver,
-  }) async =>
-      _apply(
-        await _api.requestTransport(
-          appointmentId: appointmentId,
-          pickupAt: pickupAt,
-          roundTrip: roundTrip,
-          notesForDriver: notesForDriver,
-        ),
-      );
+  }) async => _apply(
+    await _api.requestTransport(
+      appointmentId: appointmentId,
+      pickupAt: pickupAt,
+      roundTrip: roundTrip,
+      notesForDriver: notesForDriver,
+    ),
+  );
 
   Future<void> cancelRide(String rideId, String reason) async =>
       _apply(await _api.cancelRide(rideId, reason));

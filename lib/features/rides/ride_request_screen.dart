@@ -33,8 +33,9 @@ class _RideRequestScreenState extends ConsumerState<RideRequestScreen> {
   @override
   void initState() {
     super.initState();
-    final appointment =
-        ref.read(careProvider).appointmentById(widget.appointmentId);
+    final appointment = ref
+        .read(careProvider)
+        .appointmentById(widget.appointmentId);
     if (appointment != null) {
       _pickupTime = TimeOfDay.fromDateTime(
         appointment.startsAt.subtract(
@@ -74,7 +75,8 @@ class _RideRequestScreenState extends ConsumerState<RideRequestScreen> {
     }
 
     final estimate = _estimate(patient, clinic);
-    final hasCoordinates = patient.homeAddress.coordinates != null &&
+    final hasCoordinates =
+        patient.homeAddress.coordinates != null &&
         clinic.address.coordinates != null;
 
     return Scaffold(
@@ -121,8 +123,8 @@ class _RideRequestScreenState extends ConsumerState<RideRequestScreen> {
                 onTap: () async {
                   final picked = await showTimePicker(
                     context: context,
-                    initialTime: _pickupTime ??
-                        const TimeOfDay(hour: 9, minute: 0),
+                    initialTime:
+                        _pickupTime ?? const TimeOfDay(hour: 9, minute: 0),
                     helpText: 'Pickup time',
                   );
                   if (picked != null) setState(() => _pickupTime = picked);
@@ -187,8 +189,8 @@ class _RideRequestScreenState extends ConsumerState<RideRequestScreen> {
                     Text(
                       _roundTrip
                           ? 'A car home as well. The return pickup is flexible — '
-                              'we send one when the visit actually ends, not at a '
-                              'time guessed days earlier.'
+                                'we send one when the visit actually ends, not at a '
+                                'time guessed days earlier.'
                           : 'Someone else is bringing them home.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
@@ -201,7 +203,8 @@ class _RideRequestScreenState extends ConsumerState<RideRequestScreen> {
               const SizedBox(height: AppSpacing.lg),
               const SectionHeader(
                 'What the driver will be told',
-                subtitle: 'Taken from the profile — no medical details are '
+                subtitle:
+                    'Taken from the profile — no medical details are '
                     'shared.',
               ),
               AppCard(
@@ -268,9 +271,7 @@ class _RideRequestScreenState extends ConsumerState<RideRequestScreen> {
               FilledButton.icon(
                 onPressed: () => _submit(appointment),
                 icon: const Icon(Icons.check),
-                label: Text(
-                  _roundTrip ? 'Request round trip' : 'Request ride',
-                ),
+                label: Text(_roundTrip ? 'Request round trip' : 'Request ride'),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
@@ -329,18 +330,18 @@ class _RideRequestScreenState extends ConsumerState<RideRequestScreen> {
     );
 
     try {
-      await ref.read(careProvider.notifier).requestTransport(
+      await ref
+          .read(careProvider.notifier)
+          .requestTransport(
             appointmentId: appointment.id,
             pickupAt: pickupAt,
             roundTrip: _roundTrip,
-            notesForDriver:
-                _notes.text.trim().isEmpty ? null : _notes.text.trim(),
+            notesForDriver: _notes.text.trim().isEmpty
+                ? null
+                : _notes.text.trim(),
           );
       if (!mounted) return;
-      showConfirmationBanner(
-        context,
-        'Requested. We are finding a driver.',
-      );
+      showConfirmationBanner(context, 'Requested. We are finding a driver.');
       context.pop();
     } catch (error) {
       if (mounted) showFailure(context, error);

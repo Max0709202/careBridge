@@ -14,7 +14,8 @@ class AuthTokens {
   final String accessToken;
   final String refreshToken;
 
-  AuthTokens copyWith({String? accessToken, String? refreshToken}) => AuthTokens(
+  AuthTokens copyWith({String? accessToken, String? refreshToken}) =>
+      AuthTokens(
         accessToken: accessToken ?? this.accessToken,
         refreshToken: refreshToken ?? this.refreshToken,
       );
@@ -37,7 +38,7 @@ class SecureTokenStore implements TokenStore {
   // No options needed: as of flutter_secure_storage 11 the Android backend is
   // encrypted unconditionally, so there is no longer a flag to forget.
   SecureTokenStore([FlutterSecureStorage? storage])
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
 

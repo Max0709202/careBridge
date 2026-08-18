@@ -37,8 +37,10 @@ class AppointmentsScreen extends ConsumerWidget {
 
     final upcoming = state.upcomingFor(patient.id, now);
     final past = state.pastFor(patient.id, now);
-    final canSchedule =
-        state.can(patient.id, FamilyPermission.scheduleAppointments);
+    final canSchedule = state.can(
+      patient.id,
+      FamilyPermission.scheduleAppointments,
+    );
 
     return DefaultTabController(
       length: 2,
