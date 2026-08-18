@@ -75,7 +75,7 @@ class RideDetailScreen extends ConsumerWidget {
                         value: ride.flexibleReturn
                             ? 'Flexible — sent when the visit ends'
                             : '${formatRelativeDay(ride.scheduledPickupAt, now)}, '
-                                '${formatTime(ride.scheduledPickupAt)}',
+                                  '${formatTime(ride.scheduledPickupAt)}',
                       ),
                       InfoRow(
                         icon: Icons.trip_origin,

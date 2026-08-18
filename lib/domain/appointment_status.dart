@@ -18,17 +18,17 @@ enum AppointmentStatus {
   missed;
 
   String get label => switch (this) {
-        AppointmentStatus.draft => 'Draft',
-        AppointmentStatus.scheduled => 'Scheduled',
-        AppointmentStatus.confirmed => 'Confirmed',
-        AppointmentStatus.patientPreparing => 'Getting ready',
-        AppointmentStatus.transportationScheduled => 'Transport booked',
-        AppointmentStatus.patientEnRoute => 'On the way',
-        AppointmentStatus.patientArrived => 'Arrived at the clinic',
-        AppointmentStatus.completed => 'Completed',
-        AppointmentStatus.canceled => 'Canceled',
-        AppointmentStatus.missed => 'Missed',
-      };
+    AppointmentStatus.draft => 'Draft',
+    AppointmentStatus.scheduled => 'Scheduled',
+    AppointmentStatus.confirmed => 'Confirmed',
+    AppointmentStatus.patientPreparing => 'Getting ready',
+    AppointmentStatus.transportationScheduled => 'Transport booked',
+    AppointmentStatus.patientEnRoute => 'On the way',
+    AppointmentStatus.patientArrived => 'Arrived at the clinic',
+    AppointmentStatus.completed => 'Completed',
+    AppointmentStatus.canceled => 'Canceled',
+    AppointmentStatus.missed => 'Missed',
+  };
 
   bool get isTerminal =>
       this == AppointmentStatus.completed ||
@@ -88,10 +88,7 @@ bool canTransitionAppointment(AppointmentStatus from, AppointmentStatus to) =>
 Set<AppointmentStatus> allowedAppointmentTransitions(AppointmentStatus from) =>
     _allowed[from] ?? const {};
 
-void assertAppointmentTransition(
-  AppointmentStatus from,
-  AppointmentStatus to,
-) {
+void assertAppointmentTransition(AppointmentStatus from, AppointmentStatus to) {
   if (!canTransitionAppointment(from, to)) {
     throw InvalidTransitionFailure(from.name, to.name);
   }

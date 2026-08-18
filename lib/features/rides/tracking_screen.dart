@@ -73,7 +73,9 @@ class TrackingScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(patient == null ? 'Live trip' : '${patient.preferredName}’s trip'),
+        title: Text(
+          patient == null ? 'Live trip' : '${patient.preferredName}’s trip',
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.receipt_long_outlined),
@@ -133,7 +135,10 @@ class TrackingScreen extends ConsumerWidget {
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.colorScheme.error,
-                    side: BorderSide(color: theme.colorScheme.error, width: 1.5),
+                    side: BorderSide(
+                      color: theme.colorScheme.error,
+                      width: 1.5,
+                    ),
                   ),
                   onPressed: () => _cancel(context, ref, ride),
                   icon: const Icon(Icons.cancel_outlined),
@@ -155,9 +160,9 @@ class TrackingScreen extends ConsumerWidget {
       title: 'Cancel this ride?',
       message: onboard
           ? 'The passenger is already in the vehicle. Only cancel if you have '
-              'spoken to them — the driver will be told to stop.'
+                'spoken to them — the driver will be told to stop.'
           : 'The driver will be told not to come. You can book another ride '
-              'afterwards.',
+                'afterwards.',
       confirmLabel: 'Cancel the ride',
       cancelLabel: 'Keep it',
     );
@@ -194,26 +199,26 @@ class _FreshnessBanner extends StatelessWidget {
 
     final (ink, icon, message) = switch ((age, stale, lost)) {
       (null, _, _) => (
-          context.neutralInk,
-          Icons.location_disabled_outlined,
-          'Waiting for the first position report from the driver.',
-        ),
+        context.neutralInk,
+        Icons.location_disabled_outlined,
+        'Waiting for the first position report from the driver.',
+      ),
       (_, _, true) => (
-          context.criticalInk,
-          Icons.signal_wifi_statusbar_null_outlined,
-          'We have lost contact with the driver’s device. The last position was '
-              '${formatFreshness(age!)} and is no longer shown.',
-        ),
+        context.criticalInk,
+        Icons.signal_wifi_statusbar_null_outlined,
+        'We have lost contact with the driver’s device. The last position was '
+            '${formatFreshness(age!)} and is no longer shown.',
+      ),
       (_, true, _) => (
-          context.cautionInk,
-          Icons.warning_amber_rounded,
-          'Position last updated ${formatFreshness(age!)}. It may be out of date.',
-        ),
+        context.cautionInk,
+        Icons.warning_amber_rounded,
+        'Position last updated ${formatFreshness(age!)}. It may be out of date.',
+      ),
       _ => (
-          context.positiveInk,
-          Icons.check_circle_outline,
-          'Position updated ${formatFreshness(age!)}.',
-        ),
+        context.positiveInk,
+        Icons.check_circle_outline,
+        'Position updated ${formatFreshness(age!)}.',
+      ),
     };
 
     return Container(
@@ -254,14 +259,16 @@ class _StatusHeadline extends StatelessWidget {
     final eta = ride.etaMinutes;
 
     final headline = switch (ride.status) {
-      RideStatus.driverEnRoute => lost || eta == null
-          ? 'The driver is on the way'
-          : 'Driver is about $eta ${eta == 1 ? 'minute' : 'minutes'} away',
+      RideStatus.driverEnRoute =>
+        lost || eta == null
+            ? 'The driver is on the way'
+            : 'Driver is about $eta ${eta == 1 ? 'minute' : 'minutes'} away',
       RideStatus.driverArrived => 'The driver is outside',
       RideStatus.passengerOnboard => 'Picked up safely',
-      RideStatus.inProgress => lost || eta == null
-          ? 'On the way to the clinic'
-          : 'Arriving in about $eta ${eta == 1 ? 'minute' : 'minutes'}',
+      RideStatus.inProgress =>
+        lost || eta == null
+            ? 'On the way to the clinic'
+            : 'Arriving in about $eta ${eta == 1 ? 'minute' : 'minutes'}',
       RideStatus.arrivedAtDestination => 'Arrived at the clinic',
       _ => ride.status.label,
     };
@@ -365,7 +372,10 @@ class _DriverCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(driver.displayName, style: theme.textTheme.titleMedium),
+                    Text(
+                      driver.displayName,
+                      style: theme.textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 2),
                     Row(
                       children: [
@@ -450,9 +460,9 @@ class _FinishedRideView extends StatelessWidget {
             : 'Tracking has stopped',
         message: ride.status == RideStatus.completed
             ? 'Location sharing ended when the trip finished. The full timeline '
-                'is on the ride details.'
+                  'is on the ride details.'
             : 'This ride is ${ride.status.label.toLowerCase()}, so the driver is '
-                'no longer sharing location.',
+                  'no longer sharing location.',
         action: FilledButton(
           onPressed: () => context.pushReplacement('/rides/$rideId'),
           child: const Text('See ride details'),

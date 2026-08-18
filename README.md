@@ -65,6 +65,8 @@ make check
 
 Format, lint, typecheck, unit tests and the API-contract drift check — exactly
 what CI runs, in CI's order. If the two ever diverge, CI is what is wrong.
+Nothing in it is allowed to fail silently: the unit run enforces coverage
+floors on both sides, and the pure rules in `domain/` are held at 100%.
 
 ```bash
 make test-integration        # 72 tests, real app against real Postgres
@@ -73,7 +75,7 @@ make test-integration        # 72 tests, real app against real Postgres
 Individually:
 
 ```bash
-pnpm --filter @carebridge/api test          # 110 unit tests
+pnpm --filter @carebridge/api test          # 141 unit tests, with coverage floors
 pnpm --filter @carebridge/api exec eslint . # boundaries, no-console, no process.env
 flutter analyze && flutter test             # the app
 ```
@@ -119,6 +121,8 @@ REDIS_URL=redis://127.0.0.1:56379 make test-integration  # the real BullMQ path
 | TOTP MFA end to end — enrol, confirm, sign in with a code, spend a recovery code — verified against the RFC 6238 vectors, secret encrypted at rest | Real GPS, maps and routing — the route view is a schematic, deliberately, and positions come from the preview runner |
 | Family invitations: single-use, expiring, email-bound, verified-address-bound, no grant broader than the inviter's | Live push: the client polls while a trip is running. The Socket.IO gateway is Stage 3 |
 | Server-owned ride and appointment state machines, with illegal transitions rejected | Payments and subscriptions |
+| `Idempotency-Key` honoured on every create — a retried request books one ride, not two | |
+| Rate limits on every credential endpoint — sign-in, registration, reset, verification, invitation, MFA — counted per IP *and* per address, shared across instances through Redis | |
 | Per-patient permission model resolved server-side on every request | The `ops_console`, the driver app, and everything in Stage 4 |
 | Notification delivery on three channels with per-user, per-channel preferences | A real mail or push vendor — `MAIL_DRIVER=smtp` points at Mailpit locally and SES in production; `PUSH_DRIVER=fcm` is written and untested against a live project |
 | BullMQ reminder scheduling, timezone-correct across both DST boundaries | Redis in the default local setup — without it the API falls back to an in-process scheduler and says so at boot |
@@ -192,7 +196,8 @@ lib/                          Flutter — family + patient  (the pub workspace r
                    settings (account security, two-factor, notification
                    preferences)
 
-infrastructure/nginx/         same-origin proxy + SPA fallback
+infrastructure/nginx/         same-origin proxy, SPA fallback, CSP and the
+                              other response headers the app is served with
 ```
 
 Dependencies point downward on both sides: `domain/` depends on nothing but
@@ -232,6 +237,17 @@ by tests on both sides.
 **Delay is a flag, not a status.** A driver stuck in traffic on the way to pickup
 is still `driverEnRoute`; making delay a status would lose the state it must
 return to.
+
+**A retried request is not a second request.** A family taps "Request
+transport", the connection drops before the response arrives, and the app
+retries: at the HTTP level that is indistinguishable from booking a second car,
+and no state machine can catch it because both requests are individually legal.
+The client sends one `Idempotency-Key` per tap and the server claims it before
+running the handler, so the retry is answered from the record rather than
+performed. The body is hashed rather than kept — the same key with a different
+body is a client bug and is refused, and storing the body to compare against
+would mean a second copy of an address and an appointment time sitting around
+for a day.
 
 **A round trip is two rides.** Each leg is assigned, tracked, cancelled and
 priced independently, and each snapshots its own copy of the two addresses — so
@@ -284,6 +300,19 @@ to the invited email address, and acceptable only by an account that has
 Nobody may hand out access broader than they hold. FOUNDATION flags this as an
 account-takeover vector; what it grants is standing access to a vulnerable
 person's home address and daily movements.
+
+**The app origin makes no third-party request, so its policy is `'self'`
+throughout.** CanvasKit is built into the image rather than pulled from gstatic
+at runtime, and Roboto is a bundled asset rather than the copy the web engine
+fetches from `fonts.gstatic.com` on first paint. What that buys is a
+Content-Security-Policy with no vendor in it: `connect-src 'self'` means a
+script injected into this page has nowhere to send what it reads. It also
+removes an unauthenticated request to a third party, made before the user has
+agreed to anything, that says an IP address opened a medical-appointment app
+and when. And it is what makes the app survive a bad network: CanvasKit has no
+system font to fall back on, so a blocked font download renders every screen
+with no text at all — verified, before the font was bundled, as a sign-in form
+with three empty boxes.
 
 **The redaction denylist is applied at the logger, not at call sites.** A
 denylist enforced by remembering to scrub before each call fails the first time

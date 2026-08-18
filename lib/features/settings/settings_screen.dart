@@ -139,9 +139,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 const SectionHeader('Your account'),
                 AppCard(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.xs,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                   child: Column(
                     children: [
                       ListTile(
@@ -199,7 +197,10 @@ class SettingsScreen extends ConsumerWidget {
                               ),
                               const SizedBox(width: AppSpacing.sm),
                               Expanded(
-                                child: Text(item, style: theme.textTheme.bodyMedium),
+                                child: Text(
+                                  item,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
                               ),
                             ],
                           ),
@@ -231,7 +232,8 @@ class SettingsScreen extends ConsumerWidget {
                     final confirmed = await confirmAction(
                       context,
                       title: 'Sign out?',
-                      message: 'You will need to sign in again to see '
+                      message:
+                          'You will need to sign in again to see '
                           'appointments and trips.',
                       confirmLabel: 'Sign out',
                       cancelLabel: 'Stay signed in',

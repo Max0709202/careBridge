@@ -110,12 +110,12 @@ class PatientsApi {
   /// The signed-in account must be the invited address and must have verified
   /// it. Returns the full state snapshot, which now includes the newly shared
   /// patient.
-  Future<void> accept({required AcceptInvitationDto body}) async {
-    await _client.send(
+  Future<CareStateDto> accept({required AcceptInvitationDto body}) async {
+    final response = await _client.send(
       method: 'POST',
       path: '/invitations/accept',
       body: body.toJson(),
     );
-    return;
+    return CareStateDto.fromJson(response as Map<String, dynamic>);
   }
 }

@@ -37,15 +37,15 @@ class PricingRule {
   final DateTime effectiveFrom;
 
   static PricingRule standard() => PricingRule(
-        version: 'v1-pilot',
-        baseFare: const Money(1200),
-        perMile: const Money(225),
-        perMinute: const Money(45),
-        minimumFare: const Money(1800),
-        wheelchairSurcharge: const Money(1500),
-        assistanceSurcharge: const Money(800),
-        effectiveFrom: DateTime.utc(2026, 1, 1),
-      );
+    version: 'v1-pilot',
+    baseFare: const Money(1200),
+    perMile: const Money(225),
+    perMinute: const Money(45),
+    minimumFare: const Money(1800),
+    wheelchairSurcharge: const Money(1500),
+    assistanceSurcharge: const Money(800),
+    effectiveFrom: DateTime.utc(2026, 1, 1),
+  );
 }
 
 /// A priced quote, itemised so a family can see what they are paying for.
@@ -92,7 +92,10 @@ PriceEstimate estimateFare({
 
   final surcharges = <({String label, Money amount})>[
     if (wheelchairAccessRequired)
-      (label: 'Wheelchair-accessible vehicle', amount: rule.wheelchairSurcharge),
+      (
+        label: 'Wheelchair-accessible vehicle',
+        amount: rule.wheelchairSurcharge,
+      ),
     if (assistanceRequired)
       (label: 'Door-through-door assistance', amount: rule.assistanceSurcharge),
   ];

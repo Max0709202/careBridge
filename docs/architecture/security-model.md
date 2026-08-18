@@ -126,13 +126,62 @@ are being logged.
 Users see a generic message plus a correlation id; the detail stays
 server-side.
 
+## Rate limiting
+
+Three policies, on the endpoints an unauthenticated caller can reach. They are
+separate because what they protect fails in different ways.
+
+| Policy | Routes | Keyed on | What it stops |
+| --- | --- | --- | --- |
+| `signIn` | `POST /auth/login` | failures per email+IP, and all attempts per IP | Guessing one password; spraying one password across many accounts |
+| `emailDispatch` | register, resend-verification, password-reset | IP **and** address | Using this system to deliver mail to a stranger |
+| `tokenGuess` | verify-email, reset confirm, invitation accept, MFA confirm | IP | Grinding a single-use secret — a TOTP code is only 10⁶ wide |
+
+Two dimensions rather than one, on the policy where it matters: per-IP alone
+lets one host mail a thousand addresses, per-address alone lets a thousand
+hosts mail one. Both are counted and either can refuse.
+
+Sign-in counts **failures only**, which is why it is enforced in the service
+rather than in the guard — someone signing in successfully from several devices
+is a person, not an attack. A success clears the counter.
+
+The 429 carries `Retry-After` and a message that says nothing about which limit
+was reached. "Too many attempts for that email address" would confirm the
+address has an account, which every other response on those routes is careful
+not to do.
+
+Counters live behind a port with two adapters, the same arrangement as the
+queue: Redis wherever more than one process serves traffic, an in-process map
+on a laptop with no Redis. The in-process one is *wrong* with more than one
+instance — the effective limit multiplies by the instance count — so the API
+says which is live at boot and production refuses to start without Redis. When
+Redis is unreachable at request time the decision is to allow: it is a cache,
+never the source of truth, and failing closed would turn a cache blip into a
+total sign-in outage for every family at once.
+
+The client address comes from `X-Forwarded-For`, trusting exactly
+`TRUST_PROXY_HOPS` proxies (1 — nginx). Too low and everyone shares one bucket;
+too high and a caller forges the header for a fresh bucket per request.
+
 ## Application hardening
 
 DTO validation at every boundary, with unknown fields dropped rather than
 passed through. Parameterised queries only. Helmet. A CORS allowlist per
 environment, and `*` refused outright in production. Uploads restricted by type
 and size with server-generated keys. Webhook signatures verified **before**
-parsing. Idempotency enforced on money and state-changing commands.
+parsing.
+
+Idempotency on the endpoints that create things — patients, clinics,
+appointments, rides, invitations. A client sends `Idempotency-Key`; the key is
+claimed by inserting a row before the handler runs, so two concurrent retries
+race on a unique constraint and exactly one proceeds. A repeat returns the
+stored response with `Idempotent-Replay: true`; the same key with a different
+body is refused rather than answered with the first one's result; a failed
+request releases its claim, because it did not happen and must stay retryable.
+The request body is *hashed*, not stored — these bodies carry addresses and
+appointment times, and keeping a copy for a day would be a second store of
+exactly the data the rest of this document is careful about. Records expire
+after 24 hours, swept by the retention job.
 
 The client-supplied correlation id is length- and pattern-checked before being
 echoed in a response header and written to a log — an unbounded client string

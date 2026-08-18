@@ -38,8 +38,9 @@ class _CareCircleScreenState extends ConsumerState<CareCircleScreen> {
   Future<void> _load() async {
     setState(() => _error = null);
     try {
-      final invitations =
-          await ref.read(careApiProvider).invitations(widget.patientId);
+      final invitations = await ref
+          .read(careApiProvider)
+          .invitations(widget.patientId);
       if (mounted) setState(() => _invitations = invitations);
     } catch (error) {
       if (mounted) setState(() => _error = error);
@@ -69,7 +70,9 @@ class _CareCircleScreenState extends ConsumerState<CareCircleScreen> {
 
     setState(() => _busy = true);
     try {
-      await ref.read(careApiProvider).revokeInvitation(
+      await ref
+          .read(careApiProvider)
+          .revokeInvitation(
             patientId: widget.patientId,
             invitationId: invitation.id,
           );
@@ -189,8 +192,10 @@ class _CareCircleScreenState extends ConsumerState<CareCircleScreen> {
         children: [
           for (final invitation in invitations)
             ListTile(
-              leading: Icon(_statusIcon(invitation.status),
-                  color: _statusColour(theme, invitation.status)),
+              leading: Icon(
+                _statusIcon(invitation.status),
+                color: _statusColour(theme, invitation.status),
+              ),
               // Masked by the server: enough for the invitee to recognise
               // their own address, not enough for the rest of the circle to
               // harvest one.
@@ -211,11 +216,11 @@ class _CareCircleScreenState extends ConsumerState<CareCircleScreen> {
 }
 
 IconData _statusIcon(wire.InvitationStatus status) => switch (status) {
-      wire.InvitationStatus.pending => Icons.schedule_send_outlined,
-      wire.InvitationStatus.accepted => Icons.how_to_reg_outlined,
-      wire.InvitationStatus.revoked => Icons.link_off,
-      wire.InvitationStatus.expired => Icons.timer_off_outlined,
-    };
+  wire.InvitationStatus.pending => Icons.schedule_send_outlined,
+  wire.InvitationStatus.accepted => Icons.how_to_reg_outlined,
+  wire.InvitationStatus.revoked => Icons.link_off,
+  wire.InvitationStatus.expired => Icons.timer_off_outlined,
+};
 
 Color _statusColour(ThemeData theme, wire.InvitationStatus status) =>
     switch (status) {
@@ -225,13 +230,13 @@ Color _statusColour(ThemeData theme, wire.InvitationStatus status) =>
     };
 
 String _subtitle(wire.InvitationDto invitation) => switch (invitation.status) {
-      wire.InvitationStatus.pending =>
-        'Invited as ${invitation.relationship.wireName} · expires '
-            '${DateFormat.yMMMd().format(invitation.expiresAt.toLocal())}',
-      wire.InvitationStatus.accepted => 'Accepted — they have access',
-      wire.InvitationStatus.revoked => 'Revoked',
-      wire.InvitationStatus.expired => 'Expired without being used',
-    };
+  wire.InvitationStatus.pending =>
+    'Invited as ${invitation.relationship.wireName} · expires '
+        '${DateFormat.yMMMd().format(invitation.expiresAt.toLocal())}',
+  wire.InvitationStatus.accepted => 'Accepted — they have access',
+  wire.InvitationStatus.revoked => 'Revoked',
+  wire.InvitationStatus.expired => 'Expired without being used',
+};
 
 class _InviteSheet extends ConsumerStatefulWidget {
   const _InviteSheet({required this.patientId});
@@ -264,7 +269,9 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
 
     setState(() => _busy = true);
     try {
-      await ref.read(careApiProvider).invite(
+      await ref
+          .read(careApiProvider)
+          .invite(
             patientId: widget.patientId,
             email: _email.text,
             relationship: _relationship.wireName,
@@ -341,12 +348,12 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
                   onChanged: permission == FamilyPermission.viewProfile
                       ? null
                       : (checked) => setState(() {
-                            if (checked ?? false) {
-                              _permissions.add(permission);
-                            } else {
-                              _permissions.remove(permission);
-                            }
-                          }),
+                          if (checked ?? false) {
+                            _permissions.add(permission);
+                          } else {
+                            _permissions.remove(permission);
+                          }
+                        }),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   title: Text(permission.label),

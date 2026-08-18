@@ -80,6 +80,11 @@ class AppTheme {
       colorScheme: scheme,
       useMaterial3: true,
       visualDensity: VisualDensity.standard,
+      // The bundled family, not the engine's default of the same name — see
+      // the note in pubspec.yaml. Naming it here is what makes every text
+      // style resolve to an asset rather than to a font the web engine
+      // downloads from a third party.
+      fontFamily: 'Roboto',
     );
 
     final text = base.textTheme.copyWith(
@@ -107,7 +112,10 @@ class AppTheme {
         fontWeight: FontWeight.w600,
       ),
       bodyLarge: base.textTheme.bodyLarge?.copyWith(fontSize: 17, height: 1.45),
-      bodyMedium: base.textTheme.bodyMedium?.copyWith(fontSize: 16, height: 1.45),
+      bodyMedium: base.textTheme.bodyMedium?.copyWith(
+        fontSize: 16,
+        height: 1.45,
+      ),
       bodySmall: base.textTheme.bodySmall?.copyWith(fontSize: 14, height: 1.4),
       labelLarge: base.textTheme.labelLarge?.copyWith(
         fontSize: 17,
@@ -126,8 +134,9 @@ class AppTheme {
 
     return base.copyWith(
       textTheme: text,
-      scaffoldBackgroundColor:
-          isLight ? const Color(0xFFF7F9F9) : scheme.surface,
+      scaffoldBackgroundColor: isLight
+          ? const Color(0xFFF7F9F9)
+          : scheme.surface,
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
@@ -232,7 +241,9 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        contentTextStyle: text.bodyLarge?.copyWith(color: scheme.onInverseSurface),
+        contentTextStyle: text.bodyLarge?.copyWith(
+          color: scheme.onInverseSurface,
+        ),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.controlAll),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -274,10 +285,10 @@ extension StatusPalette on BuildContext {
       isDark ? ink.withValues(alpha: 0.18) : _lightContainerFor(ink);
 
   Color _lightContainerFor(Color ink) => switch (ink) {
-        AppStatusColors.positive => AppStatusColors.positiveContainer,
-        AppStatusColors.caution => AppStatusColors.cautionContainer,
-        AppStatusColors.critical => AppStatusColors.criticalContainer,
-        AppStatusColors.info => AppStatusColors.infoContainer,
-        _ => AppStatusColors.neutralContainer,
-      };
+    AppStatusColors.positive => AppStatusColors.positiveContainer,
+    AppStatusColors.caution => AppStatusColors.cautionContainer,
+    AppStatusColors.critical => AppStatusColors.criticalContainer,
+    AppStatusColors.info => AppStatusColors.infoContainer,
+    _ => AppStatusColors.neutralContainer,
+  };
 }

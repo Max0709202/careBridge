@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { ConfigModule } from './common/config.module';
 import { LoggingModule } from './common/logging/logging.module';
@@ -12,10 +12,13 @@ import { QueueModule } from './infrastructure/queue/queue.module';
 import { MailModule } from './infrastructure/mail/mail.module';
 import { PushModule } from './infrastructure/push/push.module';
 import { MapsModule } from './infrastructure/maps/maps.module';
+import { RateLimitModule } from './infrastructure/rate-limit/rate-limit.module';
 import { RetentionModule } from './modules/retention/retention.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/auth.guard';
+import { RateLimitGuard } from './common/rate-limit.guard';
+import { IdempotencyInterceptor } from './common/idempotency.interceptor';
 import { CareModule } from './modules/care/care.module';
 import { HealthModule } from './modules/health/health.module';
 
@@ -32,6 +35,7 @@ import { HealthModule } from './modules/health/health.module';
     MailModule,
     PushModule,
     MapsModule,
+    RateLimitModule,
     AuditModule,
     CareModule,
     AuthModule,
@@ -44,6 +48,17 @@ import { HealthModule } from './modules/health/health.module';
     // @Public(). The reverse — remembering @UseGuards on each new controller —
     // is the single most common way an endpoint ships unprotected.
     { provide: APP_GUARD, useClass: AuthGuard },
+    // After AuthGuard, and that order is deliberate: a request with no valid
+    // token is refused before it can spend anybody's rate-limit allowance.
+    // The routes this applies to are the public ones, where there is no token
+    // to check and the limit is the only thing between a stranger and a
+    // password guess.
+    { provide: APP_GUARD, useClass: RateLimitGuard },
+    // Only routes marked @Idempotent() and carrying an Idempotency-Key do
+    // anything here. Registered globally so that marking a new route is the
+    // whole change — the alternative is remembering @UseInterceptors on each
+    // controller, which is the same failure mode as remembering @UseGuards.
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
   ],
 })
 export class AppModule implements NestModule {

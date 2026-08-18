@@ -64,14 +64,17 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     _line2 = TextEditingController(text: existing?.homeAddress.line2 ?? '');
     _city = TextEditingController(text: existing?.homeAddress.city ?? '');
     _stateCode = TextEditingController(text: existing?.homeAddress.state ?? '');
-    _postalCode =
-        TextEditingController(text: existing?.homeAddress.postalCode ?? '');
-    _accessNotes =
-        TextEditingController(text: existing?.homeAddress.accessNotes ?? '');
+    _postalCode = TextEditingController(
+      text: existing?.homeAddress.postalCode ?? '',
+    );
+    _accessNotes = TextEditingController(
+      text: existing?.homeAddress.accessNotes ?? '',
+    );
     _mobilityNotes = TextEditingController(text: existing?.mobilityNotes ?? '');
     _contactName = TextEditingController(text: contact?.name ?? '');
-    _contactRelationship =
-        TextEditingController(text: contact?.relationship ?? '');
+    _contactRelationship = TextEditingController(
+      text: contact?.relationship ?? '',
+    );
     _contactPhone = TextEditingController(text: contact?.phone ?? '');
     _needs = {...?existing?.mobilityNeeds};
     _ageBand = existing?.ageBand;
@@ -109,8 +112,9 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
       city: _city.text.trim(),
       state: _stateCode.text.trim(),
       postalCode: _postalCode.text.trim(),
-      accessNotes:
-          _accessNotes.text.trim().isEmpty ? null : _accessNotes.text.trim(),
+      accessNotes: _accessNotes.text.trim().isEmpty
+          ? null
+          : _accessNotes.text.trim(),
       // Coordinates come from geocoding, which is a server concern. Until then
       // they stay null and price estimates say so rather than inventing one.
       coordinates: _existing?.homeAddress.coordinates,
@@ -198,7 +202,8 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                   textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
                     labelText: 'Legal name (optional)',
-                    helperText: 'Only needed if a clinic or transport provider '
+                    helperText:
+                        'Only needed if a clinic or transport provider '
                         'has to match their records.',
                   ),
                 ),
@@ -218,7 +223,8 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                   initialValue: _ageBand,
                   decoration: const InputDecoration(
                     labelText: 'Age range (optional)',
-                    helperText: 'A range, not a date of birth — enough to plan '
+                    helperText:
+                        'A range, not a date of birth — enough to plan '
                         'mobility support, and not enough to identify anyone.',
                   ),
                   items: [
@@ -231,11 +237,14 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 const SectionHeader(
                   'Where they are collected',
-                  subtitle: 'The details a driver needs to find the right door.',
+                  subtitle:
+                      'The details a driver needs to find the right door.',
                 ),
                 TextFormField(
                   controller: _line1,
-                  decoration: const InputDecoration(labelText: 'Street address'),
+                  decoration: const InputDecoration(
+                    labelText: 'Street address',
+                  ),
                   validator: (value) => (value == null || value.trim().isEmpty)
                       ? 'Enter the pickup address.'
                       : null,
@@ -258,8 +267,8 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                         decoration: const InputDecoration(labelText: 'City'),
                         validator: (value) =>
                             (value == null || value.trim().isEmpty)
-                                ? 'Required'
-                                : null,
+                            ? 'Required'
+                            : null,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
@@ -270,8 +279,8 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                         decoration: const InputDecoration(labelText: 'State'),
                         validator: (value) =>
                             (value == null || value.trim().isEmpty)
-                                ? 'Required'
-                                : null,
+                            ? 'Required'
+                            : null,
                       ),
                     ),
                   ],
@@ -291,7 +300,8 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                   maxLines: 3,
                   decoration: const InputDecoration(
                     labelText: 'How to find them',
-                    helperText: 'Gate codes, which door, how long to wait. This '
+                    helperText:
+                        'Gate codes, which door, how long to wait. This '
                         'is what stops a driver waiting at the wrong entrance.',
                   ),
                 ),
@@ -299,7 +309,8 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 const SectionHeader(
                   'Getting about',
-                  subtitle: 'Determines which vehicle is sent and what help is '
+                  subtitle:
+                      'Determines which vehicle is sent and what help is '
                       'offered on the day.',
                 ),
                 Wrap(
@@ -350,7 +361,8 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                   maxLines: 3,
                   decoration: const InputDecoration(
                     labelText: 'Anything a driver should know',
-                    helperText: 'How to help, not why help is needed. No medical '
+                    helperText:
+                        'How to help, not why help is needed. No medical '
                         'details.',
                   ),
                 ),

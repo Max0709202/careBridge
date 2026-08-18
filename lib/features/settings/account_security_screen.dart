@@ -59,7 +59,9 @@ class _AccountSecurityScreenState extends ConsumerState<AccountSecurityScreen> {
     try {
       await ref.read(careApiProvider).revokeSession(session.id);
       await _load();
-      if (mounted) showConfirmationBanner(context, 'That device was signed out.');
+      if (mounted) {
+        showConfirmationBanner(context, 'That device was signed out.');
+      }
     } catch (error) {
       if (mounted) showFailure(context, error);
     } finally {
@@ -142,7 +144,8 @@ class _AccountSecurityScreenState extends ConsumerState<AccountSecurityScreen> {
                         'A code from your phone, as well as your password',
                       ),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push('/settings/security/two-factor'),
+                      onTap: () =>
+                          context.push('/settings/security/two-factor'),
                     ),
                   ),
 
@@ -299,7 +302,9 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
 
     setState(() => _busy = true);
     try {
-      await ref.read(careApiProvider).changePassword(
+      await ref
+          .read(careApiProvider)
+          .changePassword(
             currentPassword: _current.text,
             newPassword: _next.text,
           );
@@ -335,9 +340,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
               controller: _current,
               obscureText: true,
               autofillHints: const [AutofillHints.password],
-              decoration: const InputDecoration(
-                labelText: 'Current password',
-              ),
+              decoration: const InputDecoration(labelText: 'Current password'),
               validator: (value) =>
                   (value ?? '').isEmpty ? 'Enter your current password.' : null,
             ),

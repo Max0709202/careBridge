@@ -135,6 +135,19 @@ describe('ride state machine', () => {
     expect(() => assertRideTransition('requested', 'awaitingAssignment')).not.toThrow();
   });
 
+  it('offers nothing and permits nothing from a status it does not recognise', () => {
+    // The database can hand this build a status a newer one wrote. Both the
+    // "what can I do next" list the app renders and the check the server makes
+    // must read it as a dead end rather than as an empty allowlist meaning
+    // "anything".
+    const unknown = 'impounded' as RideStatus;
+    expect(allowedRideTransitions(unknown)).toEqual([]);
+    expect(canTransitionRide(unknown, 'completed')).toBe(false);
+    expect(() => assertRideTransition(unknown, 'completed')).toThrow(
+      InvalidTransitionError,
+    );
+  });
+
   it('has no `delayed` status, because delay is a flag', () => {
     // A driver stuck in traffic on the way to pickup is still driverEnRoute.
     // Modelling delay as a status would lose the state it must return to.

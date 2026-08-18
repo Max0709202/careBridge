@@ -22,13 +22,16 @@ class PatientSwitcher extends ConsumerWidget {
     final theme = Theme.of(context);
     if (patient == null) return const SizedBox.shrink();
 
-    final others = state.activePatients.where((p) => p.id != patient.id).toList();
+    final others = state.activePatients
+        .where((p) => p.id != patient.id)
+        .toList();
 
     return AppCard(
       onTap: others.isEmpty && state.activePatients.length == 1
           ? () => context.push('/patients/${patient.id}')
           : () => _showPicker(context, ref, state.activePatients, patient),
-      semanticLabel: 'Currently viewing ${patient.preferredName}. '
+      semanticLabel:
+          'Currently viewing ${patient.preferredName}. '
           '${others.isEmpty ? 'Open profile.' : 'Tap to switch person.'}',
       child: Row(
         children: [

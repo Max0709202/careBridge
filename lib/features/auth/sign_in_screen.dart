@@ -29,10 +29,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     try {
-      ref.read(careProvider.notifier).signIn(
-            email: _email.text,
-            password: _password.text,
-          );
+      ref
+          .read(careProvider.notifier)
+          .signIn(email: _email.text, password: _password.text);
       if (mounted) context.go('/');
     } catch (error) {
       if (mounted) showFailure(context, error);
@@ -114,8 +113,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                                   ? Icons.visibility_outlined
                                   : Icons.visibility_off_outlined,
                             ),
-                            tooltip: _obscure ? 'Show password' : 'Hide password',
-                            onPressed: () => setState(() => _obscure = !_obscure),
+                            tooltip: _obscure
+                                ? 'Show password'
+                                : 'Hide password',
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
                           ),
                         ),
                         validator: (value) => (value == null || value.isEmpty)

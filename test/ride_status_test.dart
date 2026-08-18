@@ -64,7 +64,10 @@ void main() {
 
     test('a ride cannot go backwards', () {
       expect(
-        canTransitionRide(RideStatus.passengerOnboard, RideStatus.driverEnRoute),
+        canTransitionRide(
+          RideStatus.passengerOnboard,
+          RideStatus.driverEnRoute,
+        ),
         isFalse,
       );
       expect(
@@ -99,7 +102,8 @@ void main() {
         expect(
           canTransitionRide(status, RideStatus.canceled),
           isTrue,
-          reason: 'cancelling must be possible from ${status.name} — the reasons '
+          reason:
+              'cancelling must be possible from ${status.name} — the reasons '
               'to stop a ride are rarely convenient',
         );
       }
@@ -108,10 +112,9 @@ void main() {
         canTransitionRide(RideStatus.arrivedAtDestination, RideStatus.canceled),
         isFalse,
       );
-      expect(
-        allowedRideTransitions(RideStatus.arrivedAtDestination),
-        {RideStatus.completed},
-      );
+      expect(allowedRideTransitions(RideStatus.arrivedAtDestination), {
+        RideStatus.completed,
+      });
     });
 
     group('location sharing', () {
@@ -152,12 +155,15 @@ void main() {
       });
     });
 
-    test('passengerIsOnboard is true only with the passenger in the vehicle', () {
-      expect(RideStatus.passengerOnboard.passengerIsOnboard, isTrue);
-      expect(RideStatus.inProgress.passengerIsOnboard, isTrue);
-      expect(RideStatus.driverArrived.passengerIsOnboard, isFalse);
-      expect(RideStatus.arrivedAtDestination.passengerIsOnboard, isFalse);
-    });
+    test(
+      'passengerIsOnboard is true only with the passenger in the vehicle',
+      () {
+        expect(RideStatus.passengerOnboard.passengerIsOnboard, isTrue);
+        expect(RideStatus.inProgress.passengerIsOnboard, isTrue);
+        expect(RideStatus.driverArrived.passengerIsOnboard, isFalse);
+        expect(RideStatus.arrivedAtDestination.passengerIsOnboard, isFalse);
+      },
+    );
 
     test('every status has a plain-language label', () {
       for (final status in RideStatus.values) {

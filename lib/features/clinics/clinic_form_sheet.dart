@@ -77,12 +77,15 @@ class _ClinicFormState extends State<_ClinicForm> {
         state: _stateCode.text.trim(),
         postalCode: _postalCode.text.trim(),
       ),
-      entranceNotes:
-          _entrance.text.trim().isEmpty ? null : _entrance.text.trim(),
+      entranceNotes: _entrance.text.trim().isEmpty
+          ? null
+          : _entrance.text.trim(),
     );
 
     try {
-      final saved = await widget.ref.read(careProvider.notifier).addClinic(clinic);
+      final saved = await widget.ref
+          .read(careProvider.notifier)
+          .addClinic(clinic);
       if (!mounted) return;
       Navigator.of(context).pop(saved);
     } catch (error) {
@@ -126,7 +129,9 @@ class _ClinicFormState extends State<_ClinicForm> {
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _line1,
-                  decoration: const InputDecoration(labelText: 'Street address'),
+                  decoration: const InputDecoration(
+                    labelText: 'Street address',
+                  ),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
@@ -169,7 +174,8 @@ class _ClinicFormState extends State<_ClinicForm> {
                   maxLines: 2,
                   decoration: const InputDecoration(
                     labelText: 'Where should the car stop? (optional)',
-                    helperText: 'Large campuses are the most common reason a '
+                    helperText:
+                        'Large campuses are the most common reason a '
                         'driver cannot find someone.',
                   ),
                 ),

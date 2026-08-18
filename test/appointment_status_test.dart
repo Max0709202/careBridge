@@ -86,11 +86,14 @@ void main() {
         );
       });
 
-      test('implies nothing for ride states that say nothing about the visit', () {
-        expect(appointmentStatusForRide('requested'), isNull);
-        expect(appointmentStatusForRide('driverEnRoute'), isNull);
-        expect(appointmentStatusForRide('completed'), isNull);
-      });
+      test(
+        'implies nothing for ride states that say nothing about the visit',
+        () {
+          expect(appointmentStatusForRide('requested'), isNull);
+          expect(appointmentStatusForRide('driverEnRoute'), isNull);
+          expect(appointmentStatusForRide('completed'), isNull);
+        },
+      );
     });
   });
 }

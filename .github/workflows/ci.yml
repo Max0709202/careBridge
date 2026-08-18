@@ -200,14 +200,18 @@ jobs:
           cache: true
 
       - run: flutter pub get
-      - run: flutter analyze
-      - run: flutter test
 
-      # `dart format` is not yet enforced on the app: it predates the check and
-      # the Dart 3.12 formatter reflows enough of it that turning the gate on
-      # would be a forty-file whitespace commit. It is enforced on the
-      # generated client below, where the output is produced formatted and
-      # therefore stays clean for free.
+      # The app is the pub workspace root, so melos does not see it and it is
+      # driven directly — same three commands `make lint`, `make format` and
+      # `make test` run locally.
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test --coverage
+
+      # Floors, not targets — see the header of the script. jest enforces the
+      # API's equivalent itself; Dart has nothing built in, so the lcov file
+      # the run above just wrote is checked here.
+      - run: node scripts/check-dart-coverage.mjs
 
       # The generated client is analysed separately and on purpose. It is a
       # pure Dart package, and it is the one place a generator bug surfaces as

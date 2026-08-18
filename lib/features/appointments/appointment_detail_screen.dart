@@ -36,10 +36,14 @@ class AppointmentDetailScreen extends ConsumerWidget {
     final clinic = state.clinicById(appointment.clinicId);
     final patient = state.patientById(appointment.patientId);
     final rides = state.ridesForAppointment(appointmentId);
-    final canSchedule =
-        state.can(appointment.patientId, FamilyPermission.scheduleAppointments);
-    final canTransport =
-        state.can(appointment.patientId, FamilyPermission.requestTransport);
+    final canSchedule = state.can(
+      appointment.patientId,
+      FamilyPermission.scheduleAppointments,
+    );
+    final canTransport = state.can(
+      appointment.patientId,
+      FamilyPermission.requestTransport,
+    );
     final hasActiveRide = rides.any((r) => r.isActive);
 
     return Scaffold(
@@ -195,9 +199,12 @@ class AppointmentDetailScreen extends ConsumerWidget {
                                     Text(
                                       '${formatShortDay(change.at)}, '
                                       '${formatTime(change.at)} · ${change.actor}',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -220,7 +227,10 @@ class AppointmentDetailScreen extends ConsumerWidget {
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.colorScheme.error,
-                    side: BorderSide(color: theme.colorScheme.error, width: 1.5),
+                    side: BorderSide(
+                      color: theme.colorScheme.error,
+                      width: 1.5,
+                    ),
                   ),
                   onPressed: () =>
                       _cancel(context, ref, appointment, hasActiveRide),
@@ -244,7 +254,9 @@ class AppointmentDetailScreen extends ConsumerWidget {
     final now = ref.read(clockProvider).now();
     final date = await showDatePicker(
       context: context,
-      initialDate: appointment.startsAt.isAfter(now) ? appointment.startsAt : now,
+      initialDate: appointment.startsAt.isAfter(now)
+          ? appointment.startsAt
+          : now,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365)),
       helpText: 'New date',
@@ -259,7 +271,9 @@ class AppointmentDetailScreen extends ConsumerWidget {
     if (time == null || !context.mounted) return;
 
     try {
-      await ref.read(careProvider.notifier).rescheduleAppointment(
+      await ref
+          .read(careProvider.notifier)
+          .rescheduleAppointment(
             appointment.id,
             DateTime(date.year, date.month, date.day, time.hour, time.minute),
           );
@@ -282,7 +296,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
       title: 'Cancel this appointment?',
       message: hasActiveRide
           ? 'The booked transportation will be cancelled too, so no car is sent '
-              'for an appointment that is not happening.'
+                'for an appointment that is not happening.'
           : 'This cannot be undone. Everyone with access will be notified.',
       confirmLabel: 'Cancel appointment',
       cancelLabel: 'Keep it',
@@ -334,7 +348,7 @@ class _RideSummaryCard extends StatelessWidget {
             ride.flexibleReturn
                 ? 'Pickup when the visit ends'
                 : 'Pickup ${formatRelativeDay(ride.scheduledPickupAt, now)} at '
-                    '${formatTime(ride.scheduledPickupAt)}',
+                      '${formatTime(ride.scheduledPickupAt)}',
             style: theme.textTheme.bodyMedium,
           ),
           if (ride.driver != null)

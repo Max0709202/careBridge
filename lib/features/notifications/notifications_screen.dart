@@ -43,7 +43,8 @@ class NotificationsScreen extends ConsumerWidget {
           ? const EmptyState(
               icon: Icons.notifications_none,
               title: 'Nothing to report',
-              message: 'Updates about appointments and rides appear here, and '
+              message:
+                  'Updates about appointments and rides appear here, and '
                   'as notifications on your phone.',
             )
           : ListView(
@@ -90,20 +91,21 @@ class _NotificationTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final unread = !notification.isRead;
-    final ink = notification.kind.isUrgent ? context.cautionInk : context.infoInk;
+    final ink = notification.kind.isUrgent
+        ? context.cautionInk
+        : context.infoInk;
 
     return AppCard(
       borderColor: unread ? theme.colorScheme.primary : null,
-      semanticLabel: '${unread ? 'Unread. ' : ''}${notification.title}. '
+      semanticLabel:
+          '${unread ? 'Unread. ' : ''}${notification.title}. '
           '${notification.body}',
       onTap: () {
         // Navigation does not wait on the read receipt. Opening the update is
         // what the user asked for; marking it read is bookkeeping, and the
         // snapshot that comes back updates the badge a moment later.
         unawaited(
-          ref
-              .read(careProvider.notifier)
-              .markNotificationRead(notification.id),
+          ref.read(careProvider.notifier).markNotificationRead(notification.id),
         );
         final rideId = notification.rideId;
         final appointmentId = notification.appointmentId;
@@ -135,8 +137,9 @@ class _NotificationTile extends ConsumerWidget {
                       child: Text(
                         notification.title,
                         style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight:
-                              unread ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: unread
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                         ),
                       ),
                     ),
@@ -174,21 +177,20 @@ class _NotificationTile extends ConsumerWidget {
   }
 
   IconData _iconFor(NotificationKind kind) => switch (kind) {
-        NotificationKind.appointmentCreated ||
-        NotificationKind.appointmentChanged =>
-          Icons.event_outlined,
-        NotificationKind.appointmentReminder => Icons.alarm,
-        NotificationKind.appointmentCanceled => Icons.event_busy_outlined,
-        NotificationKind.rideRequested => Icons.hourglass_empty,
-        NotificationKind.driverAssigned => Icons.person_pin_circle_outlined,
-        NotificationKind.driverEnRoute => Icons.directions_car_outlined,
-        NotificationKind.driverArrivingSoon => Icons.timer_outlined,
-        NotificationKind.driverArrived => Icons.pin_drop_outlined,
-        NotificationKind.patientPickedUp => Icons.event_seat_outlined,
-        NotificationKind.patientArrived => Icons.local_hospital_outlined,
-        NotificationKind.rideDelayed => Icons.watch_later_outlined,
-        NotificationKind.rideCompleted => Icons.task_alt,
-        NotificationKind.rideCanceled => Icons.cancel_outlined,
-        NotificationKind.accessGranted => Icons.group_add_outlined,
-      };
+    NotificationKind.appointmentCreated ||
+    NotificationKind.appointmentChanged => Icons.event_outlined,
+    NotificationKind.appointmentReminder => Icons.alarm,
+    NotificationKind.appointmentCanceled => Icons.event_busy_outlined,
+    NotificationKind.rideRequested => Icons.hourglass_empty,
+    NotificationKind.driverAssigned => Icons.person_pin_circle_outlined,
+    NotificationKind.driverEnRoute => Icons.directions_car_outlined,
+    NotificationKind.driverArrivingSoon => Icons.timer_outlined,
+    NotificationKind.driverArrived => Icons.pin_drop_outlined,
+    NotificationKind.patientPickedUp => Icons.event_seat_outlined,
+    NotificationKind.patientArrived => Icons.local_hospital_outlined,
+    NotificationKind.rideDelayed => Icons.watch_later_outlined,
+    NotificationKind.rideCompleted => Icons.task_alt,
+    NotificationKind.rideCanceled => Icons.cancel_outlined,
+    NotificationKind.accessGranted => Icons.group_add_outlined,
+  };
 }

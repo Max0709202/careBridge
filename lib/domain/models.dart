@@ -24,9 +24,9 @@ class Coordinates {
   final double longitude;
 
   Coordinates lerp(Coordinates to, double t) => Coordinates(
-        latitude + (to.latitude - latitude) * t,
-        longitude + (to.longitude - longitude) * t,
-      );
+    latitude + (to.latitude - latitude) * t,
+    longitude + (to.longitude - longitude) * t,
+  );
 }
 
 class Address {
@@ -56,11 +56,11 @@ class Address {
   final Coordinates? coordinates;
 
   String get singleLine => [
-        line1,
-        if (line2 != null && line2!.isNotEmpty) line2,
-        city,
-        '$state $postalCode',
-      ].join(', ');
+    line1,
+    if (line2 != null && line2!.isNotEmpty) line2,
+    city,
+    '$state $postalCode',
+  ].join(', ');
 
   String get shortLine => '$line1, $city';
 }
@@ -72,11 +72,11 @@ enum AgeBand {
   over85;
 
   String get label => switch (this) {
-        AgeBand.under65 => 'Under 65',
-        AgeBand.from65to74 => '65–74',
-        AgeBand.from75to84 => '75–84',
-        AgeBand.over85 => '85 or older',
-      };
+    AgeBand.under65 => 'Under 65',
+    AgeBand.from65to74 => '65–74',
+    AgeBand.from75to84 => '75–84',
+    AgeBand.over85 => '85 or older',
+  };
 }
 
 enum MobilityNeed {
@@ -91,16 +91,16 @@ enum MobilityNeed {
   memorySupport;
 
   String get label => switch (this) {
-        MobilityNeed.walker => 'Uses a walker',
-        MobilityNeed.wheelchair => 'Uses a wheelchair',
-        MobilityNeed.cane => 'Uses a cane',
-        MobilityNeed.oxygen => 'Travels with oxygen',
-        MobilityNeed.transferAssistance => 'Needs help transferring',
-        MobilityNeed.escortToDoor => 'Needs escorting to the door',
-        MobilityNeed.lowVision => 'Low vision',
-        MobilityNeed.hardOfHearing => 'Hard of hearing',
-        MobilityNeed.memorySupport => 'Needs memory support',
-      };
+    MobilityNeed.walker => 'Uses a walker',
+    MobilityNeed.wheelchair => 'Uses a wheelchair',
+    MobilityNeed.cane => 'Uses a cane',
+    MobilityNeed.oxygen => 'Travels with oxygen',
+    MobilityNeed.transferAssistance => 'Needs help transferring',
+    MobilityNeed.escortToDoor => 'Needs escorting to the door',
+    MobilityNeed.lowVision => 'Low vision',
+    MobilityNeed.hardOfHearing => 'Hard of hearing',
+    MobilityNeed.memorySupport => 'Needs memory support',
+  };
 
   /// Needs that constrain which vehicle can be sent, as opposed to needs that
   /// only tell the driver how to help.
@@ -274,16 +274,16 @@ enum AppointmentType {
   /// Coarse on purpose. "Specialist" is enough to plan a visit's length and
   /// transport; the specialty itself is clinical information we do not need.
   String get label => switch (this) {
-        AppointmentType.primaryCare => 'Primary care',
-        AppointmentType.specialist => 'Specialist visit',
-        AppointmentType.imaging => 'Imaging',
-        AppointmentType.labWork => 'Lab work',
-        AppointmentType.therapy => 'Therapy',
-        AppointmentType.dental => 'Dental',
-        AppointmentType.vision => 'Vision',
-        AppointmentType.followUp => 'Follow-up',
-        AppointmentType.other => 'Other',
-      };
+    AppointmentType.primaryCare => 'Primary care',
+    AppointmentType.specialist => 'Specialist visit',
+    AppointmentType.imaging => 'Imaging',
+    AppointmentType.labWork => 'Lab work',
+    AppointmentType.therapy => 'Therapy',
+    AppointmentType.dental => 'Dental',
+    AppointmentType.vision => 'Vision',
+    AppointmentType.followUp => 'Follow-up',
+    AppointmentType.other => 'Other',
+  };
 }
 
 class StatusChange {
@@ -419,9 +419,9 @@ enum RideDirection {
   returnTrip;
 
   String get label => switch (this) {
-        RideDirection.outbound => 'To the clinic',
-        RideDirection.returnTrip => 'Home again',
-      };
+    RideDirection.outbound => 'To the clinic',
+    RideDirection.returnTrip => 'Home again',
+  };
 }
 
 class RideEvent {
@@ -585,8 +585,9 @@ class Ride {
       cancellationReason: cancellationReason ?? this.cancellationReason,
       events: events ?? this.events,
       history: history ?? this.history,
-      lastKnownPosition:
-          clearPosition ? null : (lastKnownPosition ?? this.lastKnownPosition),
+      lastKnownPosition: clearPosition
+          ? null
+          : (lastKnownPosition ?? this.lastKnownPosition),
       etaMinutes: clearEta ? null : (etaMinutes ?? this.etaMinutes),
       createdAt: createdAt,
     );
@@ -646,15 +647,15 @@ class AppNotification {
   bool get isRead => readAt != null;
 
   AppNotification markRead(DateTime at) => AppNotification(
-        id: id,
-        kind: kind,
-        title: title,
-        body: body,
-        createdAt: createdAt,
-        readAt: at,
-        rideId: rideId,
-        appointmentId: appointmentId,
-      );
+    id: id,
+    kind: kind,
+    title: title,
+    body: body,
+    createdAt: createdAt,
+    readAt: at,
+    rideId: rideId,
+    appointmentId: appointmentId,
+  );
 }
 
 /// Everything one signed-in user can see, resolved through their access grants.

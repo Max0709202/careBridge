@@ -40,6 +40,20 @@ process.env['LOG_PRETTY'] = 'false';
 // and the tests assert on behaviour rather than on ciphertext.
 process.env['MFA_SECRET_KEY'] ??= Buffer.alloc(32).toString('base64');
 
+// Rate limits, effectively off.
+//
+// Every fixture in this suite is built through the HTTP API, and every request
+// in a run arrives from the same loopback address — so the per-IP counters
+// would see one caller registering forty accounts and refuse, which is the
+// limit working correctly and telling us nothing about the code under test.
+//
+// `??=`, not `=`: rate-limit.e2e-spec.ts sets its own tight values before the
+// harness boots, which is where the limits themselves are proven.
+process.env['LOGIN_MAX_ATTEMPTS'] ??= '10000';
+process.env['SIGN_IN_IP_MAX_ATTEMPTS'] ??= '10000';
+process.env['EMAIL_DISPATCH_MAX_ATTEMPTS'] ??= '10000';
+process.env['TOKEN_GUESS_MAX_ATTEMPTS'] ??= '10000';
+
 // Short, so an expiry test does not have to wait.
 process.env['PASSWORD_RESET_TTL_MINUTES'] ??= '30';
 process.env['INVITATION_TTL_DAYS'] ??= '7';

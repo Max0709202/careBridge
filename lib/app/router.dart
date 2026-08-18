@@ -168,39 +168,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/patients/:id',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => PatientDetailScreen(
-          patientId: state.pathParameters['id']!,
-        ),
+        builder: (context, state) =>
+            PatientDetailScreen(patientId: state.pathParameters['id']!),
         routes: [
           GoRoute(
             path: 'care-circle',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) => CareCircleScreen(
-              patientId: state.pathParameters['id']!,
-            ),
+            builder: (context, state) =>
+                CareCircleScreen(patientId: state.pathParameters['id']!),
           ),
           GoRoute(
             path: 'edit',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) => PatientFormScreen(
-              patientId: state.pathParameters['id']!,
-            ),
+            builder: (context, state) =>
+                PatientFormScreen(patientId: state.pathParameters['id']!),
           ),
         ],
       ),
       GoRoute(
         path: '/rides/:id',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => RideDetailScreen(
-          rideId: state.pathParameters['id']!,
-        ),
+        builder: (context, state) =>
+            RideDetailScreen(rideId: state.pathParameters['id']!),
         routes: [
           GoRoute(
             path: 'track',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) => TrackingScreen(
-              rideId: state.pathParameters['id']!,
-            ),
+            builder: (context, state) =>
+                TrackingScreen(rideId: state.pathParameters['id']!),
           ),
         ],
       ),

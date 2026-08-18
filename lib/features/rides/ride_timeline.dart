@@ -68,7 +68,8 @@ class _TimelineRow extends StatelessWidget {
         : (isFirst ? theme.colorScheme.primary : theme.colorScheme.outline);
 
     return Semantics(
-      label: '${event.title}, ${formatTime(event.at)}'
+      label:
+          '${event.title}, ${formatTime(event.at)}'
           '${event.detail == null ? '' : '. ${event.detail}'}',
       excludeSemantics: true,
       child: IntrinsicHeight(
@@ -81,8 +82,8 @@ class _TimelineRow extends StatelessWidget {
                   event.isException
                       ? Icons.error_outline
                       : (isFirst
-                          ? Icons.radio_button_checked
-                          : Icons.circle_outlined),
+                            ? Icons.radio_button_checked
+                            : Icons.circle_outlined),
                   size: 18,
                   color: ink,
                 ),

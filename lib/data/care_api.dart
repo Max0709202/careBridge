@@ -10,6 +10,7 @@ import 'package:carebridge_api/carebridge_api.dart' as wire;
 import 'package:http/http.dart' as http;
 
 import '../core/failures.dart';
+import '../core/ids.dart';
 import '../domain/models.dart';
 import '../domain/permissions.dart';
 import 'care_codec.dart';
@@ -32,8 +33,8 @@ class CareSnapshot {
 /// drifts out of step with the server that is supposed to be authoritative.
 class CareApi {
   CareApi({required this.tokens, String? baseUrl, http.Client? client})
-      : _baseUrl = _resolveBaseUrl(baseUrl ?? _configuredBaseUrl),
-        _client = client ?? http.Client();
+    : _baseUrl = _resolveBaseUrl(baseUrl ?? _configuredBaseUrl),
+      _client = client ?? http.Client();
 
   final TokenStore tokens;
   final Uri _baseUrl;
@@ -66,19 +67,17 @@ class CareApi {
     required String email,
     required String password,
     required bool acceptedTerms,
-  }) =>
-      _session('/auth/register', {
-        'fullName': fullName.trim(),
-        'email': email.trim(),
-        'password': password,
-        'acceptedTerms': acceptedTerms,
-      });
+  }) => _session('/auth/register', {
+    'fullName': fullName.trim(),
+    'email': email.trim(),
+    'password': password,
+    'acceptedTerms': acceptedTerms,
+  });
 
   Future<CareSnapshot> signIn({
     required String email,
     required String password,
-  }) =>
-      _session('/auth/login', {'email': email.trim(), 'password': password});
+  }) => _session('/auth/login', {'email': email.trim(), 'password': password});
 
   Future<CareSnapshot> _session(String path, Map<String, dynamic> body) async {
     final json = await _send('POST', path, body: body, authenticated: false);
@@ -129,23 +128,30 @@ class CareApi {
   // ─── preferences ──────────────────────────────────────────────────────────
 
   Future<CareSnapshot> setSimplifiedMode(bool enabled) async => _snapshot(
-        await _send('PATCH', '/me/preferences', body: {
-          'simplifiedMode': enabled,
-        }),
-      );
+    await _send('PATCH', '/me/preferences', body: {'simplifiedMode': enabled}),
+  );
 
   Future<CareSnapshot> selectPatient(String patientId) async =>
       _snapshot(await _send('POST', '/patients/$patientId/select'));
 
   // ─── patients ─────────────────────────────────────────────────────────────
 
-  Future<CareSnapshot> createPatient(Patient patient) async =>
-      _snapshot(await _send('POST', '/patients', body: patientToJson(patient)));
+  /// The key is generated per call rather than per retry, which is the whole
+  /// point: one tap is one key, and every attempt to deliver that tap — a
+  /// refresh-and-retry inside [_send], or a user pressing the button again
+  /// after a spinner that never resolved — carries it.
+  Future<CareSnapshot> createPatient(Patient patient) async => _snapshot(
+    await _send(
+      'POST',
+      '/patients',
+      body: patientToJson(patient),
+      idempotencyKey: newId(),
+    ),
+  );
 
   Future<CareSnapshot> updatePatient(Patient patient) async => _snapshot(
-        await _send('PUT', '/patients/${patient.id}',
-            body: patientToJson(patient)),
-      );
+    await _send('PUT', '/patients/${patient.id}', body: patientToJson(patient)),
+  );
 
   Future<CareSnapshot> archivePatient(String patientId) async =>
       _snapshot(await _send('POST', '/patients/$patientId/archive'));
@@ -153,12 +159,13 @@ class CareApi {
   Future<CareSnapshot> setPermissions(
     String patientId,
     Set<FamilyPermission> permissions,
-  ) async =>
-      _snapshot(
-        await _send('PUT', '/patients/$patientId/permissions', body: {
-          'permissions': permissions.map((p) => p.name).toList(),
-        }),
-      );
+  ) async => _snapshot(
+    await _send(
+      'PUT',
+      '/patients/$patientId/permissions',
+      body: {'permissions': permissions.map((p) => p.name).toList()},
+    ),
+  );
 
   // ─── the account ──────────────────────────────────────────────────────────
   //
@@ -169,7 +176,9 @@ class CareApi {
 
   Future<List<wire.SessionSummaryDto>> sessions() async =>
       (await _sendList('GET', '/auth/sessions'))
-          .map((e) => wire.SessionSummaryDto.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => wire.SessionSummaryDto.fromJson(e as Map<String, dynamic>),
+          )
           .toList();
 
   Future<void> revokeSession(String sessionId) async =>
@@ -191,32 +200,32 @@ class CareApi {
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
-  }) async =>
-      _send('POST', '/auth/password', body: {
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      });
+  }) async => _send(
+    'POST',
+    '/auth/password',
+    body: {'currentPassword': currentPassword, 'newPassword': newPassword},
+  );
 
   Future<void> requestPasswordReset(String email) async => _send(
-        'POST',
-        '/auth/password-reset',
-        body: {'email': email.trim()},
-        authenticated: false,
-      );
+    'POST',
+    '/auth/password-reset',
+    body: {'email': email.trim()},
+    authenticated: false,
+  );
 
   Future<void> resendVerification(String email) async => _send(
-        'POST',
-        '/auth/resend-verification',
-        body: {'email': email.trim()},
-        authenticated: false,
-      );
+    'POST',
+    '/auth/resend-verification',
+    body: {'email': email.trim()},
+    authenticated: false,
+  );
 
   Future<void> verifyEmail(String token) async => _send(
-        'POST',
-        '/auth/verify-email',
-        body: {'token': token},
-        authenticated: false,
-      );
+    'POST',
+    '/auth/verify-email',
+    body: {'token': token},
+    authenticated: false,
+  );
 
   // ─── two-factor authentication ────────────────────────────────────────────
 
@@ -233,10 +242,14 @@ class CareApi {
 
   // ─── notification preferences ─────────────────────────────────────────────
 
-  Future<List<wire.NotificationPreferenceDto>> notificationPreferences() async =>
+  Future<List<wire.NotificationPreferenceDto>>
+  notificationPreferences() async =>
       (await _sendList('GET', '/notifications/preferences'))
-          .map((e) =>
-              wire.NotificationPreferenceDto.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => wire.NotificationPreferenceDto.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList();
 
   Future<List<wire.NotificationPreferenceDto>> setNotificationPreference({
@@ -244,13 +257,16 @@ class CareApi {
     required String channel,
     required bool enabled,
   }) async =>
-      (await _sendList('PUT', '/notifications/preferences', body: {
-        'kind': kind,
-        'channel': channel,
-        'enabled': enabled,
-      }))
-          .map((e) =>
-              wire.NotificationPreferenceDto.fromJson(e as Map<String, dynamic>))
+      (await _sendList(
+            'PUT',
+            '/notifications/preferences',
+            body: {'kind': kind, 'channel': channel, 'enabled': enabled},
+          ))
+          .map(
+            (e) => wire.NotificationPreferenceDto.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList();
 
   // ─── the care circle ──────────────────────────────────────────────────────
@@ -265,32 +281,42 @@ class CareApi {
     required String email,
     required String relationship,
     required List<String> permissions,
-  }) async =>
-      wire.InvitationDto.fromJson(
-        await _send('POST', '/patients/$patientId/invitations', body: {
-          'email': email.trim(),
-          'relationship': relationship,
-          'permissions': permissions,
-        }),
-      );
+  }) async => wire.InvitationDto.fromJson(
+    await _send(
+      'POST',
+      '/patients/$patientId/invitations',
+      // A retried invitation is a second email to someone who is already
+      // deciding whether to accept the first.
+      idempotencyKey: newId(),
+      body: {
+        'email': email.trim(),
+        'relationship': relationship,
+        'permissions': permissions,
+      },
+    ),
+  );
 
   Future<void> revokeInvitation({
     required String patientId,
     required String invitationId,
-  }) async =>
-      _send('DELETE', '/patients/$patientId/invitations/$invitationId');
+  }) async => _send('DELETE', '/patients/$patientId/invitations/$invitationId');
 
   /// Accepting returns the whole snapshot — it now includes a patient the
   /// caller could not see a moment ago.
-  Future<CareSnapshot> acceptInvitation(String token) async =>
-      _snapshot(await _send('POST', '/invitations/accept', body: {
-        'token': token,
-      }));
+  Future<CareSnapshot> acceptInvitation(String token) async => _snapshot(
+    await _send('POST', '/invitations/accept', body: {'token': token}),
+  );
 
   // ─── clinics ──────────────────────────────────────────────────────────────
 
-  Future<CareSnapshot> addClinic(Clinic clinic) async =>
-      _snapshot(await _send('POST', '/clinics', body: clinicToJson(clinic)));
+  Future<CareSnapshot> addClinic(Clinic clinic) async => _snapshot(
+    await _send(
+      'POST',
+      '/clinics',
+      body: clinicToJson(clinic),
+      idempotencyKey: newId(),
+    ),
+  );
 
   // ─── appointments ─────────────────────────────────────────────────────────
 
@@ -302,39 +328,45 @@ class CareApi {
     required AppointmentType type,
     String? coordinationNotes,
     bool transportRequired = false,
-  }) async =>
-      _snapshot(
-        await _send('POST', '/appointments', body: {
-          'patientId': patientId,
-          'clinicId': clinicId,
-          'startsAt': startsAt.toUtc().toIso8601String(),
-          'expectedDurationMinutes': expectedDuration.inMinutes,
-          'type': type.name,
-          if (coordinationNotes != null && coordinationNotes.isNotEmpty)
-            'coordinationNotes': coordinationNotes,
-          'transportRequired': transportRequired,
-        }),
-      );
+  }) async => _snapshot(
+    await _send(
+      'POST',
+      '/appointments',
+      idempotencyKey: newId(),
+      body: {
+        'patientId': patientId,
+        'clinicId': clinicId,
+        'startsAt': startsAt.toUtc().toIso8601String(),
+        'expectedDurationMinutes': expectedDuration.inMinutes,
+        'type': type.name,
+        if (coordinationNotes != null && coordinationNotes.isNotEmpty)
+          'coordinationNotes': coordinationNotes,
+        'transportRequired': transportRequired,
+      },
+    ),
+  );
 
   Future<CareSnapshot> rescheduleAppointment(
     String appointmentId,
     DateTime startsAt,
-  ) async =>
-      _snapshot(
-        await _send('POST', '/appointments/$appointmentId/reschedule', body: {
-          'startsAt': startsAt.toUtc().toIso8601String(),
-        }),
-      );
+  ) async => _snapshot(
+    await _send(
+      'POST',
+      '/appointments/$appointmentId/reschedule',
+      body: {'startsAt': startsAt.toUtc().toIso8601String()},
+    ),
+  );
 
   Future<CareSnapshot> cancelAppointment(
     String appointmentId, {
     String? reason,
-  }) async =>
-      _snapshot(
-        await _send('POST', '/appointments/$appointmentId/cancel', body: {
-          if (reason != null && reason.isNotEmpty) 'reason': reason,
-        }),
-      );
+  }) async => _snapshot(
+    await _send(
+      'POST',
+      '/appointments/$appointmentId/cancel',
+      body: {if (reason != null && reason.isNotEmpty) 'reason': reason},
+    ),
+  );
 
   // ─── transportation ───────────────────────────────────────────────────────
 
@@ -343,16 +375,23 @@ class CareApi {
     required DateTime pickupAt,
     required bool roundTrip,
     String? notesForDriver,
-  }) async =>
-      _snapshot(
-        await _send('POST', '/rides', body: {
-          'appointmentId': appointmentId,
-          'pickupAt': pickupAt.toUtc().toIso8601String(),
-          'roundTrip': roundTrip,
-          if (notesForDriver != null && notesForDriver.isNotEmpty)
-            'notesForDriver': notesForDriver,
-        }),
-      );
+  }) async => _snapshot(
+    await _send(
+      'POST',
+      '/rides',
+      // A dropped response here is the case this exists for: retrying it
+      // without a key books a second car for the same appointment, and bills
+      // for it.
+      idempotencyKey: newId(),
+      body: {
+        'appointmentId': appointmentId,
+        'pickupAt': pickupAt.toUtc().toIso8601String(),
+        'roundTrip': roundTrip,
+        if (notesForDriver != null && notesForDriver.isNotEmpty)
+          'notesForDriver': notesForDriver,
+      },
+    ),
+  );
 
   Future<CareSnapshot> cancelRide(String rideId, String reason) async =>
       _snapshot(
@@ -363,13 +402,16 @@ class CareApi {
     String rideId, {
     required bool delayed,
     String? reason,
-  }) async =>
-      _snapshot(
-        await _send('POST', '/rides/$rideId/delay', body: {
-          'delayed': delayed,
-          if (reason != null && reason.isNotEmpty) 'reason': reason,
-        }),
-      );
+  }) async => _snapshot(
+    await _send(
+      'POST',
+      '/rides/$rideId/delay',
+      body: {
+        'delayed': delayed,
+        if (reason != null && reason.isNotEmpty) 'reason': reason,
+      },
+    ),
+  );
 
   /// Starts the server-side preview trip — the stand-in for the driver app.
   Future<CareSnapshot> startPreviewTrip(String rideId) async =>
@@ -389,9 +431,9 @@ class CareApi {
   // ─── transport plumbing ───────────────────────────────────────────────────
 
   CareSnapshot _snapshot(Map<String, dynamic> json) => CareSnapshot(
-        state: careStateFromJson(json),
-        runningPreviews: runningPreviewRideIds(json),
-      );
+    state: careStateFromJson(json),
+    runningPreviews: runningPreviewRideIds(json),
+  );
 
   Future<Map<String, dynamic>> _send(
     String method,
@@ -399,15 +441,31 @@ class CareApi {
     Map<String, dynamic>? body,
     bool authenticated = true,
     bool allowRetry = true,
+    String? idempotencyKey,
   }) async {
-    final response = await _request(method, path, body, authenticated);
+    final response = await _request(
+      method,
+      path,
+      body,
+      authenticated,
+      idempotencyKey,
+    );
 
     // One refresh attempt, then give up. Looping on 401 would turn an expired
     // session into an infinite request storm against the auth endpoint.
     if (response.statusCode == 401 && authenticated && allowRetry) {
       if (await _refresh()) {
-        return _send(method, path,
-            body: body, authenticated: authenticated, allowRetry: false);
+        return _send(
+          method,
+          path,
+          body: body,
+          authenticated: authenticated,
+          allowRetry: false,
+          // The same key on the retry, deliberately: a 401 that is fixed by a
+          // refresh is one request, not two, and the server must be able to
+          // tell if the first attempt landed before the token expired.
+          idempotencyKey: idempotencyKey,
+        );
       }
       await tokens.clear();
       throw const AuthenticationFailure();
@@ -441,7 +499,7 @@ class CareApi {
       final decoded = response.body.isEmpty
           ? const <String, dynamic>{}
           : jsonDecode(response.body) as Map<String, dynamic>;
-      throw _failureFrom(response.statusCode, decoded);
+      throw _failureFrom(response.statusCode, decoded, response.headers);
     }
 
     return response.body.isEmpty
@@ -453,12 +511,15 @@ class CareApi {
     String method,
     String path,
     Map<String, dynamic>? body,
-    bool authenticated,
-  ) async {
+    bool authenticated, [
+    String? idempotencyKey,
+  ]) async {
     final uri = Uri.parse('$_baseUrl$path');
     final headers = <String, String>{
       'Accept': 'application/json',
       if (body != null) 'Content-Type': 'application/json',
+      // Null-aware element: the header is simply absent when there is no key.
+      'Idempotency-Key': ?idempotencyKey,
     };
 
     if (authenticated) {
@@ -518,7 +579,7 @@ class CareApi {
 
     if (response.statusCode >= 200 && response.statusCode < 300) return body;
 
-    throw _failureFrom(response.statusCode, body);
+    throw _failureFrom(response.statusCode, body, response.headers);
   }
 
   /// Maps the server's error envelope onto the same [Failure] types the app
@@ -526,7 +587,11 @@ class CareApi {
   /// enforced. Note that 404 stays deliberately ambiguous: the server refuses
   /// to say whether a record is missing or merely not ours, and the client must
   /// not invent a distinction it was not given.
-  Failure _failureFrom(int status, Map<String, dynamic> body) {
+  Failure _failureFrom(
+    int status,
+    Map<String, dynamic> body,
+    Map<String, String> headers,
+  ) {
     final error = body['error'] as Map<String, dynamic>?;
     final message = error?['message'] as String?;
     final code = error?['code'] as String?;
@@ -534,23 +599,43 @@ class CareApi {
 
     return switch (code) {
       'validation' => ValidationFailure(
-          message ?? 'That request could not be processed.',
-          field: field,
-        ),
+        message ?? 'That request could not be processed.',
+        field: field,
+      ),
       'authentication' => AuthenticationFailure(
-          message ?? 'Please sign in again.',
-        ),
+        message ?? 'Please sign in again.',
+      ),
       'not_found_or_forbidden' => const NotFoundFailure(),
-      'invalid_transition' => const InvalidTransitionFailure('unknown', 'unknown'),
-      'conflict' => ValidationFailure(message ?? 'That conflicts with something else.'),
+      'invalid_transition' => const InvalidTransitionFailure(
+        'unknown',
+        'unknown',
+      ),
+      'conflict' => ValidationFailure(
+        message ?? 'That conflicts with something else.',
+      ),
+      'rate_limited' => RateLimitedFailure(
+        retryAfter: _retryAfter(headers),
+        message: message ?? 'Too many attempts. Please wait and try again.',
+      ),
       _ => switch (status) {
-          400 => ValidationFailure(message ?? 'That request could not be processed.'),
-          401 => const AuthenticationFailure(),
-          403 || 404 => const NotFoundFailure(),
-          _ => NetworkFailure(
-              message ?? 'Something went wrong on our side. Please try again.',
-            ),
-        },
+        400 => ValidationFailure(
+          message ?? 'That request could not be processed.',
+        ),
+        401 => const AuthenticationFailure(),
+        403 || 404 => const NotFoundFailure(),
+        429 => RateLimitedFailure(retryAfter: _retryAfter(headers)),
+        _ => NetworkFailure(
+          message ?? 'Something went wrong on our side. Please try again.',
+        ),
+      },
     };
+  }
+
+  /// `Retry-After` in seconds. Absent or unparseable means "we were not told" —
+  /// which the screen renders as a generic wait rather than inventing a number
+  /// and counting down to a retry that is refused again.
+  Duration? _retryAfter(Map<String, String> headers) {
+    final seconds = int.tryParse(headers['retry-after'] ?? '');
+    return seconds == null || seconds <= 0 ? null : Duration(seconds: seconds);
   }
 }

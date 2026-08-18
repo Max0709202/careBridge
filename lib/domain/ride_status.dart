@@ -32,21 +32,21 @@ enum RideStatus {
   /// Plain-language label. Written for a worried adult child reading it on a
   /// phone, not for an operations console.
   String get label => switch (this) {
-        RideStatus.draft => 'Draft',
-        RideStatus.requested => 'Requested',
-        RideStatus.awaitingAssignment => 'Finding a driver',
-        RideStatus.assigned => 'Driver assigned',
-        RideStatus.driverAccepted => 'Driver confirmed',
-        RideStatus.driverEnRoute => 'Driver on the way',
-        RideStatus.driverArrived => 'Driver has arrived',
-        RideStatus.passengerOnboard => 'Picked up',
-        RideStatus.inProgress => 'On the way to the clinic',
-        RideStatus.arrivedAtDestination => 'Arrived at the clinic',
-        RideStatus.completed => 'Completed',
-        RideStatus.canceled => 'Canceled',
-        RideStatus.noShow => 'No show',
-        RideStatus.reassignmentRequired => 'Needs a new driver',
-      };
+    RideStatus.draft => 'Draft',
+    RideStatus.requested => 'Requested',
+    RideStatus.awaitingAssignment => 'Finding a driver',
+    RideStatus.assigned => 'Driver assigned',
+    RideStatus.driverAccepted => 'Driver confirmed',
+    RideStatus.driverEnRoute => 'Driver on the way',
+    RideStatus.driverArrived => 'Driver has arrived',
+    RideStatus.passengerOnboard => 'Picked up',
+    RideStatus.inProgress => 'On the way to the clinic',
+    RideStatus.arrivedAtDestination => 'Arrived at the clinic',
+    RideStatus.completed => 'Completed',
+    RideStatus.canceled => 'Canceled',
+    RideStatus.noShow => 'No show',
+    RideStatus.reassignmentRequired => 'Needs a new driver',
+  };
 
   bool get isTerminal =>
       this == RideStatus.completed ||
@@ -60,19 +60,17 @@ enum RideStatus {
   /// whether to start the location stream at all. Tracking begins when the
   /// driver sets off and ends the moment the ride reaches a terminal state.
   bool get allowsLocationSharing => const {
-        RideStatus.driverEnRoute,
-        RideStatus.driverArrived,
-        RideStatus.passengerOnboard,
-        RideStatus.inProgress,
-        RideStatus.arrivedAtDestination,
-      }.contains(this);
+    RideStatus.driverEnRoute,
+    RideStatus.driverArrived,
+    RideStatus.passengerOnboard,
+    RideStatus.inProgress,
+    RideStatus.arrivedAtDestination,
+  }.contains(this);
 
   /// Whether the patient is physically in the vehicle. Drives the family app's
   /// most-asked question and the "picked up safely" notification.
-  bool get passengerIsOnboard => const {
-        RideStatus.passengerOnboard,
-        RideStatus.inProgress,
-      }.contains(this);
+  bool get passengerIsOnboard =>
+      const {RideStatus.passengerOnboard, RideStatus.inProgress}.contains(this);
 }
 
 /// Allowed transitions. Anything not listed here is rejected.

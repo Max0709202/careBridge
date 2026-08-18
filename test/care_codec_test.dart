@@ -33,9 +33,16 @@ void main() {
       final grant = state.access[Seeded.eleanor]!;
 
       expect(grant.isActive, isTrue);
-      expect(grant.isPrimary, isTrue, reason: 'the organiser created the record');
+      expect(
+        grant.isPrimary,
+        isTrue,
+        reason: 'the organiser created the record',
+      );
       expect(state.canView(Seeded.eleanor), isTrue);
-      expect(state.can(Seeded.eleanor, FamilyPermission.requestTransport), isTrue);
+      expect(
+        state.can(Seeded.eleanor, FamilyPermission.requestTransport),
+        isTrue,
+      );
 
       // A patient nobody granted access to is invisible, not merely hidden.
       expect(state.canView('00000000-0000-4000-8000-0000000000aa'), isFalse);
@@ -52,17 +59,20 @@ void main() {
       expect(eleanor.ageBand, AgeBand.from75to84);
     });
 
-    test('decodes mobility needs, including the ones that pick the vehicle', () {
-      final state = careStateFromJson(json);
-      final eleanor = state.patientById(Seeded.eleanor)!;
-      final frank = state.patientById(Seeded.frank)!;
+    test(
+      'decodes mobility needs, including the ones that pick the vehicle',
+      () {
+        final state = careStateFromJson(json);
+        final eleanor = state.patientById(Seeded.eleanor)!;
+        final frank = state.patientById(Seeded.frank)!;
 
-      expect(eleanor.mobilityNeeds, contains(MobilityNeed.walker));
-      expect(eleanor.requiresAssistance, isTrue);
-      expect(eleanor.requiresWheelchairVehicle, isFalse);
+        expect(eleanor.mobilityNeeds, contains(MobilityNeed.walker));
+        expect(eleanor.requiresAssistance, isTrue);
+        expect(eleanor.requiresWheelchairVehicle, isFalse);
 
-      expect(frank.requiresWheelchairVehicle, isTrue);
-    });
+        expect(frank.requiresWheelchairVehicle, isTrue);
+      },
+    );
 
     test('decodes appointments with their status history', () {
       final state = careStateFromJson(json);
@@ -109,8 +119,10 @@ void main() {
       );
 
       // Itemised, and the parts still add up to something explicable.
-      final parts = estimate.base
-          .plusAll([estimate.distanceCharge, estimate.timeCharge]);
+      final parts = estimate.base.plusAll([
+        estimate.distanceCharge,
+        estimate.timeCharge,
+      ]);
       expect(parts.cents, lessThanOrEqualTo(estimate.total.cents));
     });
 
@@ -159,21 +171,24 @@ void main() {
       expect(state.access, isEmpty);
     });
 
-    test('an unknown enum member falls back rather than crashing the screen', () {
-      // A server that gains a ride status this build has never heard of must
-      // not take the whole list down with it.
-      final mutated = Map<String, dynamic>.from(json);
-      mutated['rides'] = [
-        {
-          ...(json['rides'] as List).first as Map<String, dynamic>,
-          'status': 'somethingAddedLater',
-        },
-      ];
+    test(
+      'an unknown enum member falls back rather than crashing the screen',
+      () {
+        // A server that gains a ride status this build has never heard of must
+        // not take the whole list down with it.
+        final mutated = Map<String, dynamic>.from(json);
+        mutated['rides'] = [
+          {
+            ...(json['rides'] as List).first as Map<String, dynamic>,
+            'status': 'somethingAddedLater',
+          },
+        ];
 
-      final state = careStateFromJson(mutated);
-      expect(state.rides, hasLength(1));
-      expect(state.rides.first.status, RideStatus.requested);
-    });
+        final state = careStateFromJson(mutated);
+        expect(state.rides, hasLength(1));
+        expect(state.rides.first.status, RideStatus.requested);
+      },
+    );
   });
 
   group('preview trip flag', () {
@@ -204,22 +219,28 @@ void main() {
         (encoded['homeAddress'] as Map)['accessNotes'],
         contains('Blue front door'),
       );
-      expect(encoded.containsKey('id'), isFalse,
-          reason: 'the server owns identity');
+      expect(
+        encoded.containsKey('id'),
+        isFalse,
+        reason: 'the server owns identity',
+      );
     });
 
-    test('an address without coordinates omits them rather than sending nulls', () {
-      const address = Address(
-        label: 'Home',
-        line1: '1 Test Street',
-        city: 'Columbus',
-        state: 'OH',
-        postalCode: '43210',
-      );
-      final encoded = addressToJson(address);
-      expect(encoded.containsKey('latitude'), isFalse);
-      expect(encoded.containsKey('longitude'), isFalse);
-    });
+    test(
+      'an address without coordinates omits them rather than sending nulls',
+      () {
+        const address = Address(
+          label: 'Home',
+          line1: '1 Test Street',
+          city: 'Columbus',
+          state: 'OH',
+          postalCode: '43210',
+        );
+        final encoded = addressToJson(address);
+        expect(encoded.containsKey('latitude'), isFalse);
+        expect(encoded.containsKey('longitude'), isFalse);
+      },
+    );
   });
 }
 

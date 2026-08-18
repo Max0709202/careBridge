@@ -9,10 +9,15 @@ import { AppConfig } from '../../common/config';
 import {
   AuthenticationError,
   ConflictError,
+  RateLimitError,
   ValidationError,
 } from '../../common/errors';
 import { APP_CONFIG } from '../../common/config.token';
 import { MAIL, type MailPort } from '../../infrastructure/mail/mail.port';
+import {
+  RATE_LIMITER,
+  type RateLimiterPort,
+} from '../../infrastructure/rate-limit/rate-limit.port';
 import { CredentialTokensService } from './credential-tokens.service';
 import { MfaService } from './mfa.service';
 import { SessionsService } from './sessions.service';
@@ -82,19 +87,6 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   /**
-   * Failed-login counters, in process memory.
-   *
-   * Redis owns this the moment there is more than one API instance — with two
-   * containers the effective limit silently doubles. Called out here rather
-   * than left to be discovered: at pilot scale (T3, a single instance) this is
-   * correct, and beyond it, it is not.
-   */
-  private readonly failedLogins = new Map<
-    string,
-    { count: number; firstAttemptAt: number }
-  >();
-
-  /**
    * A real argon2id hash of a value nobody holds, computed once at boot.
    *
    * Verified against when the email is unknown, so a missing account and a
@@ -112,6 +104,7 @@ export class AuthService {
     private readonly credentials: CredentialTokensService,
     private readonly mfa: MfaService,
     @Inject(MAIL) private readonly mail: MailPort,
+    @Inject(RATE_LIMITER) private readonly rateLimiter: RateLimiterPort,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {
     this.dummyHash = argon2.hash(randomBytes(32).toString('hex'), ARGON2_OPTIONS);
@@ -179,13 +172,17 @@ export class AuthService {
     ctx: RequestContext = {},
   ): Promise<{ userId: string; tokens: AuthTokens }> {
     const email = normaliseEmail(input.email);
-    const lockKey = `${email}|${ctx.ip ?? 'unknown'}`;
 
-    if (this.isLockedOut(lockKey)) {
-      throw new ValidationError(
-        'Too many sign-in attempts. Wait a few minutes and try again.',
-      );
-    }
+    // Keyed on the pair, not on either half. Per-email alone lets one careless
+    // person on a shared office address lock out everybody behind it; per-IP
+    // alone is already covered by the route's own limit, which counts every
+    // attempt rather than only the failures.
+    //
+    // Only *failed* attempts land here, which is why it is enforced in the
+    // service and not in the guard: signing in correctly ten times in a row is
+    // a person with several devices, not an attack.
+    const lockKey = `signIn:credentials:${email}|${ctx.ip ?? 'unknown'}`;
+    await this.assertNotLockedOut(lockKey);
 
     const user = await this.prisma.user.findUnique({ where: { email } });
 
@@ -196,7 +193,7 @@ export class AuthService {
     const ok = await argon2.verify(hash, input.password).catch(() => false);
 
     if (!user || !ok) {
-      this.recordFailedLogin(lockKey);
+      await this.recordFailedLogin(lockKey);
       await this.audit.record({
         actorUserId: user?.id ?? null,
         action: 'auth.login.failed',
@@ -217,7 +214,7 @@ export class AuthService {
     // whether an account has MFA at all.
     const mfa = await this.mfa.requireIfEnrolled(user.id, input.mfaCode);
     if (!mfa.satisfied) {
-      this.recordFailedLogin(lockKey);
+      await this.recordFailedLogin(lockKey);
       await this.audit.record({
         actorUserId: user.id,
         action: input.mfaCode ? 'auth.mfa.failed' : 'auth.mfa.required',
@@ -235,7 +232,9 @@ export class AuthService {
       );
     }
 
-    this.failedLogins.delete(lockKey);
+    // Signed in: forget the failures, so getting your own password wrong twice
+    // and then right does not leave a counter primed against you.
+    await this.rateLimiter.reset(lockKey);
 
     await this.audit.record({
       actorUserId: user.id,
@@ -698,27 +697,28 @@ export class AuthService {
     return { accessToken, refreshToken, expiresInSeconds };
   }
 
-  private isLockedOut(key: string): boolean {
-    const entry = this.failedLogins.get(key);
-    if (!entry) return false;
-
-    const windowMs = this.config.LOGIN_WINDOW_MINUTES * 60 * 1000;
-    if (Date.now() - entry.firstAttemptAt > windowMs) {
-      this.failedLogins.delete(key);
-      return false;
-    }
-    return entry.count >= this.config.LOGIN_MAX_ATTEMPTS;
+  private get loginPolicy(): { limit: number; windowMs: number } {
+    return {
+      limit: this.config.LOGIN_MAX_ATTEMPTS,
+      windowMs: this.config.LOGIN_WINDOW_MINUTES * 60 * 1000,
+    };
   }
 
-  private recordFailedLogin(key: string): void {
-    const windowMs = this.config.LOGIN_WINDOW_MINUTES * 60 * 1000;
-    const entry = this.failedLogins.get(key);
+  /**
+   * Refuse if this email+IP pair has already spent its failures.
+   *
+   * `peek`, not `consume`: only failures count here, so the check itself must
+   * not. Counting every attempt would lock out anyone who signs in more often
+   * than the limit — which, at eight attempts per fifteen minutes, is an
+   * ordinary person with a phone and a laptop.
+   */
+  private async assertNotLockedOut(key: string): Promise<void> {
+    const decision = await this.rateLimiter.peek(key, this.loginPolicy);
+    if (!decision.allowed) throw new RateLimitError(decision.retryAfterSeconds);
+  }
 
-    if (!entry || Date.now() - entry.firstAttemptAt > windowMs) {
-      this.failedLogins.set(key, { count: 1, firstAttemptAt: Date.now() });
-      return;
-    }
-    entry.count += 1;
+  private async recordFailedLogin(key: string): Promise<void> {
+    await this.rateLimiter.consume(key, this.loginPolicy);
   }
 }
 

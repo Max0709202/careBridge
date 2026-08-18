@@ -96,6 +96,18 @@ describe('appointment state machine', () => {
       }
     });
 
+    it('refuses every transition out of a status it does not recognise', () => {
+      // Not reachable through the type system, but reachable through the
+      // database: a row written by a newer deploy and read by an older one
+      // carries a status this build has never heard of. The lookup falls
+      // through to "no", so an unknown status is inert rather than unguarded.
+      const unknown = 'rescheduledTwice' as AppointmentStatus;
+      expect(canTransitionAppointment(unknown, 'canceled')).toBe(false);
+      expect(() => assertAppointmentTransition(unknown, 'canceled')).toThrow(
+        InvalidTransitionError,
+      );
+    });
+
     it('only ever implies a status the machine could actually reach', () => {
       // A mapping that produced an unreachable status would make every ride
       // transition throw at exactly the wrong moment.

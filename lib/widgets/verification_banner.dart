@@ -53,7 +53,9 @@ class _VerificationBannerState extends ConsumerState<VerificationBanner> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(
-              _sent ? Icons.mark_email_read_outlined : Icons.mark_email_unread_outlined,
+              _sent
+                  ? Icons.mark_email_read_outlined
+                  : Icons.mark_email_unread_outlined,
               color: theme.colorScheme.primary,
             ),
             const SizedBox(width: AppSpacing.md),
@@ -69,10 +71,10 @@ class _VerificationBannerState extends ConsumerState<VerificationBanner> {
                   Text(
                     _sent
                         ? 'We sent a new link to ${user.email}. It works once '
-                            'and expires in a day.'
+                              'and expires in a day.'
                         : 'You can use CareBridge without it, but you cannot '
-                            'invite a relative or accept an invitation until '
-                            'the address is confirmed.',
+                              'invite a relative or accept an invitation until '
+                              'the address is confirmed.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

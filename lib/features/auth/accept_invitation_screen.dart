@@ -90,10 +90,7 @@ class _AcceptInvitationScreenState
                         ),
                         if (user != null) ...[
                           const SizedBox(height: AppSpacing.md),
-                          InfoRow(
-                            label: 'Signed in as',
-                            value: user.email,
-                          ),
+                          InfoRow(label: 'Signed in as', value: user.email),
                           if (!user.isEmailVerified)
                             Padding(
                               padding: const EdgeInsets.only(

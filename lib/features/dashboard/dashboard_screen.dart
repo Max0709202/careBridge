@@ -36,7 +36,8 @@ class DashboardScreen extends ConsumerWidget {
         body: EmptyState(
           icon: Icons.person_add_alt_1_outlined,
           title: 'Add the person you care for',
-          message: 'Create a profile with their address, how they get about, '
+          message:
+              'Create a profile with their address, how they get about, '
               'and who to call in an emergency. Everything else builds on it.',
           action: FilledButton.icon(
             onPressed: () => context.push('/patients/new'),
@@ -132,7 +133,8 @@ class _ActiveRideCard extends ConsumerWidget {
 
     return AppCard(
       borderColor: ride.isDelayed ? context.cautionInk : visual.ink,
-      semanticLabel: 'Current ride for ${patient.preferredName}. '
+      semanticLabel:
+          'Current ride for ${patient.preferredName}. '
           'Status: ${ride.status.label}.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,7 +161,7 @@ class _ActiveRideCard extends ConsumerWidget {
             Text(
               ride.status == RideStatus.awaitingAssignment
                   ? 'We are finding a driver. You will be notified as soon as '
-                      'one is assigned.'
+                        'one is assigned.'
                   : 'No driver assigned yet.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -175,7 +177,7 @@ class _ActiveRideCard extends ConsumerWidget {
               value: ride.flexibleReturn
                   ? 'When the visit ends'
                   : '${formatRelativeDay(ride.scheduledPickupAt, ref.watch(clockProvider).now())}, '
-                      '${formatTime(ride.scheduledPickupAt)}',
+                        '${formatTime(ride.scheduledPickupAt)}',
             ),
           const SizedBox(height: AppSpacing.md),
           Row(
@@ -211,9 +213,7 @@ class _EtaLine extends ConsumerWidget {
     final now = ref.watch(clockProvider).now();
     final theme = Theme.of(context);
     final position = ride.lastKnownPosition;
-    final age = position == null
-        ? null
-        : now.difference(position.capturedAt);
+    final age = position == null ? null : now.difference(position.capturedAt);
     final stale = age != null && age.inSeconds > 45;
 
     return Column(
@@ -238,7 +238,9 @@ class _EtaLine extends ConsumerWidget {
                 ? 'Location last updated ${formatFreshness(age)} — this may be out of date.'
                 : 'Location updated ${formatFreshness(age)}.',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: stale ? context.cautionInk : theme.colorScheme.onSurfaceVariant,
+              color: stale
+                  ? context.cautionInk
+                  : theme.colorScheme.onSurfaceVariant,
               fontWeight: stale ? FontWeight.w700 : null,
             ),
           ),
@@ -354,7 +356,10 @@ class _NextAppointmentSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('No appointments coming up', style: theme.textTheme.titleMedium),
+            Text(
+              'No appointments coming up',
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               'When you add one, it will show here with its transport status.',
@@ -382,7 +387,8 @@ class _NextAppointmentSection extends StatelessWidget {
         const SectionHeader('Next appointment'),
         AppCard(
           onTap: () => context.push('/appointments/${appointment!.id}'),
-          semanticLabel: 'Next appointment, '
+          semanticLabel:
+              'Next appointment, '
               '${formatAppointmentWhen(appointment!.startsAt, appointment!.timeZoneLabel)}, '
               'at ${clinic?.name ?? 'a clinic'}.',
           child: Column(
@@ -405,10 +411,7 @@ class _NextAppointmentSection extends StatelessWidget {
                 style: theme.textTheme.headlineSmall,
               ),
               const SizedBox(height: AppSpacing.sm),
-              Text(
-                clinic?.name ?? 'Clinic',
-                style: theme.textTheme.bodyLarge,
-              ),
+              Text(clinic?.name ?? 'Clinic', style: theme.textTheme.bodyLarge),
               Text(
                 appointment!.type.label,
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -438,10 +441,14 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canSchedule =
-        state.can(patient.id, FamilyPermission.scheduleAppointments);
-    final canTransport =
-        state.can(patient.id, FamilyPermission.requestTransport);
+    final canSchedule = state.can(
+      patient.id,
+      FamilyPermission.scheduleAppointments,
+    );
+    final canTransport = state.can(
+      patient.id,
+      FamilyPermission.requestTransport,
+    );
 
     return Wrap(
       spacing: AppSpacing.sm,
@@ -477,7 +484,8 @@ class _EmergencyContactCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primary = patient.emergencyContacts.where((c) => c.isPrimary).firstOrNull ??
+    final primary =
+        patient.emergencyContacts.where((c) => c.isPrimary).firstOrNull ??
         patient.emergencyContacts.firstOrNull;
 
     if (primary == null) return const SizedBox.shrink();
@@ -525,11 +533,9 @@ class _RecentActivity extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final rides = state
-        .ridesFor(patient.id)
-        .where((r) => r.status.isTerminal)
-        .toList()
-      ..sort((a, b) => b.scheduledPickupAt.compareTo(a.scheduledPickupAt));
+    final rides =
+        state.ridesFor(patient.id).where((r) => r.status.isTerminal).toList()
+          ..sort((a, b) => b.scheduledPickupAt.compareTo(a.scheduledPickupAt));
 
     if (rides.isEmpty) {
       return Text(
@@ -568,7 +574,10 @@ class _RecentActivity extends StatelessWidget {
                       ],
                     ),
                   ),
-                  RideStatusPill(ride.status, emphasis: StatusEmphasis.outlined),
+                  RideStatusPill(
+                    ride.status,
+                    emphasis: StatusEmphasis.outlined,
+                  ),
                 ],
               ),
             ),
