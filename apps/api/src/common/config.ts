@@ -75,9 +75,55 @@ const schema = z.object({
    */
   CORS_ORIGINS: z.string().default('*'),
 
-  /** Failed sign-ins per email+IP per window before lockout. */
+  /**
+   * How many proxies sit in front of this process.
+   *
+   * The compose stack and the production topology both put nginx in front, so
+   * every request arrives from the proxy's address — and a per-IP rate limit
+   * that sees one address for the entire internet is not a per-IP rate limit.
+   * Express takes the client address from the right-hand end of
+   * X-Forwarded-For, skipping this many hops.
+   *
+   * The number matters in both directions. Too low and everyone shares one
+   * bucket. Too high and a caller can prepend their own X-Forwarded-For to
+   * pose as a fresh address every request, which makes the limits decorative.
+   * 1 is the deployment described in docker-compose.yml; set 0 when nothing is
+   * in front, and only ever raise it to the number of proxies actually there.
+   */
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(1),
+
+  /**
+   * Rate limits on the unauthenticated credential endpoints. Three policies,
+   * because the three things being protected fail differently.
+   *
+   * Sign-in: failed attempts per email+IP before that pair is locked out, plus
+   * a looser ceiling on attempts per IP regardless of which address they name
+   * — the first stops a password being guessed, the second stops one host
+   * spraying one password across many accounts.
+   */
   LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(8),
   LOGIN_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
+  SIGN_IN_IP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(30),
+
+  /**
+   * Email dispatch: registration, verification resend and password reset all
+   * send mail to an address the caller names and are all deliberately
+   * indistinguishable from a no-op. Without a limit they are a way to use this
+   * system to deliver mail to a stranger, repeatedly. Counted per IP *and* per
+   * address: per-IP alone lets one host mail a thousand addresses, per-address
+   * alone lets a thousand hosts mail one.
+   */
+  EMAIL_DISPATCH_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  EMAIL_DISPATCH_WINDOW_MINUTES: z.coerce.number().int().positive().default(60),
+
+  /**
+   * Token guessing: email verification, password-reset confirmation,
+   * invitation acceptance and MFA codes. These are single-use secrets, and a
+   * six-digit TOTP code is only 10^6 wide — small enough to be worth grinding
+   * if nothing counts the attempts.
+   */
+  TOKEN_GUESS_MAX_ATTEMPTS: z.coerce.number().int().positive().default(10),
+  TOKEN_GUESS_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
 
   // `silent` is a real pino level and the right one for a test run: the suite
   // asserts on behaviour, and a thousand log lines between two failures is how
@@ -205,7 +251,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     }
     if (!config.REDIS_URL) {
       throw new Error(
-        'REDIS_URL is required in production: the in-process scheduler fallback loses every pending job on deploy and double-fires with more than one instance.',
+        'REDIS_URL is required in production: the in-process fallbacks lose every pending job on deploy, double-fire with more than one instance, and hold rate-limit counters per process — so the effective limit multiplies by the instance count.',
       );
     }
   }

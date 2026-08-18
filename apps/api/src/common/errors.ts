@@ -13,6 +13,7 @@ export type FailureCode =
   | 'not_found_or_forbidden'
   | 'invalid_transition'
   | 'conflict'
+  | 'rate_limited'
   | 'internal';
 
 export class AppError extends Error {
@@ -74,5 +75,22 @@ export class InvalidTransitionError extends AppError {
 export class ConflictError extends AppError {
   constructor(message: string) {
     super('conflict', message, 409);
+  }
+}
+
+/**
+ * Too many attempts. Carries how long to wait so the filter can send
+ * `Retry-After` — a client that is told to back off but not for how long
+ * either retries immediately or gives up entirely, and both are worse than
+ * being told.
+ *
+ * The message never says which limit was hit or what the counter is keyed on.
+ * "Too many attempts for this email address" would confirm the address exists,
+ * which is exactly what the sign-in and reset endpoints refuse to do
+ * everywhere else.
+ */
+export class RateLimitError extends AppError {
+  constructor(readonly retryAfterSeconds: number) {
+    super('rate_limited', 'Too many attempts. Please wait and try again.', 429);
   }
 }

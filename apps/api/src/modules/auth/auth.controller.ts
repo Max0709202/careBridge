@@ -1,5 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiAcceptedResponse,
+  ApiBearerAuth,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
 import { MfaService } from './mfa.service';
@@ -21,6 +28,7 @@ import {
   TokenPairDto,
 } from './auth.dto';
 import { Public } from './auth.guard';
+import { RateLimit } from '../../common/rate-limit.guard';
 import {
   Ctx,
   CurrentSession,
@@ -50,6 +58,7 @@ export class AuthController {
    * real user gets, not a seeded one.
    */
   @Public()
+  @RateLimit('emailDispatch')
   @Post('register')
   @ApiOkResponse({ type: SessionResponseDto })
   @ApiOperation({
@@ -66,6 +75,7 @@ export class AuthController {
   }
 
   @Public()
+  @RateLimit('signIn')
   @Post('login')
   @HttpCode(200)
   @ApiOkResponse({ type: SessionResponseDto })
@@ -132,16 +142,22 @@ export class AuthController {
   // ─── email verification ───────────────────────────────────────────────────
 
   @Public()
+  @RateLimit('tokenGuess')
   @Post('verify-email')
   @HttpCode(204)
+  @ApiNoContentResponse({ description: 'The address is confirmed.' })
   @ApiOperation({ summary: 'Confirm an email address with the emailed token' })
   async verifyEmail(@Body() dto: TokenDto, @Ctx() ctx: RequestContext): Promise<void> {
     await this.auth.verifyEmail(dto.token, ctx);
   }
 
   @Public()
+  @RateLimit('emailDispatch')
   @Post('resend-verification')
   @HttpCode(202)
+  @ApiAcceptedResponse({
+    description: 'Accepted, whatever the address turns out to be.',
+  })
   @ApiOperation({
     summary: 'Send the verification email again',
     description:
@@ -157,8 +173,12 @@ export class AuthController {
   // ─── password ─────────────────────────────────────────────────────────────
 
   @Public()
+  @RateLimit('emailDispatch')
   @Post('password-reset')
   @HttpCode(202)
+  @ApiAcceptedResponse({
+    description: 'Accepted, whatever the address turns out to be.',
+  })
   @ApiOperation({
     summary: 'Request a password reset link',
     description:
@@ -172,8 +192,12 @@ export class AuthController {
   }
 
   @Public()
+  @RateLimit('tokenGuess')
   @Post('password-reset/confirm')
   @HttpCode(204)
+  @ApiNoContentResponse({
+    description: 'The password is changed and every session revoked.',
+  })
   @ApiOperation({
     summary: 'Set a new password with the emailed token',
     description:
@@ -258,8 +282,10 @@ export class AuthController {
     return this.mfa.beginEnrolment(userId, user.email, ctx);
   }
 
+  @RateLimit('tokenGuess')
   @Post('mfa/confirm')
   @HttpCode(204)
+  @ApiNoContentResponse({ description: 'Two-factor authentication is now active.' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Confirm enrolment with one generated code' })
   async confirmMfa(

@@ -45,6 +45,13 @@ export class TestHarness {
     const app = moduleRef.createNestApplication({ logger: false });
 
     app.setGlobalPrefix('api/v1');
+    // Same as main.ts: the rate-limit tests set X-Forwarded-For to act as
+    // distinct clients, and that only works if the application reads it the
+    // way the deployed one does.
+    (app.getHttpAdapter().getInstance() as { set(k: string, v: unknown): void }).set(
+      'trust proxy',
+      1,
+    );
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,

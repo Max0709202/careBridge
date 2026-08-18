@@ -25,6 +25,16 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api/v1');
 
+  // nginx is the only thing that talks to this process directly, so the
+  // client's address is in X-Forwarded-For rather than on the socket. Without
+  // this every rate limit is keyed on the proxy and the whole internet shares
+  // one bucket; with it set too high, a caller forges the header and gets a
+  // fresh bucket per request. See TRUST_PROXY_HOPS in config.ts.
+  const express = app.getHttpAdapter().getInstance() as {
+    set(setting: string, value: unknown): void;
+  };
+  express.set('trust proxy', config.TRUST_PROXY_HOPS);
+
   app.use(
     helmet({
       // The API serves JSON to a separate origin; CSP here would only

@@ -121,6 +121,7 @@ REDIS_URL=redis://127.0.0.1:56379 make test-integration  # the real BullMQ path
 | TOTP MFA end to end — enrol, confirm, sign in with a code, spend a recovery code — verified against the RFC 6238 vectors, secret encrypted at rest | Real GPS, maps and routing — the route view is a schematic, deliberately, and positions come from the preview runner |
 | Family invitations: single-use, expiring, email-bound, verified-address-bound, no grant broader than the inviter's | Live push: the client polls while a trip is running. The Socket.IO gateway is Stage 3 |
 | Server-owned ride and appointment state machines, with illegal transitions rejected | Payments and subscriptions |
+| Rate limits on every credential endpoint — sign-in, registration, reset, verification, invitation, MFA — counted per IP *and* per address, shared across instances through Redis | |
 | Per-patient permission model resolved server-side on every request | The `ops_console`, the driver app, and everything in Stage 4 |
 | Notification delivery on three channels with per-user, per-channel preferences | A real mail or push vendor — `MAIL_DRIVER=smtp` points at Mailpit locally and SES in production; `PUSH_DRIVER=fcm` is written and untested against a live project |
 | BullMQ reminder scheduling, timezone-correct across both DST boundaries | Redis in the default local setup — without it the API falls back to an in-process scheduler and says so at boot |

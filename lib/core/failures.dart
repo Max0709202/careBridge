@@ -48,6 +48,18 @@ class InvalidTransitionFailure extends Failure {
   String toString() => 'InvalidTransitionFailure: $from -> $to';
 }
 
+/// Too many attempts. The server says how long to wait; it never says which
+/// limit was hit, because "too many attempts for that email address" would
+/// confirm the address has an account.
+class RateLimitedFailure extends Failure {
+  const RateLimitedFailure({
+    this.retryAfter,
+    String message = 'Too many attempts. Please wait and try again.',
+  }) : super(message);
+
+  final Duration? retryAfter;
+}
+
 class NetworkFailure extends Failure {
   const NetworkFailure([
     super.message = 'We could not reach CareBridge. Check your connection.',

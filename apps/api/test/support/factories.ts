@@ -32,13 +32,24 @@ export function uniqueEmail(prefix = 'user'): string {
 
 export async function registerUser(
   harness: TestHarness,
-  overrides: Partial<{ email: string; password: string; fullName: string }> = {},
+  overrides: Partial<{
+    email: string;
+    password: string;
+    fullName: string;
+    /**
+     * Which client this registration appears to come from. Only the rate-limit
+     * suite sets it: every request in a run otherwise arrives from loopback,
+     * so without it a test cannot express "a different person".
+     */
+    clientIp: string;
+  }> = {},
 ): Promise<TestUser> {
   const email = overrides.email ?? uniqueEmail();
   const password = overrides.password ?? 'correct-horse-battery-staple';
 
   const response = await harness.http
     .post('/api/v1/auth/register')
+    .set('X-Forwarded-For', overrides.clientIp ?? '203.0.113.1')
     .send({
       fullName: overrides.fullName ?? 'Ada Okonkwo',
       email,

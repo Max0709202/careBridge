@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { AppError } from './errors';
+import { AppError, RateLimitError } from './errors';
 
 /**
  * One error envelope for the whole API:
@@ -36,6 +36,12 @@ export class ErrorFilter implements ExceptionFilter {
       this.logger.debug(
         `${request.method} ${request.path} -> ${exception.status} ${exception.code} [${correlationId}]`,
       );
+      // The only header any modelled failure sets. A 429 without it leaves the
+      // client to guess, and every client guesses differently.
+      if (exception instanceof RateLimitError) {
+        response.setHeader('Retry-After', String(exception.retryAfterSeconds));
+      }
+
       response.status(exception.status).json({
         error: {
           code: exception.code,

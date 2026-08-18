@@ -11,7 +11,13 @@ import {
   Put,
 } from '@nestjs/common';
 
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { Ctx, CurrentUser, RequestContext } from '../../common/request-context';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
@@ -39,6 +45,7 @@ import {
 } from './dto/ride.dto';
 import { UpdatePreferencesDto } from './dto/preferences.dto';
 import { InvitationsService } from './invitations.service';
+import { RateLimit } from '../../common/rate-limit.guard';
 import {
   AcceptInvitationDto,
   CreateInvitationDto,
@@ -252,7 +259,13 @@ export class InvitationsController {
     private readonly care: CareService,
   ) {}
 
+  // Authenticated, but the token in the body is a bearer credential in its
+  // own right: it grants standing access to a vulnerable person's address and
+  // daily movements, and any registered account may present one. Guessing is
+  // counted like any other token guess.
+  @RateLimit('tokenGuess')
   @Post('accept')
+  @ApiCreatedResponse({ type: CareStateDto })
   @ApiOperation({
     summary: 'Accept an invitation',
     description:
