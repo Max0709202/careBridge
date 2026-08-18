@@ -169,7 +169,19 @@ DTO validation at every boundary, with unknown fields dropped rather than
 passed through. Parameterised queries only. Helmet. A CORS allowlist per
 environment, and `*` refused outright in production. Uploads restricted by type
 and size with server-generated keys. Webhook signatures verified **before**
-parsing. Idempotency enforced on money and state-changing commands.
+parsing.
+
+Idempotency on the endpoints that create things — patients, clinics,
+appointments, rides, invitations. A client sends `Idempotency-Key`; the key is
+claimed by inserting a row before the handler runs, so two concurrent retries
+race on a unique constraint and exactly one proceeds. A repeat returns the
+stored response with `Idempotent-Replay: true`; the same key with a different
+body is refused rather than answered with the first one's result; a failed
+request releases its claim, because it did not happen and must stay retryable.
+The request body is *hashed*, not stored — these bodies carry addresses and
+appointment times, and keeping a copy for a day would be a second store of
+exactly the data the rest of this document is careful about. Records expire
+after 24 hours, swept by the retention job.
 
 The client-supplied correlation id is length- and pattern-checked before being
 echoed in a response header and written to a log — an unbounded client string

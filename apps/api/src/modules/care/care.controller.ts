@@ -46,6 +46,7 @@ import {
 import { UpdatePreferencesDto } from './dto/preferences.dto';
 import { InvitationsService } from './invitations.service';
 import { RateLimit } from '../../common/rate-limit.guard';
+import { Idempotent } from '../../common/idempotency.interceptor';
 import {
   AcceptInvitationDto,
   CreateInvitationDto,
@@ -148,6 +149,7 @@ export class PatientsController {
   ) {}
 
   @Post()
+  @Idempotent()
   @ApiOkResponse({ type: CareStateDto })
   async create(
     @CurrentUser() userId: string,
@@ -215,6 +217,7 @@ export class PatientsController {
     return this.invitations.list(userId, id);
   }
 
+  @Idempotent()
   @Post(':id/invitations')
   @ApiOkResponse({ type: InvitationDto })
   @ApiOperation({
@@ -291,6 +294,7 @@ export class ClinicsController {
   ) {}
 
   @Post()
+  @Idempotent()
   @ApiOkResponse({ type: CareStateDto })
   async create(
     @CurrentUser() userId: string,
@@ -313,6 +317,7 @@ export class AppointmentsController {
   ) {}
 
   @Post()
+  @Idempotent()
   @ApiOkResponse({ type: CareStateDto })
   async create(
     @CurrentUser() userId: string,
@@ -362,6 +367,7 @@ export class RidesController {
   ) {}
 
   @Post()
+  @Idempotent()
   @ApiOkResponse({ type: CareStateDto })
   async request(
     @CurrentUser() userId: string,

@@ -37,6 +37,12 @@ export class RetentionService implements OnApplicationBootstrap {
     staleDeviceDays: 180,
     /** An unaccepted invitation has no evidentiary value once long expired. */
     expiredInvitationDays: 30,
+    /**
+     * Idempotency claims. A retry arrives within seconds; a day covers a
+     * client that queued the request while offline, and keeping them longer
+     * only preserves a hash of a request nobody is going to repeat.
+     */
+    idempotencyHours: 24,
   };
 
   /** Daily is often enough for windows measured in weeks. */
@@ -113,6 +119,14 @@ export class RetentionService implements OnApplicationBootstrap {
       this.devices.purgeStale(daysBefore(now, windows.staleDeviceDays)),
     );
 
+    await this.step(results, 'idempotencyRecords', () =>
+      this.prisma.idempotencyRecord
+        .deleteMany({
+          where: { createdAt: { lt: hoursBefore(now, windows.idempotencyHours) } },
+        })
+        .then((r) => r.count),
+    );
+
     const total = Object.values(results).reduce((sum, n) => sum + n, 0);
     if (total > 0) this.logger.log({ ...results }, 'Retention sweep removed rows');
 
@@ -136,5 +150,9 @@ export class RetentionService implements OnApplicationBootstrap {
 }
 
 function daysBefore(now: Date, days: number): Date {
-  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  return hoursBefore(now, days * 24);
+}
+
+function hoursBefore(now: Date, hours: number): Date {
+  return new Date(now.getTime() - hours * 60 * 60 * 1000);
 }

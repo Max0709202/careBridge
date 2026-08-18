@@ -10,6 +10,7 @@ import 'package:carebridge_api/carebridge_api.dart' as wire;
 import 'package:http/http.dart' as http;
 
 import '../core/failures.dart';
+import '../core/ids.dart';
 import '../domain/models.dart';
 import '../domain/permissions.dart';
 import 'care_codec.dart';
@@ -135,8 +136,18 @@ class CareApi {
 
   // ─── patients ─────────────────────────────────────────────────────────────
 
-  Future<CareSnapshot> createPatient(Patient patient) async =>
-      _snapshot(await _send('POST', '/patients', body: patientToJson(patient)));
+  /// The key is generated per call rather than per retry, which is the whole
+  /// point: one tap is one key, and every attempt to deliver that tap — a
+  /// refresh-and-retry inside [_send], or a user pressing the button again
+  /// after a spinner that never resolved — carries it.
+  Future<CareSnapshot> createPatient(Patient patient) async => _snapshot(
+    await _send(
+      'POST',
+      '/patients',
+      body: patientToJson(patient),
+      idempotencyKey: newId(),
+    ),
+  );
 
   Future<CareSnapshot> updatePatient(Patient patient) async => _snapshot(
     await _send('PUT', '/patients/${patient.id}', body: patientToJson(patient)),
@@ -274,6 +285,9 @@ class CareApi {
     await _send(
       'POST',
       '/patients/$patientId/invitations',
+      // A retried invitation is a second email to someone who is already
+      // deciding whether to accept the first.
+      idempotencyKey: newId(),
       body: {
         'email': email.trim(),
         'relationship': relationship,
@@ -295,8 +309,14 @@ class CareApi {
 
   // ─── clinics ──────────────────────────────────────────────────────────────
 
-  Future<CareSnapshot> addClinic(Clinic clinic) async =>
-      _snapshot(await _send('POST', '/clinics', body: clinicToJson(clinic)));
+  Future<CareSnapshot> addClinic(Clinic clinic) async => _snapshot(
+    await _send(
+      'POST',
+      '/clinics',
+      body: clinicToJson(clinic),
+      idempotencyKey: newId(),
+    ),
+  );
 
   // ─── appointments ─────────────────────────────────────────────────────────
 
@@ -312,6 +332,7 @@ class CareApi {
     await _send(
       'POST',
       '/appointments',
+      idempotencyKey: newId(),
       body: {
         'patientId': patientId,
         'clinicId': clinicId,
@@ -358,6 +379,10 @@ class CareApi {
     await _send(
       'POST',
       '/rides',
+      // A dropped response here is the case this exists for: retrying it
+      // without a key books a second car for the same appointment, and bills
+      // for it.
+      idempotencyKey: newId(),
       body: {
         'appointmentId': appointmentId,
         'pickupAt': pickupAt.toUtc().toIso8601String(),
@@ -416,8 +441,15 @@ class CareApi {
     Map<String, dynamic>? body,
     bool authenticated = true,
     bool allowRetry = true,
+    String? idempotencyKey,
   }) async {
-    final response = await _request(method, path, body, authenticated);
+    final response = await _request(
+      method,
+      path,
+      body,
+      authenticated,
+      idempotencyKey,
+    );
 
     // One refresh attempt, then give up. Looping on 401 would turn an expired
     // session into an infinite request storm against the auth endpoint.
@@ -429,6 +461,10 @@ class CareApi {
           body: body,
           authenticated: authenticated,
           allowRetry: false,
+          // The same key on the retry, deliberately: a 401 that is fixed by a
+          // refresh is one request, not two, and the server must be able to
+          // tell if the first attempt landed before the token expired.
+          idempotencyKey: idempotencyKey,
         );
       }
       await tokens.clear();
@@ -475,12 +511,15 @@ class CareApi {
     String method,
     String path,
     Map<String, dynamic>? body,
-    bool authenticated,
-  ) async {
+    bool authenticated, [
+    String? idempotencyKey,
+  ]) async {
     final uri = Uri.parse('$_baseUrl$path');
     final headers = <String, String>{
       'Accept': 'application/json',
       if (body != null) 'Content-Type': 'application/json',
+      // Null-aware element: the header is simply absent when there is no key.
+      'Idempotency-Key': ?idempotencyKey,
     };
 
     if (authenticated) {

@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { ConfigModule } from './common/config.module';
 import { LoggingModule } from './common/logging/logging.module';
@@ -18,6 +18,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/auth.guard';
 import { RateLimitGuard } from './common/rate-limit.guard';
+import { IdempotencyInterceptor } from './common/idempotency.interceptor';
 import { CareModule } from './modules/care/care.module';
 import { HealthModule } from './modules/health/health.module';
 
@@ -53,6 +54,11 @@ import { HealthModule } from './modules/health/health.module';
     // to check and the limit is the only thing between a stranger and a
     // password guess.
     { provide: APP_GUARD, useClass: RateLimitGuard },
+    // Only routes marked @Idempotent() and carrying an Idempotency-Key do
+    // anything here. Registered globally so that marking a new route is the
+    // whole change — the alternative is remembering @UseInterceptors on each
+    // controller, which is the same failure mode as remembering @UseGuards.
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
   ],
 })
 export class AppModule implements NestModule {

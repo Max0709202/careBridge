@@ -10,6 +10,10 @@ import {
   type MailPort,
 } from '../../src/infrastructure/mail/mail.port';
 import { resetConfigCache } from '../../src/common/config';
+import {
+  REDIS,
+  type RedisConnection,
+} from '../../src/infrastructure/redis/redis.module';
 
 /**
  * The integration harness.
@@ -122,6 +126,23 @@ export class TestHarness {
         active: true,
       },
     });
+  }
+
+  /**
+   * Forget every rate-limit counter.
+   *
+   * `reset()` truncates Postgres, which is where all the other state lives.
+   * Rate-limit counters do not: with REDIS_URL set they outlive the process,
+   * so a second run of the suite inside the window would start against
+   * whatever the first one left behind — and a test that passes only the first
+   * time is worse than one that never passes.
+   */
+  async clearRateLimitCounters(): Promise<void> {
+    const redis = this.app.get<RedisConnection>(REDIS);
+    if (!redis) return;
+
+    const keys = await redis.keys('ratelimit:*');
+    if (keys.length > 0) await redis.del(...keys);
   }
 
   async close(): Promise<void> {

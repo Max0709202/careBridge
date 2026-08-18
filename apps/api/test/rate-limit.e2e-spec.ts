@@ -39,6 +39,7 @@ describe('rate limiting', () => {
 
   beforeEach(async () => {
     await harness.reset();
+    await harness.clearRateLimitCounters();
   });
 
   it('refuses a fourth password-reset request and says how long to wait', async () => {

@@ -121,6 +121,7 @@ REDIS_URL=redis://127.0.0.1:56379 make test-integration  # the real BullMQ path
 | TOTP MFA end to end — enrol, confirm, sign in with a code, spend a recovery code — verified against the RFC 6238 vectors, secret encrypted at rest | Real GPS, maps and routing — the route view is a schematic, deliberately, and positions come from the preview runner |
 | Family invitations: single-use, expiring, email-bound, verified-address-bound, no grant broader than the inviter's | Live push: the client polls while a trip is running. The Socket.IO gateway is Stage 3 |
 | Server-owned ride and appointment state machines, with illegal transitions rejected | Payments and subscriptions |
+| `Idempotency-Key` honoured on every create — a retried request books one ride, not two | |
 | Rate limits on every credential endpoint — sign-in, registration, reset, verification, invitation, MFA — counted per IP *and* per address, shared across instances through Redis | |
 | Per-patient permission model resolved server-side on every request | The `ops_console`, the driver app, and everything in Stage 4 |
 | Notification delivery on three channels with per-user, per-channel preferences | A real mail or push vendor — `MAIL_DRIVER=smtp` points at Mailpit locally and SES in production; `PUSH_DRIVER=fcm` is written and untested against a live project |
@@ -236,6 +237,17 @@ by tests on both sides.
 **Delay is a flag, not a status.** A driver stuck in traffic on the way to pickup
 is still `driverEnRoute`; making delay a status would lose the state it must
 return to.
+
+**A retried request is not a second request.** A family taps "Request
+transport", the connection drops before the response arrives, and the app
+retries: at the HTTP level that is indistinguishable from booking a second car,
+and no state machine can catch it because both requests are individually legal.
+The client sends one `Idempotency-Key` per tap and the server claims it before
+running the handler, so the retry is answered from the record rather than
+performed. The body is hashed rather than kept — the same key with a different
+body is a client bug and is refused, and storing the body to compare against
+would mean a second copy of an address and an appointment time sitting around
+for a day.
 
 **A round trip is two rides.** Each leg is assigned, tracked, cancelled and
 priced independently, and each snapshots its own copy of the two addresses — so

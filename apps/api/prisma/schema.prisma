@@ -58,6 +58,7 @@ model User {
   notificationPreferences NotificationPreference[]
   invitationsSent         PatientInvitation[]      @relation("InvitationInviter")
   invitationsAccepted     PatientInvitation[]      @relation("InvitationAcceptor")
+  idempotencyRecords      IdempotencyRecord[]
 
   @@map("users")
 }
@@ -899,4 +900,48 @@ model AuditLog {
   @@index([actorUserId, at])
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+/// A request that must not be performed twice.
+///
+/// The failure this exists for is ordinary: a family taps "Request transport",
+/// the response is lost to a dropped connection, the app retries, and a second
+/// car is booked for the same appointment. Nothing in the ride state machine
+/// can catch that — both requests are individually legal.
+///
+/// The row is claimed *before* the handler runs, and the unique constraint on
+/// (userId, key) is what makes the claim atomic: two concurrent retries race
+/// to insert, exactly one wins, and the loser is told the request is already
+/// in progress rather than being allowed to duplicate it.
+///
+/// Keyed by user as well as key, so one client's chosen key cannot collide
+/// with — or read — another's.
+model IdempotencyRecord {
+  id       String @id @default(uuid())
+  userId   String
+  /// Client-supplied. Opaque to us, and never logged: a client is free to put
+  /// something meaningful in it.
+  key      String
+  /// Method and path. The same key on a different endpoint is a client bug,
+  /// and treating it as a replay would return the wrong body entirely.
+  endpoint String
+
+  /// SHA-256 of the request body. A replay with a *different* body is not a
+  /// retry; it is two different intentions sharing a key, and it is refused
+  /// rather than silently answered with the first one's result.
+  requestHash String
+
+  /// Null until the handler returns. A row in that state is an in-flight
+  /// request, which is what lets a concurrent retry be refused.
+  responseStatus Int?
+  responseBody   Json?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([createdAt])
+  @@map("idempotency_records")
 }
