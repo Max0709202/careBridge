@@ -242,6 +242,7 @@ export class CareService {
       minimumFare: new Money(rule.minimumFareCents),
       wheelchairSurcharge: new Money(rule.wheelchairSurchargeCents),
       assistanceSurcharge: new Money(rule.assistanceSurchargeCents),
+      platformFeeBps: rule.platformFeeBps,
       effectiveFrom: rule.effectiveFrom,
     };
   }

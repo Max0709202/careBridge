@@ -45,6 +45,10 @@ mutation writes an audit row; no personal data appears in any log line.
 
 The differentiator, and the highest-risk stage in the plan.
 
+**Slice one is built**: the operator's roster and driver lifecycle, shifts, the
+dispatch queue, and assignment with server-asserted eligibility. The rest of the
+list below is outstanding.
+
 Driver onboarding with documents to S3 via pre-signed URLs, admin approval,
 vehicles with accessibility attributes, availability · ride requests with
 estimates · dispatch queue, manual assignment, reassignment with recorded
@@ -65,9 +69,18 @@ manual field test on real devices.
 
 Commercially operable and safe to run a controlled pilot on.
 
-Stripe: customer, SetupIntent, authorise at assignment, capture at completion,
-failure and retry, refunds, receipts, signed webhooks with idempotency,
-reconciliation, internal ledger · subscriptions with entitlement checks · admin
+The **fee model itself landed early**, during Stage 2, because "who pays" turned
+out to be a question about the domain rather than about a payment processor:
+two payers (household and dispatch operator), monthly or annual, the operator
+priced by drivers on the road. See
+[business-model.md](business-model.md) and
+[ADR-0011](../adr/0011-two-sided-subscription-billing.md). What Stage 4 adds is
+the money movement.
+
+Stripe: customer per billing account, SetupIntent, authorise at assignment,
+capture at completion, failure and retry, refunds, receipts, signed webhooks
+with idempotency, reconciliation, internal ledger · recurring charges and
+dunning against the subscription periods the model already writes · admin
 surfaces including the audit-log viewer · Terraform for staging and production
 · deploy pipeline with migration step and documented rollback · backup and a
 **tested, timed** restore · rate limiting and idempotency keys · an OWASP API

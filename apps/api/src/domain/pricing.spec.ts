@@ -1,5 +1,5 @@
 import { Money } from './money';
-import { estimateFare, type PricingRule } from './pricing';
+import { estimateFare, settleFare, type PricingRule } from './pricing';
 import { ValidationError } from '../common/errors';
 
 const rule: PricingRule = {
@@ -10,6 +10,7 @@ const rule: PricingRule = {
   minimumFare: new Money(1800),
   wheelchairSurcharge: new Money(1500),
   assistanceSurcharge: new Money(800),
+  platformFeeBps: 1500,
   effectiveFrom: new Date('2026-01-01T00:00:00Z'),
 };
 
@@ -110,6 +111,70 @@ describe('fare estimation', () => {
     ).toThrow(ValidationError);
     expect(() =>
       estimateFare({ rule, distanceMiles: 1, durationMinutes: -10 }),
+    ).toThrow(ValidationError);
+  });
+});
+
+describe('who the fare is split between', () => {
+  it('takes nothing from an operator who already pays for their drivers', () => {
+    // Charging a per-ride percentage *and* a per-driver subscription is
+    // charging twice for the same relationship. An operator finds that in a
+    // spreadsheet six months in and never forgives it.
+    const settlement = settleFare({
+      rule,
+      total: new Money(4000),
+      operatorSubscribed: true,
+    });
+
+    expect(settlement.funding).toBe('operatorSubscription');
+    expect(settlement.platformFee).toEqual(Money.zero());
+    expect(settlement.operatorPayout).toEqual(new Money(4000));
+  });
+
+  it('falls back to basis points for an operator who is not yet on a plan', () => {
+    // This is what makes it possible to run a pilot operator before the
+    // contract is signed, rather than blocking the first ride on procurement.
+    const settlement = settleFare({
+      rule,
+      total: new Money(4000),
+      operatorSubscribed: false,
+    });
+
+    expect(settlement.funding).toBe('perRide');
+    expect(settlement.platformFee).toEqual(new Money(600));
+    expect(settlement.operatorPayout).toEqual(new Money(3400));
+  });
+
+  it('charges the family the same total either way', () => {
+    const subscribed = settleFare({
+      rule,
+      total: new Money(4000),
+      operatorSubscribed: true,
+    });
+    const not = settleFare({ rule, total: new Money(4000), operatorSubscribed: false });
+
+    expect(subscribed.total).toEqual(not.total);
+    expect(subscribed.platformFee.plus(subscribed.operatorPayout)).toEqual(
+      subscribed.total,
+    );
+    expect(not.platformFee.plus(not.operatorPayout)).toEqual(not.total);
+  });
+
+  it('refuses a rule that would take more than the whole fare', () => {
+    expect(() =>
+      settleFare({
+        rule: { ...rule, platformFeeBps: 10_001 },
+        total: new Money(4000),
+        operatorSubscribed: false,
+      }),
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      settleFare({
+        rule: { ...rule, platformFeeBps: -1 },
+        total: new Money(4000),
+        operatorSubscribed: false,
+      }),
     ).toThrow(ValidationError);
   });
 });

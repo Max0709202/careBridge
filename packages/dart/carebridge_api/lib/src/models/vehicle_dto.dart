@@ -8,12 +8,15 @@
 /// VehicleDto, from the CareBridge API.
 class VehicleDto {
   const VehicleDto({
+    required this.id,
     required this.make,
     required this.model,
     required this.color,
     required this.licensePlate,
     required this.isWheelchairAccessible,
   });
+
+  final String id;
 
   final String make;
 
@@ -26,6 +29,7 @@ class VehicleDto {
   final bool isWheelchairAccessible;
 
   factory VehicleDto.fromJson(Map<String, dynamic> json) => VehicleDto(
+    id: json['id'] as String,
     make: json['make'] as String,
     model: json['model'] as String,
     color: json['color'] as String,
@@ -34,6 +38,7 @@ class VehicleDto {
   );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
     'make': make,
     'model': model,
     'color': color,

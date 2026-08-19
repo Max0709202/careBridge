@@ -59,8 +59,90 @@ model User {
   invitationsSent         PatientInvitation[]      @relation("InvitationInviter")
   invitationsAccepted     PatientInvitation[]      @relation("InvitationAcceptor")
   idempotencyRecords      IdempotencyRecord[]
+  memberships             OrganizationMembership[]
+  billingAccount          BillingAccount?
+  seatChanges             SeatLedgerEntry[]
+  driversApproved         Driver[]                 @relation("DriverApprover")
 
   @@map("users")
+}
+
+// ─── organisations ───────────────────────────────────────────────────────────
+
+/// `clinicNetwork` exists as a value and nothing reads it yet: the clinic
+/// portal is Stage 5B. Naming the axis now is what stops a second, parallel
+/// "company" table being invented when it lands.
+enum OrganizationKind {
+  dispatchCompany
+  clinicNetwork
+}
+
+/// A transport operator — the *second* paying party in the product.
+///
+/// Until the fee model became two-sided this table did not exist, and the
+/// dispatch company was an implicit thing outside the system that supplied
+/// drivers. It cannot be implicit once it holds a subscription: somebody has
+/// to be billed, somebody has to be able to sign in and see the invoice, and
+/// the seats have to belong to something.
+model Organization {
+  id   String           @id @default(uuid())
+  kind OrganizationKind @default(dispatchCompany)
+  name String
+
+  /// Stable, human-typeable. Used in URLs and in support conversations, where
+  /// reading a UUID down a telephone line is nobody's idea of a good time.
+  slug String @unique
+
+  contactEmail String
+  phone        String?
+
+  /// IANA zone. An operator's business day, dispatch shifts and invoice dates
+  /// are theirs, not the server's.
+  timeZone String @default("America/New_York")
+
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  memberships    OrganizationMembership[]
+  drivers        Driver[]
+  vehicles       Vehicle[]
+  billingAccount BillingAccount?
+  settledRides   Ride[]
+
+  @@map("organizations")
+}
+
+enum OrgRole {
+  owner
+  admin
+  dispatcher
+  member
+}
+
+/// Many-to-many on purpose: a user may belong to several organisations.
+///
+/// That single decision is what keeps a later multi-tenant model from being a
+/// rewrite of every query, and it costs nothing today — see
+/// docs/architecture/multi-tenancy.md.
+model OrganizationMembership {
+  id             String  @id @default(uuid())
+  userId         String
+  organizationId String
+  role           OrgRole @default(member)
+
+  invitedByUserId String?
+  joinedAt        DateTime  @default(now())
+  /// Revoked rather than deleted: who could see the dispatch queue last March
+  /// is an answer an investigation needs.
+  revokedAt       DateTime?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, revokedAt])
+  @@map("organization_memberships")
 }
 
 // ─── single-use credentials ──────────────────────────────────────────────────
@@ -536,19 +618,42 @@ model AppointmentReminder {
 
 model Vehicle {
   id                     String  @id @default(uuid())
+  organizationId         String
   make                   String
   model                  String
   color                  String
   licensePlate           String
   isWheelchairAccessible Boolean @default(false)
 
-  drivers Driver[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  drivers      Driver[]
 
+  @@index([organizationId])
   @@map("vehicles")
+}
+
+/// The lifecycle of a driver at an operator. Mirrors
+/// src/domain/driver-status.ts, which is where the transition table lives.
+///
+/// `approved` is the **only** status that occupies a billable seat, and that
+/// is the single definition — the alternative is a second boolean somebody has
+/// to remember to keep in step, and an operator billed for drivers they
+/// offboarded in March is the kind of error that ends a contract.
+enum DriverStatus {
+  invited
+  pendingApproval
+  approved
+  suspended
+  offboarded
 }
 
 model Driver {
   id String @id @default(uuid())
+
+  /// The operator this driver works for. Required: a driver with no operator
+  /// is a seat nobody is billed for, and an unbilled seat is the whole way the
+  /// dispatch side of the fee model leaks.
+  organizationId String
 
   /// First name and last initial only. The family needs to recognise the person
   /// at the kerb, not to be able to look them up.
@@ -557,15 +662,49 @@ model Driver {
   yearsDriving Int    @default(1)
   vehicleId    String
 
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
-  rides   Ride[]
+  status DriverStatus @default(invited)
 
+  /// Whether the driver is working right now. A scheduling fact that changes
+  /// several times a day, deliberately separate from `status`, which is the
+  /// company saying whether this person may carry a passenger at all.
+  onShift Boolean @default(false)
+
+  approvedAt       DateTime?
+  approvedByUserId String?
+  suspensionReason String?
+
+  /// When they stopped occupying a seat. Set alongside any move out of
+  /// `approved`, and kept rather than deleted: "you were charged for eleven
+  /// drivers in June" has to be answerable with eleven names, including the
+  /// two who left in July.
+  deactivatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  vehicle      Vehicle           @relation(fields: [vehicleId], references: [id])
+  approvedBy   User?             @relation("DriverApprover", fields: [approvedByUserId], references: [id])
+  rides        Ride[]
+  seatChanges  SeatLedgerEntry[]
+
+  @@index([organizationId, status])
   @@map("drivers")
 }
 
 enum RideDirection {
   outbound
   returnTrip
+}
+
+/// Which of the two revenue lines paid for this ride's platform margin.
+/// Stamped on the ride alongside the pricing rule version, so a payout can be
+/// explained months after the fact.
+enum PlatformFunding {
+  /// The operator holds a per-driver subscription. The whole fare is theirs.
+  operatorSubscription
+  /// No subscription: the rule's basis points applied.
+  perRide
 }
 
 /// Deliberately no `delayed` member: a driver stuck in traffic on the way to
@@ -622,6 +761,19 @@ model Ride {
   totalCents          Int
   minimumApplied      Boolean @default(false)
 
+  // Where the fare goes. Null until an operator is known, which is at driver
+  // assignment and not at request: the family is quoted a total before anybody
+  // has been dispatched, and who ends up carrying them decides the split
+  // rather than the price.
+  //
+  // The operator is pinned here rather than read back through the driver,
+  // because a reassignment changes the driver and must not silently move a
+  // settled payout to a different company.
+  platformFunding       PlatformFunding?
+  platformFeeCents      Int?
+  operatorPayoutCents   Int?
+  settledOrganizationId String?
+
   // Last known position. Aged against `capturedAt` (when the device took the
   // reading), never against when the server received it.
   lastLatitude       Float?
@@ -645,6 +797,7 @@ model Ride {
   pickup          Address              @relation("RidePickup", fields: [pickupAddressId], references: [id])
   destination     Address              @relation("RideDestination", fields: [destinationAddressId], references: [id])
   driver          Driver?              @relation(fields: [driverId], references: [id])
+  operator        Organization?        @relation(fields: [settledOrganizationId], references: [id])
   surcharges      RideSurcharge[]
   events          RideEvent[]
   history         RideStatusHistory[]
@@ -863,18 +1016,283 @@ model DeviceToken {
 /// Prices are configurable records, never constants in code — so a historical
 /// charge can always be explained by the rule that produced it.
 model PricingRule {
-  id                       String   @id @default(uuid())
-  version                  String   @unique
+  id                       String @id @default(uuid())
+  version                  String @unique
   baseFareCents            Int
   perMileCents             Int
   perMinuteCents           Int
   minimumFareCents         Int
   wheelchairSurchargeCents Int
   assistanceSurchargeCents Int
-  effectiveFrom            DateTime
-  active                   Boolean  @default(true)
+
+  /// Our cut of a fare, in basis points, and **only** for operators who are
+  /// not on a subscription. An operator paying per driver keeps the whole
+  /// fare; see `settleFare` in src/domain/pricing.ts.
+  platformFeeBps Int @default(1500)
+
+  effectiveFrom DateTime
+  active        Boolean  @default(true)
 
   @@map("pricing_rules")
+}
+
+// ─── subscriptions ───────────────────────────────────────────────────────────
+
+/// The two sides of the marketplace that can hold a subscription.
+enum BillingPayer {
+  family
+  dispatchOrganization
+}
+
+/// Monthly or annual, and nothing in between. Annual is a **separate plan
+/// row** with its own price rather than a multiplier applied in code: the size
+/// of the annual discount is a commercial decision, and a commercial decision
+/// must not be a deploy.
+enum BillingInterval {
+  monthly
+  annual
+}
+
+enum SubscriptionStatus {
+  trialing
+  active
+  pastDue
+  pendingCancellation
+  canceled
+  expired
+}
+
+/// Whoever is billed. One table for both sides, because "is this subscription
+/// currently entitling anything" is one question and two implementations of it
+/// would eventually disagree — with the disagreement being either a family
+/// locked out of a live trip or an operator using a console they stopped
+/// paying for.
+///
+/// Exactly one of `ownerUserId` and `organizationId` is set. Both carry a
+/// unique constraint, so a household and an operator each have at most one
+/// billing account and the "which account am I looking at" question has one
+/// answer.
+model BillingAccount {
+  id    String       @id @default(uuid())
+  payer BillingPayer
+
+  /// Set for a family account: the organiser who pays. Null for an operator.
+  ownerUserId    String? @unique
+  /// Set for an operator account. Null for a family.
+  organizationId String? @unique
+
+  /// Where invoices and dunning go. Separate from the account email on
+  /// purpose — the person who books the rides and the person who pays for
+  /// them are frequently not the same person, and in an operator they never
+  /// are.
+  billingEmail String
+
+  /// Stripe customer id. Null until Stage 4 wires the processor up: card data
+  /// never touches this database, only the identifier — see ADR-0006.
+  externalCustomerId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner         User?          @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  organization  Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+
+  @@map("billing_accounts")
+}
+
+/// A plan is a row. The catalogue is data, resolved server-side, and the app
+/// renders whatever it is told — so a price change, a new tier or a
+/// discontinued plan is an insert, not a release.
+model SubscriptionPlan {
+  id   String @id @default(uuid())
+  /// Stable across price changes: `family-standard`, `dispatch-core`.
+  code String
+
+  /// Immutable price identity, stamped onto every period this plan bills — the
+  /// same mechanism as `PricingRule.version` on a ride, and for the same
+  /// reason: a charge from eight months ago must still be explicable to the
+  /// person who paid it.
+  version String
+
+  payer       BillingPayer
+  interval    BillingInterval
+  name        String
+  description String
+
+  /// The fixed part. For a family plan it is the whole price.
+  basePriceCents Int
+
+  /// Drivers covered by the base price. Always 0 on a family plan — a
+  /// household does not have seats.
+  includedSeats Int @default(0)
+
+  /// Strings, not an enum the code branches on in twenty places. The
+  /// catalogue of valid values is the `Entitlement` union in
+  /// src/domain/billing.ts, checked when a plan is written.
+  entitlements String[]
+
+  trialDays Int @default(0)
+
+  /// How long a failed payment keeps entitling. Not zero, and the reason is
+  /// specific: cutting live tracking off the instant a card expires blanks the
+  /// map while somebody's mother is in a stranger's car.
+  graceDays Int @default(7)
+
+  active        Boolean  @default(true)
+  effectiveFrom DateTime
+  createdAt     DateTime @default(now())
+
+  seatTiers     SubscriptionPlanSeatTier[]
+  subscriptions Subscription[]
+
+  @@unique([code, interval, version])
+  @@index([payer, active])
+  @@map("subscription_plans")
+}
+
+/// One band of the graduated per-driver ladder. `upToSeats` is a total driver
+/// count, inclusive; the last tier is unbounded (`null`), or every driver
+/// above the top band would be free.
+model SubscriptionPlanSeatTier {
+  id             String @id @default(uuid())
+  planId         String
+  position       Int
+  upToSeats      Int?
+  unitPriceCents Int
+
+  plan SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, position])
+  @@map("subscription_plan_seat_tiers")
+}
+
+model Subscription {
+  id               String @id @default(uuid())
+  billingAccountId String
+  planId           String
+
+  status SubscriptionStatus
+
+  /// Denormalised from the plan so "show me everyone renewing annually" does
+  /// not need a join, and so the interval a period was billed at survives the
+  /// plan being deactivated.
+  interval BillingInterval
+
+  /// Drivers this subscription bills for from the next renewal. Zero on a
+  /// family subscription.
+  seats Int @default(0)
+
+  /// The highest seat count already charged for in the **current** period.
+  ///
+  /// Proration is measured against this rather than against `seats`, so an
+  /// operator who drops from twelve drivers to ten and back to twelve inside
+  /// one month is not billed twice for the same two seats. Reset to `seats` at
+  /// every renewal, which is the moment a reduction actually takes effect.
+  seatsPaidFor Int @default(0)
+
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+
+  trialEndsAt       DateTime?
+  /// When the first payment failed. Drives the grace window; null unless
+  /// `pastDue`.
+  pastDueSince      DateTime?
+  /// Cancellation is requested now and takes effect at `currentPeriodEnd`.
+  /// Cancelling is not a refund.
+  cancelRequestedAt DateTime?
+  canceledAt        DateTime?
+
+  /// Credit that outran a charge on an interval switch, spent down against
+  /// renewals rather than refunded.
+  carriedCreditCents Int @default(0)
+
+  /// Optimistic locking, as on rides and appointments.
+  version Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  billingAccount BillingAccount       @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
+  plan           SubscriptionPlan     @relation(fields: [planId], references: [id])
+  periods        SubscriptionPeriod[]
+  seatChanges    SeatLedgerEntry[]
+
+  @@index([billingAccountId, status])
+  @@index([status, currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+/// Append-only. What was billed, at what driver count, under which plan
+/// version — the row an invoice is reconstructed from.
+///
+/// The plan code, version and interval are **copied** rather than joined. A
+/// plan row can be deactivated or superseded; the period has to keep saying
+/// what it actually charged.
+model SubscriptionPeriod {
+  id             String @id @default(uuid())
+  subscriptionId String
+  sequence       Int
+
+  startsAt DateTime
+  endsAt   DateTime
+
+  planCode    String
+  planVersion String
+  interval    BillingInterval
+
+  seatsBilled     Int
+  basePriceCents  Int
+  seatChargeCents Int
+  totalCents      Int
+
+  /// The itemisation, exactly as it was quoted. Shown on the invoice, so an
+  /// operator can see which band their twenty-first driver landed in — a bill
+  /// nobody can check is a bill somebody eventually disputes.
+  lines Json
+
+  closedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, sequence])
+  @@map("subscription_periods")
+}
+
+enum SeatChange {
+  granted
+  released
+}
+
+/// Append-only ledger of driver seats: the audit trail behind an invoice line.
+///
+/// Without it, "why were we billed for eleven drivers" is answerable only from
+/// the current state of the `drivers` table, which by then has changed.
+model SeatLedgerEntry {
+  id             String     @id @default(uuid())
+  subscriptionId String
+  driverId       String
+  change         SeatChange
+  at             DateTime   @default(now())
+  actorUserId    String?
+
+  /// The seat count after this change, so a period can be reconstructed
+  /// without replaying the whole ledger.
+  seatsAfter Int
+
+  /// Charged immediately for the remainder of the period on a grant. Zero on a
+  /// release — a released seat stays usable until the period that paid for it
+  /// ends, and is not refunded.
+  prorationCents Int @default(0)
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  driver       Driver       @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  actor        User?        @relation(fields: [actorUserId], references: [id])
+
+  @@index([subscriptionId, at])
+  @@index([driverId])
+  @@map("seat_ledger_entries")
 }
 
 // ─── audit ───────────────────────────────────────────────────────────────────

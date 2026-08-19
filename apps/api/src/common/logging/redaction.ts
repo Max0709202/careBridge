@@ -25,6 +25,10 @@ const SENSITIVE_FIELDS = [
   'phoneNumber',
   'fullName',
   'name',
+  // Billing addresses are email addresses. pino's path matching is exact, so
+  // an alias of `email` has to be named or it walks straight through.
+  'billingEmail',
+  'contactEmail',
   'legalName',
   'preferredName',
   'displayName',
@@ -100,6 +104,10 @@ const PREFIXES = [
   'driver.',
   'clinic.',
   'ride.',
+  'organization.',
+  'subscription.',
+  'billingAccount.',
+  'account.',
   'appointment.',
   'contact.',
   'data.',

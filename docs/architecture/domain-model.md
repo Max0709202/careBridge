@@ -14,7 +14,7 @@
 ## The relationship that carries authorisation
 
 ```
-User ──< OrganizationMembership >── Organization
+User ──< OrganizationMembership >── Organization ──< Driver ──> Vehicle
 User ──< PatientAccess >────────── Patient          ← every patient-scoped
                                      │                authorisation check
                                      ├──< EmergencyContact
@@ -30,7 +30,16 @@ User ──< PatientAccess >────────── Patient          ← 
                                                      ├──< RideEvent
                                                      ├──< RideLocationSample  (30-day retention)
                                                      └──< Payment ──< Refund
+
+User ──── BillingAccount ────< Subscription ──> SubscriptionPlan ──< SeatTier
+             │  (or)                 ├──< SubscriptionPeriod   (append-only)
+Organization ┘                       └──< SeatLedgerEntry      (append-only)
 ```
+
+**A billing account belongs to exactly one of the two payers.** `ownerUserId`
+and `organizationId` are both nullable and both unique, with a database CHECK
+that exactly one is set — a shape the type system cannot narrow and the database
+can.
 
 **Authorisation for a ride is never asked directly.** It resolves *up* the
 graph — ride → patient → `PatientAccess`, or ride → assignment → driver, or
@@ -62,6 +71,59 @@ snapshot query filters on it.
 Single-use, expiring, **email-bound**, stored as a digest. Three properties,
 each enforced against a specific attack — see
 [security-model.md](security-model.md#invitations).
+
+### `Driver`
+
+Has a lifecycle of its own — `invited` → `pendingApproval` → `approved`, with
+`suspended` and a terminal `offboarded` — and it is the **operator's billing
+meter**: a driver occupies a billable seat exactly while they are `approved`.
+One definition (`occupiesSeat` in src/domain/driver-status.ts), turned into SQL
+in exactly one query. A second predicate somebody has to keep in step ends with
+an operator billed for drivers they offboarded in March.
+
+`onShift` is deliberately separate. Whether somebody is working today changes
+several times a day; whether the company has said they may carry a passenger
+does not, and conflating them means a suspension can be undone by a scheduling
+screen.
+
+Offboarded rather than deleted, because a completed ride from March still has to
+name the person who drove it.
+
+### `Subscription`
+
+At most **one live subscription per billing account**, enforced by a partial
+unique index over the non-terminal statuses. Prisma cannot express a partial
+index, so it is hand-written in the migration. Without it "which subscription
+is in force" has more than one answer, and an entitlement check starts
+depending on row order.
+
+There is no edge out of `canceled` or `expired`. Re-subscribing creates a new
+row, so what somebody was charged, under which plan version, stays immutable.
+
+### `SubscriptionPeriod`
+
+Append-only, and it **copies** the plan code, version, interval and itemisation
+rather than joining to them. A plan row can be deactivated or superseded; the
+period has to keep saying what it actually charged. Same mechanism as
+`PricingRule.version` on a ride, and the same reason.
+
+### `SeatLedgerEntry`
+
+Append-only record of a driver taking or releasing a billable seat. It is what
+makes "why were we billed for eleven drivers in June" answerable, given that
+the `drivers` table has changed since. A grant carries the proration charged
+for the remainder of the period; a release carries zero, because a released
+seat stays usable until the period that paid for it ends.
+
+Drivers are offboarded rather than deleted for the same reason: an invoice for
+eleven seats has to be answerable with eleven names, including the two who left
+in July. `Driver.deactivatedAt` records *when* they stopped occupying one;
+`Driver.status` is what decides whether they do.
+
+`Subscription.seatsPaidFor` is the high-water mark for the current period, and
+proration is measured against it rather than against the head count — so a
+driver suspended and reinstated in one month is not charged for twice. It resets
+at renewal, which is the moment a reduction actually takes effect.
 
 ### `RefreshToken`
 

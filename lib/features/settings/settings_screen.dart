@@ -152,6 +152,15 @@ class SettingsScreen extends ConsumerWidget {
                         onTap: () => context.push('/settings/security'),
                       ),
                       ListTile(
+                        leading: const Icon(Icons.card_membership_outlined),
+                        title: const Text('Your plan'),
+                        subtitle: const Text(
+                          'What you pay, what it covers, and when it renews',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/settings/plan'),
+                      ),
+                      ListTile(
                         leading: const Icon(Icons.notifications_outlined),
                         title: const Text('Notifications'),
                         subtitle: const Text(
@@ -180,7 +189,6 @@ class SettingsScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.sm),
                       for (final item in const [
                         'Payment methods and receipts',
-                        'Family plan subscription',
                         'Inviting other relatives',
                         'Notification channel preferences',
                         'Push notifications',

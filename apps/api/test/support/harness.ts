@@ -126,6 +126,85 @@ export class TestHarness {
         active: true,
       },
     });
+
+    // The plan catalogue is reference data for the same reason the pricing
+    // rule is. A household's trial starts at registration and every ride
+    // request checks an entitlement, so a truncated catalogue would not be an
+    // empty fixture — it would be an environment in which nobody can register.
+    await this.seedPlan({
+      code: 'family-standard',
+      interval: 'monthly',
+      basePriceCents: 2900,
+      entitlements: ['requestTransport', 'liveTracking', 'appointmentReminders'],
+      trialDays: 14,
+    });
+    await this.seedPlan({
+      code: 'family-standard',
+      interval: 'annual',
+      basePriceCents: 29_000,
+      entitlements: ['requestTransport', 'liveTracking', 'appointmentReminders'],
+      trialDays: 14,
+    });
+    await this.seedPlan({
+      code: 'dispatch-core',
+      interval: 'monthly',
+      basePriceCents: 19_900,
+      includedSeats: 5,
+      seatTiers: [
+        { upToSeats: 20, unitPriceCents: 1800 },
+        { upToSeats: null, unitPriceCents: 1400 },
+      ],
+      entitlements: ['dispatchConsole', 'driverApp', 'bulkAssignment'],
+      trialDays: 30,
+    });
+    await this.seedPlan({
+      code: 'dispatch-core',
+      interval: 'annual',
+      basePriceCents: 199_000,
+      includedSeats: 5,
+      seatTiers: [
+        { upToSeats: 20, unitPriceCents: 18_000 },
+        { upToSeats: null, unitPriceCents: 14_000 },
+      ],
+      entitlements: ['dispatchConsole', 'driverApp', 'bulkAssignment'],
+      trialDays: 30,
+    });
+  }
+
+  private async seedPlan(plan: {
+    code: string;
+    interval: 'monthly' | 'annual';
+    basePriceCents: number;
+    includedSeats?: number;
+    seatTiers?: Array<{ upToSeats: number | null; unitPriceCents: number }>;
+    entitlements: string[];
+    trialDays: number;
+  }): Promise<void> {
+    const row = await this.prisma.subscriptionPlan.create({
+      data: {
+        code: plan.code,
+        version: 'v1-test',
+        payer: plan.code.startsWith('family') ? 'family' : 'dispatchOrganization',
+        interval: plan.interval,
+        name: plan.code,
+        description: plan.code,
+        basePriceCents: plan.basePriceCents,
+        includedSeats: plan.includedSeats ?? 0,
+        entitlements: plan.entitlements,
+        trialDays: plan.trialDays,
+        graceDays: 7,
+        effectiveFrom: new Date(Date.UTC(2026, 0, 1)),
+      },
+    });
+
+    await this.prisma.subscriptionPlanSeatTier.createMany({
+      data: (plan.seatTiers ?? []).map((tier, position) => ({
+        planId: row.id,
+        position,
+        upToSeats: tier.upToSeats,
+        unitPriceCents: tier.unitPriceCents,
+      })),
+    });
   }
 
   /**

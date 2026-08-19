@@ -18,6 +18,7 @@ import '../features/rides/ride_request_screen.dart';
 import '../features/rides/tracking_screen.dart';
 import '../features/settings/account_security_screen.dart';
 import '../features/settings/notification_preferences_screen.dart';
+import '../features/settings/plan_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/settings/two_factor_screen.dart';
 import '../state/providers.dart';
@@ -143,6 +144,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'notifications',
                     builder: (context, state) =>
                         const NotificationPreferencesScreen(),
+                  ),
+                  GoRoute(
+                    path: 'plan',
+                    builder: (context, state) => const PlanScreen(),
                   ),
                 ],
               ),

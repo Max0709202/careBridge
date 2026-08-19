@@ -5,7 +5,7 @@
 | [FOUNDATION.md](FOUNDATION.md) | The gate document: understanding, assumptions, scope, architecture, the five-stage plan, the domain model, the API surface, the security plan, the first twenty tasks |
 | [product/](product/) | Eight documents — problem, vision, personas, journeys, scope, non-goals, business model, success metrics |
 | [architecture/](architecture/) | Nine documents — overview, containers, domain model, data flow, security, tenancy, tracking, deployment, disaster recovery |
-| [adr/](adr/) | Ten decision records, each with what we rejected and what would make us revisit |
+| [adr/](adr/) | Eleven decision records, each with what we rejected and what would make us revisit |
 | [privacy/](privacy/) | The data map and the retention schedule |
 | [runbooks/](runbooks/) | Procedures followed under time pressure |
 

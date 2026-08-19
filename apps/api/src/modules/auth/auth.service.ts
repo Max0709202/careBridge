@@ -5,6 +5,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { BillingService } from '../billing/billing.service';
 import { AppConfig } from '../../common/config';
 import {
   AuthenticationError,
@@ -106,6 +107,7 @@ export class AuthService {
     @Inject(MAIL) private readonly mail: MailPort,
     @Inject(RATE_LIMITER) private readonly rateLimiter: RateLimiterPort,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly billing: BillingService,
   ) {
     this.dummyHash = argon2.hash(randomBytes(32).toString('hex'), ARGON2_OPTIONS);
   }
@@ -160,6 +162,15 @@ export class AuthService {
       ip: ctx.ip,
       userAgent: ctx.userAgent,
     });
+
+    // The household's trial starts here rather than at the first ride.
+    //
+    // A family that never sees a plan, a renewal date or a price has no way to
+    // discover what this costs until the day it stops working — which, for
+    // this product, is the day somebody cannot get their mother to a
+    // cardiology appointment. Fourteen days is the plan's number, not this
+    // code's.
+    await this.billing.startFamilyTrial(user.id, email, new Date());
 
     await this.sendVerificationEmail(user.id, email, ctx);
 

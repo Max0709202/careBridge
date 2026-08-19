@@ -7,7 +7,8 @@ import { AuditService } from '../audit/audit.service';
 import { NotFoundError, ValidationError } from '../../common/errors';
 import { appointmentStatusForRide } from '../../domain/appointment-status';
 import { distanceMiles, estimateDriveMinutes } from '../../domain/geo';
-import { estimateFare } from '../../domain/pricing';
+import { estimateFare, settleFare } from '../../domain/pricing';
+import { Money } from '../../domain/money';
 import {
   allowsLocationSharing,
   assertRideTransition,
@@ -19,6 +20,7 @@ import { checkPositionFreshness } from '../../domain/tracking';
 import type { RequestContext } from '../../common/request-context';
 import { AppointmentsService } from './appointments.service';
 import { CareService } from './care.service';
+import { BillingService } from '../billing/billing.service';
 import type {
   CancelRideDto,
   ReportLocationDto,
@@ -35,6 +37,7 @@ export class RidesService {
     private readonly care: CareService,
     private readonly appointments: AppointmentsService,
     private readonly audit: AuditService,
+    private readonly billing: BillingService,
   ) {}
 
   /**
@@ -55,6 +58,19 @@ export class RidesService {
       dto.appointmentId,
       'requestTransport',
     );
+
+    // Two different questions, both of which have to be yes.
+    //
+    // The grant above asks whether *this relative* may book for this patient.
+    // This one asks whether the household is paying for the product at all —
+    // a permission and a subscription are not the same thing, and collapsing
+    // them would mean a lapsed subscription silently reading as "you are not
+    // family".
+    if (!(await this.billing.familyHasEntitlement(userId, 'requestTransport'))) {
+      throw new ValidationError(
+        'This household does not have an active CareBridge plan. Choose a plan to book transportation.',
+      );
+    }
 
     const appointment = await this.prisma.appointment.findUnique({
       where: { id: dto.appointmentId },
@@ -355,11 +371,21 @@ export class RidesService {
     const clearsTracking = !allowsLocationSharing(input.to);
     const terminal = isTerminalRideStatus(input.to);
 
+    // Who the fare is split between is decided here, at assignment, and not at
+    // request: the family is quoted a total before anybody has been
+    // dispatched, and which operator ends up carrying them decides the split
+    // rather than the price.
+    const settlement =
+      driver && ride.platformFunding == null
+        ? await this.settle(tx, ride, driver.organizationId)
+        : null;
+
     await tx.ride.update({
       where: { id: input.rideId },
       data: {
         status: input.to,
         driverId,
+        ...(settlement ?? {}),
         isDelayed: terminal ? false : ride.isDelayed,
         delayReason: terminal ? null : ride.delayReason,
         version: { increment: 1 },
@@ -538,6 +564,67 @@ export class RidesService {
         },
       },
     });
+  }
+
+  /**
+   * The platform's cut of one fare, decided once and stamped on the ride.
+   *
+   * Priced under the ride's **own** rule version rather than today's, for the
+   * same reason the estimate was: a charge has to stay explicable by the rule
+   * that produced it, and a rule that changed between the booking and the
+   * pickup must not silently re-price a trip somebody has already agreed to.
+   *
+   * The operator is pinned rather than read back through the driver, because a
+   * reassignment changes the driver and must not quietly move a settled payout
+   * to a different company.
+   */
+  private async settle(
+    tx: Tx,
+    ride: { priceRuleVersion: string; totalCents: number },
+    organizationId: string,
+  ): Promise<{
+    platformFunding: 'operatorSubscription' | 'perRide';
+    platformFeeCents: number;
+    operatorPayoutCents: number;
+    settledOrganizationId: string;
+  }> {
+    const rule = await tx.pricingRule.findUnique({
+      where: { version: ride.priceRuleVersion },
+    });
+    if (!rule) throw new NotFoundError();
+
+    // `driverApp` rather than a bare "has a subscription": what makes a fare
+    // pass through whole is that the operator is paying us for the drivers who
+    // carry it, and that is the entitlement those seats buy.
+    const operatorSubscribed = await this.billing.organizationHasEntitlement(
+      organizationId,
+      'driverApp',
+      new Date(),
+      tx,
+    );
+
+    const settlement = settleFare({
+      rule: {
+        version: rule.version,
+        baseFare: new Money(rule.baseFareCents),
+        perMile: new Money(rule.perMileCents),
+        perMinute: new Money(rule.perMinuteCents),
+        minimumFare: new Money(rule.minimumFareCents),
+        wheelchairSurcharge: new Money(rule.wheelchairSurchargeCents),
+        assistanceSurcharge: new Money(rule.assistanceSurchargeCents),
+        platformFeeBps: rule.platformFeeBps,
+        effectiveFrom: rule.effectiveFrom,
+      },
+      total: new Money(ride.totalCents),
+      operatorSubscribed,
+    });
+
+    return {
+      platformFunding: settlement.funding,
+      platformFeeCents: settlement.platformFee.cents,
+      operatorPayoutCents: settlement.operatorPayout.cents,
+      settledOrganizationId: organizationId,
+    };
   }
 }
 

@@ -15,7 +15,12 @@ import * as argon2 from 'argon2';
 
 import { distanceMiles, estimateDriveMinutes } from '../src/domain/geo';
 import { Money } from '../src/domain/money';
-import { estimateFare } from '../src/domain/pricing';
+import { estimateFare, settleFare } from '../src/domain/pricing';
+import { periodEndFor, trialEndsAt, type BillingInterval } from '../src/domain/billing';
+import {
+  quoteSubscription,
+  type SubscriptionPlan,
+} from '../src/domain/subscription-pricing';
 
 const prisma = new PrismaClient();
 
@@ -37,7 +42,14 @@ const ID = {
   rideReturn: '00000000-0000-4000-8000-000000000061',
   ridePast: '00000000-0000-4000-8000-000000000062',
   roundTripGroup: '00000000-0000-4000-8000-000000000070',
+  // Must match the id the two-sided-billing migration backfills onto existing
+  // drivers, or a seeded database and a migrated one would disagree about
+  // which company the fleet belongs to.
+  meridian: '00000000-0000-4000-8000-0000000000a1',
+  dispatcher: '00000000-0000-4000-8000-0000000000a2',
 } as const;
+
+const DISPATCHER_EMAIL = 'dispatch@meridiantransit.example';
 
 const DEMO_PASSWORD = 'demo-password';
 
@@ -45,9 +57,12 @@ async function main(): Promise<void> {
   const now = new Date();
 
   await seedPricingRule();
+  await seedPlanCatalogue();
+  const operator = await seedOperator();
   await seedFleet();
 
   const user = await seedUser();
+  await seedSubscriptions({ now, userId: user.id, organizationId: operator.id });
   const { riverbend, northside } = await seedClinics();
   const { eleanor, frank } = await seedPatients(user.id, now);
   await seedAppointmentsAndRides({
@@ -74,10 +89,378 @@ async function seedPricingRule(): Promise<void> {
       minimumFareCents: 1800,
       wheelchairSurchargeCents: 1500,
       assistanceSurchargeCents: 800,
+      // Applies only to operators who are not on a per-driver subscription.
+      // Meridian is, so every seeded ride settles at zero platform fee — which
+      // is the point of the two-sided model rather than an accident of the
+      // demo data.
+      platformFeeBps: 1500,
       effectiveFrom: new Date(Date.UTC(2026, 0, 1)),
       active: true,
     },
   });
+}
+
+/**
+ * The plan catalogue — the whole fee model, as data.
+ *
+ * Four rows, because there are two payers and two intervals. Annual is a
+ * separate row rather than `monthly × 12 × 0.83` computed in code: the size of
+ * the annual discount is a commercial decision that must not require a deploy,
+ * and a multiplier hides where the rounding happened.
+ *
+ * The dispatch ladder is graduated — drivers 6–20 at $18, 21 and up at $14 —
+ * so an operator's bill never *falls* when they hire.
+ */
+async function seedPlanCatalogue(): Promise<void> {
+  const effectiveFrom = new Date(Date.UTC(2026, 0, 1));
+
+  const plans = [
+    {
+      code: 'family-standard',
+      interval: 'monthly' as const,
+      name: 'Family plan',
+      description:
+        'Coordination for one household: appointments, transport requests, live tracking and reminders for everyone in the care circle.',
+      basePriceCents: 2900,
+      includedSeats: 0,
+      seatTiers: [] as Array<{ upToSeats: number | null; unitPriceCents: number }>,
+      entitlements: [
+        'requestTransport',
+        'liveTracking',
+        'unlimitedCareCircle',
+        'appointmentReminders',
+      ],
+      trialDays: 14,
+      graceDays: 7,
+    },
+    {
+      code: 'family-standard',
+      interval: 'annual' as const,
+      name: 'Family plan, annual',
+      description:
+        'The family plan, billed yearly — two months less than paying monthly.',
+      basePriceCents: 29_000,
+      includedSeats: 0,
+      seatTiers: [],
+      entitlements: [
+        'requestTransport',
+        'liveTracking',
+        'unlimitedCareCircle',
+        'appointmentReminders',
+        'prioritySupport',
+      ],
+      trialDays: 14,
+      graceDays: 7,
+    },
+    {
+      code: 'dispatch-core',
+      interval: 'monthly' as const,
+      name: 'Dispatch core',
+      description:
+        'The operational product for a transport company: dispatch console, driver app and assignment. Priced by drivers on the road.',
+      basePriceCents: 19_900,
+      includedSeats: 5,
+      seatTiers: [
+        { upToSeats: 20, unitPriceCents: 1800 },
+        { upToSeats: null, unitPriceCents: 1400 },
+      ],
+      entitlements: ['dispatchConsole', 'driverApp', 'bulkAssignment'],
+      trialDays: 30,
+      // Longer than a family's, because an operator losing the console mid-shift
+      // strands passengers who are already booked, and an accounts department
+      // does not turn a failed card around in seven days.
+      graceDays: 14,
+    },
+    {
+      code: 'dispatch-core',
+      interval: 'annual' as const,
+      name: 'Dispatch core, annual',
+      description: 'Dispatch core, billed yearly, with per-driver rates to match.',
+      basePriceCents: 199_000,
+      includedSeats: 5,
+      seatTiers: [
+        { upToSeats: 20, unitPriceCents: 18_000 },
+        { upToSeats: null, unitPriceCents: 14_000 },
+      ],
+      entitlements: [
+        'dispatchConsole',
+        'driverApp',
+        'bulkAssignment',
+        'operationsAnalytics',
+      ],
+      trialDays: 30,
+      graceDays: 14,
+    },
+  ];
+
+  for (const plan of plans) {
+    const payer = plan.code.startsWith('family') ? 'family' : 'dispatchOrganization';
+
+    const row = await prisma.subscriptionPlan.upsert({
+      where: {
+        code_interval_version: {
+          code: plan.code,
+          interval: plan.interval,
+          version: 'v1-pilot',
+        },
+      },
+      update: {},
+      create: {
+        code: plan.code,
+        version: 'v1-pilot',
+        payer,
+        interval: plan.interval,
+        name: plan.name,
+        description: plan.description,
+        basePriceCents: plan.basePriceCents,
+        includedSeats: plan.includedSeats,
+        entitlements: plan.entitlements,
+        trialDays: plan.trialDays,
+        graceDays: plan.graceDays,
+        effectiveFrom,
+      },
+    });
+
+    await prisma.subscriptionPlanSeatTier.deleteMany({ where: { planId: row.id } });
+    await prisma.subscriptionPlanSeatTier.createMany({
+      data: plan.seatTiers.map((tier, position) => ({
+        planId: row.id,
+        position,
+        upToSeats: tier.upToSeats,
+        unitPriceCents: tier.unitPriceCents,
+      })),
+    });
+  }
+}
+
+/**
+ * The pilot transport operator, and a dispatcher who can sign in as one.
+ *
+ * Fictional, like everyone else in this file. It exists because a dispatch
+ * company that pays for seats cannot be an implicit thing outside the system:
+ * somebody has to be billed, and somebody has to be able to look at the
+ * invoice.
+ */
+async function seedOperator(): Promise<{ id: string }> {
+  const organization = await prisma.organization.upsert({
+    where: { id: ID.meridian },
+    update: {},
+    create: {
+      id: ID.meridian,
+      kind: 'dispatchCompany',
+      name: 'Meridian Transit Partners',
+      slug: 'meridian-transit',
+      contactEmail: DISPATCHER_EMAIL,
+      phone: '+1-555-0142',
+      timeZone: 'America/New_York',
+    },
+  });
+
+  const passwordHash = await argon2.hash(DEMO_PASSWORD, {
+    type: argon2.argon2id,
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1,
+  });
+
+  const dispatcher = await prisma.user.upsert({
+    where: { email: DISPATCHER_EMAIL },
+    update: {},
+    create: {
+      id: ID.dispatcher,
+      email: DISPATCHER_EMAIL,
+      passwordHash,
+      fullName: 'Dana Reyes',
+      phone: '+1-555-0143',
+      emailVerifiedAt: new Date(),
+      timeZone: 'America/New_York',
+    },
+  });
+
+  await prisma.organizationMembership.upsert({
+    where: {
+      userId_organizationId: { userId: dispatcher.id, organizationId: organization.id },
+    },
+    update: {},
+    create: { userId: dispatcher.id, organizationId: organization.id, role: 'owner' },
+  });
+
+  return { id: organization.id };
+}
+
+/**
+ * Both sides of the fee model, live.
+ *
+ * The family is on the annual plan and the operator on the monthly one, which
+ * is deliberate: the demo should show the two intervals side by side, because
+ * "who pays, how often, and for what" is the question this data exists to make
+ * legible.
+ *
+ * Each subscription's first period is written by quoting the plan through the
+ * same domain function a real subscribe call uses — a seeded period whose total
+ * cannot be explained by its own plan version would be worse than no seed.
+ */
+async function seedSubscriptions(input: {
+  now: Date;
+  userId: string;
+  organizationId: string;
+}): Promise<void> {
+  const { now, userId, organizationId } = input;
+  const startedAt = daysBefore(now, 40);
+
+  const familyAccount = await prisma.billingAccount.upsert({
+    where: { ownerUserId: userId },
+    update: {},
+    create: {
+      payer: 'family',
+      ownerUserId: userId,
+      billingEmail: 'sarah@example.com',
+    },
+  });
+
+  const operatorAccount = await prisma.billingAccount.upsert({
+    where: { organizationId },
+    update: {},
+    create: {
+      payer: 'dispatchOrganization',
+      organizationId,
+      billingEmail: DISPATCHER_EMAIL,
+    },
+  });
+
+  await openSubscription({
+    billingAccountId: familyAccount.id,
+    code: 'family-standard',
+    interval: 'annual',
+    seats: 0,
+    startedAt,
+  });
+
+  const seats = await prisma.driver.count({
+    where: { organizationId, status: 'approved' },
+  });
+
+  const operatorSubscription = await openSubscription({
+    billingAccountId: operatorAccount.id,
+    code: 'dispatch-core',
+    interval: 'monthly',
+    seats,
+    startedAt,
+  });
+
+  // The ledger behind the operator's seat count. Without it, "why were we
+  // billed for two drivers" is answerable only from a driver table that will
+  // have changed by the time anybody asks.
+  if (operatorSubscription) {
+    const drivers = await prisma.driver.findMany({
+      where: { organizationId },
+      orderBy: { id: 'asc' },
+    });
+
+    for (const [index, driver] of drivers.entries()) {
+      const existing = await prisma.seatLedgerEntry.findFirst({
+        where: { subscriptionId: operatorSubscription.id, driverId: driver.id },
+      });
+      if (existing) continue;
+
+      await prisma.seatLedgerEntry.create({
+        data: {
+          subscriptionId: operatorSubscription.id,
+          driverId: driver.id,
+          change: 'granted',
+          at: startedAt,
+          seatsAfter: index + 1,
+          // Granted at the start of the period, so there is nothing to prorate.
+          prorationCents: 0,
+        },
+      });
+    }
+  }
+}
+
+async function openSubscription(input: {
+  billingAccountId: string;
+  code: string;
+  interval: BillingInterval;
+  seats: number;
+  startedAt: Date;
+}): Promise<{ id: string } | null> {
+  const { billingAccountId, code, interval, seats, startedAt } = input;
+
+  const existing = await prisma.subscription.findFirst({
+    where: {
+      billingAccountId,
+      status: { in: ['trialing', 'active', 'pastDue', 'pendingCancellation'] },
+    },
+  });
+  if (existing) return existing;
+
+  const plan = await prisma.subscriptionPlan.findFirstOrThrow({
+    where: { code, interval, active: true },
+    include: { seatTiers: { orderBy: { position: 'asc' } } },
+  });
+
+  const domainPlan: SubscriptionPlan = {
+    code: plan.code,
+    version: plan.version,
+    payer: plan.payer,
+    interval: plan.interval,
+    name: plan.name,
+    basePrice: new Money(plan.basePriceCents),
+    includedSeats: plan.includedSeats,
+    seatTiers: plan.seatTiers.map((tier) => ({
+      upToSeats: tier.upToSeats,
+      unitPrice: new Money(tier.unitPriceCents),
+    })),
+    entitlements: [],
+    trialDays: plan.trialDays,
+    graceDays: plan.graceDays,
+  };
+
+  const quote = quoteSubscription({ plan: domainPlan, seats });
+  const endsAt = periodEndFor(startedAt, interval);
+
+  const subscription = await prisma.subscription.create({
+    data: {
+      billingAccountId,
+      planId: plan.id,
+      // Past its trial: the demo family should land on a running subscription,
+      // not on a countdown.
+      status: 'active',
+      interval,
+      seats,
+      seatsPaidFor: seats,
+      currentPeriodStart: startedAt,
+      currentPeriodEnd: endsAt,
+      trialEndsAt: trialEndsAt(startedAt, plan.trialDays),
+    },
+  });
+
+  const base = quote.lines[0]?.amount.cents ?? 0;
+
+  await prisma.subscriptionPeriod.create({
+    data: {
+      subscriptionId: subscription.id,
+      sequence: 0,
+      startsAt: startedAt,
+      endsAt,
+      planCode: quote.planCode,
+      planVersion: quote.planVersion,
+      interval,
+      seatsBilled: quote.seats,
+      basePriceCents: base,
+      seatChargeCents: quote.total.cents - base,
+      totalCents: quote.total.cents,
+      lines: quote.lines.map((line) => ({
+        label: line.label,
+        quantity: line.quantity,
+        unitPriceCents: line.unitPrice.cents,
+        amountCents: line.amount.cents,
+      })),
+    },
+  });
+
+  return subscription;
 }
 
 async function seedFleet(): Promise<void> {
@@ -86,6 +469,7 @@ async function seedFleet(): Promise<void> {
     update: {},
     create: {
       id: ID.sienna,
+      organizationId: ID.meridian,
       make: 'Toyota',
       model: 'Sienna',
       color: 'Silver',
@@ -99,6 +483,7 @@ async function seedFleet(): Promise<void> {
     update: {},
     create: {
       id: ID.transit,
+      organizationId: ID.meridian,
       make: 'Ford',
       model: 'Transit',
       color: 'White',
@@ -114,10 +499,16 @@ async function seedFleet(): Promise<void> {
     update: {},
     create: {
       id: ID.marcus,
+      organizationId: ID.meridian,
       displayName: 'Marcus T.',
       rating: 4.9,
       yearsDriving: 6,
       vehicleId: ID.sienna,
+      // Approved and on shift, so the dispatch queue has somebody to offer.
+      // Approval is what takes the billable seat — see `occupiesSeat`.
+      status: 'approved',
+      onShift: true,
+      approvedAt: new Date(),
     },
   });
 
@@ -126,10 +517,14 @@ async function seedFleet(): Promise<void> {
     update: {},
     create: {
       id: ID.priya,
+      organizationId: ID.meridian,
       displayName: 'Priya N.',
       rating: 4.9,
       yearsDriving: 8,
       vehicleId: ID.transit,
+      status: 'approved',
+      onShift: true,
+      approvedAt: new Date(),
     },
   });
 }
@@ -514,6 +909,7 @@ async function seedAppointmentsAndRides(input: {
       minimumFare: new Money(rule.minimumFareCents),
       wheelchairSurcharge: new Money(rule.wheelchairSurchargeCents),
       assistanceSurcharge: new Money(rule.assistanceSurchargeCents),
+      platformFeeBps: rule.platformFeeBps,
       effectiveFrom: rule.effectiveFrom,
     },
     distanceMiles: miles,
@@ -542,6 +938,33 @@ async function seedAppointmentsAndRides(input: {
       position: index,
     })),
   };
+
+  // How the completed ride below was settled — by the same function the
+  // transition path calls. Meridian holds a per-driver subscription, so the
+  // whole fare is theirs and the platform fee is zero: our margin on that trip
+  // was their seats, taken a month earlier.
+  const settlement = settleFare({
+    rule: {
+      version: rule.version,
+      baseFare: new Money(rule.baseFareCents),
+      perMile: new Money(rule.perMileCents),
+      perMinute: new Money(rule.perMinuteCents),
+      minimumFare: new Money(rule.minimumFareCents),
+      wheelchairSurcharge: new Money(rule.wheelchairSurchargeCents),
+      assistanceSurcharge: new Money(rule.assistanceSurchargeCents),
+      platformFeeBps: rule.platformFeeBps,
+      effectiveFrom: rule.effectiveFrom,
+    },
+    total: quote.total,
+    operatorSubscribed: true,
+  });
+
+  const settled = {
+    platformFunding: settlement.funding,
+    platformFeeCents: settlement.platformFee.cents,
+    operatorPayoutCents: settlement.operatorPayout.cents,
+    settledOrganizationId: ID.meridian,
+  } as const;
 
   // Each leg snapshots its own copies of the two addresses, exactly as
   // `RidesService.requestTransport` does — so a seeded ride and a requested one
@@ -649,6 +1072,7 @@ async function seedAppointmentsAndRides(input: {
       driverId: ID.marcus,
       createdAt: daysBefore(now, 30),
       ...estimate,
+      ...settled,
       surcharges,
       events: {
         create: [

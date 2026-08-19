@@ -269,6 +269,54 @@ class CareApi {
           )
           .toList();
 
+  // ─── billing ──────────────────────────────────────────────────────────────
+
+  /// The household's own subscription, or null if it has none.
+  ///
+  /// Null is a real state rather than an error: an account created before the
+  /// two-sided fee model existed has no billing account, and telling that
+  /// person "something went wrong" instead of "choose a plan" would be a lie
+  /// about whose problem it is.
+  Future<wire.BillingAccountDto?> billingAccount() async {
+    final json = await _send('GET', '/billing/account');
+    if (json.isEmpty) return null;
+    return wire.BillingAccountDto.fromJson(json);
+  }
+
+  /// The catalogue. Plans are rows on the server; nothing about a price,
+  /// a tier or an entitlement is compiled into this app.
+  Future<List<wire.SubscriptionPlanDto>> billingPlans({
+    String payer = 'family',
+  }) async => (await _sendList('GET', '/billing/plans?payer=$payer'))
+      .map((e) => wire.SubscriptionPlanDto.fromJson(e as Map<String, dynamic>))
+      .toList();
+
+  Future<wire.BillingAccountDto> subscribe({
+    required String planCode,
+    required String interval,
+  }) async => wire.BillingAccountDto.fromJson(
+    await _send(
+      'POST',
+      '/billing/subscribe',
+      body: {'planCode': planCode, 'interval': interval},
+      // Choosing a plan is a thing that gets double-tapped on a slow
+      // connection, and the second tap must not open a second subscription.
+      idempotencyKey: newId(),
+    ),
+  );
+
+  Future<wire.BillingAccountDto> changeBillingInterval(String interval) async =>
+      wire.BillingAccountDto.fromJson(
+        await _send(
+          'POST',
+          '/billing/change-interval',
+          body: {'interval': interval},
+        ),
+      );
+
+  Future<wire.BillingAccountDto> cancelSubscription() async =>
+      wire.BillingAccountDto.fromJson(await _send('POST', '/billing/cancel'));
+
   // ─── the care circle ──────────────────────────────────────────────────────
 
   Future<List<wire.InvitationDto>> invitations(String patientId) async =>

@@ -119,7 +119,15 @@ function withAuth<T extends { set: (k: string, v: string) => T }>(
 export async function createPatient(
   harness: TestHarness,
   token: string,
-  overrides: Partial<{ preferredName: string; phone: string }> = {},
+  overrides: Partial<{
+    preferredName: string;
+    phone: string;
+    /**
+     * Drives the accessibility flags on any ride booked for this patient, which
+     * is what the dispatch eligibility rules turn on.
+     */
+    mobilityNeeds: string[];
+  }> = {},
 ): Promise<string> {
   const response = await authed(harness, token)
     .post('/api/v1/patients')
@@ -127,6 +135,7 @@ export async function createPatient(
       preferredName: overrides.preferredName ?? 'Margaret',
       phone: overrides.phone ?? '+1-555-0100',
       relationship: 'daughter',
+      ...(overrides.mobilityNeeds ? { mobilityNeeds: overrides.mobilityNeeds } : {}),
       homeAddress: {
         label: 'Home',
         line1: '400 Parkside Avenue',

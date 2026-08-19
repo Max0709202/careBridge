@@ -132,4 +132,85 @@ void main() {
       expect((const Money(-1) * 0.5).cents, -1);
     });
   });
+
+  group('who the fare is split between', () {
+    test(
+      'takes nothing from an operator who already pays for their drivers',
+      () {
+        // Charging a per-ride percentage *and* a per-driver subscription is
+        // charging twice for the same relationship.
+        final settlement = settleFare(
+          rule: rule,
+          total: const Money(4000),
+          operatorSubscribed: true,
+        );
+
+        expect(settlement.funding, PlatformFunding.operatorSubscription);
+        expect(settlement.platformFee, const Money.zero());
+        expect(settlement.operatorPayout, const Money(4000));
+      },
+    );
+
+    test('falls back to basis points for an operator not yet on a plan', () {
+      final settlement = settleFare(
+        rule: rule,
+        total: const Money(4000),
+        operatorSubscribed: false,
+      );
+
+      expect(settlement.funding, PlatformFunding.perRide);
+      expect(settlement.platformFee, const Money(600));
+      expect(settlement.operatorPayout, const Money(3400));
+    });
+
+    test('charges the family the same total either way', () {
+      final subscribed = settleFare(
+        rule: rule,
+        total: const Money(4000),
+        operatorSubscribed: true,
+      );
+      final not = settleFare(
+        rule: rule,
+        total: const Money(4000),
+        operatorSubscribed: false,
+      );
+
+      expect(subscribed.total, not.total);
+      expect(
+        subscribed.platformFee + subscribed.operatorPayout,
+        subscribed.total,
+      );
+      expect(not.platformFee + not.operatorPayout, not.total);
+    });
+
+    test('refuses a rule that would take more than the whole fare', () {
+      final broken = PricingRule(
+        version: 'broken',
+        baseFare: rule.baseFare,
+        perMile: rule.perMile,
+        perMinute: rule.perMinute,
+        minimumFare: rule.minimumFare,
+        wheelchairSurcharge: rule.wheelchairSurcharge,
+        assistanceSurcharge: rule.assistanceSurcharge,
+        platformFeeBps: 10001,
+        effectiveFrom: rule.effectiveFrom,
+      );
+
+      expect(
+        () => settleFare(
+          rule: broken,
+          total: const Money(4000),
+          operatorSubscribed: false,
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('round-trips the funding mode from the wire', () {
+      for (final funding in PlatformFunding.values) {
+        expect(PlatformFunding.tryParse(funding.name), funding);
+      }
+      expect(PlatformFunding.tryParse('magic'), isNull);
+    });
+  });
 }

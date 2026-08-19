@@ -69,10 +69,32 @@ agent, and changed **field names**.
 investigation needs; storing the old and new number would make the audit log a
 second copy of the data it exists to protect.
 
+### Billing — *sensitive*
+
+`BillingAccount.billingEmail` and `Organization.contactEmail` are email
+addresses and carry the same treatment as `User.email`: on the redaction
+denylist, audited on mutation.
+
+Everything else on the billing tables is money and counts — plan codes, period
+bounds, seat totals, prorations, the invoice itemisation. None of it names a
+patient, and none of it is derivable from a patient: a subscription belongs to
+a *household* or an *operator*, never to the person being driven. That is not
+an accident of the schema. It is what lets an invoice be emailed, exported and
+handed to an accountant without any of that touching the health-adjacent
+boundary.
+
+`SeatLedgerEntry` names a **driver**, which is an employee of the operator and
+not a patient. `Driver.displayName` is a first name and last initial, as it is
+everywhere else.
+
+No card number, expiry, or last-four exists in this database. Only
+`externalCustomerId` — a Stripe identifier — which is why the PCI scope is
+SAQ-A ([ADR-0006](../adr/0006-stripe-payments.md)).
+
 ### Operational
 
 Appointment times, ride states, price estimates, clinic details, vehicle
-details. A clinic's address and drop-off instructions reveal nothing about who
+details, subscription plan catalogue rows. A clinic's address and drop-off instructions reveal nothing about who
 attends it, which is why clinics are shared reference data rather than patient
 data.
 
@@ -81,7 +103,7 @@ data.
 | Vendor | Receives | Control |
 | ------ | -------- | ------- |
 | AWS | Everything | BAA required before pilot; HIPAA-eligible services only |
-| Stripe | Name, email, amount — **no health or ride detail** | PCI SAQ-A via the SDK; deliberately excluded from PHI scope |
+| Stripe | For a family: name, email, amount. For an operator: company name, contact email, amount. **No health or ride detail in either case**, and no driver names | PCI SAQ-A via the SDK; deliberately excluded from PHI scope |
 | Google Maps | Address strings and coordinates | **No patient identity is ever sent** — the request carries an address and nothing else |
 | FCM | Device tokens, contentless payloads | The contentless policy limits exposure |
 | SES / SMTP | Email addresses, contentless bodies | BAA; contentless policy |

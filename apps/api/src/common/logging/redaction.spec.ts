@@ -118,4 +118,30 @@ describe('log redaction', () => {
       expect(SENSITIVE_FIELD_NAMES).toContain(field);
     }
   });
+
+  it('redacts the billing addresses that are email addresses under another name', () => {
+    // `billingEmail` and `contactEmail` are the same class of data as `email`,
+    // and pino matches paths exactly — an alias walks straight through unless
+    // it is named.
+    const line = captureLog((log) =>
+      log.info(
+        {
+          billingAccount: {
+            id: 'ba_1',
+            billingEmail: 'accounts@meridiantransit.example',
+          },
+          organization: { id: 'org_1', contactEmail: 'dispatch@example.test' },
+        },
+        'opened subscription',
+      ),
+    );
+
+    const account = line['billingAccount'] as Record<string, unknown>;
+    const organization = line['organization'] as Record<string, unknown>;
+
+    expect(account['billingEmail']).toBe(REDACTION_CENSOR);
+    expect(organization['contactEmail']).toBe(REDACTION_CENSOR);
+    // The ids stay: they are what makes an incident traceable at all.
+    expect(account['id']).toBe('ba_1');
+  });
 });

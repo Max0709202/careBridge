@@ -220,7 +220,8 @@ design change if wrong.
 
 | ID | Assumption |
 | -- | ---------- |
-| B1 | Revenue is a family subscription plus a per-ride margin. Both are configurable records, never constants in code. |
+| B1 | Revenue is **two subscriptions**: a family household plan, and a dispatch operator plan priced by drivers on the road. Both are monthly or annual, both are configurable records, never constants in code. Superseded the original "family subscription plus a per-ride margin" — see [ADR-0011](adr/0011-two-sided-subscription-billing.md). |
+| B1a | The per-ride platform margin applies **only** to operators who are not on a subscription. An operator paying by seats keeps the whole fare; charging both would be charging twice for one relationship. |
 | B2 | Transportation is fulfilled by partner providers; CareBridge does not own vehicles or employ drivers in the MVP. |
 | B3 | ⚠ No insurance, Medicaid or Medicare billing. Families pay by card. This is the single largest constraint on early market size and is accepted knowingly. |
 | B4 | Pricing is distance-and-time based with accessibility and wait-time surcharges. |
@@ -608,6 +609,20 @@ Android foreground service.
 **Dependencies:** Stage 2; maps/routing contract; FCM project; physical devices
 for real-world location testing.
 
+**Landed so far (slice one — the domain, as planned):** the organisation and its
+roster; the driver lifecycle state machine, with approval moving a billable
+seat inside the same transaction; shifts; assignment eligibility as pure,
+asserted rules (accessible vehicle, approved driver, one passenger at a time);
+the dispatch queue ordered by when the car is needed; assignment and
+reassignment-with-reason through the existing ride state machine, replacing the
+scripted stand-in rather than adding to it.
+
+**Still outstanding in this stage:** driver documents to S3 and the upload
+behind approval; the driver app and its adaptive-cadence location service; the
+Socket.IO gateway and the Redis position store; the ETA service; the staleness
+watchdog; the Android foreground service; and `ops-console`, which is the
+Flutter Web surface over the dispatch API that now exists.
+
 **Risks (highest of any stage):** background-location platform restrictions and
 store review (T2); battery drain damaging driver adoption; map/routing cost at
 scale; WebSocket authorisation errors leaking a patient's live position — treated
@@ -629,8 +644,10 @@ state.
 
 **Objective:** commercially operable and safe to run a controlled pilot on.
 
-**Features:** the full Stripe integration described in Section 4; subscription
-plans, trials, lifecycle and entitlement checks; administration surfaces including
+**Features:** the full Stripe integration described in Section 4, for **both**
+payers — a household and a transport operator ([ADR-0011](adr/0011-two-sided-subscription-billing.md));
+recurring charges against the `SubscriptionPeriod` rows the billing model
+already writes, dunning, and the seat-derived operator invoice; administration surfaces including
 the audit-log viewer, driver approval, refunds and feature flags; the operations
 analytics dashboard; production security hardening; Terraform for staging and
 production; the pilot documentation set.
@@ -643,6 +660,11 @@ retention jobs; dependency, container and secret scanning in CI; alerting.
 
 **Dependencies:** Stage 3; a Stripe account; an AWS account with a signed BAA; a
 domain; legal review of terms and consent copy.
+
+**Already landed ahead of this stage:** the plan catalogue, both billing
+accounts, the subscription lifecycle, seat accounting and entitlement
+enforcement. Stage 4 adds the money movement, not the model — an unpaid period
+is a period with no payment against it, not a missing row.
 
 **Risks:** payment/ledger drift (reconciliation job plus alerting); webhook
 replay and out-of-order delivery (idempotency table plus event-ID uniqueness);
@@ -777,9 +799,28 @@ carries a sensitivity classification driving log redaction and retention.
 - **Refund** — payment, amount, reason, initiated-by, Stripe refund ID, status.
 - **LedgerEntry** — append-only internal double-entry record; the authoritative
   internal view reconciled nightly against Stripe.
-- **SubscriptionPlan** — code, name, price, interval, entitlements, active flag.
-- **Subscription** — account, plan, Stripe subscription ID, status, trial and
-  period bounds, cancel-at-period-end.
+- **Organization** — the transport operator. Kind, name, slug, contact address,
+  timezone. Exists because a dispatch company that pays for seats cannot be an
+  implicit thing outside the system.
+- **OrganizationMembership** — user, organisation, `OrgRole`, revoked-at.
+  Many-to-many, which is what keeps a later multi-tenant model from being a
+  rewrite.
+- **BillingAccount** — payer (`family` | `dispatchOrganization`), owning user
+  **or** organisation (exactly one, by CHECK constraint), billing email, Stripe
+  customer ID.
+- **SubscriptionPlan** — code, **version**, payer, interval, name, base price,
+  included seats, entitlements, trial days, grace days, active flag. Annual is
+  a separate row, not a multiplier.
+- **SubscriptionPlanSeatTier** — the graduated per-driver ladder. `upToSeats` is
+  a total driver count; the final tier is unbounded.
+- **Subscription** — billing account, plan, Stripe subscription ID, status,
+  interval, seats, trial and period bounds, past-due-since, cancel-requested-at,
+  carried credit. At most one live per account, by partial unique index.
+- **SubscriptionPeriod** — append-only. Copies plan code, version, interval,
+  seats billed and the itemisation, so a superseded plan cannot rewrite history.
+- **SeatLedgerEntry** — append-only record of a driver taking or releasing a
+  billable seat, with the proration charged. The audit trail behind an invoice
+  line.
 - **Invoice** — Stripe invoice mirror plus receipt S3 key.
 - **WebhookEvent** — provider, provider event ID (**unique** — the constraint is
   the idempotency guarantee), payload hash, received/processed timestamps, status.
@@ -1182,11 +1223,13 @@ first, tracking second, `ops-console` last.
 
 | ID | Risk | Mitigation |
 | -- | ---- | ---------- |
-| **R1** | Dispatcher has no adequate surface until the Flutter Web console lands. | Auto-assignment + REST in Stage 3; console before Stage 3 close. Needs sign-off. |
+| **R1** | Dispatcher has no adequate surface until the Flutter Web console lands. | **Partly closed.** The REST surface — roster, shifts, queue, assign, reassign — is built and tested as of Stage 3 slice one. Auto-assignment is still deferred (the eligibility filter it would rank is in place); the console is still needed before Stage 3 closes, and still needs sign-off. |
 | **R2** | Background location on iOS/Android may fail store review or drain battery. | Foreground-service-first (T2); real-device field test is a Stage 3 acceptance item. |
 | **R3** | Flutter Web accessibility is weaker than DOM. | Internal tool only; patient-facing surfaces stay native. |
 | **R4** | Map/routing spend scales with tracked rides. | Vendor behind an interface; ETA throttled and cached; cost alarm from Stage 3. |
 | **R5** | No web portal may block a family segment that will not install an app. | Measure in pilot; Next.js portal against the same API is the unblocked path. |
 | **R6** | Legal role determination (L1) is unresolved. | Architecture assumes strictest case; counsel engaged before Stage 4 pilot. |
 | **R7** | Card-only payment (B3) narrows the addressable market. | Accepted for pilot; insurance/Medicaid is a Stage 5 decision. |
+| **R9** | The operator may refuse per-driver pricing, or price-shop against a per-ride model. | The ladder is `SeatTier` rows: moving to per-vehicle or per-dispatcher is a seed change, not a rewrite. Measured in the pilot. |
+| **R10** | A household's plan lapsing mid-trip would be the worst possible moment to enforce an entitlement. | Grace window on the plan row; `pendingCancellation` runs to period end; both pinned by test. |
 | **R8** | ~~Docker and Flutter absent locally.~~ | **Closed, 2026-08-12.** Docker 29.7.2 (user added to the `docker` group) and Flutter 3.44.0 / Dart 3.12.0 are installed and verified. `docker compose up` brings up six healthy containers; the API image builds and runs; `flutter analyze` and `flutter test` are clean. Android SDK and the Linux desktop toolchain are still absent — neither is needed until the driver app (Stage 3). |

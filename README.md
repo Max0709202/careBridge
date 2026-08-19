@@ -8,7 +8,7 @@ runs against, and the generated Dart client between them. The plan it is being
 built to — product, architecture, five stages, domain model, security — is in
 [docs/FOUNDATION.md](docs/FOUNDATION.md), expanded across
 [docs/](docs/README.md): eight product documents, nine architecture documents
-and ten ADRs.
+and eleven ADRs.
 
 ---
 
@@ -69,13 +69,13 @@ Nothing in it is allowed to fail silently: the unit run enforces coverage
 floors on both sides, and the pure rules in `domain/` are held at 100%.
 
 ```bash
-make test-integration        # 72 tests, real app against real Postgres
+make test-integration        # 139 tests, real app against real Postgres
 ```
 
 Individually:
 
 ```bash
-pnpm --filter @carebridge/api test          # 141 unit tests, with coverage floors
+pnpm --filter @carebridge/api test          # 232 unit tests, with coverage floors
 pnpm --filter @carebridge/api exec eslint . # boundaries, no-console, no process.env
 flutter analyze && flutter test             # the app
 ```
@@ -117,17 +117,21 @@ REDIS_URL=redis://127.0.0.1:56379 make test-integration  # the real BullMQ path
 | ---- | ----------- |
 | Every Stage-2 feature is reachable **from the app**: care-circle invitations, the session list, two-factor enrolment, notification preferences, the verification prompt | |
 | PostgreSQL is the source of truth. Nothing resets on restart. | The **driver app** — "Preview controls" ask the server to run the same transitions |
+| **Dispatch**: the driver lifecycle (invite → approve → suspend → offboard), shifts, a queue ordered by when the car is needed, and assignment with reassignment reasons | The **dispatch console** — the API is real, the Flutter Web surface for it is not |
 | Full auth lifecycle: argon2id, rotating refresh tokens with family revocation, email verification, password reset, session list and revoke, sign-out-everywhere | The **dispatch service** — assignment is scripted, not matched |
 | TOTP MFA end to end — enrol, confirm, sign in with a code, spend a recovery code — verified against the RFC 6238 vectors, secret encrypted at rest | Real GPS, maps and routing — the route view is a schematic, deliberately, and positions come from the preview runner |
+| Assignment eligibility asserted server-side: a wheelchair trip cannot be given to a saloon car, an unapproved driver cannot be given anybody, and no driver carries two passengers at once | Driver **documents** — approval is a decision an admin records; the S3 upload behind it is still to come |
 | Family invitations: single-use, expiring, email-bound, verified-address-bound, no grant broader than the inviter's | Live push: the client polls while a trip is running. The Socket.IO gateway is Stage 3 |
-| Server-owned ride and appointment state machines, with illegal transitions rejected | Payments and subscriptions |
+| Server-owned ride, appointment and **driver** state machines, with illegal transitions rejected | **Charging a card.** The fee model is real — two payers, plans, periods, seats, entitlements — but no money moves until Stage 4 wires Stripe up |
 | `Idempotency-Key` honoured on every create — a retried request books one ride, not two | |
 | Rate limits on every credential endpoint — sign-in, registration, reset, verification, invitation, MFA — counted per IP *and* per address, shared across instances through Redis | |
-| Per-patient permission model resolved server-side on every request | The `ops_console`, the driver app, and everything in Stage 4 |
+| Per-patient permission model resolved server-side on every request, **and** an organisation-membership model beside it for operator staff | The `ops_console`, the driver app, and everything in Stage 4 |
 | Notification delivery on three channels with per-user, per-channel preferences | A real mail or push vendor — `MAIL_DRIVER=smtp` points at Mailpit locally and SES in production; `PUSH_DRIVER=fcm` is written and untested against a live project |
 | BullMQ reminder scheduling, timezone-correct across both DST boundaries | Redis in the default local setup — without it the API falls back to an in-process scheduler and says so at boot |
 | Geocoding behind the maps interface, with a deterministic dev adapter | A real maps vendor — `MAPS_DRIVER=google` is written; production refuses the deterministic one |
 | Fare calculation in integer cents, itemised, versioned, priced from a `pricing_rules` row | S3 — MinIO is up, nothing writes to it until driver documents land |
+| **Two-sided subscriptions** — a household plan and a dispatch operator priced by drivers on the road, monthly or annual, with graduated seat tiers, proration, a grace window and an append-only seat ledger | |
+| Every fare settled once, at driver assignment: an operator on a per-driver plan keeps the whole fare, and which way it went is stamped on the ride | |
 | Contentless notifications, fanned out to everyone with access, verified by test | |
 | Location staleness, expiry and tracking-window enforcement, on the write path as well as the read path | |
 | Append-only audit log, transactional with the change it describes | |
@@ -156,7 +160,13 @@ apps/api/                     NestJS modular monolith
     │   ├── ride-status.ts            state machine + tracking window
     │   ├── appointment-status.ts     state machine + ride→appointment mapping
     │   ├── permissions.ts            per-patient access grants
-    │   ├── pricing.ts / money.ts     versioned rules, integer cents
+    │   ├── pricing.ts / money.ts     versioned rules, integer cents,
+    │   │                              and who the fare is split between
+    │   ├── billing.ts                 payers, subscription lifecycle,
+    │   │                              entitlements, calendar periods
+    │   ├── subscription-pricing.ts    graduated seat tiers, proration
+    │   ├── driver-status.ts           driver lifecycle; which status is billed
+    │   ├── dispatch.ts                assignment eligibility, queue ordering
     │   ├── tracking.ts               freshness bounds (mirrored in the client)
     │   ├── totp.ts                   RFC 6238, against the published vectors
     │   ├── reminder-schedule.ts      offsets in local wall time, DST-correct
@@ -171,6 +181,11 @@ apps/api/                     NestJS modular monolith
     │   │                     sessions · MFA
     │   ├── care/             the snapshot, invitations, reminders, devices,
     │   │                     notification delivery, geocoding
+    │   ├── billing/          the plan catalogue, both billing accounts,
+    │   │                     subscribe · change interval · cancel · seats
+    │   ├── dispatch/         the roster, shifts, the queue, assignment
+    │   ├── organizations/    the operator, and the membership axis of
+    │   │                     authorisation
     │   ├── retention/        the schedule in docs/privacy, as a job
     │   ├── audit/  health/
     ├── test/                 integration harness + the negative-path helper set
@@ -186,6 +201,7 @@ lib/                          Flutter — family + patient  (the pub workspace r
 ├── core/          Money (integer cents), Clock, geo, formatting, failures
 ├── domain/        Pure business rules, mirroring the server's so controls can
 │                  be disabled and prices shown — never so they can be enforced
+│                  (including billing.dart and subscription_pricing.dart)
 ├── data/          CareState, the API client, the wire codec, token storage
 ├── state/         Riverpod providers
 ├── app/           Theme tokens, router, shell
@@ -194,7 +210,7 @@ lib/                          Flutter — family + patient  (the pub workspace r
                    patients (detail, care circle) · clinics · appointments ·
                    rides (request, detail, tracking) · notifications ·
                    settings (account security, two-factor, notification
-                   preferences)
+                   preferences, your plan)
 
 infrastructure/nginx/         same-origin proxy, SPA fallback, CSP and the
                               other response headers the app is served with
@@ -268,7 +284,68 @@ its own line items — pinned in `pricing.spec.ts` and `pricing_test.dart`.
 
 **Prices are rows, not constants.** The seed prices its demo ride by calling the
 same engine a live request calls, so a seeded fare can always be explained by
-its own rule version.
+its own rule version. The same is true of subscriptions: a plan is a
+`subscription_plans` row with a version, copied onto every period it bills, and
+the annual plan is a *separate row* rather than twelve times the monthly one —
+the size of an annual discount is a commercial decision, and a commercial
+decision must not be a deploy.
+
+**Two parties pay, and neither pays twice.** A family subscribes for
+coordination and pays the fare for each ride; a transport operator subscribes
+for the dispatch console and driver app, priced by how many drivers it has on
+the road. When the operator is on a plan, the platform's cut of the fare is
+**zero** — our margin is their seats, taken a month earlier, and charging a
+percentage as well would be charging twice for one relationship. Which way a
+ride settled is stamped on it beside the pricing rule version, so a payout is
+explicable months later. The whole rule is `settleFare` in `domain/pricing.ts`,
+and the reasoning is in
+[ADR-0011](docs/adr/0011-two-sided-subscription-billing.md).
+
+**Driver seats are graduated, and the ladder never bites the operator for
+growing.** Each driver is priced in the band they fall in, so adding one never
+re-prices the ones below it. Volume pricing — the whole fleet at the rate the
+total reaches — makes an invoice *fall* when a company hires, which is a
+conversation that ends in a spreadsheet nobody trusts again. Adding a driver is
+prorated and charged now; removing one takes effect at renewal and is not
+refunded, because the seat stays usable until the period that paid for it ends.
+
+**A failed payment does not blank the map.** A declined renewal moves a
+subscription to `pastDue` and it keeps entitling for the plan's grace window —
+seven days for a family, fourteen for an operator. The naive alternative cuts
+live tracking off the instant a card expires, and the family's first signal that
+anything is wrong is an empty screen while their mother is in a stranger's car.
+Cancelling is likewise not an immediate switch-off: it runs to the end of the
+period already paid for, because that period was paid for.
+
+**Approving a driver moves money, in the same transaction.** A driver occupies
+a billable seat exactly while their status is `approved` — one definition,
+`occupiesSeat`, and `BillingService.recordSeatChange` is called inside the same
+transaction as the status change. A failure cannot leave an operator
+approved-but-unbilled or billed-but-offboarded, and neither of those is
+discoverable without an audit. A driver who is suspended and reinstated inside
+one period is **not** charged twice: proration measures against the period's
+high-water mark, not the current head count.
+
+**Assignment is asserted, not advised.** A wheelchair trip cannot be given to a
+saloon car, an unapproved driver cannot be given anybody, and no driver carries
+two passengers at once — all in `domain/dispatch.ts`, all throwing rather than
+returning a boolean a caller can forget to read. A dispatcher under pressure at
+8am should not be the last line of defence against a patient in a wheelchair
+meeting the wrong vehicle at the kerb. The queue tells them *every* reason a
+driver is unavailable, because "nobody is on shift" and "nobody has an
+accessible vehicle" need different phone calls.
+
+**The queue is ordered by when the car is needed, not by when the request
+arrived.** A ride booked this morning for 4pm is not more urgent than one booked
+five minutes ago for 2pm, and first-in-first-out quietly optimises for the
+dispatcher's sense of fairness rather than for the person waiting. A pickup time
+that has already passed with nobody assigned gets its own band — that is a
+failure in progress, not an urgent task.
+
+**A permission and a subscription are different questions.** A ride request
+checks both: whether this relative may book for this patient, and whether the
+household is on a plan at all. Collapsing them would make a lapsed subscription
+read as "you are not family".
 
 **Every vendor sits behind a port with a local adapter, and production refuses
 the local one.** A developer can run the whole product with no accounts: the
@@ -339,9 +416,10 @@ where the two share a name.
 
 ## Not built
 
-Payments and subscriptions · driver app · dispatcher console · `ops_console` ·
-real maps and routing · WebSocket tracking · S3 document upload · caregiver
-marketplace · clinic portal · Terraform and AWS.
+Card charging, invoices and dunning — the *model* is built and nothing moves
+money yet · driver app · `ops_console` (the dispatch **API** is built; the
+Flutter Web surface is not) · real maps and routing · WebSocket tracking · S3
+driver documents · caregiver marketplace · clinic portal · Terraform and AWS.
 
 CareBridge coordinates appointments and transport. It is not an EHR, not a
 medical service, and not an emergency service.

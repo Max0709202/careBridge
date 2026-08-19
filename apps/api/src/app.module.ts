@@ -20,6 +20,9 @@ import { AuthGuard } from './modules/auth/auth.guard';
 import { RateLimitGuard } from './common/rate-limit.guard';
 import { IdempotencyInterceptor } from './common/idempotency.interceptor';
 import { CareModule } from './modules/care/care.module';
+import { BillingModule } from './modules/billing/billing.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { DispatchModule } from './modules/dispatch/dispatch.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -37,7 +40,10 @@ import { HealthModule } from './modules/health/health.module';
     MapsModule,
     RateLimitModule,
     AuditModule,
+    OrganizationsModule,
+    BillingModule,
     CareModule,
+    DispatchModule,
     AuthModule,
     HealthModule,
     RetentionModule,

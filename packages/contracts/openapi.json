@@ -1,6 +1,496 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/billing/plans": {
+      "get": {
+        "description": "Plans are rows, resolved server-side. The app renders what it is told — a price change or a new tier is an insert, not a release.",
+        "operationId": "Billing_plans",
+        "parameters": [
+          {
+            "name": "payer",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "family",
+                "dispatchOrganization"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubscriptionPlanDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The plan catalogue",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/account": {
+      "get": {
+        "operationId": "Billing_account",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The caller's household subscription",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/subscribe": {
+      "post": {
+        "description": "Refused if one is already live — changing plan is `change-interval`, and anything else is two intentions sharing an endpoint.",
+        "operationId": "Billing_subscribe",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscribeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Start a household subscription",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/change-interval": {
+      "post": {
+        "description": "The unused remainder of the current period is credited and a fresh period starts today. Annual → monthly leaves a credit carried against renewals, not a refund.",
+        "operationId": "Billing_changeInterval",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeIntervalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Move between monthly and annual",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/cancel": {
+      "post": {
+        "description": "Not a refund and not an immediate switch-off: a family part-way through a booked month keeps live tracking for the rides they have already arranged.",
+        "operationId": "Billing_cancel",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Cancel at the end of the paid period",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/organizations": {
+      "get": {
+        "operationId": "Organizations_mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Organisations the caller belongs to",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}/billing": {
+      "get": {
+        "operationId": "Organizations_organizationBilling",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "An operator's subscription",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}/billing/subscribe": {
+      "post": {
+        "description": "Priced at the drivers actually on the road — an operator cannot subscribe at five seats and run twenty.",
+        "operationId": "Organizations_subscribeOrganization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscribeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Start an operator subscription",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}/billing/change-interval": {
+      "post": {
+        "operationId": "Organizations_changeOrganizationInterval",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeIntervalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Move an operator between monthly and annual",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}/billing/cancel": {
+      "post": {
+        "operationId": "Organizations_cancelOrganization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Cancel an operator subscription at period end",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}/seats": {
+      "get": {
+        "description": "The audit trail an invoice line is answerable from: without it, \"why were we billed for eleven drivers\" can only be answered from a driver table that has since changed.",
+        "operationId": "Organizations_seats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationSeatsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Drivers, seats and the ledger behind them",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}/seats/quote": {
+      "get": {
+        "operationId": "Organizations_quote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planCode",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "interval",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "monthly",
+                "annual"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "seats",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionQuoteDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "What a given driver count would cost",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
     "/care/state": {
       "get": {
         "operationId": "Care_state",
@@ -1100,6 +1590,402 @@
         ]
       }
     },
+    "/organizations/{organizationId}/vehicles": {
+      "get": {
+        "operationId": "Dispatch_vehicles",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VehicleDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The operator's vehicles",
+        "tags": [
+          "dispatch"
+        ]
+      },
+      "post": {
+        "operationId": "Dispatch_addVehicle",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVehicleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Add a vehicle",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/drivers": {
+      "get": {
+        "operationId": "Dispatch_drivers",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DriverDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The roster, with who is billable and who is free",
+        "tags": [
+          "dispatch"
+        ]
+      },
+      "post": {
+        "description": "Created as `invited`. The billable seat moves at approval, so a roster can be built without being charged for people who have not handed in a licence.",
+        "operationId": "Dispatch_addDriver",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDriverDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Add a driver",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/drivers/{driverId}/status": {
+      "post": {
+        "description": "Crossing into or out of `approved` grants or releases a billable seat, in the same transaction as the status change.",
+        "operationId": "Dispatch_setDriverStatus",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "driverId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetDriverStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Move a driver through the lifecycle",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/drivers/{driverId}/shift": {
+      "put": {
+        "description": "A dispatcher may do this: they are the person who knows somebody called in sick, and waiting for an admin would leave the queue offering a driver who is not there.",
+        "operationId": "Dispatch_setShift",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "driverId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetShiftDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Put a driver on or off shift",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/dispatch/queue": {
+      "get": {
+        "description": "Not by when the request arrived: a ride booked this morning for 4pm is not more urgent than one booked five minutes ago for 2pm.",
+        "operationId": "Dispatch_queue",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispatchQueueDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Rides waiting for a car, ordered by when the car is needed",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/dispatch/rides/{rideId}/assign": {
+      "post": {
+        "description": "Eligibility is asserted, not advised — a wheelchair trip cannot be given to a saloon car, and a driver cannot be given a second passenger. A reassignment requires a reason and passes through `reassignmentRequired`, so the family timeline records that the first driver dropped it.",
+        "operationId": "Dispatch_assign",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rideId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRideDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispatchQueueDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Give a ride to a driver, or move it to another one",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
     "/auth/register": {
       "post": {
         "description": "Signs the new account in immediately and sends a verification email. Nothing is blocked on verification — locking a family out of a ride they have already booked because an email went to spam is the worse outcome — but invitations require a verified address.",
@@ -1985,6 +2871,504 @@
       }
     },
     "schemas": {
+      "BillingPayer": {
+        "type": "string",
+        "enum": [
+          "family",
+          "dispatchOrganization"
+        ]
+      },
+      "BillingInterval": {
+        "type": "string",
+        "enum": [
+          "monthly",
+          "annual"
+        ]
+      },
+      "SubscriptionSeatTierDto": {
+        "type": "object",
+        "properties": {
+          "upToSeats": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Total driver count this band covers, inclusive. Null on the final band, which is unbounded."
+          },
+          "unitPriceCents": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "upToSeats",
+          "unitPriceCents"
+        ]
+      },
+      "SubscriptionPlanDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string",
+            "description": "Immutable price identity, stamped onto every period this plan bills — so a charge from eight months ago can still be explained."
+          },
+          "payer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingPayer"
+              }
+            ]
+          },
+          "interval": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingInterval"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "basePriceCents": {
+            "type": "integer"
+          },
+          "includedSeats": {
+            "type": "integer",
+            "description": "Drivers covered by the base price. Always 0 on a family plan."
+          },
+          "seatTiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionSeatTierDto"
+            }
+          },
+          "entitlements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "trialDays": {
+            "type": "integer"
+          },
+          "graceDays": {
+            "type": "integer",
+            "description": "How long a failed payment keeps entitling. Not zero: cutting live tracking off the instant a card expires blanks the map mid-trip."
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "version",
+          "payer",
+          "interval",
+          "name",
+          "description",
+          "basePriceCents",
+          "includedSeats",
+          "seatTiers",
+          "entitlements",
+          "trialDays",
+          "graceDays"
+        ]
+      },
+      "SubscriptionStatus": {
+        "type": "string",
+        "enum": [
+          "trialing",
+          "active",
+          "pastDue",
+          "pendingCancellation",
+          "canceled",
+          "expired"
+        ]
+      },
+      "SubscriptionLineDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "unitPriceCents": {
+            "type": "integer"
+          },
+          "amountCents": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "quantity",
+          "unitPriceCents",
+          "amountCents"
+        ]
+      },
+      "SubscriptionQuoteDto": {
+        "type": "object",
+        "properties": {
+          "planCode": {
+            "type": "string"
+          },
+          "planVersion": {
+            "type": "string"
+          },
+          "interval": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingInterval"
+              }
+            ]
+          },
+          "seats": {
+            "type": "integer"
+          },
+          "billableSeats": {
+            "type": "integer"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionLineDto"
+            }
+          },
+          "totalCents": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "planCode",
+          "planVersion",
+          "interval",
+          "seats",
+          "billableSeats",
+          "lines",
+          "totalCents"
+        ]
+      },
+      "SubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingPayer"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionStatus"
+              }
+            ]
+          },
+          "interval": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingInterval"
+              }
+            ]
+          },
+          "planCode": {
+            "type": "string"
+          },
+          "planName": {
+            "type": "string"
+          },
+          "planVersion": {
+            "type": "string"
+          },
+          "seats": {
+            "type": "integer",
+            "description": "Drivers billed from the next renewal. Zero on a family subscription."
+          },
+          "currentPeriodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currentPeriodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "trialEndsAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "pastDueSince": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When a payment first failed. Entitlements survive until this plus the plan grace window."
+          },
+          "cancelRequestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "entitlements": {
+            "description": "What is switched on right now — resolved server-side from status, period and grace. The client renders it; it never derives it.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "carriedCreditCents": {
+            "type": "integer"
+          },
+          "renewalQuote": {
+            "description": "What the next renewal will cost at the current driver count.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionQuoteDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "payer",
+          "status",
+          "interval",
+          "planCode",
+          "planName",
+          "planVersion",
+          "seats",
+          "currentPeriodStart",
+          "currentPeriodEnd",
+          "trialEndsAt",
+          "pastDueSince",
+          "cancelRequestedAt",
+          "entitlements",
+          "carriedCreditCents",
+          "renewalQuote"
+        ]
+      },
+      "BillingAccountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingPayer"
+              }
+            ]
+          },
+          "billingEmail": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Set on an operator account, null on a family one."
+          },
+          "subscription": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "payer",
+          "billingEmail",
+          "organizationId",
+          "subscription"
+        ]
+      },
+      "SubscribeDto": {
+        "type": "object",
+        "properties": {
+          "planCode": {
+            "type": "string",
+            "description": "Plan code, e.g. \"family-standard\" or \"dispatch-core\"."
+          },
+          "interval": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingInterval"
+              }
+            ]
+          }
+        },
+        "required": [
+          "planCode",
+          "interval"
+        ]
+      },
+      "ChangeIntervalDto": {
+        "type": "object",
+        "properties": {
+          "interval": {
+            "description": "The unused remainder of the current period is credited; a fresh period starts today. Annual → monthly produces a credit carried forward, not a refund.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingInterval"
+              }
+            ]
+          }
+        },
+        "required": [
+          "interval"
+        ]
+      },
+      "OrgRole": {
+        "type": "string",
+        "enum": [
+          "owner",
+          "admin",
+          "dispatcher",
+          "member"
+        ],
+        "description": "The caller's role in this organisation."
+      },
+      "OrganizationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "role": {
+            "description": "The caller's role in this organisation.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrgRole"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "kind",
+          "timeZone",
+          "role"
+        ]
+      },
+      "SeatChange": {
+        "type": "string",
+        "enum": [
+          "granted",
+          "released"
+        ]
+      },
+      "SeatLedgerEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "driverId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "driverDisplayName": {
+            "type": "string"
+          },
+          "change": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SeatChange"
+              }
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "seatsAfter": {
+            "type": "integer"
+          },
+          "prorationCents": {
+            "type": "integer",
+            "description": "Charged immediately for the remainder of the period on a grant. Zero on a release — a released seat stays usable until the period that paid for it ends."
+          }
+        },
+        "required": [
+          "id",
+          "driverId",
+          "driverDisplayName",
+          "change",
+          "at",
+          "seatsAfter",
+          "prorationCents"
+        ]
+      },
+      "OrganizationSeatsDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "activeDrivers": {
+            "type": "integer",
+            "description": "Drivers on the road right now."
+          },
+          "billedSeats": {
+            "type": "integer",
+            "description": "Drivers the current subscription is billing for."
+          },
+          "renewalQuote": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionQuoteDto"
+              }
+            ]
+          },
+          "ledger": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeatLedgerEntryDto"
+            }
+          }
+        },
+        "required": [
+          "organizationId",
+          "activeDrivers",
+          "billedSeats",
+          "renewalQuote",
+          "ledger"
+        ]
+      },
       "PatientAccessDto": {
         "type": "object",
         "properties": {
@@ -2349,6 +3733,10 @@
       "VehicleDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
           "make": {
             "type": "string"
           },
@@ -2366,6 +3754,7 @@
           }
         },
         "required": [
+          "id",
           "make",
           "model",
           "color",
@@ -2384,23 +3773,56 @@
             "type": "string",
             "description": "First name and last initial only. The family needs to recognise the person at the kerb, not to be able to look them up."
           },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DriverStatus"
+              }
+            ]
+          },
+          "onShift": {
+            "type": "boolean",
+            "description": "Working right now. Separate from status, which is whether the company has said this person may carry a passenger at all."
+          },
           "rating": {
             "type": "number",
-            "format": "double"
+            "format": "float"
           },
           "yearsDriving": {
             "type": "integer"
           },
           "vehicle": {
             "$ref": "#/components/schemas/VehicleDto"
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "suspensionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "occupiesSeat": {
+            "type": "boolean",
+            "description": "Whether this driver counts towards the operator’s per-driver subscription. True for approved drivers and nobody else."
+          },
+          "activeRideCount": {
+            "type": "integer"
           }
         },
         "required": [
           "id",
           "displayName",
+          "status",
+          "onShift",
           "rating",
           "yearsDriving",
-          "vehicle"
+          "vehicle",
+          "approvedAt",
+          "suspensionReason",
+          "occupiesSeat",
+          "activeRideCount"
         ]
       },
       "SurchargeDto": {
@@ -3456,6 +4878,237 @@
         },
         "required": [
           "token"
+        ]
+      },
+      "CreateVehicleDto": {
+        "type": "object",
+        "properties": {
+          "make": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "licensePlate": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "isWheelchairAccessible": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "make",
+          "model",
+          "color",
+          "licensePlate",
+          "isWheelchairAccessible"
+        ]
+      },
+      "DriverStatus": {
+        "type": "string",
+        "enum": [
+          "invited",
+          "pendingApproval",
+          "approved",
+          "suspended",
+          "offboarded"
+        ]
+      },
+      "CreateDriverDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "maxLength": 60,
+            "description": "First name and last initial. Never a full legal name."
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "yearsDriving": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60
+          }
+        },
+        "required": [
+          "displayName",
+          "vehicleId"
+        ]
+      },
+      "SetDriverStatusDto": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "description": "Drives the lifecycle state machine in src/domain/driver-status.ts. Crossing into or out of `approved` is what moves a billable seat.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DriverStatus"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "to"
+        ]
+      },
+      "SetShiftDto": {
+        "type": "object",
+        "properties": {
+          "onShift": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "onShift"
+        ]
+      },
+      "DispatchUrgency": {
+        "type": "string",
+        "enum": [
+          "overdue",
+          "imminent",
+          "soon",
+          "later"
+        ],
+        "description": "\"overdue\" is its own band rather than the top of \"imminent\": a pickup time that has passed with nobody assigned is a failure already in progress — somebody is standing in a hallway waiting."
+      },
+      "DispatchCandidateDto": {
+        "type": "object",
+        "properties": {
+          "driverId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "eligible": {
+            "type": "boolean"
+          },
+          "reasons": {
+            "description": "Every reason this driver cannot take the trip, not just the first — \"nobody is on shift\" and \"nobody has an accessible vehicle\" need different phone calls.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "driverId",
+          "displayName",
+          "eligible",
+          "reasons"
+        ]
+      },
+      "DispatchQueueItemDto": {
+        "type": "object",
+        "properties": {
+          "rideId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "patientName": {
+            "type": "string"
+          },
+          "pickupLine": {
+            "type": "string"
+          },
+          "destinationLine": {
+            "type": "string"
+          },
+          "scheduledPickupAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "wheelchairRequired": {
+            "type": "boolean"
+          },
+          "assistanceRequired": {
+            "type": "boolean"
+          },
+          "urgency": {
+            "description": "\"overdue\" is its own band rather than the top of \"imminent\": a pickup time that has passed with nobody assigned is a failure already in progress — somebody is standing in a hallway waiting.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DispatchUrgency"
+              }
+            ]
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DispatchCandidateDto"
+            }
+          }
+        },
+        "required": [
+          "rideId",
+          "status",
+          "patientName",
+          "pickupLine",
+          "destinationLine",
+          "scheduledPickupAt",
+          "wheelchairRequired",
+          "assistanceRequired",
+          "urgency",
+          "candidates"
+        ]
+      },
+      "DispatchQueueDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DispatchQueueItemDto"
+            }
+          },
+          "availableDrivers": {
+            "type": "integer",
+            "description": "Drivers on shift and free right now, across the whole roster."
+          }
+        },
+        "required": [
+          "organizationId",
+          "items",
+          "availableDrivers"
+        ]
+      },
+      "AssignRideDto": {
+        "type": "object",
+        "properties": {
+          "driverId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Required when taking a ride off a driver who already had it."
+          }
+        },
+        "required": [
+          "driverId"
         ]
       },
       "RegisterDto": {

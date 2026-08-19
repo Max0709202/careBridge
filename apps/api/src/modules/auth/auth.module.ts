@@ -10,11 +10,13 @@ import { SessionsService } from './sessions.service';
 import { ConfigModule } from '../../common/config.module';
 import { appConfig } from '../../common/config';
 import { CareModule } from '../care/care.module';
+import { BillingModule } from '../billing/billing.module';
 
 @Module({
   imports: [
     ConfigModule,
     CareModule,
+    BillingModule,
     JwtModule.registerAsync({
       useFactory: () => {
         const config = appConfig();

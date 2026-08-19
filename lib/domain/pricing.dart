@@ -16,6 +16,7 @@ class PricingRule {
     required this.wheelchairSurcharge,
     required this.assistanceSurcharge,
     required this.effectiveFrom,
+    this.platformFeeBps = 0,
   });
 
   final String version;
@@ -34,6 +35,10 @@ class PricingRule {
   /// and hands them over. Costs the driver time that per-mile pricing misses.
   final Money assistanceSurcharge;
 
+  /// Our cut of a fare, in basis points, and **only** when the transport
+  /// operator is not on a per-driver subscription. See [settleFare].
+  final int platformFeeBps;
+
   final DateTime effectiveFrom;
 
   static PricingRule standard() => PricingRule(
@@ -44,6 +49,7 @@ class PricingRule {
     minimumFare: const Money(1800),
     wheelchairSurcharge: const Money(1500),
     assistanceSurcharge: const Money(800),
+    platformFeeBps: 1500,
     effectiveFrom: DateTime.utc(2026, 1, 1),
   );
 }
@@ -117,5 +123,74 @@ PriceEstimate estimateFare({
     surcharges: surcharges,
     total: total,
     minimumApplied: total > subtotal,
+  );
+}
+
+/// Which of the two revenue lines paid for a ride's platform margin.
+enum PlatformFunding {
+  /// The operator holds a per-driver subscription. The whole fare is theirs.
+  operatorSubscription,
+
+  /// No subscription: the rule's basis points applied.
+  perRide;
+
+  static PlatformFunding? tryParse(String? value) {
+    for (final funding in PlatformFunding.values) {
+      if (funding.name == value) return funding;
+    }
+    return null;
+  }
+}
+
+/// Where the money a family pays for one ride actually goes.
+class FareSettlement {
+  const FareSettlement({
+    required this.total,
+    required this.platformFee,
+    required this.operatorPayout,
+    required this.funding,
+  });
+
+  /// What the family is charged. Identical under both funding modes.
+  final Money total;
+  final Money platformFee;
+  final Money operatorPayout;
+  final PlatformFunding funding;
+}
+
+/// The "who pays the fees" question at its narrowest.
+///
+/// An operator on a per-driver subscription has already paid for the month, so
+/// taking a percentage of their fares as well would be charging twice for the
+/// same relationship. The family pays the same total either way — what changes
+/// is who keeps it.
+///
+/// Mirrored from the server so a receipt screen can show the split without a
+/// round trip. As with everything in `lib/domain/`, the server's copy is the
+/// one that decides.
+FareSettlement settleFare({
+  required PricingRule rule,
+  required Money total,
+  required bool operatorSubscribed,
+}) {
+  if (rule.platformFeeBps < 0 || rule.platformFeeBps > 10000) {
+    throw ArgumentError.value(
+      rule.platformFeeBps,
+      'platformFeeBps',
+      'Platform fee must be between 0 and 100 percent.',
+    );
+  }
+
+  final platformFee = operatorSubscribed
+      ? const Money.zero()
+      : total * (rule.platformFeeBps / 10000);
+
+  return FareSettlement(
+    total: total,
+    platformFee: platformFee,
+    operatorPayout: total - platformFee,
+    funding: operatorSubscribed
+        ? PlatformFunding.operatorSubscription
+        : PlatformFunding.perRide,
   );
 }

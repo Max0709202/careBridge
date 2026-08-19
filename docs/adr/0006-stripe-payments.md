@@ -9,6 +9,14 @@ assignment, capture at completion, refunds, and subscriptions — while keeping
 our PCI scope as small as it can be, and keeping payment data out of the
 health-adjacent boundary entirely.
 
+Since [ADR-0011](0011-two-sided-subscription-billing.md) there are **two**
+paying parties: a household and a transport operator. Both hold a
+`BillingAccount`, and `externalCustomerId` on that row is where the Stripe
+customer id lives for either. The flows below are unchanged for the family's
+per-ride charges; the operator's subscription is an ordinary recurring charge
+with a seat-derived amount, and the amount is quoted by our own domain code
+before it reaches Stripe.
+
 ## Decision
 
 **Stripe**, using the SDK's PaymentSheet in both apps. Card data never touches
@@ -17,7 +25,9 @@ identifiers.
 
 The flow:
 
-1. A `Customer` on first payment setup.
+1. A `Customer` on first payment setup — per `BillingAccount`, so a household
+   and an operator are separate customers even where one person administers
+   both.
 2. A `SetupIntent` saves a card.
 3. On **driver assignment**, a `PaymentIntent` with `capture_method: manual`
    authorises the estimated fare.
@@ -58,7 +68,11 @@ somewhere. Rejected.
 
 - PCI SAQ-A via the SDK.
 - Stripe is **deliberately excluded from PHI scope**: it receives name, email
-  and amount, and no health or ride detail (L3).
+  and amount for a family, a company name and amount for an operator, and no
+  health or ride detail in either case (L3).
+- An operator's invoice amount is derived from `SeatLedgerEntry` and the plan's
+  tiers, and stored on a `SubscriptionPeriod` **before** it is charged. Stripe
+  is told a number; our ledger is what explains it.
 - Test mode throughout development, with the same code path — not a stubbed
   alternative that diverges.
 
