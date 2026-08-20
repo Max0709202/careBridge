@@ -158,6 +158,152 @@
         ]
       }
     },
+    "/billing/invoices": {
+      "get": {
+        "description": "Newest first. Line items are read back from the invoice, not recomputed — a superseded plan must not reprint last March at this March’s prices.",
+        "operationId": "Billing_invoices",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InvoiceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "What this household has been billed",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/payment-method": {
+      "post": {
+        "description": "Takes a token the client obtained directly from the processor. No endpoint in this system accepts a card number — see ADR-0006.",
+        "operationId": "Billing_attachPaymentMethod",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachPaymentMethodDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Put a card on file",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/payment-method/{id}": {
+      "delete": {
+        "description": "The row is kept and marked detached, so a payment made months ago still names the card that made it. Removing the last card is allowed.",
+        "operationId": "Billing_detachPaymentMethod",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Take a card off file",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/invoices/{id}/pay": {
+      "post": {
+        "description": "For the moment after a declined card is replaced: waiting a day for the scheduled retry, while the screen still says the payment failed, reads as the update not having worked.",
+        "operationId": "Billing_payInvoice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Charge an open invoice now",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
     "/billing/cancel": {
       "post": {
         "description": "Not a refund and not an immediate switch-off: a family part-way through a booked month keeps live tracking for the rides they have already arranged.",
@@ -385,6 +531,181 @@
           }
         ],
         "summary": "Cancel an operator subscription at period end",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}/billing/invoices": {
+      "get": {
+        "operationId": "Organizations_organizationInvoices",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InvoiceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "What this operator has been billed",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}/billing/payment-method": {
+      "post": {
+        "operationId": "Organizations_attachOrganizationPaymentMethod",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachPaymentMethodDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Put a card on an operator's account",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}/billing/payment-method/{paymentMethodId}": {
+      "delete": {
+        "operationId": "Organizations_detachOrganizationPaymentMethod",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentMethodId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Take a card off an operator's account",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}/billing/invoices/{invoiceId}/pay": {
+      "post": {
+        "operationId": "Organizations_payOrganizationInvoice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "invoiceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Charge an operator's open invoice now",
         "tags": [
           "organizations"
         ]
@@ -3158,6 +3479,40 @@
           "renewalQuote"
         ]
       },
+      "PaymentMethodDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "brand": {
+            "type": "string",
+            "description": "Card brand. Display only — no card number exists in this system."
+          },
+          "last4": {
+            "type": "string"
+          },
+          "expMonth": {
+            "type": "integer"
+          },
+          "expYear": {
+            "type": "integer"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Which card renewals are charged against. At most one per account."
+          }
+        },
+        "required": [
+          "id",
+          "brand",
+          "last4",
+          "expMonth",
+          "expYear",
+          "isDefault"
+        ]
+      },
       "BillingAccountDto": {
         "type": "object",
         "properties": {
@@ -3188,6 +3543,19 @@
                 "$ref": "#/components/schemas/SubscriptionDto"
               }
             ]
+          },
+          "paymentMethod": {
+            "nullable": true,
+            "description": "The card renewals are charged against, or null if there is none.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentMethodDto"
+              }
+            ]
+          },
+          "amountDueCents": {
+            "type": "integer",
+            "description": "Total owed across every open invoice. Zero when nothing is outstanding."
           }
         },
         "required": [
@@ -3195,7 +3563,9 @@
           "payer",
           "billingEmail",
           "organizationId",
-          "subscription"
+          "subscription",
+          "paymentMethod",
+          "amountDueCents"
         ]
       },
       "SubscribeDto": {
@@ -3232,6 +3602,153 @@
         },
         "required": [
           "interval"
+        ]
+      },
+      "InvoiceReason": {
+        "type": "string",
+        "enum": [
+          "subscriptionPeriod",
+          "seatProration",
+          "intervalSwitch"
+        ],
+        "description": "What raised it: a billed period, drivers added mid-period, or an interval switch."
+      },
+      "InvoiceStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "paid",
+          "uncollectible",
+          "void"
+        ],
+        "description": "`uncollectible` is owed and was pursued; `void` was never owed. They are not the same and are never merged."
+      },
+      "InvoiceLineDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "unitPriceCents": {
+            "type": "integer"
+          },
+          "amountCents": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "quantity",
+          "unitPriceCents",
+          "amountCents"
+        ]
+      },
+      "InvoiceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string",
+            "description": "Human-quotable. An invoice somebody rings up about has to be findable by the number printed on it."
+          },
+          "reason": {
+            "description": "What raised it: a billed period, drivers added mid-period, or an interval switch.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InvoiceReason"
+              }
+            ]
+          },
+          "status": {
+            "description": "`uncollectible` is owed and was pursued; `void` was never owed. They are not the same and are never merged.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InvoiceStatus"
+              }
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "subtotalCents": {
+            "type": "integer"
+          },
+          "creditAppliedCents": {
+            "type": "integer",
+            "description": "Credit spent against this invoice."
+          },
+          "totalCents": {
+            "type": "integer"
+          },
+          "amountPaidCents": {
+            "type": "integer"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLineDto"
+            }
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "attemptCount": {
+            "type": "integer",
+            "description": "Charges attempted, including the first."
+          },
+          "nextAttemptAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the next attempt is scheduled. Null once we have stopped trying."
+          },
+          "lastFailureCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "The processor's code for the last decline, for support to read."
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "reason",
+          "status",
+          "currency",
+          "subtotalCents",
+          "creditAppliedCents",
+          "totalCents",
+          "amountPaidCents",
+          "lines",
+          "issuedAt",
+          "paidAt",
+          "attemptCount",
+          "nextAttemptAt",
+          "lastFailureCode"
+        ]
+      },
+      "AttachPaymentMethodDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "A reference the client obtained directly from the payment processor. Never a card number — no endpoint in this system accepts one (ADR-0006).",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "token"
         ]
       },
       "OrgRole": {

@@ -5,6 +5,7 @@ import {
   BILLING_PAYERS,
   SUBSCRIPTION_STATUSES,
 } from '../../domain/billing';
+import { INVOICE_REASONS, INVOICE_STATUSES } from '../../domain/invoicing';
 
 /**
  * The wire contract for money the *platform* is paid — as distinct from
@@ -137,6 +138,100 @@ export class SubscriptionDto {
   renewalQuote!: SubscriptionQuoteDto;
 }
 
+export class InvoiceLineDto {
+  @ApiProperty({ type: String }) label!: string;
+  @ApiProperty({ type: 'integer' }) quantity!: number;
+  @ApiProperty({ type: 'integer' }) unitPriceCents!: number;
+  @ApiProperty({ type: 'integer' }) amountCents!: number;
+}
+
+export class InvoiceDto {
+  @ApiProperty({ type: String, format: 'uuid' }) id!: string;
+
+  @ApiProperty({
+    type: String,
+    description:
+      'Human-quotable. An invoice somebody rings up about has to be findable by the number printed on it.',
+  })
+  number!: string;
+
+  @ApiProperty({
+    enum: INVOICE_REASONS,
+    enumName: 'InvoiceReason',
+    description:
+      'What raised it: a billed period, drivers added mid-period, or an interval switch.',
+  })
+  reason!: string;
+
+  @ApiProperty({
+    enum: INVOICE_STATUSES,
+    enumName: 'InvoiceStatus',
+    description:
+      '`uncollectible` is owed and was pursued; `void` was never owed. They are not the same and are never merged.',
+  })
+  status!: string;
+
+  @ApiProperty({ type: String }) currency!: string;
+  @ApiProperty({ type: 'integer' }) subtotalCents!: number;
+
+  @ApiProperty({
+    type: 'integer',
+    description: 'Credit spent against this invoice.',
+  })
+  creditAppliedCents!: number;
+
+  @ApiProperty({ type: 'integer' }) totalCents!: number;
+  @ApiProperty({ type: 'integer' }) amountPaidCents!: number;
+
+  @ApiProperty({ type: () => [InvoiceLineDto] }) lines!: InvoiceLineDto[];
+
+  @ApiProperty({ type: String, format: 'date-time' }) issuedAt!: string;
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  paidAt!: string | null;
+
+  @ApiProperty({
+    type: 'integer',
+    description: 'Charges attempted, including the first.',
+  })
+  attemptCount!: number;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description:
+      'When the next attempt is scheduled. Null once we have stopped trying.',
+  })
+  nextAttemptAt!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: "The processor's code for the last decline, for support to read.",
+  })
+  lastFailureCode!: string | null;
+}
+
+export class PaymentMethodDto {
+  @ApiProperty({ type: String, format: 'uuid' }) id!: string;
+
+  @ApiProperty({
+    type: String,
+    description: 'Card brand. Display only — no card number exists in this system.',
+  })
+  brand!: string;
+
+  @ApiProperty({ type: String }) last4!: string;
+  @ApiProperty({ type: 'integer' }) expMonth!: number;
+  @ApiProperty({ type: 'integer' }) expYear!: number;
+
+  @ApiProperty({
+    type: Boolean,
+    description: 'Which card renewals are charged against. At most one per account.',
+  })
+  isDefault!: boolean;
+}
+
 export class BillingAccountDto {
   @ApiProperty({ type: String, format: 'uuid' }) id!: string;
   @ApiProperty({ enum: BILLING_PAYERS, enumName: 'BillingPayer' }) payer!: string;
@@ -152,6 +247,20 @@ export class BillingAccountDto {
 
   @ApiProperty({ type: () => SubscriptionDto, nullable: true })
   subscription!: SubscriptionDto | null;
+
+  @ApiProperty({
+    type: () => PaymentMethodDto,
+    nullable: true,
+    description: 'The card renewals are charged against, or null if there is none.',
+  })
+  paymentMethod!: PaymentMethodDto | null;
+
+  @ApiProperty({
+    type: 'integer',
+    description:
+      'Total owed across every open invoice. Zero when nothing is outstanding.',
+  })
+  amountDueCents!: number;
 }
 
 export class SeatLedgerEntryDto {

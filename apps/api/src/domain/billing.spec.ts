@@ -58,6 +58,13 @@ describe('subscription status machine', () => {
     expect(canTransitionSubscription('pendingCancellation', 'active')).toBe(true);
   });
 
+  it('sends a declined trial conversion into dunning rather than straight out', () => {
+    // The tidy reading is that a trial which never paid simply expires. That
+    // reading blanks the map on day fourteen, which is the exact failure the
+    // grace window exists to prevent.
+    expect(canTransitionSubscription('trialing', 'pastDue')).toBe(true);
+  });
+
   it('never revives a subscription that ended', () => {
     // Re-subscribing creates a new row. What somebody was charged, under which
     // plan version, stays immutable.

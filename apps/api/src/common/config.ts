@@ -14,6 +14,7 @@ import { z } from 'zod';
 const mailDriver = z.enum(['smtp', 'log']).default('log');
 const pushDriver = z.enum(['fcm', 'log']).default('log');
 const mapsDriver = z.enum(['google', 'deterministic']).default('deterministic');
+const paymentsDriver = z.enum(['stripe', 'local']).default('local');
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -155,6 +156,37 @@ const schema = z.object({
   MAPS_API_KEY: z.string().optional(),
 
   /**
+   * The processor that actually moves money — see ADR-0006.
+   *
+   * `local` decides an outcome from the card's last four digits, using
+   * Stripe's own test-card meanings, so a decline and the dunning that follows
+   * it can be reproduced on a laptop. Refused in production below, and it is
+   * the most consequential of those refusals: an adapter that reports every
+   * charge as settled is a system that bills nobody and says everything is
+   * fine.
+   */
+  PAYMENTS_DRIVER: paymentsDriver,
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+
+  /**
+   * Signs the local adapter's webhooks.
+   *
+   * The local adapter verifies signatures rather than waving them through, so
+   * the branch that rejects a forged "this invoice is paid" is the same code
+   * in development as in production. Defaulted, because it protects nothing
+   * real — the live secret is STRIPE_WEBHOOK_SECRET.
+   */
+  PAYMENTS_WEBHOOK_SECRET: z.string().min(1).default('local-webhook-secret'),
+
+  /**
+   * How long an invoice may sit open before the first charge is attempted.
+   * Zero means the sweep charges it as soon as it is issued, which is what a
+   * renewal wants; it is configuration because a pilot may want a delay.
+   */
+  INVOICE_DUE_HOURS: z.coerce.number().int().min(0).default(0),
+
+  /**
    * Reminder offsets in minutes before the appointment, e.g. "1440,120" for a
    * day before and two hours before. Configuration rather than a constant,
    * because the right answer is an operational finding from the pilot.
@@ -244,6 +276,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     if (config.MAPS_DRIVER === 'deterministic') {
       localAdapters.push('MAPS_DRIVER=deterministic');
     }
+    if (config.PAYMENTS_DRIVER === 'local') {
+      localAdapters.push('PAYMENTS_DRIVER=local');
+    }
     if (localAdapters.length > 0) {
       throw new Error(
         `These adapters do nothing but log, and must not run in production: ${localAdapters.join(', ')}.`,
@@ -264,6 +299,18 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
   if (config.MAPS_DRIVER === 'google' && !config.MAPS_API_KEY) {
     throw new Error('MAPS_API_KEY is required when MAPS_DRIVER=google.');
+  }
+  if (config.PAYMENTS_DRIVER === 'stripe') {
+    if (!config.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is required when PAYMENTS_DRIVER=stripe.');
+    }
+    // Without the webhook secret the API cannot verify that a "payment
+    // succeeded" callback came from Stripe, and an unverified one is an
+    // unauthenticated request marking an invoice paid. Refused at boot rather
+    // than degraded to trusting the caller.
+    if (!config.STRIPE_WEBHOOK_SECRET) {
+      throw new Error('STRIPE_WEBHOOK_SECRET is required when PAYMENTS_DRIVER=stripe.');
+    }
   }
 
   const mfaSecretKey = decodeMfaKey(config.MFA_SECRET_KEY);

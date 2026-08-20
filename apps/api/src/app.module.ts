@@ -12,6 +12,7 @@ import { QueueModule } from './infrastructure/queue/queue.module';
 import { MailModule } from './infrastructure/mail/mail.module';
 import { PushModule } from './infrastructure/push/push.module';
 import { MapsModule } from './infrastructure/maps/maps.module';
+import { PaymentsModule } from './infrastructure/payments/payments.module';
 import { RateLimitModule } from './infrastructure/rate-limit/rate-limit.module';
 import { RetentionModule } from './modules/retention/retention.module';
 import { AuditModule } from './modules/audit/audit.module';
@@ -38,6 +39,7 @@ import { HealthModule } from './modules/health/health.module';
     MailModule,
     PushModule,
     MapsModule,
+    PaymentsModule,
     RateLimitModule,
     AuditModule,
     OrganizationsModule,

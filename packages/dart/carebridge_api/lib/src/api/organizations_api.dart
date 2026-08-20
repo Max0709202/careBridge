@@ -69,6 +69,56 @@ class OrganizationsApi {
     return BillingAccountDto.fromJson(response as Map<String, dynamic>);
   }
 
+  /// What this operator has been billed
+  Future<List<InvoiceDto>> organizationInvoices({required String id}) async {
+    final response = await _client.send(
+      method: 'GET',
+      path: '/organizations/${Uri.encodeComponent(id)}/billing/invoices',
+    );
+    return (response as List<dynamic>)
+        .map((e) => InvoiceDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Put a card on an operator's account
+  Future<PaymentMethodDto> attachOrganizationPaymentMethod({
+    required String id,
+    required AttachPaymentMethodDto body,
+  }) async {
+    final response = await _client.send(
+      method: 'POST',
+      path: '/organizations/${Uri.encodeComponent(id)}/billing/payment-method',
+      body: body.toJson(),
+    );
+    return PaymentMethodDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Take a card off an operator's account
+  Future<void> detachOrganizationPaymentMethod({
+    required String id,
+    required String paymentMethodId,
+  }) async {
+    await _client.send(
+      method: 'DELETE',
+      path:
+          '/organizations/${Uri.encodeComponent(id)}/billing/payment-method/${Uri.encodeComponent(paymentMethodId)}',
+    );
+    return;
+  }
+
+  /// Charge an operator's open invoice now
+  Future<InvoiceDto> payOrganizationInvoice({
+    required String id,
+    required String invoiceId,
+  }) async {
+    final response = await _client.send(
+      method: 'POST',
+      path:
+          '/organizations/${Uri.encodeComponent(id)}/billing/invoices/${Uri.encodeComponent(invoiceId)}/pay',
+    );
+    return InvoiceDto.fromJson(response as Map<String, dynamic>);
+  }
+
   /// Drivers, seats and the ledger behind them
   ///
   /// The audit trail an invoice line is answerable from: without it, "why were

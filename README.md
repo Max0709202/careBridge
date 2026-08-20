@@ -69,13 +69,13 @@ Nothing in it is allowed to fail silently: the unit run enforces coverage
 floors on both sides, and the pure rules in `domain/` are held at 100%.
 
 ```bash
-make test-integration        # 139 tests, real app against real Postgres
+make test-integration        # 162 tests, real app against real Postgres
 ```
 
 Individually:
 
 ```bash
-pnpm --filter @carebridge/api test          # 232 unit tests, with coverage floors
+pnpm --filter @carebridge/api test          # 320 unit tests, with coverage floors
 pnpm --filter @carebridge/api exec eslint . # boundaries, no-console, no process.env
 flutter analyze && flutter test             # the app
 ```
@@ -342,6 +342,59 @@ dispatcher's sense of fairness rather than for the person waiting. A pickup time
 that has already passed with nobody assigned gets its own band — that is a
 failure in progress, not an urgent task.
 
+**Nothing entitles forever, and the clock is a sweep.** A subscription used to
+be written once and never moved: `isEntitling` answers `true` for `trialing`
+and `active` without consulting a date, and nothing anywhere advanced either —
+so a fourteen-day trial entitled live tracking permanently and no period was
+ever billed. The failure is silent in both directions, which is why it survived:
+nobody reports a subscription that never stops working, and nobody notices
+revenue that was never invoiced. `BillingCycleService` is an hourly sweep rather
+than a timer per renewal, for the reason the notification outbox is a sweep — a
+job scheduled at renewal time can be lost by a restart or never created at all,
+and a sweep cannot be forgotten. Its rules are pure and live in
+`domain/billing-cycle.ts`; the service owns only the order of writes.
+
+**A late sweep is late, not wrong.** A new period is anchored to the boundary
+that was already scheduled, never to when the sweep happened to run. Anchoring
+to `now` shifts the renewal date by the lateness of every pass and bakes each
+shift into the next anchor, so a subscriber who bought on the 1st is billed on
+the 9th by December.
+
+**A charge is not transactional with the row that records it.** Collection is
+three commits, not one: the attempt is claimed on the invoice, a `Payment` row
+is written *before* the processor is called, and the outcome is recorded after.
+The tempting single transaction can roll back after the money has moved, and
+the next sweep — seeing no record — charges again. The payment row's id is the
+idempotency key, so a retry of a lost response is answered from the processor's
+record rather than performed.
+
+**Four retries, and the last one has to land inside the grace window.** Dunning
+runs at +1, +3 and +6 days, and the six is not a preference: the cycle sweep
+expires a subscription the moment its grace closes, and the shortest grace any
+plan offers is seven days. A schedule reaching past that would have its final
+attempt scheduled against a subscription that no longer exists — a charge
+silently never made, on the account that most needed the reminder. A card
+reported stolen skips the schedule entirely, because three more attempts cannot
+succeed and each one is a fraud signal recorded against us.
+
+**A redelivered webhook is not a second payment.** Every processor event id is
+claimed by a unique constraint rather than a check-then-write, so two workers
+racing the same redelivery cannot both pass the check. The signature is verified
+against the raw bytes — the endpoint is public by necessity and its URL is not
+a secret — and the *local* adapter verifies too, so the branch that rejects a
+forged "this invoice is paid" is the same code in development as in production.
+An event type we do not handle is answered `200`: a processor retries non-2xx
+for days and eventually disables the endpoint, which silently stops the events
+we do handle.
+
+**Dunning mail says what has not stopped before it says what failed.** On a
+product whose purpose is knowing an elderly relative arrived safely, "your
+payment failed" is read as "I have lost the ability to see where my mother is".
+That is not what happened — the grace window exists precisely so nothing stops
+immediately — and the message that actually gets a card updated is the calm one.
+The wording is in `billing-mail.ts` and `lib/domain/invoicing.dart`, and a test
+on each side holds it there.
+
 **A permission and a subscription are different questions.** A ride request
 checks both: whether this relative may book for this patient, and whether the
 household is on a plan at all. Collapsing them would make a lapsed subscription
@@ -416,10 +469,13 @@ where the two share a name.
 
 ## Not built
 
-Card charging, invoices and dunning — the *model* is built and nothing moves
-money yet · driver app · `ops_console` (the dispatch **API** is built; the
-Flutter Web surface is not) · real maps and routing · WebSocket tracking · S3
-driver documents · caregiver marketplace · clinic portal · Terraform and AWS.
+Driver app · `ops_console` (the dispatch **API** is built; the Flutter Web
+surface is not) · real maps and routing · WebSocket tracking · S3 driver
+documents · caregiver marketplace · clinic portal · Terraform and AWS.
+
+Money moves, but only through the local adapter by default: `PAYMENTS_DRIVER`
+selects between it and Stripe, and the Stripe path is written and typed but has
+not been exercised against a live account.
 
 CareBridge coordinates appointments and transport. It is not an EHR, not a
 medical service, and not an emergency service.

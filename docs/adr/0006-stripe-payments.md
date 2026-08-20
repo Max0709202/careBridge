@@ -1,6 +1,7 @@
 # ADR-0006 · Stripe, with card data never touching us
 
-**Status:** Accepted · **Date:** 2026-07-27 · **Implemented:** Stage 4
+**Status:** Accepted · **Date:** 2026-07-27 · **Implemented:** Stage 4 (partly —
+see *Where this stands* below)
 
 ## Context
 
@@ -81,3 +82,48 @@ somewhere. Rejected.
 Insurance or Medicaid billing enters scope (a Stage 5 decision), at which point
 the payment model changes shape entirely and this ADR is superseded rather than
 amended.
+
+## Where this stands
+
+The **port** is `infrastructure/payments/payments.port.ts` and there are two
+adapters behind it, chosen by `PAYMENTS_DRIVER`.
+
+`StripePaymentsAdapter` speaks the REST API directly rather than through the
+`stripe` package — the same call the push adapter makes about `firebase-admin`,
+and for the same reason: this system touches a customer, a payment method, a
+payment intent and a refund, which is two hundred lines we can read against a
+dependency tree we cannot. It is written and typed; it has **not** been
+exercised against a live Stripe account, and that is the remaining work.
+
+`LocalPaymentsAdapter` moves no money and decides each outcome from the card's
+last four digits, using Stripe's own test-card meanings — `4242` settles,
+`9995` is declined for insufficient funds, `9979` is reported stolen. That
+correspondence is the point rather than a convenience: a developer reproducing
+a customer's dunning sequence locally uses the card number from the ticket, and
+the whole unhappy path is reachable with no account at all. Config validation
+refuses it in production, which is the most consequential of those refusals —
+an adapter that reports every charge as settled is a system that bills nobody
+and says everything is fine.
+
+Two decisions in the implementation are worth recording here because they are
+not obvious from the flow above.
+
+**A charge is not transactional with the row that records it.** Collection is
+three commits: the attempt is claimed on the invoice, the `Payment` row is
+written *before* the processor is called, and the outcome is recorded after.
+The single-transaction version can roll back after Stripe has taken the money,
+and the next sweep — finding no record — charges again. The payment row's id
+seeds the `Idempotency-Key`, so a retry of a lost response is answered from
+Stripe's record rather than performed.
+
+**A timeout is not a decline.** The port models `pending` as a first-class
+outcome alongside success and failure, and a transport failure leaves the
+payment there rather than reporting it as failed. Treating "we do not know" as
+"it did not work" retries a charge that may already have succeeded; the webhook
+settles it instead.
+
+What is **not** built: initiating a refund. The port and both adapters support
+it and a refund issued in Stripe's own console is reconciled against its invoice
+through `charge.refunded`, but there is no endpoint to start one — a refund
+button with no approval surface behind it is worse than no button. It belongs
+with the administration surfaces, which are the rest of this stage.

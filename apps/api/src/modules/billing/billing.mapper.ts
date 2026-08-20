@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Invoice, PaymentMethod, Prisma } from '@prisma/client';
 
 import { Money } from '../../domain/money';
 import type { Entitlement, SubscriptionEntitlementState } from '../../domain/billing';
@@ -7,6 +7,9 @@ import type {
   SubscriptionQuote,
 } from '../../domain/subscription-pricing';
 import type {
+  InvoiceDto,
+  InvoiceLineDto,
+  PaymentMethodDto,
   SubscriptionPlanDto,
   SubscriptionQuoteDto,
   SeatLedgerEntryDto,
@@ -128,5 +131,72 @@ export function toSeatLedgerDto(
     at: row.at.toISOString(),
     seatsAfter: row.seatsAfter,
     prorationCents: row.prorationCents,
+  };
+}
+
+/**
+ * An invoice, as the app renders it.
+ *
+ * `lines` is read back out of the JSON column it was written to rather than
+ * recomputed from the plan. That is the point of storing it: a plan can be
+ * superseded or deactivated, and an invoice that re-derives its itemisation
+ * from today's catalogue would silently reprint last March's bill at this
+ * March's prices.
+ */
+export function toInvoiceDto(row: Invoice): InvoiceDto {
+  return {
+    id: row.id,
+    number: row.number,
+    reason: row.reason,
+    status: row.status,
+    currency: row.currency,
+    subtotalCents: row.subtotalCents,
+    creditAppliedCents: row.creditAppliedCents,
+    totalCents: row.totalCents,
+    amountPaidCents: row.amountPaidCents,
+    lines: readStoredLines(row.lines),
+    issuedAt: row.issuedAt.toISOString(),
+    paidAt: row.paidAt?.toISOString() ?? null,
+    attemptCount: row.attemptCount,
+    nextAttemptAt: row.nextAttemptAt?.toISOString() ?? null,
+    lastFailureCode: row.lastFailureCode,
+  };
+}
+
+/**
+ * Reads the stored itemisation defensively.
+ *
+ * It is a JSON column, so the type system guarantees nothing about it — and
+ * the one thing this must not do is throw while rendering a billing screen. A
+ * malformed row costs the customer their line items; it must not cost them
+ * the page that shows what they owe.
+ */
+function readStoredLines(value: Prisma.JsonValue): InvoiceLineDto[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((entry): InvoiceLineDto[] => {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return [];
+    const line = entry as Record<string, unknown>;
+
+    return [
+      {
+        label: typeof line.label === 'string' ? line.label : 'Charge',
+        quantity: typeof line.quantity === 'number' ? line.quantity : 1,
+        unitPriceCents:
+          typeof line.unitPriceCents === 'number' ? line.unitPriceCents : 0,
+        amountCents: typeof line.amountCents === 'number' ? line.amountCents : 0,
+      },
+    ];
+  });
+}
+
+export function toPaymentMethodDto(row: PaymentMethod): PaymentMethodDto {
+  return {
+    id: row.id,
+    brand: row.brand,
+    last4: row.last4,
+    expMonth: row.expMonth,
+    expYear: row.expYear,
+    isDefault: row.isDefault,
   };
 }

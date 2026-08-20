@@ -5,7 +5,9 @@ import '../../app/theme.dart';
 import '../../core/formatting.dart';
 import '../../core/money.dart';
 import '../../data/billing_codec.dart';
+import '../../data/care_api.dart';
 import '../../domain/billing.dart';
+import '../../domain/invoicing.dart';
 import '../../domain/subscription_pricing.dart';
 import '../../state/providers.dart';
 import '../../widgets/common.dart';
@@ -31,6 +33,9 @@ class PlanScreen extends ConsumerStatefulWidget {
 class _PlanScreenState extends ConsumerState<PlanScreen> {
   Subscription? _subscription;
   List<SubscriptionPlan> _plans = const [];
+  List<Invoice> _invoices = const [];
+  PaymentMethod? _card;
+  int _amountDueCents = 0;
   Object? _error;
   bool _loaded = false;
   bool _busy = false;
@@ -47,16 +52,28 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       final api = ref.read(careApiProvider);
       final account = await api.billingAccount();
       final plans = await api.billingPlans();
+      // Only fetched once we know there is an account. Asking for the invoices
+      // of a household that has none is a request whose only possible answer
+      // is an empty list.
+      final invoices = account == null ? <Invoice>[] : await _invoicesFor(api);
 
       if (!mounted) return;
       setState(() {
         _subscription = subscriptionFromWire(account?.subscription);
         _plans = [for (final plan in plans) ?planFromWire(plan)];
+        _invoices = invoices;
+        _card = paymentMethodFromWire(account?.paymentMethod);
+        _amountDueCents = account?.amountDueCents ?? 0;
         _loaded = true;
       });
     } catch (error) {
       if (mounted) setState(() => _error = error);
     }
+  }
+
+  Future<List<Invoice>> _invoicesFor(CareApi api) async {
+    final dtos = await api.invoices();
+    return [for (final dto in dtos) ?invoiceFromWire(dto)];
   }
 
   Future<void> _run(Future<void> Function() action) async {
@@ -115,6 +132,18 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
           const SizedBox(height: AppSpacing.md),
           _switchInterval(theme, subscription),
         ],
+        if (subscription != null) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _paymentMethod(theme),
+        ],
+        if (_invoices.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.lg),
+          const SectionHeader('Invoices'),
+          for (final invoice in _invoices) ...[
+            _invoiceCard(theme, invoice),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ],
         const SizedBox(height: AppSpacing.lg),
         const SectionHeader('Plans'),
         for (final plan in _plans) ...[
@@ -126,6 +155,139 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       ],
     );
   }
+
+  /// The card renewals are charged against.
+  ///
+  /// Shown whether or not one exists, because the absence is the more
+  /// important state: an account with no card on file is one renewal away from
+  /// dunning, and the only moment to mention that is before it happens.
+  Widget _paymentMethod(ThemeData theme) {
+    final card = _card;
+    final now = DateTime.now();
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Payment method', style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          if (card == null)
+            Text(
+              'No card on file. Add one so your plan renews without '
+              'interruption.',
+              style: theme.textTheme.bodyMedium,
+            )
+          else ...[
+            Row(
+              children: [
+                const Icon(Icons.credit_card_outlined, size: 20),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(card.label, style: theme.textTheme.bodyLarge),
+                ),
+              ],
+            ),
+            // Warned before it fails rather than after. A card that lapses
+            // between renewals produces a decline nobody could have predicted
+            // from this screen, which is the avoidable half of dunning.
+            if (card.hasExpired(now) || card.expiresSoon(now))
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.xs),
+                child: Text(
+                  card.hasExpired(now)
+                      ? 'This card has expired.'
+                      : 'This card expires soon.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ),
+          ],
+          if (_amountDueCents > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(
+                'Outstanding: ${Money(_amountDueCents).format()}',
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// One invoice, itemised.
+  ///
+  /// The line items come from the server, which read them back off the invoice
+  /// rather than recomputing them from today's catalogue — so a bill from
+  /// eight months ago still shows the prices it actually charged.
+  Widget _invoiceCard(ThemeData theme, Invoice invoice) {
+    final overdue = invoice.status.isOutstanding;
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(invoice.number, style: theme.textTheme.titleSmall),
+              ),
+              Text(
+                Money(invoice.totalCents).format(),
+                style: theme.textTheme.titleSmall,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          InfoRow(label: invoice.reason.label, value: invoice.status.label),
+          InfoRow(label: 'Issued', value: formatDay(invoice.issuedAt)),
+          if (invoice.creditAppliedCents > 0)
+            InfoRow(
+              label: 'Credit applied',
+              value: Money(invoice.creditAppliedCents).format(),
+            ),
+          const SizedBox(height: AppSpacing.xs),
+          for (final line in invoice.lines)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 1),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(line.label, style: theme.textTheme.bodySmall),
+                  ),
+                  Text(
+                    Money(line.amountCents).format(),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          if (overdue) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              DunningCopy.headline(invoice),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+            Text(DunningCopy.detail(invoice), style: theme.textTheme.bodySmall),
+            if (invoice.canBePaidNow)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: _busy ? null : () => _pay(invoice),
+                  child: const Text('Try this payment again'),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pay(Invoice invoice) =>
+      _run(() => ref.read(careApiProvider).payInvoice(invoice.id));
 
   Widget _noPlan(ThemeData theme) => AppCard(
     child: EmptyState(

@@ -70,6 +70,60 @@ class BillingApi {
     return BillingAccountDto.fromJson(response as Map<String, dynamic>);
   }
 
+  /// What this household has been billed
+  ///
+  /// Newest first. Line items are read back from the invoice, not recomputed —
+  /// a superseded plan must not reprint last March at this March’s prices.
+  Future<List<InvoiceDto>> invoices() async {
+    final response = await _client.send(
+      method: 'GET',
+      path: '/billing/invoices',
+    );
+    return (response as List<dynamic>)
+        .map((e) => InvoiceDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Put a card on file
+  ///
+  /// Takes a token the client obtained directly from the processor. No endpoint
+  /// in this system accepts a card number — see ADR-0006.
+  Future<PaymentMethodDto> attachPaymentMethod({
+    required AttachPaymentMethodDto body,
+  }) async {
+    final response = await _client.send(
+      method: 'POST',
+      path: '/billing/payment-method',
+      body: body.toJson(),
+    );
+    return PaymentMethodDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Take a card off file
+  ///
+  /// The row is kept and marked detached, so a payment made months ago still
+  /// names the card that made it. Removing the last card is allowed.
+  Future<void> detachPaymentMethod({required String id}) async {
+    await _client.send(
+      method: 'DELETE',
+      path: '/billing/payment-method/${Uri.encodeComponent(id)}',
+    );
+    return;
+  }
+
+  /// Charge an open invoice now
+  ///
+  /// For the moment after a declined card is replaced: waiting a day for the
+  /// scheduled retry, while the screen still says the payment failed, reads as
+  /// the update not having worked.
+  Future<InvoiceDto> payInvoice({required String id}) async {
+    final response = await _client.send(
+      method: 'POST',
+      path: '/billing/invoices/${Uri.encodeComponent(id)}/pay',
+    );
+    return InvoiceDto.fromJson(response as Map<String, dynamic>);
+  }
+
   /// Cancel at the end of the paid period
   ///
   /// Not a refund and not an immediate switch-off: a family part-way through a

@@ -19,6 +19,9 @@ const productionReady = {
   FCM_SERVICE_ACCOUNT_JSON: '{"project_id":"x"}',
   MAPS_DRIVER: 'google',
   MAPS_API_KEY: 'k',
+  PAYMENTS_DRIVER: 'stripe',
+  STRIPE_SECRET_KEY: 'sk_live_x',
+  STRIPE_WEBHOOK_SECRET: 'whsec_x',
 };
 
 describe('configuration', () => {
@@ -89,6 +92,17 @@ describe('configuration', () => {
     expect(() =>
       loadConfig({ ...productionReady, MAPS_DRIVER: 'deterministic' }),
     ).toThrow(/MAPS_DRIVER=deterministic/);
+
+    // The most consequential of the four. An adapter that reports every charge
+    // as settled is a system that bills nobody and says everything is fine.
+    expect(() =>
+      loadConfig({
+        ...productionReady,
+        PAYMENTS_DRIVER: 'local',
+        STRIPE_SECRET_KEY: undefined,
+        STRIPE_WEBHOOK_SECRET: undefined,
+      }),
+    ).toThrow(/PAYMENTS_DRIVER=local/);
   });
 
   it('requires Redis in production, where the in-process fallback is wrong', () => {
@@ -108,6 +122,23 @@ describe('configuration', () => {
     expect(() => loadConfig({ ...valid, PUSH_DRIVER: 'fcm' })).toThrow(
       /FCM_SERVICE_ACCOUNT_JSON/,
     );
+
+    expect(() => loadConfig({ ...valid, PAYMENTS_DRIVER: 'stripe' })).toThrow(
+      /STRIPE_SECRET_KEY/,
+    );
+  });
+
+  it('refuses Stripe without the secret that verifies its webhooks', () => {
+    // Without it a "payment succeeded" callback cannot be told from an
+    // unauthenticated request marking an invoice paid, and the endpoint is
+    // public by necessity. Refused at boot rather than degraded to trust.
+    expect(() =>
+      loadConfig({
+        ...valid,
+        PAYMENTS_DRIVER: 'stripe',
+        STRIPE_SECRET_KEY: 'sk_test_x',
+      }),
+    ).toThrow(/STRIPE_WEBHOOK_SECRET/);
   });
 
   // ─── MFA key ────────────────────────────────────────────────────────────

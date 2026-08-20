@@ -78,7 +78,15 @@ export const SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
  * a ride keeps its pricing rule version.
  */
 const ALLOWED_TRANSITIONS: Record<SubscriptionStatus, readonly SubscriptionStatus[]> = {
-  trialing: ['active', 'pendingCancellation', 'canceled', 'expired'],
+  // `trialing → pastDue` is the edge that carries a decision. A trial whose
+  // conversion charge is declined has never paid us anything, and the tidy
+  // reading is that it simply expires. That reading blanks the map: the family
+  // discovers the card failed when live tracking stops mid-journey, which is
+  // precisely the failure the grace window exists to prevent, and it discovers
+  // it on day fourteen of using the product. So a declined conversion enters
+  // the same dunning as any other declined renewal, and expires at the end of
+  // the same grace window if nobody fixes the card.
+  trialing: ['active', 'pastDue', 'pendingCancellation', 'canceled', 'expired'],
   active: ['pastDue', 'pendingCancellation', 'canceled'],
   pastDue: ['active', 'canceled', 'expired'],
   pendingCancellation: ['active', 'canceled'],

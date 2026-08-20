@@ -12,6 +12,8 @@ export const QUEUES = {
   notifications: 'notifications',
   reminders: 'reminders',
   retention: 'retention',
+  /** The subscription clock: trials ending, periods renewing, dunning retries. */
+  billing: 'billing',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];

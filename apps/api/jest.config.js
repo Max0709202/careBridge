@@ -54,6 +54,18 @@ module.exports = {
       lines: 100,
     },
 
+    // Same class of thing, and the same reasoning. This is the only check
+    // between a public URL and "this invoice is paid": the payment webhook is
+    // an unauthenticated POST by necessity, its address is in the processor's
+    // dashboard and in our logs, and a hole here is not a bug report — it is
+    // money. Applied in one place, so it is held at one hundred.
+    './src/infrastructure/payments/webhook-signature.ts': {
+      statements: 100,
+      branches: 100,
+      functions: 100,
+      lines: 100,
+    },
+
     // A floor, not a target, and it covers what is *left* — jest takes every
     // file matched by a threshold above out of the global group, so this is
     // the services, controllers and adapters with the domain removed.

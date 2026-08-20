@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Post,
@@ -9,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
@@ -23,12 +26,15 @@ import { BillingService } from './billing.service';
 import { OrganizationsService } from '../organizations/organizations.service';
 import {
   BillingAccountDto,
+  InvoiceDto,
   OrganizationDto,
   OrganizationSeatsDto,
+  PaymentMethodDto,
   SubscriptionPlanDto,
   SubscriptionQuoteDto,
 } from './billing.dto';
 import { ChangeIntervalDto, SubscribeDto } from './dto/subscribe.dto';
+import { AttachPaymentMethodDto } from './dto/payment-method.dto';
 
 /**
  * Two payers, one set of endpoints, split by whose money it is.
@@ -109,6 +115,63 @@ export class BillingController {
       body.interval as BillingInterval,
       ctx,
     );
+  }
+
+  @Get('invoices')
+  @ApiOperation({
+    summary: 'What this household has been billed',
+    description:
+      'Newest first. Line items are read back from the invoice, not recomputed — a superseded plan must not reprint last March at this March’s prices.',
+  })
+  @ApiOkResponse({ type: [InvoiceDto] })
+  invoices(@CurrentUser() userId: string): Promise<InvoiceDto[]> {
+    return this.billing.invoices(userId, {});
+  }
+
+  @Post('payment-method')
+  @Idempotent()
+  @ApiOperation({
+    summary: 'Put a card on file',
+    description:
+      'Takes a token the client obtained directly from the processor. No endpoint in this system accepts a card number — see ADR-0006.',
+  })
+  @ApiOkResponse({ type: PaymentMethodDto })
+  attachPaymentMethod(
+    @CurrentUser() userId: string,
+    @Body() body: AttachPaymentMethodDto,
+    @Ctx() ctx: RequestContext,
+  ): Promise<PaymentMethodDto> {
+    return this.billing.attachPaymentMethod(userId, {}, body.token, ctx);
+  }
+
+  @Delete('payment-method/:id')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Take a card off file',
+    description:
+      'The row is kept and marked detached, so a payment made months ago still names the card that made it. Removing the last card is allowed.',
+  })
+  @ApiNoContentResponse()
+  detachPaymentMethod(
+    @CurrentUser() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Ctx() ctx: RequestContext,
+  ): Promise<void> {
+    return this.billing.detachPaymentMethod(userId, {}, id, ctx);
+  }
+
+  @Post('invoices/:id/pay')
+  @ApiOperation({
+    summary: 'Charge an open invoice now',
+    description:
+      'For the moment after a declined card is replaced: waiting a day for the scheduled retry, while the screen still says the payment failed, reads as the update not having worked.',
+  })
+  @ApiOkResponse({ type: InvoiceDto })
+  payInvoice(
+    @CurrentUser() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<InvoiceDto> {
+    return this.billing.payInvoice(userId, {}, id);
   }
 
   @Post('cancel')
@@ -208,6 +271,63 @@ export class OrganizationsController {
     @Ctx() ctx: RequestContext,
   ): Promise<BillingAccountDto> {
     return this.billing.cancel(userId, { organizationId: id }, ctx);
+  }
+
+  @Get(':id/billing/invoices')
+  @ApiOperation({ summary: 'What this operator has been billed' })
+  @ApiOkResponse({ type: [InvoiceDto] })
+  organizationInvoices(
+    @CurrentUser() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<InvoiceDto[]> {
+    return this.billing.invoices(userId, { organizationId: id });
+  }
+
+  @Post(':id/billing/payment-method')
+  @Idempotent()
+  @ApiOperation({ summary: "Put a card on an operator's account" })
+  @ApiOkResponse({ type: PaymentMethodDto })
+  attachOrganizationPaymentMethod(
+    @CurrentUser() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: AttachPaymentMethodDto,
+    @Ctx() ctx: RequestContext,
+  ): Promise<PaymentMethodDto> {
+    return this.billing.attachPaymentMethod(
+      userId,
+      { organizationId: id },
+      body.token,
+      ctx,
+    );
+  }
+
+  @Delete(':id/billing/payment-method/:paymentMethodId')
+  @HttpCode(204)
+  @ApiOperation({ summary: "Take a card off an operator's account" })
+  @ApiNoContentResponse()
+  detachOrganizationPaymentMethod(
+    @CurrentUser() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('paymentMethodId', ParseUUIDPipe) paymentMethodId: string,
+    @Ctx() ctx: RequestContext,
+  ): Promise<void> {
+    return this.billing.detachPaymentMethod(
+      userId,
+      { organizationId: id },
+      paymentMethodId,
+      ctx,
+    );
+  }
+
+  @Post(':id/billing/invoices/:invoiceId/pay')
+  @ApiOperation({ summary: "Charge an operator's open invoice now" })
+  @ApiOkResponse({ type: InvoiceDto })
+  payOrganizationInvoice(
+    @CurrentUser() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('invoiceId', ParseUUIDPipe) invoiceId: string,
+  ): Promise<InvoiceDto> {
+    return this.billing.payInvoice(userId, { organizationId: id }, invoiceId);
   }
 
   @Get(':id/seats')

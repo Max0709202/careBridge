@@ -121,6 +121,12 @@ services:
       MAIL_FROM: ${MAIL_FROM:-CareBridge <no-reply@carebridge.local>}
       PUSH_DRIVER: ${PUSH_DRIVER:-log}
       MAPS_DRIVER: ${MAPS_DRIVER:-deterministic}
+      # Moves no money and scripts its outcomes from the card's last four
+      # digits, so the decline and dunning paths are reachable in the demo.
+      PAYMENTS_DRIVER: ${PAYMENTS_DRIVER:-local}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      PAYMENTS_WEBHOOK_SECRET: ${PAYMENTS_WEBHOOK_SECRET:-local-webhook-secret}
     depends_on:
       db:
         condition: service_healthy

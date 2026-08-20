@@ -4,6 +4,7 @@ import type { BillingInterval, Prisma, SubscriptionStatus } from '@prisma/client
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { OrganizationsService } from '../organizations/organizations.service';
+import { InvoicesService } from './invoices.service';
 import { ConflictError, NotFoundError, ValidationError } from '../../common/errors';
 import { Money } from '../../domain/money';
 import {
@@ -21,7 +22,9 @@ import {
 } from '../../domain/subscription-pricing';
 import type {
   BillingAccountDto,
+  InvoiceDto,
   OrganizationSeatsDto,
+  PaymentMethodDto,
   SubscriptionDto,
   SubscriptionPlanDto,
   SubscriptionQuoteDto,
@@ -30,6 +33,8 @@ import {
   PLAN_INCLUDE,
   SUBSCRIPTION_INCLUDE,
   toEntitlementState,
+  toInvoiceDto,
+  toPaymentMethodDto,
   toPlanDomain,
   toPlanDto,
   toQuoteDto,
@@ -60,11 +65,14 @@ const LIVE_STATUSES: SubscriptionStatus[] = [
  * now" and the disagreement is either a family locked out of a live trip or an
  * operator using a console they stopped paying for.
  *
- * What is *not* here is the money movement. Charging a card is Stage 4 and
- * ADR-0006; every quote below is computed, recorded and stamped with the plan
- * version that produced it, and the amounts are handed to the processor there.
- * The seam is `SubscriptionPeriod` — an unpaid period is a period with no
- * payment against it, not a missing row.
+ * What this service decides is *what is owed*; `InvoicesService` decides
+ * whether it was collected. The seam is deliberate and it is the invoice: an
+ * unpaid period is a period with an open invoice against it, not a missing
+ * row, so a decline can never rewrite the record of what the plan cost.
+ *
+ * Every path here that raises money follows the same two beats — write the
+ * invoice inside the transaction that justifies it, collect after it commits.
+ * See `collectAll`.
  */
 @Injectable()
 export class BillingService {
@@ -72,7 +80,28 @@ export class BillingService {
     private readonly prisma: PrismaService,
     private readonly organizations: OrganizationsService,
     private readonly audit: AuditService,
+    private readonly invoicesService: InvoicesService,
   ) {}
+
+  /**
+   * Charges invoices raised inside a transaction, once it has committed.
+   *
+   * Every path below that raises money follows the same two beats: write the
+   * invoice inside the transaction that justifies it, then collect outside.
+   * Collecting *inside* would hold a database transaction open across a call
+   * to a third party — so a slow processor becomes a held lock on the
+   * subscription row, and a rollback afterwards discards the record of a
+   * charge that has already been made.
+   *
+   * A failed collection is not an error here. It is dunning, already recorded
+   * against the invoice, and the subscribe or switch the caller asked for
+   * genuinely happened.
+   */
+  private async collectAll(invoiceIds: readonly string[], now: Date): Promise<void> {
+    for (const id of invoiceIds) {
+      await this.invoicesService.collect(id, now);
+    }
+  }
 
   // ─── the catalogue ────────────────────────────────────────────────────────
 
@@ -166,6 +195,12 @@ export class BillingService {
       data: { payer: 'family', ownerUserId: userId, billingEmail: email },
     });
 
+    // Deliberately not collected here. Registration runs inside its own
+    // transaction, and a card charged from inside it would be charged again by
+    // the retry of a registration whose transaction rolled back. A plan with no
+    // trial leaves an open invoice, and the cycle sweep collects it — see
+    // `InvoicesService.dueForRetry`, which picks up an invoice nobody has
+    // attempted yet precisely so that no invoice can be orphaned by its caller.
     await this.openSubscription({
       db,
       billingAccountId: account.id,
@@ -191,7 +226,7 @@ export class BillingService {
     seats: number;
     status: SubscriptionStatus;
     now: Date;
-  }): Promise<SubscriptionRow> {
+  }): Promise<{ subscription: SubscriptionRow; invoiceId: string | null }> {
     const { db, billingAccountId, plan, seats, status, now } = input;
 
     const domainPlan = toPlanDomain(plan);
@@ -213,8 +248,34 @@ export class BillingService {
       include: SUBSCRIPTION_INCLUDE,
     });
 
-    await this.writePeriod(db, subscription.id, 0, now, periodEnd, quote);
-    return subscription;
+    const period = await this.writePeriod(
+      db,
+      subscription.id,
+      0,
+      now,
+      periodEnd,
+      quote,
+    );
+
+    // A trial is not billed. The period row is still written, because it is the
+    // record of what was quoted — but nothing is owed until the trial converts,
+    // and an invoice raised now would be dunned over an amount the subscriber
+    // was explicitly told they would not yet be charged.
+    if (status === 'trialing') {
+      return { subscription, invoiceId: null };
+    }
+
+    const invoice = await this.invoicesService.issue({
+      db,
+      billingAccountId,
+      subscriptionId: subscription.id,
+      periodId: period.id,
+      reason: 'subscriptionPeriod',
+      quote,
+      now,
+    });
+
+    return { subscription, invoiceId: invoice.id };
   }
 
   private async writePeriod(
@@ -224,9 +285,9 @@ export class BillingService {
     startsAt: Date,
     endsAt: Date,
     quote: SubscriptionQuote,
-  ): Promise<void> {
+  ) {
     const base = quote.lines[0]?.amount ?? Money.zero();
-    await db.subscriptionPeriod.create({
+    return db.subscriptionPeriod.create({
       data: {
         subscriptionId,
         sequence,
@@ -269,6 +330,40 @@ export class BillingService {
       billingEmail: account.billingEmail,
       organizationId: null,
       subscription: subscription ? this.toSubscriptionDto(subscription) : null,
+      ...(await this.settlementState(account.id)),
+    };
+  }
+
+  /**
+   * The card on file and the total outstanding.
+   *
+   * Both are read here rather than derived on the client, for the same reason
+   * entitlements are: "do I owe anything" is a question with one answer, and a
+   * client that sums open invoices itself will eventually sum a different set
+   * than the dunning sweep does.
+   */
+  private async settlementState(billingAccountId: string): Promise<{
+    paymentMethod: PaymentMethodDto | null;
+    amountDueCents: number;
+  }> {
+    const [card, outstanding] = await Promise.all([
+      this.prisma.paymentMethod.findFirst({
+        where: { billingAccountId, isDefault: true, detachedAt: null },
+      }),
+      this.prisma.invoice.aggregate({
+        where: { billingAccountId, status: 'open' },
+        _sum: { totalCents: true, amountPaidCents: true },
+      }),
+    ]);
+
+    const billed = outstanding._sum.totalCents ?? 0;
+    const paid = outstanding._sum.amountPaidCents ?? 0;
+
+    return {
+      paymentMethod: card ? toPaymentMethodDto(card) : null,
+      // Floored at zero. A negative figure here would be an over-payment, and
+      // rendering "you owe -$4.00" is worse than rendering nothing owed.
+      amountDueCents: Math.max(0, billed - paid),
     };
   }
 
@@ -294,6 +389,7 @@ export class BillingService {
       billingEmail: account.billingEmail,
       organizationId,
       subscription: subscription ? this.toSubscriptionDto(subscription) : null,
+      ...(await this.settlementState(account.id)),
     };
   }
 
@@ -381,6 +477,7 @@ export class BillingService {
     context: { correlationId?: string | null },
   ): Promise<BillingAccountDto> {
     const now = new Date();
+    let invoiceId: string | null = null;
 
     await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({ where: { id: userId } });
@@ -394,7 +491,13 @@ export class BillingService {
           data: { payer: 'family', ownerUserId: userId, billingEmail: user.email },
         }));
 
-      await this.replaceOrOpen({ tx, accountId: account.id, plan, seats: 0, now });
+      invoiceId = await this.replaceOrOpen({
+        tx,
+        accountId: account.id,
+        plan,
+        seats: 0,
+        now,
+      });
 
       await this.audit.record(
         {
@@ -408,6 +511,8 @@ export class BillingService {
         tx,
       );
     });
+
+    await this.collectAll(invoiceId ? [invoiceId] : [], now);
 
     const billing = await this.familyBilling(userId);
     if (!billing) throw new NotFoundError();
@@ -425,6 +530,7 @@ export class BillingService {
       'admin',
     ]);
     const now = new Date();
+    let invoiceId: string | null = null;
 
     await this.prisma.$transaction(async (tx) => {
       const organization = await tx.organization.findUnique({
@@ -453,7 +559,13 @@ export class BillingService {
       // subscribe at five seats and run twenty.
       const seats = await this.organizations.activeDriverCount(organizationId, tx);
 
-      await this.replaceOrOpen({ tx, accountId: account.id, plan, seats, now });
+      invoiceId = await this.replaceOrOpen({
+        tx,
+        accountId: account.id,
+        plan,
+        seats,
+        now,
+      });
 
       await this.audit.record(
         {
@@ -467,6 +579,8 @@ export class BillingService {
         tx,
       );
     });
+
+    await this.collectAll(invoiceId ? [invoiceId] : [], now);
 
     return this.organizationBilling(userId, organizationId);
   }
@@ -486,7 +600,7 @@ export class BillingService {
     plan: PlanRow;
     seats: number;
     now: Date;
-  }): Promise<void> {
+  }): Promise<string | null> {
     const { tx, accountId, plan, seats, now } = input;
 
     const live = await this.liveSubscription(accountId, tx);
@@ -496,7 +610,7 @@ export class BillingService {
       );
     }
 
-    await this.openSubscription({
+    const opened = await this.openSubscription({
       db: tx,
       billingAccountId: accountId,
       plan,
@@ -504,6 +618,8 @@ export class BillingService {
       status: plan.trialDays > 0 ? 'trialing' : 'active',
       now,
     });
+
+    return opened.invoiceId;
   }
 
   /**
@@ -528,6 +644,7 @@ export class BillingService {
       ]);
     }
     const now = new Date();
+    let invoiceId: string | null = null;
 
     await this.prisma.$transaction(async (tx) => {
       const account = scope.organizationId
@@ -582,14 +699,39 @@ export class BillingService {
         where: { subscriptionId: current.id, closedAt: null },
         data: { closedAt: now },
       });
-      await this.writePeriod(
+
+      const nextQuote = quoteSubscription({
+        plan: toPlanDomain(target),
+        seats: current.seats,
+      });
+      const period = await this.writePeriod(
         tx,
         current.id,
         periods,
         now,
         periodEnd,
-        quoteSubscription({ plan: toPlanDomain(target), seats: current.seats }),
+        nextQuote,
       );
+
+      // The invoice carries the full price of the new period as its subtotal
+      // and the unused remainder of the old one as credit, so it reads as the
+      // arithmetic it is. Charging `dueNow` as a bare total instead would
+      // produce an invoice that cannot be checked against either plan's price.
+      //
+      // This credit is **not** drawn from `carriedCreditCents`: it is the
+      // remainder of a period the payer already paid for, and decrementing the
+      // stored balance by it would take money they still hold.
+      const invoice = await this.invoicesService.issue({
+        db: tx,
+        billingAccountId: account.id,
+        subscriptionId: current.id,
+        periodId: period.id,
+        reason: 'intervalSwitch',
+        quote: nextQuote,
+        credit: { cents: quote.credit.cents, fromCarriedBalance: false },
+        now,
+      });
+      invoiceId = invoice.id;
 
       await this.audit.record(
         {
@@ -608,6 +750,8 @@ export class BillingService {
         tx,
       );
     });
+
+    await this.collectAll(invoiceId ? [invoiceId] : [], now);
 
     return scope.organizationId
       ? this.organizationBilling(userId, scope.organizationId)
@@ -670,6 +814,190 @@ export class BillingService {
     return scope.organizationId
       ? this.organizationBilling(userId, scope.organizationId)
       : ((await this.familyBilling(userId)) ?? Promise.reject(new NotFoundError()));
+  }
+
+  // ─── cards and invoices ───────────────────────────────────────────────────
+
+  /**
+   * Resolves whose billing account a request is about, and refuses if the
+   * caller has no standing on it.
+   *
+   * One place, because the two scopes authorise differently — a family account
+   * by owning it, an operator account by a membership with a role — and every
+   * endpoint below needs the same branch. Written once so a new endpoint
+   * cannot accidentally ship with the family check on an operator path.
+   */
+  private async requireAccount(
+    userId: string,
+    scope: { organizationId?: string },
+  ): Promise<{ id: string; billingEmail: string }> {
+    if (scope.organizationId) {
+      await this.organizations.requireMembership(userId, scope.organizationId, [
+        'owner',
+        'admin',
+      ]);
+      const account = await this.prisma.billingAccount.findUnique({
+        where: { organizationId: scope.organizationId },
+      });
+      if (!account) throw new NotFoundError();
+      return account;
+    }
+
+    const account = await this.familyAccount(userId);
+    if (!account) throw new NotFoundError();
+    return account;
+  }
+
+  async invoices(
+    userId: string,
+    scope: { organizationId?: string },
+  ): Promise<InvoiceDto[]> {
+    const account = await this.requireAccount(userId, scope);
+    const rows = await this.invoicesService.listForAccount(account.id);
+    return rows.map(toInvoiceDto);
+  }
+
+  /**
+   * Puts a card on file and makes it the one renewals are charged against.
+   *
+   * `token` is a reference the client obtained **directly from the
+   * processor**. It is not a card number, and no code path in this system
+   * accepts one — see ADR-0006. Validated for shape only; the processor
+   * decides whether it is real.
+   */
+  async attachPaymentMethod(
+    userId: string,
+    scope: { organizationId?: string },
+    token: string,
+    context: { correlationId?: string | null },
+  ): Promise<PaymentMethodDto> {
+    const account = await this.requireAccount(userId, scope);
+
+    const customerRef = await this.invoicesService.customerReference(
+      account.id,
+      account.billingEmail,
+    );
+    const details = await this.invoicesService.attachCard(customerRef, token);
+
+    const card = await this.prisma.$transaction(async (tx) => {
+      // The previous default is stood down first. The partial unique index
+      // permits one default per account, so setting the new one before
+      // clearing the old would be refused by the database — correctly, but
+      // as an opaque constraint error rather than a card change.
+      await tx.paymentMethod.updateMany({
+        where: { billingAccountId: account.id, isDefault: true },
+        data: { isDefault: false },
+      });
+
+      const created = await tx.paymentMethod.upsert({
+        where: { externalId: details.externalId },
+        create: {
+          billingAccountId: account.id,
+          externalId: details.externalId,
+          brand: details.brand,
+          last4: details.last4,
+          expMonth: details.expMonth,
+          expYear: details.expYear,
+          isDefault: true,
+        },
+        update: {
+          brand: details.brand,
+          last4: details.last4,
+          expMonth: details.expMonth,
+          expYear: details.expYear,
+          isDefault: true,
+          detachedAt: null,
+        },
+      });
+
+      await this.audit.record(
+        {
+          actorUserId: userId,
+          action: 'billing.payment_method_attached',
+          entityType: 'BillingAccount',
+          entityId: account.id,
+          correlationId: context.correlationId,
+          // The field names, never the values. A last4 in an audit row is a
+          // second copy of the thing the row exists to protect.
+          changedFields: ['paymentMethodId'],
+        },
+        tx,
+      );
+
+      return created;
+    });
+
+    return toPaymentMethodDto(card);
+  }
+
+  /**
+   * Takes a card off file.
+   *
+   * The row is kept and marked detached rather than deleted, so a payment made
+   * eight months ago still names the card that made it. Removing the last card
+   * is allowed: refusing it would trap somebody whose card was stolen into
+   * leaving it on the account.
+   */
+  async detachPaymentMethod(
+    userId: string,
+    scope: { organizationId?: string },
+    paymentMethodId: string,
+    context: { correlationId?: string | null },
+  ): Promise<void> {
+    const account = await this.requireAccount(userId, scope);
+
+    const card = await this.prisma.paymentMethod.findFirst({
+      where: { id: paymentMethodId, billingAccountId: account.id },
+    });
+    if (!card || card.detachedAt) throw new NotFoundError();
+
+    await this.invoicesService.detachCard(card.externalId);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.paymentMethod.update({
+        where: { id: card.id },
+        data: { isDefault: false, detachedAt: new Date() },
+      });
+
+      await this.audit.record(
+        {
+          actorUserId: userId,
+          action: 'billing.payment_method_detached',
+          entityType: 'BillingAccount',
+          entityId: account.id,
+          correlationId: context.correlationId,
+          changedFields: ['paymentMethodId'],
+        },
+        tx,
+      );
+    });
+  }
+
+  /**
+   * Charges an open invoice now, at the payer's request.
+   *
+   * The point of the endpoint is the moment after somebody updates a declined
+   * card: waiting up to a day for the scheduled retry, while the app still
+   * says the payment failed, reads as the update not having worked.
+   */
+  async payInvoice(
+    userId: string,
+    scope: { organizationId?: string },
+    invoiceId: string,
+  ): Promise<InvoiceDto> {
+    const account = await this.requireAccount(userId, scope);
+
+    const invoice = await this.prisma.invoice.findFirst({
+      where: { id: invoiceId, billingAccountId: account.id },
+    });
+    if (!invoice) throw new NotFoundError();
+
+    this.invoicesService.assertCollectable(invoice);
+
+    // Null means another worker claimed the attempt between the guard and
+    // here. The invoice as it stands is the honest answer either way.
+    const settled = await this.invoicesService.collect(invoice.id, new Date());
+    return toInvoiceDto(settled ?? invoice);
   }
 
   // ─── driver seats ─────────────────────────────────────────────────────────
@@ -793,6 +1121,42 @@ export class BillingService {
         seatsPaidFor: quote.seatsPaidForAfter,
         version: { increment: 1 },
       },
+    });
+
+    if (quote.dueNow.cents <= 0) return;
+
+    // A driver added mid-period is charged for the remainder of it, and the
+    // invoice is raised inside the caller's transaction — the same transaction
+    // that approved the driver. That is the whole point of `recordSeatChange`
+    // being called from the driver lifecycle rather than from a nightly
+    // recount: a failure cannot leave an operator approved-but-unbilled.
+    //
+    // Not collected here, for the same reason: the caller's transaction is
+    // still open. The sweep collects it, because `dueForRetry` picks up an
+    // invoice nobody has attempted yet.
+    await this.invoicesService.issue({
+      db,
+      billingAccountId: account.id,
+      subscriptionId: subscription.id,
+      periodId: null,
+      reason: 'seatProration',
+      quote: {
+        planCode: subscription.plan.code,
+        planVersion: subscription.plan.version,
+        interval: subscription.interval,
+        seats: seatsAfter,
+        billableSeats: seatsAfter,
+        lines: [
+          {
+            label: `Driver seats ${quote.seatsPaidFor + 1}–${seatsAfter}, rest of period`,
+            quantity: seatsAfter - quote.seatsPaidFor,
+            unitPrice: quote.dueNow,
+            amount: quote.dueNow,
+          },
+        ],
+        total: quote.dueNow,
+      },
+      now,
     });
   }
 }

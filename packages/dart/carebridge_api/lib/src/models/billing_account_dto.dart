@@ -15,6 +15,8 @@ class BillingAccountDto {
     required this.billingEmail,
     this.organizationId,
     this.subscription,
+    this.paymentMethod,
+    required this.amountDueCents,
   });
 
   final String id;
@@ -28,6 +30,12 @@ class BillingAccountDto {
 
   final SubscriptionDto? subscription;
 
+  /// The card renewals are charged against, or null if there is none.
+  final PaymentMethodDto? paymentMethod;
+
+  /// Total owed across every open invoice. Zero when nothing is outstanding.
+  final int amountDueCents;
+
   factory BillingAccountDto.fromJson(Map<String, dynamic> json) =>
       BillingAccountDto(
         id: json['id'] as String,
@@ -39,6 +47,12 @@ class BillingAccountDto {
             : SubscriptionDto.fromJson(
                 json['subscription'] as Map<String, dynamic>,
               ),
+        paymentMethod: json['paymentMethod'] == null
+            ? null
+            : PaymentMethodDto.fromJson(
+                json['paymentMethod'] as Map<String, dynamic>,
+              ),
+        amountDueCents: json['amountDueCents'] as int,
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -47,5 +61,7 @@ class BillingAccountDto {
     'billingEmail': billingEmail,
     if (organizationId != null) 'organizationId': organizationId,
     if (subscription != null) 'subscription': subscription?.toJson(),
+    if (paymentMethod != null) 'paymentMethod': paymentMethod?.toJson(),
+    'amountDueCents': amountDueCents,
   };
 }

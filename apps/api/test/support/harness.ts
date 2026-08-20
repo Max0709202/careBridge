@@ -46,7 +46,13 @@ export class TestHarness {
       .useValue(mail)
       .compile();
 
-    const app = moduleRef.createNestApplication({ logger: false });
+    const app = moduleRef.createNestApplication({
+      logger: false,
+      // Same as main.ts. Without it the payment webhook has no bytes to check
+      // a signature against, and the test would prove a signature check the
+      // deployed application does differently.
+      rawBody: true,
+    });
 
     app.setGlobalPrefix('api/v1');
     // Same as main.ts: the rate-limit tests set X-Forwarded-For to act as

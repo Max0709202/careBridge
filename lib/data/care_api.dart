@@ -317,6 +317,44 @@ class CareApi {
   Future<wire.BillingAccountDto> cancelSubscription() async =>
       wire.BillingAccountDto.fromJson(await _send('POST', '/billing/cancel'));
 
+  /// What this household has been billed, newest first.
+  Future<List<wire.InvoiceDto>> invoices() async => (await _sendList(
+    'GET',
+    '/billing/invoices',
+  )).map((e) => wire.InvoiceDto.fromJson(e as Map<String, dynamic>)).toList();
+
+  /// Puts a card on file.
+  ///
+  /// [token] is a reference obtained **directly from the payment processor**.
+  /// This app never holds a card number and this method cannot be given one:
+  /// the field is a token, the API refuses anything else, and ADR-0006 is the
+  /// reason the boundary sits here rather than one layer further in.
+  Future<wire.PaymentMethodDto> attachPaymentMethod(String token) async =>
+      wire.PaymentMethodDto.fromJson(
+        await _send(
+          'POST',
+          '/billing/payment-method',
+          body: {'token': token},
+          // Adding a card is double-tapped on a slow connection like anything
+          // else, and the second tap must not attach a second card.
+          idempotencyKey: newId(),
+        ),
+      );
+
+  Future<void> detachPaymentMethod(String id) async {
+    await _send('DELETE', '/billing/payment-method/$id');
+  }
+
+  /// Charges an open invoice now.
+  ///
+  /// Exists for the moment after a declined card is replaced: waiting a day
+  /// for the scheduled retry, while the screen still says the payment failed,
+  /// reads as the update not having worked.
+  Future<wire.InvoiceDto> payInvoice(String id) async =>
+      wire.InvoiceDto.fromJson(
+        await _send('POST', '/billing/invoices/$id/pay'),
+      );
+
   // ─── the care circle ──────────────────────────────────────────────────────
 
   Future<List<wire.InvitationDto>> invitations(String patientId) async =>

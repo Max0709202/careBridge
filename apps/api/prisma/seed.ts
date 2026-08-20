@@ -306,7 +306,18 @@ async function seedSubscriptions(input: {
   organizationId: string;
 }): Promise<void> {
   const { now, userId, organizationId } = input;
-  const startedAt = daysBefore(now, 40);
+
+  // Two different start dates, and the difference matters.
+  //
+  // The family is on the annual plan, so a period that began forty days ago
+  // still has ten months to run. The operator is on the monthly one — begin
+  // that forty days ago and its period ended ten days back, so the billing
+  // sweep would renew and re-charge it within an hour of the demo starting.
+  // A demo whose state changes underneath the person reading it is a demo
+  // nobody trusts. Each subscription starts far enough back to look
+  // established and recently enough to still be inside the period it paid for.
+  const familyStartedAt = daysBefore(now, 40);
+  const operatorStartedAt = daysBefore(now, 10);
 
   const familyAccount = await prisma.billingAccount.upsert({
     where: { ownerUserId: userId },
@@ -328,24 +339,28 @@ async function seedSubscriptions(input: {
     },
   });
 
+  await seedCard(familyAccount.id, 'family');
+
   await openSubscription({
     billingAccountId: familyAccount.id,
     code: 'family-standard',
     interval: 'annual',
     seats: 0,
-    startedAt,
+    startedAt: familyStartedAt,
   });
 
   const seats = await prisma.driver.count({
     where: { organizationId, status: 'approved' },
   });
 
+  await seedCard(operatorAccount.id, 'operator');
+
   const operatorSubscription = await openSubscription({
     billingAccountId: operatorAccount.id,
     code: 'dispatch-core',
     interval: 'monthly',
     seats,
-    startedAt,
+    startedAt: operatorStartedAt,
   });
 
   // The ledger behind the operator's seat count. Without it, "why were we
@@ -368,7 +383,7 @@ async function seedSubscriptions(input: {
           subscriptionId: operatorSubscription.id,
           driverId: driver.id,
           change: 'granted',
-          at: startedAt,
+          at: operatorStartedAt,
           seatsAfter: index + 1,
           // Granted at the start of the period, so there is nothing to prorate.
           prorationCents: 0,
@@ -376,6 +391,120 @@ async function seedSubscriptions(input: {
       });
     }
   }
+}
+
+/**
+ * A card on file, in the shape the local payments adapter mints.
+ *
+ * `4242` is Stripe's test card that settles, and the local adapter reads the
+ * same four digits — so the demo's renewals go through here exactly as they
+ * would against a Stripe test account. Nothing resembling a card number is
+ * stored: the reference is a token, the four digits are what a person needs to
+ * recognise which card is being charged, and there is no third thing.
+ *
+ * The seed is refused in production by `SEED_ON_START` and by config
+ * validation refusing the local payments adapter there, so a token this
+ * process invented can never be presented to a real processor.
+ */
+async function seedCard(billingAccountId: string, label: string): Promise<void> {
+  const externalId = `pm_local_4242_seed-${label}`;
+
+  await prisma.paymentMethod.upsert({
+    where: { externalId },
+    update: {},
+    create: {
+      billingAccountId,
+      externalId,
+      brand: 'visa',
+      last4: '4242',
+      expMonth: 12,
+      // Far enough out that a demo run in two years does not open on an
+      // "this card has expired" warning that has nothing to do with the point.
+      expYear: new Date().getUTCFullYear() + 4,
+      isDefault: true,
+    },
+  });
+}
+
+/**
+ * The invoice a seeded period was paid by.
+ *
+ * Without it the demo shows a subscription that has been running for weeks and
+ * has never been billed — which is precisely the state the billing sweep now
+ * exists to make impossible, so seeding it would be seeding a bug. The payment
+ * row is written too, because an invoice marked paid with nothing that paid it
+ * cannot be reconciled against anything.
+ */
+/** Writes the missing invoice for every period of an already-seeded subscription. */
+async function backfillInvoices(
+  billingAccountId: string,
+  subscriptionId: string,
+): Promise<void> {
+  const periods = await prisma.subscriptionPeriod.findMany({
+    where: { subscriptionId, invoice: null },
+    orderBy: { sequence: 'asc' },
+  });
+
+  for (const period of periods) {
+    await seedPaidInvoice({
+      billingAccountId,
+      subscriptionId,
+      periodId: period.id,
+      totalCents: period.totalCents,
+      lines: period.lines as Prisma.InputJsonValue,
+      paidAt: period.startsAt,
+    });
+  }
+}
+
+async function seedPaidInvoice(input: {
+  billingAccountId: string;
+  subscriptionId: string;
+  periodId: string;
+  totalCents: number;
+  lines: Prisma.InputJsonValue;
+  paidAt: Date;
+}): Promise<void> {
+  const existing = await prisma.invoice.findUnique({
+    where: { periodId: input.periodId },
+  });
+  if (existing) return;
+
+  const invoice = await prisma.invoice.create({
+    data: {
+      billingAccountId: input.billingAccountId,
+      subscriptionId: input.subscriptionId,
+      periodId: input.periodId,
+      reason: 'subscriptionPeriod',
+      status: 'paid',
+      subtotalCents: input.totalCents,
+      totalCents: input.totalCents,
+      amountPaidCents: input.totalCents,
+      lines: input.lines,
+      issuedAt: input.paidAt,
+      dueAt: input.paidAt,
+      paidAt: input.paidAt,
+      attemptCount: 1,
+    },
+  });
+
+  const card = await prisma.paymentMethod.findFirst({
+    where: { billingAccountId: input.billingAccountId, isDefault: true },
+  });
+
+  await prisma.payment.create({
+    data: {
+      invoiceId: invoice.id,
+      billingAccountId: input.billingAccountId,
+      paymentMethodId: card?.id ?? null,
+      attempt: 1,
+      amountCents: input.totalCents,
+      status: 'succeeded',
+      externalPaymentId: `pi_local_seed-${invoice.id}`,
+      idempotencyKey: `inv:${invoice.id}:attempt:1`,
+      settledAt: input.paidAt,
+    },
+  });
 }
 
 async function openSubscription(input: {
@@ -393,7 +522,16 @@ async function openSubscription(input: {
       status: { in: ['trialing', 'active', 'pastDue', 'pendingCancellation'] },
     },
   });
-  if (existing) return existing;
+
+  // Already seeded. Still back-fill the invoices for its periods rather than
+  // returning straight away: a subscription with periods and no invoices is
+  // exactly the state the billing sweep exists to make impossible, and a
+  // database seeded before invoices existed is sitting in it. Keyed on the
+  // period, so running this a second time writes nothing.
+  if (existing) {
+    await backfillInvoices(billingAccountId, existing.id);
+    return existing;
+  }
 
   const plan = await prisma.subscriptionPlan.findFirstOrThrow({
     where: { code, interval, active: true },
@@ -438,7 +576,14 @@ async function openSubscription(input: {
 
   const base = quote.lines[0]?.amount.cents ?? 0;
 
-  await prisma.subscriptionPeriod.create({
+  const lines = quote.lines.map((line) => ({
+    label: line.label,
+    quantity: line.quantity,
+    unitPriceCents: line.unitPrice.cents,
+    amountCents: line.amount.cents,
+  }));
+
+  const period = await prisma.subscriptionPeriod.create({
     data: {
       subscriptionId: subscription.id,
       sequence: 0,
@@ -451,13 +596,17 @@ async function openSubscription(input: {
       basePriceCents: base,
       seatChargeCents: quote.total.cents - base,
       totalCents: quote.total.cents,
-      lines: quote.lines.map((line) => ({
-        label: line.label,
-        quantity: line.quantity,
-        unitPriceCents: line.unitPrice.cents,
-        amountCents: line.amount.cents,
-      })),
+      lines,
     },
+  });
+
+  await seedPaidInvoice({
+    billingAccountId,
+    subscriptionId: subscription.id,
+    periodId: period.id,
+    totalCents: quote.total.cents,
+    lines,
+    paidAt: startedAt,
   });
 
   return subscription;

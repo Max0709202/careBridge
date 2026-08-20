@@ -16,7 +16,14 @@ async function bootstrap(): Promise<void> {
   // Buffered until the pino logger is resolved, so the framework's own startup
   // lines go through the redaction denylist like everything else rather than
   // being printed by Nest's default logger before we can replace it.
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+    // Keeps the exact bytes of each request alongside the parsed body. The
+    // payment webhook's signature is computed over them, and a body that has
+    // been through a JSON parser and re-serialised will not verify — key
+    // order and whitespace are both part of what was signed.
+    rawBody: true,
+  });
 
   const config = app.get<AppConfig>(APP_CONFIG);
   const rootLogger = app.get<PinoLogger>(LOGGER);
@@ -80,6 +87,7 @@ async function bootstrap(): Promise<void> {
         mail: config.MAIL_DRIVER,
         push: config.PUSH_DRIVER,
         maps: config.MAPS_DRIVER,
+        payments: config.PAYMENTS_DRIVER,
         scheduler: config.REDIS_URL ? 'bullmq' : 'in-process',
       },
     },

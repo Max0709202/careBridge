@@ -663,8 +663,27 @@ domain; legal review of terms and consent copy.
 
 **Already landed ahead of this stage:** the plan catalogue, both billing
 accounts, the subscription lifecycle, seat accounting and entitlement
-enforcement. Stage 4 adds the money movement, not the model — an unpaid period
-is a period with no payment against it, not a missing row.
+enforcement.
+
+**Landed since (slice one of this stage — the money movement):** a payments
+port with a Stripe adapter and a local one that scripts its outcomes from the
+card's last four digits, so a decline and the dunning that follows it are
+reachable without an account; invoices, payment attempts and cards on file;
+`BillingCycleService`, the hourly sweep that ends trials, renews periods,
+completes cancellations and expires a closed grace window — which nothing did
+before, with the consequence that every trial entitled the product permanently
+and no period was ever billed; the dunning schedule, pinned to land its last
+attempt inside the shortest grace window any plan offers; and the signed
+webhook endpoint, whose event ids are claimed by a unique constraint so a
+redelivery cannot credit an account twice.
+
+**Still outstanding in this stage:** the administration surfaces — audit-log
+viewer, driver approval, refund initiation, feature flags; the operations
+analytics dashboard; Terraform and the deployment pipeline; the backup restore
+rehearsal; and the pilot documentation set. Refunds are *reconciled* rather
+than initiated: a refund issued in the processor's console lands against its
+invoice through the webhook, and there is deliberately no endpoint to start one
+without an approval surface behind it.
 
 **Risks:** payment/ledger drift (reconciliation job plus alerting); webhook
 replay and out-of-order delivery (idempotency table plus event-ID uniqueness);
