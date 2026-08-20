@@ -49,6 +49,11 @@ Three ways out, in order of preference:
 **Proposal:** auto-assignment plus REST endpoints in Stage 3, `ops-console`
 (Flutter Web) delivered at the end of Stage 3. Flagged as risk R1.
 
+**Resolved.** The REST endpoints and the console are both built. Assignment is
+still manual — a dispatcher picks from a queue the server has ordered and
+filtered — and auto-assignment remains future work that will rank candidates
+`driverEligibility` has already filtered, rather than replacing it.
+
 ---
 
 # Section 1 — Understanding of CareBridge
@@ -617,13 +622,25 @@ the dispatch queue ordered by when the car is needed; assignment and
 reassignment-with-reason through the existing ride state machine, replacing the
 scripted stand-in rather than adding to it.
 
+**Landed since (slice two — the dispatcher's surface):** `apps/ops_console`, a
+Flutter Web console over the dispatch API. It covers the queue ordered by when
+the car is needed, assignment and reassignment-with-reason, the roster with the
+shift/status split, the fleet, and the seat ledger behind the operator's
+invoice. It is a **separate origin and a separate image** from the family app,
+and it shares the generated client, the domain mirrors and the failure taxonomy
+rather than reimplementing them — the last of those now lives in
+`packages/dart/carebridge_client`, because the API's deliberate ambiguity
+between "no such record" and "not yours" is precisely the thing a second
+implementation would undo. This closes risk R1.
+
 **Still outstanding in this stage:** driver documents to S3 and the upload
 behind approval; the driver app and its adaptive-cadence location service; the
 Socket.IO gateway and the Redis position store; the ETA service; the staleness
-watchdog; the Android foreground service; and `ops-console`, which is the
-Flutter Web surface over the dispatch API that now exists.
+watchdog; and the Android foreground service. The console has no live map for
+the same reason: there is no WebSocket surface yet for it to read.
 
-**Risks (highest of any stage):** background-location platform restrictions and
+**Risks (highest of any stage):** ~~Flutter Web ops console unvalidated~~
+(R1, resolved — the console is built, tested and containerised); background-location platform restrictions and
 store review (T2); battery drain damaging driver adoption; map/routing cost at
 scale; WebSocket authorisation errors leaking a patient's live position — treated
 as a **P0 security surface**; connectivity dead zones; ETA accuracy setting false
@@ -1020,7 +1037,7 @@ carebridge/
 │   │   ├── android/  ios/
 │   │   └── pubspec.yaml
 │   │
-│   └── ops_console/                  # Flutter Web — dispatch + admin (Stage 3)
+│   └── ops_console/                  # Flutter Web — dispatch console (built)
 │       ├── lib/
 │       └── pubspec.yaml
 │
@@ -1242,7 +1259,7 @@ first, tracking second, `ops-console` last.
 
 | ID | Risk | Mitigation |
 | -- | ---- | ---------- |
-| **R1** | Dispatcher has no adequate surface until the Flutter Web console lands. | **Partly closed.** The REST surface — roster, shifts, queue, assign, reassign — is built and tested as of Stage 3 slice one. Auto-assignment is still deferred (the eligibility filter it would rank is in place); the console is still needed before Stage 3 closes, and still needs sign-off. |
+| **R1** | Dispatcher has no adequate surface until the Flutter Web console lands. | **Closed.** The REST surface — roster, shifts, queue, assign, reassign — landed in Stage 3 slice one; `apps/ops_console` landed in slice two with the queue, assignment, roster, fleet and seat ledger, on its own origin and image. Auto-assignment remains deferred by choice: the eligibility filter it would rank is in place, and manual assignment from a server-ordered queue is the MVP. Still wants a dispatcher's sign-off against real traffic. |
 | **R2** | Background location on iOS/Android may fail store review or drain battery. | Foreground-service-first (T2); real-device field test is a Stage 3 acceptance item. |
 | **R3** | Flutter Web accessibility is weaker than DOM. | Internal tool only; patient-facing surfaces stay native. |
 | **R4** | Map/routing spend scales with tracked rides. | Vendor behind an interface; ETA throttled and cached; cost alarm from Stage 3. |

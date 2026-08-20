@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
-import '../../core/failures.dart';
+import 'package:carebridge_client/carebridge_client.dart';
 import '../../core/formatting.dart';
 import '../../domain/models.dart';
 import '../../state/providers.dart';

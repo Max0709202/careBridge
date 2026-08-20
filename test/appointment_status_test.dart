@@ -1,4 +1,4 @@
-import 'package:carebridge_family/core/failures.dart';
+import 'package:carebridge_client/carebridge_client.dart';
 import 'package:carebridge_family/domain/appointment_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 

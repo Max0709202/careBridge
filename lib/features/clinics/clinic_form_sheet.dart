@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
-import '../../core/ids.dart';
+import 'package:carebridge_client/carebridge_client.dart';
 import '../../domain/models.dart';
 import '../../state/providers.dart';
 import '../../widgets/common.dart';

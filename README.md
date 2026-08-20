@@ -25,14 +25,16 @@ docker compose up --build
 Then open **<http://localhost:8080>** and sign in with the pre-filled
 credentials (`sarah@example.com` / `demo-password`).
 
-Six containers come up: PostgreSQL 16, Redis 7, Mailpit, MinIO, the API, and the
-Flutter web app behind nginx. Migrations apply on start and the demo family is
+Seven containers come up: PostgreSQL 16, Redis 7, Mailpit, MinIO, the API, and
+the two Flutter web surfaces behind nginx — the family app and the dispatch
+console, on separate origins. Migrations apply on start and the demo family is
 seeded (idempotently — set `SEED_ON_START=false` for an empty database).
 Everything you do is written to Postgres and survives `docker compose restart`.
 
 | | |
 | --- | --- |
 | App | <http://localhost:8080> |
+| **Ops console** | <http://localhost:8081> — the dispatch surface, same credentials |
 | API | <http://localhost:8080/api/v1> (proxied), or `:3000` directly |
 | API docs | <http://localhost:3000/api/v1/docs> — absent in production |
 | Health | <http://localhost:8080/api/v1/health> |
@@ -57,6 +59,12 @@ flutter run -d chrome \
 The `--dart-define` is required off the web container, because the default base
 URL is the relative `/api/v1` that the nginx proxy serves.
 
+The dispatch console runs the same way, and `make ops` is the shorthand:
+
+```bash
+make ops                     # apps/ops_console, in Chrome, against :3000
+```
+
 ### Checks
 
 ```bash
@@ -78,6 +86,7 @@ Individually:
 pnpm --filter @carebridge/api test          # 320 unit tests, with coverage floors
 pnpm --filter @carebridge/api exec eslint . # boundaries, no-console, no process.env
 flutter analyze && flutter test             # the app
+dart run melos run test                     # the console and shared packages
 ```
 
 Needs **pnpm 9** and **Node 22** for the API, and the **Flutter stable SDK
@@ -342,6 +351,26 @@ dispatcher's sense of fairness rather than for the person waiting. A pickup time
 that has already passed with nobody assigned gets its own band — that is a
 failure in progress, not an urgent task.
 
+**A ride nobody can take is a different problem from a ride nobody has taken
+yet.** One needs a tap and the other needs a phone call, and a queue that
+presents them identically buries the second behind the first. So the dispatch
+API returns *every* reason each driver is unavailable rather than the first,
+and the console counts them: "four off shift" is a different call from "nobody
+has an accessible vehicle", and only one of those has a remedy the console can
+suggest. The rides with nobody available are called out in the summary, above
+the ones that merely need assigning.
+
+**The console and the family app are separate origins.** Not a route inside one
+bundle: they are different products for different people, and one origin would
+mean every family downloads the dispatch code, every ops release re-deploys the
+family app, and one XSS in either surface reaches both. Separate also means a
+deployment can put the console behind an office allowlist without touching the
+app somebody's daughter opens on a train. What they *do* share is the generated
+client, the domain mirrors and — in `packages/dart/carebridge_client` — the
+failure taxonomy: the API answers "no such record" and "not yours" identically
+on purpose, and a second mapping of that envelope is exactly where the
+ambiguity would get quietly undone.
+
 **Nothing entitles forever, and the clock is a sweep.** A subscription used to
 be written once and never moved: `isEntitling` answers `true` for `trialing`
 and `active` without consulting a date, and nothing anywhere advanced either —
@@ -469,9 +498,12 @@ where the two share a name.
 
 ## Not built
 
-Driver app · `ops_console` (the dispatch **API** is built; the Flutter Web
-surface is not) · real maps and routing · WebSocket tracking · S3 driver
-documents · caregiver marketplace · clinic portal · Terraform and AWS.
+Driver app · real maps and routing · WebSocket tracking · S3 driver documents ·
+caregiver marketplace · clinic portal · Terraform and AWS.
+
+The ops console covers the queue, assignment, the roster, the fleet and the
+seat ledger. Live tracking on a dispatcher's map is not there, because there is
+no WebSocket surface yet for it to read.
 
 Money moves, but only through the local adapter by default: `PAYMENTS_DRIVER`
 selects between it and Stripe, and the Stripe path is written and typed but has

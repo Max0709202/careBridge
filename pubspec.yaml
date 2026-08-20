@@ -11,6 +11,8 @@ version: 0.1.0+1
 # response is.
 workspace:
   - packages/dart/carebridge_api
+  - packages/dart/carebridge_client
+  - apps/ops_console
 
 environment:
   # Widened from ^3.12.2 so the app builds on the newest published Flutter
@@ -47,6 +49,13 @@ dependencies:
   # is the only safe number.
   carebridge_api:
     path: packages/dart/carebridge_api
+
+  # Failure types, secure token storage and the error mapping the console
+  # shares. Extracted rather than copied: the API answers "no such record" and
+  # "not yours" identically on purpose, and a second mapping of that envelope
+  # is where the ambiguity would get quietly undone.
+  carebridge_client:
+    path: packages/dart/carebridge_client
 
 dev_dependencies:
   flutter_test:

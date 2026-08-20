@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app/theme.dart';
-import '../core/failures.dart';
+import 'package:carebridge_client/carebridge_client.dart';
 
 /// A bordered content card. Flat rather than shadowed: elevation reads poorly at
 /// high contrast settings and adds nothing here.

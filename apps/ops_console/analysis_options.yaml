@@ -1,0 +1,6 @@
+# The same lint set as the family app and the shared packages.
+#
+# One rule set across the workspace on purpose: a console held to a looser
+# standard than the app is a console that accumulates the warnings nobody
+# reads, and both are written by the same people against the same API.
+include: package:flutter_lints/flutter.yaml

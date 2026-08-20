@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/clock.dart';
-import '../core/failures.dart';
+import 'package:carebridge_client/carebridge_client.dart';
 import '../core/geo.dart';
 import '../data/care_api.dart';
 import '../data/care_state.dart';
-import '../data/token_store.dart';
 import '../domain/models.dart';
 import '../domain/permissions.dart';
 

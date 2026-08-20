@@ -1,4 +1,4 @@
-import '../core/failures.dart';
+import 'package:carebridge_client/carebridge_client.dart';
 
 /// The lifecycle of a single ride leg.
 ///

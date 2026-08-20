@@ -9,13 +9,11 @@ import 'dart:convert';
 import 'package:carebridge_api/carebridge_api.dart' as wire;
 import 'package:http/http.dart' as http;
 
-import '../core/failures.dart';
-import '../core/ids.dart';
+import 'package:carebridge_client/carebridge_client.dart';
 import '../domain/models.dart';
 import '../domain/permissions.dart';
 import 'care_codec.dart';
 import 'care_state.dart';
-import 'token_store.dart';
 
 /// A snapshot plus the ids of any preview trips the server is running.
 class CareSnapshot {
@@ -668,60 +666,16 @@ class CareApi {
     throw _failureFrom(response.statusCode, body, response.headers);
   }
 
-  /// Maps the server's error envelope onto the same [Failure] types the app
-  /// already renders, so a screen's `catch` does not care where the rule was
-  /// enforced. Note that 404 stays deliberately ambiguous: the server refuses
-  /// to say whether a record is missing or merely not ours, and the client must
-  /// not invent a distinction it was not given.
+  /// Maps the server's error envelope onto the [Failure] types the UI renders.
+  ///
+  /// Delegated to `carebridge_client` rather than implemented here, because
+  /// the ops console needs the identical mapping and the `404` branch is the
+  /// reason: the API answers "no such record" and "not yours" identically on
+  /// purpose, and a second implementation is where that ambiguity gets
+  /// accidentally undone.
   Failure _failureFrom(
     int status,
     Map<String, dynamic> body,
     Map<String, String> headers,
-  ) {
-    final error = body['error'] as Map<String, dynamic>?;
-    final message = error?['message'] as String?;
-    final code = error?['code'] as String?;
-    final field = error?['field'] as String?;
-
-    return switch (code) {
-      'validation' => ValidationFailure(
-        message ?? 'That request could not be processed.',
-        field: field,
-      ),
-      'authentication' => AuthenticationFailure(
-        message ?? 'Please sign in again.',
-      ),
-      'not_found_or_forbidden' => const NotFoundFailure(),
-      'invalid_transition' => const InvalidTransitionFailure(
-        'unknown',
-        'unknown',
-      ),
-      'conflict' => ValidationFailure(
-        message ?? 'That conflicts with something else.',
-      ),
-      'rate_limited' => RateLimitedFailure(
-        retryAfter: _retryAfter(headers),
-        message: message ?? 'Too many attempts. Please wait and try again.',
-      ),
-      _ => switch (status) {
-        400 => ValidationFailure(
-          message ?? 'That request could not be processed.',
-        ),
-        401 => const AuthenticationFailure(),
-        403 || 404 => const NotFoundFailure(),
-        429 => RateLimitedFailure(retryAfter: _retryAfter(headers)),
-        _ => NetworkFailure(
-          message ?? 'Something went wrong on our side. Please try again.',
-        ),
-      },
-    };
-  }
-
-  /// `Retry-After` in seconds. Absent or unparseable means "we were not told" —
-  /// which the screen renders as a generic wait rather than inventing a number
-  /// and counting down to a retry that is refused again.
-  Duration? _retryAfter(Map<String, String> headers) {
-    final seconds = int.tryParse(headers['retry-after'] ?? '');
-    return seconds == null || seconds <= 0 ? null : Duration(seconds: seconds);
-  }
+  ) => failureFromResponse(status: status, body: body, headers: headers);
 }

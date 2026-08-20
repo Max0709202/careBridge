@@ -213,6 +213,15 @@ jobs:
       # the run above just wrote is checked here.
       - run: node scripts/check-dart-coverage.mjs
 
+      # Everything the root package is not. `flutter analyze` and
+      # `flutter test` above cover the workspace *root* — the family app — and
+      # a root is never a member of its own workspace, so the console and the
+      # shared packages are invisible to them. Without these two lines the ops
+      # console would analyse and test on a developer's machine and never in
+      # CI, which is the same as not being tested.
+      - run: dart run melos run analyze
+      - run: dart run melos run test
+
       # The generated client is analysed separately and on purpose. It is a
       # pure Dart package, and it is the one place a generator bug surfaces as
       # a compile error rather than as a test that quietly does not exist.
@@ -268,3 +277,28 @@ jobs:
           echo "::error::The image did not answer /health/live"
           docker logs api-smoke
           exit 1
+
+      # Both web images, built and not pushed, for the reason the API image is.
+      # They are also the only check that the pub *workspace* resolves inside a
+      # container: each Dockerfile copies every member's pubspec by hand, and a
+      # member added without a matching COPY breaks the build here and nowhere
+      # else.
+      - name: Build the family web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.web
+          push: false
+          tags: carebridge-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build the ops console image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.ops
+          push: false
+          tags: carebridge-ops:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

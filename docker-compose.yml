@@ -148,6 +148,25 @@ services:
     ports:
       - '${WEB_PORT:-8080}:80'
 
+  # The dispatch console, on its own origin.
+  #
+  # A separate service rather than a path on `web`, for the reason the image is
+  # separate: the two are different products for different people, and one
+  # origin would mean every family downloads the dispatch bundle and one XSS in
+  # either surface reaches both. A deployment can put this port behind an
+  # office allowlist without touching the app a patient's daughter opens on a
+  # train.
+  ops:
+    build:
+      context: .
+      dockerfile: Dockerfile.ops
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '${OPS_PORT:-8081}:80'
+
 volumes:
   carebridge-db:
   carebridge-redis:

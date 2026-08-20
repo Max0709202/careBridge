@@ -14,7 +14,15 @@ WORKDIR /app
 
 # Dependencies resolve on their own layer, so editing Dart source does not
 # re-run `pub get`.
+#
+# Every workspace member's pubspec is copied, not just the root's: pub resolves
+# a workspace as a unit and fails outright if a member listed under
+# `workspace:` is missing. Adding a member without adding it here breaks this
+# build and nothing else, which is a slow way to find out.
 COPY pubspec.yaml pubspec.lock ./
+COPY packages/dart/carebridge_api/pubspec.yaml packages/dart/carebridge_api/
+COPY packages/dart/carebridge_client/pubspec.yaml packages/dart/carebridge_client/
+COPY apps/ops_console/pubspec.yaml apps/ops_console/
 RUN flutter pub get
 
 COPY . .

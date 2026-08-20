@@ -61,3 +61,8 @@ apps/api/dist/
 #   (packages/dart/carebridge_api IS committed; this covers Dart build output)
 packages/dart/*/.dart_tool/
 packages/dart/*/pubspec.lock
+# `flutter test` writes here for any package that has tests, which
+# carebridge_client now does. `/build/` above is anchored to the repo root and
+# does not cover a nested one.
+packages/dart/*/build/
+apps/*/build/

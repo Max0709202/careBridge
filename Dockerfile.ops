@@ -1,0 +1,54 @@
+# The ops console, built for web and served by nginx.
+#
+# Deliberately a second image rather than a second route inside the family
+# app's bundle. The two are different products for different people, and a
+# dispatcher's console shipped inside the family app would mean every family
+# downloads the dispatch code, every ops release re-deploys the family app, and
+# one XSS in either surface reaches both. Separate origins also mean the
+# console can be put behind an office IP allowlist without touching the app a
+# patient's daughter uses from a train.
+#
+# It shares the nginx configuration with the family image, including the
+# same-origin `/api` proxy — the console never learns the API's hostname
+# either.
+
+FROM ghcr.io/cirruslabs/flutter:3.44.0 AS builder
+
+WORKDIR /app
+
+# Every workspace member's pubspec, not just the root's: pub resolves a
+# workspace as a unit and fails outright if one listed under `workspace:` is
+# missing.
+COPY pubspec.yaml pubspec.lock ./
+COPY packages/dart/carebridge_api/pubspec.yaml packages/dart/carebridge_api/
+COPY packages/dart/carebridge_client/pubspec.yaml packages/dart/carebridge_client/
+COPY apps/ops_console/pubspec.yaml apps/ops_console/
+RUN flutter pub get
+
+COPY . .
+
+WORKDIR /app/apps/ops_console
+
+# Same two flags as the family image, and they are load-bearing for the same
+# reason:
+# --csp:                  dart2js emits no `eval`, so the served policy needs
+#                         no 'unsafe-eval'.
+# --no-web-resources-cdn: CanvasKit is built in rather than fetched from
+#                         gstatic at runtime, so the origin makes no
+#                         third-party request and the policy can be 'self'
+#                         throughout.
+ARG API_BASE_URL=/api/v1
+RUN flutter build web --release --csp --no-web-resources-cdn \
+    --dart-define=CAREBRIDGE_API_BASE_URL="${API_BASE_URL}"
+
+
+FROM nginx:1.27-alpine
+
+COPY --from=builder /app/apps/ops_console/build/web /usr/share/nginx/html
+COPY infrastructure/nginx/carebridge.conf /etc/nginx/conf.d/default.conf
+COPY infrastructure/nginx/security-headers.conf /etc/nginx/carebridge/security-headers.conf
+
+EXPOSE 80
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1

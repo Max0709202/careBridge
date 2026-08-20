@@ -21,6 +21,11 @@ install: ## Install TypeScript and Dart dependencies.
 	$(PNPM) install
 	$(MELOS) bootstrap
 
+.PHONY: ops
+ops: ## Run the dispatch console in Chrome against a local API.
+	cd apps/ops_console && flutter run -d chrome \
+		--dart-define=CAREBRIDGE_API_BASE_URL=http://localhost:3000/api/v1
+
 .PHONY: up
 up: ## Start Postgres, Redis, Mailpit and MinIO.
 	docker compose up -d db redis mailpit minio
@@ -78,6 +83,7 @@ lint: ## ESLint over the API, dart analyze over the Dart packages.
 	$(PNPM) run lint
 	@# The family app is the pub *workspace root*, and a root is never a member
 	@# of its own workspace — so melos does not see it. Driven directly here.
+	@# The console and the shared packages *are* members, so melos covers them.
 	flutter analyze
 	$(MELOS) run analyze
 
@@ -93,6 +99,8 @@ test: ## Unit tests, with the coverage floors enforced.
 	$(PNPM) run test
 	flutter test --coverage
 	node scripts/check-dart-coverage.mjs
+	@# Covers the ops console and carebridge_client, which are workspace
+	@# members rather than the root package.
 	$(MELOS) run test
 
 .PHONY: test-integration

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:carebridge_family/data/care_api.dart';
-import 'package:carebridge_family/data/token_store.dart';
+import 'package:carebridge_client/carebridge_client.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
