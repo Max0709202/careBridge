@@ -286,7 +286,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     }
     if (!config.REDIS_URL) {
       throw new Error(
-        'REDIS_URL is required in production: the in-process fallbacks lose every pending job on deploy, double-fire with more than one instance, and hold rate-limit counters per process — so the effective limit multiplies by the instance count.',
+        'REDIS_URL is required in production: the in-process fallbacks lose every pending job on deploy, double-fire with more than one instance, hold rate-limit counters per process — so the effective limit multiplies by the instance count — and keep live positions inside a single process, so a family connected to one instance never sees a car reporting to another.',
       );
     }
   }

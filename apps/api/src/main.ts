@@ -89,6 +89,7 @@ async function bootstrap(): Promise<void> {
         maps: config.MAPS_DRIVER,
         payments: config.PAYMENTS_DRIVER,
         scheduler: config.REDIS_URL ? 'bullmq' : 'in-process',
+        tracking: config.REDIS_URL ? 'redis' : 'in-process',
       },
     },
     'CareBridge API listening',

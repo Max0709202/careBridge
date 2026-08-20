@@ -60,7 +60,18 @@ class TrackingScreen extends ConsumerWidget {
     }
 
     final patient = state.patientById(ride.patientId);
-    final position = ride.lastKnownPosition;
+
+    // The live stream, preferred over the polled snapshot when it has anything
+    // newer. Both are the same shape and both are aged against `capturedAt`,
+    // so the choice is only ever "which of these two readings is more recent"
+    // — never a different rule for a pushed position than a polled one.
+    //
+    // The snapshot is the floor rather than a fallback: a socket that has not
+    // connected yet, or one the server refused, leaves the screen showing
+    // exactly what it showed before live tracking existed.
+    final live = ref.watch(liveTrackingProvider(rideId)).value;
+    final position = TrackingPoint.newerOf(ride.lastKnownPosition, live?.point);
+    final etaMinutes = live?.etaMinutes ?? ride.etaMinutes;
     final age = position == null ? null : now.difference(position.capturedAt);
     final stale = age != null && age > _staleAfter;
     final lost = age != null && age > _lostAfter;
@@ -114,7 +125,7 @@ class TrackingScreen extends ConsumerWidget {
                 _FreshnessBanner(age: age, stale: stale, lost: lost),
 
                 const SizedBox(height: AppSpacing.md),
-                _StatusHeadline(ride: ride, lost: lost),
+                _StatusHeadline(ride: ride, lost: lost, etaMinutes: etaMinutes),
 
                 if (ride.isDelayed) ...[
                   const SizedBox(height: AppSpacing.md),
@@ -248,15 +259,24 @@ class _FreshnessBanner extends StatelessWidget {
 }
 
 class _StatusHeadline extends StatelessWidget {
-  const _StatusHeadline({required this.ride, required this.lost});
+  const _StatusHeadline({
+    required this.ride,
+    required this.lost,
+    required this.etaMinutes,
+  });
 
   final Ride ride;
   final bool lost;
 
+  /// From the live stream where there is one, and from the polled snapshot
+  /// otherwise. Passed in rather than read off the ride so the headline cannot
+  /// quote an ETA older than the position drawn above it.
+  final int? etaMinutes;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final eta = ride.etaMinutes;
+    final eta = etaMinutes;
 
     final headline = switch (ride.status) {
       RideStatus.driverEnRoute =>

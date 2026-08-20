@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { ConfigModule } from '../../common/config.module';
 import { BillingModule } from '../billing/billing.module';
+import { TrackingModule } from '../tracking/tracking.module';
 
 import {
   AppointmentsController,
@@ -33,7 +34,7 @@ import { NotificationDispatchService } from './notification-dispatch.service';
   // BillingModule answers two questions rides cannot answer for themselves:
   // whether the household is on a plan at all, and whether the operator's
   // seats have already funded the platform's cut of this fare.
-  imports: [ConfigModule, BillingModule],
+  imports: [ConfigModule, BillingModule, TrackingModule],
   controllers: [
     CareController,
     MeController,

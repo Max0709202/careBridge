@@ -7,6 +7,7 @@ import 'package:carebridge_client/carebridge_client.dart';
 import '../core/geo.dart';
 import '../data/care_api.dart';
 import '../data/care_state.dart';
+import '../data/tracking_socket.dart';
 import '../domain/models.dart';
 import '../domain/permissions.dart';
 
@@ -21,6 +22,29 @@ final careApiProvider = Provider<CareApi>((ref) {
   ref.onDispose(api.dispose);
   return api;
 });
+
+/// The live position stream.
+///
+/// One socket for the app, held here rather than per screen: the gateway
+/// authorises each subscription, but a second connection would mean a second
+/// handshake presenting the same token, and the session model treats a
+/// duplicate presentation as something to be suspicious of.
+final trackingSocketProvider = Provider<TrackingSocket>((ref) {
+  final socket = TrackingSocket(tokens: ref.watch(tokenStoreProvider));
+  ref.onDispose(socket.dispose);
+  return socket;
+});
+
+/// Live updates for one ride, while a screen is watching it.
+///
+/// `autoDispose` is what closes the subscription: leaving the tracking screen
+/// cancels the stream, which sends `unwatch` and — when it is the last one —
+/// drops the socket. A subscription that outlived its screen would keep a
+/// patient's position flowing to a client nobody is looking at.
+final liveTrackingProvider = StreamProvider.autoDispose
+    .family<TrackingUpdate, String>(
+      (ref, rideId) => ref.watch(trackingSocketProvider).watch(rideId),
+    );
 
 final careProvider = NotifierProvider<CareNotifier, CareState>(
   CareNotifier.new,
@@ -330,17 +354,22 @@ class CareNotifier extends Notifier<CareState> {
 
   /// Polls only while the server is actually running a trip.
   ///
-  /// A permanent poll would keep a phone awake and a database busy for the
-  /// 99% of the time when nothing is moving. Long-lived push over the
-  /// WebSocket gateway replaces this in Stage 3; until then, polling exactly
-  /// when there is something to see is the honest middle.
+  /// A permanent poll would keep a phone awake and a database busy for the 99%
+  /// of the time when nothing is moving.
+  ///
+  /// Four seconds rather than the 1.5 it used to be. What was changing every
+  /// second was the **position**, and that now arrives by push over the
+  /// tracking gateway — see [liveTrackingProvider]. What is left for the poll
+  /// is status changes, which happen seconds apart at most, so polling for
+  /// them four times as slowly costs nothing anybody can see and cuts the
+  /// request rate on the busiest screen by the same factor.
   void _syncPolling() {
     if (_runningPreviews.isEmpty) {
       _stopPolling();
       return;
     }
     _pollTimer ??= Timer.periodic(
-      const Duration(milliseconds: 1500),
+      const Duration(seconds: 4),
       (_) => unawaited(_poll()),
     );
   }

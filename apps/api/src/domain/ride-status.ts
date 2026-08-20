@@ -51,13 +51,21 @@ const TERMINAL = new Set<RideStatus>(['completed', 'canceled', 'noShow']);
  * inbound location point. Tracking begins when the driver sets off and ends the
  * moment the ride reaches a terminal state.
  */
-const LOCATION_SHARING = new Set<RideStatus>([
+export const LOCATION_SHARING_STATUSES: readonly RideStatus[] = [
   'driverEnRoute',
   'driverArrived',
   'passengerOnboard',
   'inProgress',
   'arrivedAtDestination',
-]);
+];
+
+/**
+ * Exported as a list as well as a set because the staleness watchdog queries
+ * on it — `status: { in: [...] }` needs the values, and a second hand-written
+ * list in the query would be a second definition of "tracking is legal right
+ * now" that could drift from this one.
+ */
+const LOCATION_SHARING = new Set<RideStatus>(LOCATION_SHARING_STATUSES);
 
 const PASSENGER_ONBOARD = new Set<RideStatus>(['passengerOnboard', 'inProgress']);
 

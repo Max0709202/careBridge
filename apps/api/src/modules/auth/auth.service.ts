@@ -6,6 +6,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { BillingService } from '../billing/billing.service';
+import { AccessTokenVerifier } from './access-token.module';
 import { AppConfig } from '../../common/config';
 import {
   AuthenticationError,
@@ -108,6 +109,7 @@ export class AuthService {
     @Inject(RATE_LIMITER) private readonly rateLimiter: RateLimiterPort,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     private readonly billing: BillingService,
+    private readonly accessTokens: AccessTokenVerifier,
   ) {
     this.dummyHash = argon2.hash(randomBytes(32).toString('hex'), ARGON2_OPTIONS);
   }
@@ -646,24 +648,16 @@ export class AuthService {
    * protected is a vulnerable person's home address and live position, that is
    * the right trade.
    */
-  async verifyAccessToken(token: string): Promise<AuthenticatedCaller> {
-    let claims: AccessTokenClaims;
-    try {
-      claims = await this.jwt.verifyAsync<AccessTokenClaims>(token);
-    } catch {
-      throw new AuthenticationError();
-    }
-
-    if (!claims.sub) throw new AuthenticationError();
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: claims.sub },
-      select: { tokenVersion: true },
-    });
-
-    if (!user || user.tokenVersion !== claims.v) throw new AuthenticationError();
-
-    return { userId: claims.sub, familyId: claims.fam ?? '' };
+  /**
+   * Verifies an access token.
+   *
+   * Delegated to `AccessTokenVerifier` rather than implemented here, because
+   * the tracking gateway needs the identical check and a second copy would be
+   * a second implementation of the `tokenVersion` comparison — the line that
+   * makes "sign out everywhere" real. See the note on that class.
+   */
+  verifyAccessToken(token: string): Promise<AuthenticatedCaller> {
+    return this.accessTokens.verify(token);
   }
 
   private async issueTokens(

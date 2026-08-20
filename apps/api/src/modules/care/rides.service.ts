@@ -21,6 +21,7 @@ import type { RequestContext } from '../../common/request-context';
 import { AppointmentsService } from './appointments.service';
 import { CareService } from './care.service';
 import { BillingService } from '../billing/billing.service';
+import { LiveTrackingService } from '../tracking/live-tracking.service';
 import type {
   CancelRideDto,
   ReportLocationDto,
@@ -38,6 +39,7 @@ export class RidesService {
     private readonly appointments: AppointmentsService,
     private readonly audit: AuditService,
     private readonly billing: BillingService,
+    private readonly tracking: LiveTrackingService,
   ) {}
 
   /**
@@ -431,6 +433,19 @@ export class RidesService {
         rideId: input.rideId,
       });
     }
+
+    // Tracking ends the moment the ride stops being one of the statuses that
+    // may share a location — not when the stored position expires. The row
+    // above has already had its position cleared; this drops the live copy and
+    // tells anyone still watching, so a family is not left looking at a map
+    // that has silently stopped rather than one that has finished.
+    //
+    // Deliberately keyed on `clearsTracking` rather than `terminal`: a ride
+    // that goes back to `reassignmentRequired` is not over, but the driver who
+    // was reporting is gone, and their last position must not linger.
+    if (clearsTracking) {
+      await this.tracking.end(input.rideId);
+    }
   }
 
   /**
@@ -563,6 +578,22 @@ export class RidesService {
           },
         },
       },
+    });
+
+    // Pushed to whoever is watching, after the row is written rather than
+    // before. A position on somebody's map that is not in the database is a
+    // position that vanishes on the next page load; the reverse — written but
+    // not yet pushed — corrects itself with the next report two seconds later.
+    //
+    // This cannot fail the caller: `LiveTrackingService` swallows and logs, so
+    // a Redis outage degrades live tracking without rolling back a ride.
+    await this.tracking.publish({
+      rideId,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      accuracyMeters,
+      capturedAt: capturedAt.toISOString(),
+      etaMinutes: dto.etaMinutes ?? null,
     });
   }
 

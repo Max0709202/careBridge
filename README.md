@@ -77,13 +77,13 @@ Nothing in it is allowed to fail silently: the unit run enforces coverage
 floors on both sides, and the pure rules in `domain/` are held at 100%.
 
 ```bash
-make test-integration        # 162 tests, real app against real Postgres
+make test-integration        # 178 tests, real app against real Postgres
 ```
 
 Individually:
 
 ```bash
-pnpm --filter @carebridge/api test          # 320 unit tests, with coverage floors
+pnpm --filter @carebridge/api test          # 331 unit tests, with coverage floors
 pnpm --filter @carebridge/api exec eslint . # boundaries, no-console, no process.env
 flutter analyze && flutter test             # the app
 dart run melos run test                     # the console and shared packages
@@ -351,6 +351,35 @@ dispatcher's sense of fairness rather than for the person waiting. A pickup time
 that has already passed with nobody assigned gets its own band — that is a
 failure in progress, not an urgent task.
 
+**A subscription is the one authorisation that outlives its own check.** Every
+HTTP endpoint re-authorises on every request, because every request carries a
+token. A WebSocket is checked once and then pays out for as long as it stays
+open — all day, on a dispatcher's desk. Three things must stop a stream and
+none of them would: the ride finishing, the watcher's access being revoked, and
+the watcher signing out everywhere. So the gateway re-runs the whole check on a
+fifteen-second timer, re-verifying the token — which is what carries the
+`tokenVersion` comparison, and so what makes "sign out everywhere" reach an
+open socket — and re-asking whether each joined room is still permitted. The
+alternative, checking on every emitted position, would turn a Redis read into
+two database queries at exactly the moment the system is busiest.
+
+**A position expires in the store at the same moment it stops being a position
+on screen.** The Redis key's TTL is `TrackingFreshness.lostMs` — the same
+constant the client uses to stop drawing a marker, and the same one the write
+path uses to refuse a reading that arrives already expired. One number in three
+places, so there is no arrangement of them that shows a stale car as a moving
+one. When a ride ends the position is *forgotten* rather than left to expire:
+the TTL would take up to two minutes, and for those two minutes a finished
+trip's last position would still be readable.
+
+**Silence is the failure nothing else can see.** Every other alert in this
+product is raised by something happening. A driver whose phone dies in a tunnel
+produces no event at all — the position simply stops moving, and a stationary
+car is indistinguishable from one at traffic lights. The client already ages a
+position and says so, which covers whoever is looking; the staleness watchdog
+covers the dispatcher who is not, because they are the one who can pick up a
+phone.
+
 **A ride nobody can take is a different problem from a ride nobody has taken
 yet.** One needs a tap and the other needs a phone call, and a queue that
 presents them identically buries the second behind the first. So the dispatch
@@ -498,12 +527,13 @@ where the two share a name.
 
 ## Not built
 
-Driver app · real maps and routing · WebSocket tracking · S3 driver documents ·
-caregiver marketplace · clinic portal · Terraform and AWS.
+Driver app · real maps and routing · S3 driver documents · caregiver
+marketplace · clinic portal · Terraform and AWS.
 
-The ops console covers the queue, assignment, the roster, the fleet and the
-seat ledger. Live tracking on a dispatcher's map is not there, because there is
-no WebSocket surface yet for it to read.
+Live tracking is pushed over a WebSocket, but the positions still come from the
+server-side preview trip rather than from a driver's phone — there is no driver
+app yet. The gateway, the position store, the authorisation and the staleness
+watchdog are real; what feeds them is not.
 
 Money moves, but only through the local adapter by default: `PAYMENTS_DRIVER`
 selects between it and Stripe, and the Stripe path is written and typed but has

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -8,7 +7,7 @@ import { CredentialTokensService } from './credential-tokens.service';
 import { MfaService } from './mfa.service';
 import { SessionsService } from './sessions.service';
 import { ConfigModule } from '../../common/config.module';
-import { appConfig } from '../../common/config';
+import { AccessTokenModule } from './access-token.module';
 import { CareModule } from '../care/care.module';
 import { BillingModule } from '../billing/billing.module';
 
@@ -17,16 +16,10 @@ import { BillingModule } from '../billing/billing.module';
     ConfigModule,
     CareModule,
     BillingModule,
-    JwtModule.registerAsync({
-      useFactory: () => {
-        const config = appConfig();
-        return {
-          secret: config.JWT_SECRET,
-          signOptions: { algorithm: 'HS256', issuer: 'carebridge' },
-          verifyOptions: { algorithms: ['HS256'], issuer: 'carebridge' },
-        };
-      },
-    }),
+    // Carries the JWT configuration as well as the verifier, so this module
+    // and the tracking gateway share one secret, one algorithm and — the part
+    // that matters — one implementation of the `tokenVersion` check.
+    AccessTokenModule,
   ],
   controllers: [AuthController],
   providers: [

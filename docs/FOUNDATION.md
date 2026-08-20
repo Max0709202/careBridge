@@ -633,18 +633,35 @@ rather than reimplementing them — the last of those now lives in
 between "no such record" and "not yours" is precisely the thing a second
 implementation would undo. This closes risk R1.
 
+**Landed since (slice three — live tracking):** the Socket.IO gateway, mounted
+under `/api/v1/socket.io` so nginx's existing proxy carries it and the
+Content-Security-Policy stays `'self'` throughout; the position store behind a
+port, with a Redis adapter whose key TTL *is* `TrackingFreshness.lostMs` and an
+in-process one production refuses; `TrackingAuthorizer`, which resolves the
+right to watch up the graph — ride → patient → grant, or ride → driver →
+operator membership — with revocation in the query on both paths; and the
+staleness watchdog. The P0 concern is addressed by **re-authorising every open
+subscription on a timer** rather than only at subscribe: a socket is the one
+place a decision is made once and then keeps paying out, and the three things
+that must close a stream — the ride ending, access being revoked, the session
+being ended — are all invisible to a check that ran an hour ago.
+
 **Still outstanding in this stage:** driver documents to S3 and the upload
 behind approval; the driver app and its adaptive-cadence location service; the
-Socket.IO gateway and the Redis position store; the ETA service; the staleness
-watchdog; and the Android foreground service. The console has no live map for
-the same reason: there is no WebSocket surface yet for it to read.
+ETA service with cache and circuit breaker; and the Android foreground service.
+Positions still originate from the server-side preview trip rather than a
+driver's phone — the gateway, the store and the authorisation are real; what
+feeds them is not.
 
 **Risks (highest of any stage):** ~~Flutter Web ops console unvalidated~~
 (R1, resolved — the console is built, tested and containerised); background-location platform restrictions and
 store review (T2); battery drain damaging driver adoption; map/routing cost at
-scale; WebSocket authorisation errors leaking a patient's live position — treated
-as a **P0 security surface**; connectivity dead zones; ETA accuracy setting false
-expectations.
+scale; ~~WebSocket authorisation errors leaking a patient's live position~~ —
+the **P0 security surface**, now addressed: authorisation is resolved
+server-side per subscription, revocation is in the query on both the family and
+the operator path, and every open room is re-checked on a fifteen-second timer
+so a socket cannot outlive the permission that opened it; connectivity dead
+zones; ETA accuracy setting false expectations.
 
 **Testing:** exhaustive state-machine unit tests including every illegal
 transition; WebSocket authorisation integration tests (unassigned driver rejected,

@@ -480,6 +480,24 @@ class TrackingPoint {
   final DateTime capturedAt;
 
   final double accuracyMeters;
+
+  /// The more recent of two readings, or whichever one exists.
+  ///
+  /// Lives here rather than on the tracking screen because it is a rule about
+  /// readings, not about a widget — and because it is the rule that decides
+  /// which of the two sources the screen has is the truth. Positions now
+  /// arrive by two routes: pushed over the tracking socket, and carried on the
+  /// polled snapshot. Either can arrive second.
+  ///
+  /// Compared on [capturedAt] — when the device took the reading — never on
+  /// which arrived first. A pushed position that overtook a polled one on the
+  /// network is still the older reading, and rendering it as current is
+  /// exactly the false certainty this product refuses everywhere else.
+  static TrackingPoint? newerOf(TrackingPoint? a, TrackingPoint? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return b.capturedAt.isAfter(a.capturedAt) ? b : a;
+  }
 }
 
 class Ride {
