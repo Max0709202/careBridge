@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:carebridge_api/carebridge_api.dart' as wire;
 import 'package:carebridge_client/carebridge_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -81,6 +82,11 @@ final sessionProvider = NotifierProvider<SessionController, bool>(
 
 final profileProvider = FutureProvider<DriverProfile>(
   (ref) => ref.watch(driverApiProvider).profile(),
+);
+
+/// The driver's paperwork, and what approval is still waiting on.
+final documentsProvider = FutureProvider<wire.DriverDocumentsDto>(
+  (ref) => ref.watch(driverApiProvider).documents(),
 );
 
 /// How often the work list re-reads itself.

@@ -48,6 +48,7 @@ const ID = {
   meridian: '00000000-0000-4000-8000-0000000000a1',
   dispatcher: '00000000-0000-4000-8000-0000000000a2',
   marcusAccount: '00000000-0000-4000-8000-0000000000a3',
+  platformAdmin: '00000000-0000-4000-8000-0000000000a4',
 } as const;
 
 const DISPATCHER_EMAIL = 'dispatch@meridiantransit.example';
@@ -59,6 +60,13 @@ const DISPATCHER_EMAIL = 'dispatch@meridiantransit.example';
 /// being equal — and the account being verified — is the whole of what joins a
 /// driver to a driver record.
 const DRIVER_EMAIL = 'marcus@meridiantransit.example';
+
+/// A CareBridge staff account, for the administration surfaces.
+///
+/// Seeded **with a confirmed second factor**, because the platform guard
+/// refuses staff without one — and a demo account that cannot open the screen
+/// it exists to demonstrate is worse than no demo account.
+const PLATFORM_ADMIN_EMAIL = 'admin@carebridge.example';
 
 const DEMO_PASSWORD = 'demo-password';
 
@@ -83,10 +91,14 @@ async function main(): Promise<void> {
     userId: user.id,
   });
 
-  console.log(`Seeded. Three ways in, all on ${DEMO_PASSWORD}:`);
+  await seedPlatformAdmin();
+  await seedFeatureFlags();
+
+  console.log(`Seeded. Four ways in, all on ${DEMO_PASSWORD}:`);
   console.log(`  family app    ${user.email}`);
   console.log(`  ops console   ${DISPATCHER_EMAIL}`);
   console.log(`  driver app    ${DRIVER_EMAIL}`);
+  console.log(`  admin API     ${PLATFORM_ADMIN_EMAIL}`);
 }
 
 async function seedPricingRule(): Promise<void> {
@@ -1353,3 +1365,84 @@ main()
     process.exitCode = 1;
   })
   .finally(() => void prisma.$disconnect());
+
+/**
+ * CareBridge's own staff account.
+ *
+ * The MFA enrolment is seeded alongside because `PlatformRoleGuard` refuses a
+ * platform account without a confirmed second factor — not warned, refused —
+ * and an account that cannot open the surface it exists to demonstrate would
+ * only look like a bug.
+ *
+ * The stored secret is nonsense bytes. Nothing here verifies a TOTP code; what
+ * the guard reads is whether an enrolment was *confirmed*, and the real
+ * enrolment round trip is exercised in mfa.e2e-spec.ts.
+ */
+async function seedPlatformAdmin(): Promise<void> {
+  const passwordHash = await argon2.hash(DEMO_PASSWORD, {
+    type: argon2.argon2id,
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1,
+  });
+
+  const admin = await prisma.user.upsert({
+    where: { email: PLATFORM_ADMIN_EMAIL },
+    update: { platformRole: 'admin' },
+    create: {
+      id: ID.platformAdmin,
+      email: PLATFORM_ADMIN_EMAIL,
+      passwordHash,
+      fullName: 'Priya Raman',
+      emailVerifiedAt: new Date(),
+      platformRole: 'admin',
+    },
+  });
+
+  await prisma.userMfa.upsert({
+    where: { userId: admin.id },
+    update: { confirmedAt: new Date() },
+    create: {
+      userId: admin.id,
+      secretCiphertext: Buffer.from('seeded-demo-secret'),
+      secretIv: Buffer.from('seeded-demo-iv'),
+      secretAuthTag: Buffer.from('seeded-demo-tag'),
+      confirmedAt: new Date(),
+    },
+  });
+}
+
+/**
+ * The flags that exist, all off.
+ *
+ * Seeded so the administration screen has something to show and so the keys
+ * are discoverable, but every one is `enabled: false`. A demo database that
+ * arrives with Stage 5 switched on would be a demo of a decision FOUNDATION
+ * says is gated on pilot evidence.
+ */
+async function seedFeatureFlags(): Promise<void> {
+  const flags = [
+    {
+      key: 'caregiver-marketplace',
+      description:
+        'Stage 5A. Gated on pilot evidence — the code exists so the decision is about the product rather than the schedule.',
+    },
+    {
+      key: 'clinic-portal',
+      description:
+        'Stage 5B. A clinic saying the visit is over is what dispatches a flexible return ride.',
+    },
+    {
+      key: 'simplified-mode-default',
+      description: 'Open the family app in simplified mode for new accounts.',
+    },
+  ];
+
+  for (const flag of flags) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
+      update: {},
+      create: { ...flag, enabled: false, rolloutPercent: 0 },
+    });
+  }
+}

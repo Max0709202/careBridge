@@ -212,3 +212,42 @@ export async function createAppointment(
   if (!created) throw new Error('Appointment was not in the returned snapshot');
   return created.id;
 }
+
+/**
+ * Puts approved paperwork on a driver, so they can be approved to drive.
+ *
+ * Written straight to the table rather than driven through the upload flow —
+ * which *is* tested end to end, in documents.e2e-spec.ts. Repeating the
+ * authorise-upload-confirm-review dance in every dispatch fixture would make
+ * each test harder to read than the thing it tests, for the same reason
+ * `verifyEmail` reaches into the token table.
+ *
+ * The reviewer is required by a check constraint: a document cannot be
+ * approved by nobody.
+ */
+export async function giveDriverPaperwork(
+  harness: TestHarness,
+  driverId: string,
+  reviewerUserId: string,
+): Promise<void> {
+  const kinds = ['driversLicence', 'vehicleInsurance', 'vehicleRegistration'] as const;
+  const now = new Date();
+
+  for (const kind of kinds) {
+    await harness.prisma.driverDocument.create({
+      data: {
+        driverId,
+        kind,
+        // Opaque, like the ones the service generates. A bucket listing must
+        // not be a roster, in a test database either.
+        storageKey: `driver-documents/${driverId}/${kind}/${Math.random().toString(36).slice(2)}`,
+        contentType: 'image/jpeg',
+        byteSize: 1024,
+        status: 'approved',
+        submittedAt: now,
+        reviewedAt: now,
+        reviewedByUserId: reviewerUserId,
+      },
+    });
+  }
+}

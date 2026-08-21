@@ -49,6 +49,9 @@ node_modules/
 apps/api/dist/
 .pnpm-store/
 
+**/.storage
+
+
 # Real configuration. Only .env.example is committed — a checked-in .env is how
 # a local password becomes a production one.
 .env
@@ -66,3 +69,11 @@ packages/dart/*/pubspec.lock
 # does not cover a nested one.
 packages/dart/*/build/
 apps/*/build/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log

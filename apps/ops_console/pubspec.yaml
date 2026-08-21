@@ -18,6 +18,8 @@ dependencies:
   go_router: ^17.3.0
   intl: ^0.20.3
   http: ^1.6.0
+  # Opening a short-lived document link in a new tab.
+  url_launcher: ^6.3.2
   # Same reasoning as the family app: a token belongs in encrypted storage, not
   # in a plaintext localStorage entry that every script on the origin can read.
   flutter_secure_storage: ^11.0.0

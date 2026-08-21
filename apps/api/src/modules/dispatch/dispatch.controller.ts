@@ -11,11 +11,18 @@ import { Ctx, CurrentUser, RequestContext } from '../../common/request-context';
 import { Idempotent } from '../../common/idempotency.interceptor';
 import type { DriverStatus } from '../../domain/driver-status';
 import { DispatchService } from './dispatch.service';
-import { DispatchQueueDto, DriverDto, VehicleDto } from './dispatch.dto';
+import {
+  DispatchQueueDto,
+  DocumentViewUrlDto,
+  DriverComplianceDto,
+  DriverDto,
+  VehicleDto,
+} from './dispatch.dto';
 import {
   AssignRideDto,
   CreateDriverDto,
   CreateVehicleDto,
+  ReviewDocumentDto,
   SetDriverStatusDto,
   SetShiftDto,
 } from './dto/dispatch.request.dto';
@@ -126,6 +133,72 @@ export class DispatchController {
     @Body() body: SetShiftDto,
   ): Promise<DriverDto> {
     return this.dispatch.setShift(userId, organizationId, driverId, body.onShift);
+  }
+
+  // ─── paperwork ────────────────────────────────────────────────────────────
+
+  @Get('drivers/:driverId/documents')
+  @ApiOperation({
+    summary: 'What this driver has handed in, and what is still missing',
+    description:
+      'The `compliant` flag is what the approval button turns on. It is advisory here — the same check runs inside the approval transaction, because a check only a screen performs is one a second tab can race past.',
+  })
+  @ApiOkResponse({ type: DriverComplianceDto })
+  documentsFor(
+    @CurrentUser() userId: string,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+    @Param('driverId', ParseUUIDPipe) driverId: string,
+  ): Promise<DriverComplianceDto> {
+    return this.dispatch.documentsFor(userId, organizationId, driverId);
+  }
+
+  @Post('drivers/:driverId/documents/:documentId/view')
+  @ApiOperation({
+    summary: 'A short-lived link to one document',
+    description:
+      'A POST rather than a GET because it is not a read: it mints a credential and writes an audit row saying that a named person looked at a named driver’s licence. “Who has seen this” cannot be answered after the fact.',
+  })
+  @ApiOkResponse({ type: DocumentViewUrlDto })
+  viewDocument(
+    @CurrentUser() userId: string,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+    @Param('driverId', ParseUUIDPipe) driverId: string,
+    @Param('documentId', ParseUUIDPipe) documentId: string,
+    @Ctx() ctx: RequestContext,
+  ): Promise<DocumentViewUrlDto> {
+    return this.dispatch.viewDocument(
+      userId,
+      organizationId,
+      driverId,
+      documentId,
+      ctx,
+    );
+  }
+
+  @Post('drivers/:driverId/documents/:documentId/review')
+  @ApiOperation({
+    summary: 'Approve or reject a document',
+    description:
+      'A rejection must say why — enforced here and by a check constraint on the table.',
+  })
+  @ApiOkResponse({ type: DriverComplianceDto })
+  reviewDocument(
+    @CurrentUser() userId: string,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+    @Param('driverId', ParseUUIDPipe) driverId: string,
+    @Param('documentId', ParseUUIDPipe) documentId: string,
+    @Body() body: ReviewDocumentDto,
+    @Ctx() ctx: RequestContext,
+  ): Promise<DriverComplianceDto> {
+    return this.dispatch.reviewDocument(
+      userId,
+      organizationId,
+      driverId,
+      documentId,
+      body.decision as 'approved' | 'rejected',
+      body.note ?? null,
+      ctx,
+    );
   }
 
   // ─── the queue ────────────────────────────────────────────────────────────

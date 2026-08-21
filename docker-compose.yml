@@ -120,6 +120,13 @@ services:
       MAIL_SMTP_PORT: '1025'
       MAIL_FROM: ${MAIL_FROM:-CareBridge <no-reply@carebridge.local>}
       PUSH_DRIVER: ${PUSH_DRIVER:-log}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-filesystem}
+      STORAGE_LOCAL_ROOT: /app/.storage
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-carebridge-documents}
+      STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-}
+      STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:-}
+      STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-}
       MAPS_DRIVER: ${MAPS_DRIVER:-deterministic}
       # Moves no money and scripts its outcomes from the card's last four
       # digits, so the decline and dunning paths are reachable in the demo.

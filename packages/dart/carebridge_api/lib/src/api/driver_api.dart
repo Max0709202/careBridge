@@ -68,6 +68,52 @@ class DriverApi {
     return DriverRideDto.fromJson(response as Map<String, dynamic>);
   }
 
+  /// What has been handed in, and what is still wanted
+  ///
+  /// Includes the rejection note. Being told “you cannot drive” without being
+  /// told which document and why is how somebody re-uploads the same unreadable
+  /// photograph three times.
+  Future<DriverDocumentsDto> documents() async {
+    final response = await _client.send(
+      method: 'GET',
+      path: '/driver/documents',
+    );
+    return DriverDocumentsDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Authorise one upload
+  ///
+  /// Returns a URL to PUT the file to. The bytes never pass through this API —
+  /// a multipart body would be a copy of the file in the heap of a process that
+  /// is also holding a WebSocket open for every live ride, and an API that can
+  /// stream any object is an API where one bug hands over the bucket.
+  Future<PresignedUploadDto> requestUpload({
+    required RequestDocumentUploadDto body,
+  }) async {
+    final response = await _client.send(
+      method: 'POST',
+      path: '/driver/documents',
+      body: body.toJson(),
+    );
+    return PresignedUploadDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Say the upload finished
+  ///
+  /// The server checks storage rather than believing the client. A client
+  /// reporting its own success could report it without uploading, and an
+  /// operator would then see a complete file with an empty object behind it.
+  Future<DriverDocumentsDto> confirmUpload({
+    required ConfirmDocumentUploadDto body,
+  }) async {
+    final response = await _client.send(
+      method: 'POST',
+      path: '/driver/documents/confirm',
+      body: body.toJson(),
+    );
+    return DriverDocumentsDto.fromJson(response as Map<String, dynamic>);
+  }
+
   /// Flush the offline queue
   ///
   /// Safe to send twice: one device takes one reading per instant, so a retry

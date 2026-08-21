@@ -4,6 +4,7 @@ import {
   createAppointment,
   createClinic,
   createPatient,
+  giveDriverPaperwork,
   registerUser,
   uniqueEmail,
   verifyEmail,
@@ -123,6 +124,7 @@ describe('the driver app', () => {
     const driverId = (created.body as { id: string }).id;
 
     if (options.approve ?? true) {
+      await giveDriverPaperwork(harness, driverId, owner.userId);
       for (const to of ['pendingApproval', 'approved']) {
         await authed(harness, owner.accessToken)
           .post(`/api/v1/organizations/${organizationId}/drivers/${driverId}/status`)

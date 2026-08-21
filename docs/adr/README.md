@@ -19,6 +19,7 @@ seeming to relitigate it.
 | [0009](0009-aws-ecs.md) | AWS on ECS Fargate | Accepted |
 | [0010](0010-multi-tenancy.md) | Application-layer tenancy, not RLS | Accepted |
 | [0011](0011-two-sided-subscription-billing.md) | Both sides subscribe; drivers are the operator's meter | Accepted |
+| [0012](0012-documents-in-object-storage.md) | Driver documents in object storage, behind pre-signed URLs | Accepted |
 
 ## Format
 

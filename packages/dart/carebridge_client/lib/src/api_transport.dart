@@ -42,6 +42,16 @@ abstract class ApiTransport {
 
   final http.Client _client;
 
+  /// The one HTTP client, for the rare request that is **not** an API call.
+  ///
+  /// Exactly one thing needs it: PUTting a file to a pre-signed storage URL.
+  /// That request goes to a different host, carries no session, and must send
+  /// only the headers the signature covers — so it cannot go through [send].
+  /// It should still share the connection pool, and it must be replaceable in
+  /// a test, which a top-level `http.put` is not.
+  @protected
+  http.Client get httpClient => _client;
+
   /// Relative by default, because each app is served by an nginx that proxies
   /// `/api` from the same origin — which means no CORS, no API hostname
   /// compiled into a JavaScript bundle, and a Content-Security-Policy that can

@@ -1,0 +1,143 @@
+# Build once, promote.
+#
+# The image CI tested is the one that reaches production — not a rebuild from
+# the same commit, which is a different artefact with the same label. The tag
+# is the git SHA, and the ECR repository refuses mutable tags, so a tag cannot
+# quietly come to mean something else.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'An existing tag to promote. Leave blank to build from this commit.'
+        required: false
+
+concurrency:
+  # One deploy at a time, and a queued one is *not* cancelled: cancelling
+  # mid-deploy leaves a service half-updated, which is worse than waiting.
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  build:
+    name: Build and push
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: tag
+        run: echo "tag=${{ inputs.image_tag || github.sha }}" >> "$GITHUB_OUTPUT"
+
+      # OIDC rather than a stored access key. A long-lived key in repository
+      # secrets is a credential that outlives everybody who knew about it.
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+
+      - name: Skip the build if this tag already exists
+        id: exists
+        run: |
+          if aws ecr describe-images \
+              --repository-name carebridge-staging-api \
+              --image-ids imageTag=${{ steps.tag.outputs.tag }} >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+        if: steps.exists.outputs.found == 'false'
+
+      - name: Build and push
+        if: steps.exists.outputs.found == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          # ARM, matching the Fargate runtime platform. Building x86 and
+          # running ARM is a task that starts and immediately dies with a
+          # message about exec format.
+          platforms: linux/arm64
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/carebridge-staging-api:${{ steps.tag.outputs.tag }}
+            ${{ steps.ecr.outputs.registry }}/carebridge-production-api:${{ steps.tag.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  staging:
+    name: Staging
+    needs: build
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy
+        uses: ./.github/actions/deploy-environment
+        with:
+          environment: staging
+          image_tag: ${{ needs.build.outputs.image_tag }}
+          region: ${{ env.AWS_REGION }}
+          url: ${{ vars.STAGING_URL }}
+
+  production:
+    name: Production
+    needs: [build, staging]
+    runs-on: ubuntu-latest
+    # A protected environment with required reviewers. The approval gate is a
+    # GitHub setting rather than a step in this file, so it cannot be removed
+    # by editing the workflow in the pull request that wants to skip it.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy
+        uses: ./.github/actions/deploy-environment
+        with:
+          environment: production
+          image_tag: ${{ needs.build.outputs.image_tag }}
+          region: ${{ env.AWS_REGION }}
+          url: ${{ vars.PRODUCTION_URL }}
+
+      # Fifteen minutes of watching before the deploy is called done. A deploy
+      # that succeeds and then degrades ten minutes later is the common shape
+      # of a bad release, and nobody is looking by then unless somebody waits.
+      - name: Watch
+        run: |
+          echo "Watching error rate for 15 minutes…"
+          for i in $(seq 1 15); do
+            sleep 60
+            if ! curl -fsS --max-time 10 "${{ vars.PRODUCTION_URL }}/api/v1/health/ready" >/dev/null; then
+              echo "::error::Readiness failed ${i} minute(s) after deploy."
+              exit 1
+            fi
+          done
+          echo "Steady."

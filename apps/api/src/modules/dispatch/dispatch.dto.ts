@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { DRIVER_STATUSES } from '../../domain/driver-status';
+import {
+  DRIVER_DOCUMENT_KINDS,
+  DRIVER_DOCUMENT_STATUSES,
+} from '../../domain/driver-documents';
 
 /**
  * The operator-facing wire contract.
@@ -123,4 +127,100 @@ export class DispatchQueueDto {
     description: 'Drivers on shift and free right now, across the whole roster.',
   })
   availableDrivers!: number;
+}
+
+export class DriverDocumentDto {
+  @ApiProperty({ type: String, format: 'uuid' }) id!: string;
+
+  @ApiProperty({ enum: DRIVER_DOCUMENT_KINDS, enumName: 'DriverDocumentKind' })
+  kind!: string;
+
+  @ApiProperty({ enum: DRIVER_DOCUMENT_STATUSES, enumName: 'DriverDocumentStatus' })
+  status!: string;
+
+  @ApiProperty({ type: String }) contentType!: string;
+
+  @ApiProperty({ type: 'integer', nullable: true }) byteSize!: number | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description:
+      'The date printed on the document. An approved certificate past this date stops counting immediately, rather than when a sweep next notices.',
+  })
+  expiresAt!: string | null;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  submittedAt!: string | null;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  reviewedAt!: string | null;
+
+  @ApiProperty({ type: String, nullable: true }) reviewNote!: string | null;
+
+  @ApiProperty({
+    type: Boolean,
+    description:
+      'Replaced by a newer upload. Kept rather than deleted, so “which certificate was in force in March” stays answerable.',
+  })
+  superseded!: boolean;
+}
+
+export class DriverComplianceDto {
+  @ApiProperty({
+    type: Boolean,
+    description:
+      'Whether the paperwork permits approving this driver. Re-checked inside the approval transaction — the console greys the button out, but a check only the screen performs is one a second tab can race past.',
+  })
+  compliant!: boolean;
+
+  @ApiProperty({
+    type: [String],
+    description:
+      'Every required document still missing, not just the first. Deliberately excludes the background check: a platform lookup is not what makes somebody safe, and treating it as such would be a claim this product does not make.',
+  })
+  missing!: string[];
+
+  @ApiProperty({
+    type: [String],
+    description: 'Valid today, lapsing within thirty days.',
+  })
+  expiringSoon!: string[];
+
+  @ApiProperty({ type: () => [DriverDocumentDto] })
+  documents!: DriverDocumentDto[];
+}
+
+export class PresignedUploadDto {
+  @ApiProperty({ type: String, format: 'uuid' }) documentId!: string;
+
+  @ApiProperty({
+    type: String,
+    description:
+      'PUT the file here. The bytes never pass through this API: a multipart body would be a copy of the file in the heap of a process that is also holding a WebSocket open for every live ride.',
+  })
+  url!: string;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    description:
+      'Send these exactly. They are covered by the signature, which is what stops a slot authorised for a 4 MB photograph being filled with 400 MB of something else.',
+  })
+  headers!: Record<string, string>;
+
+  @ApiProperty({ type: 'integer' }) expiresInSeconds!: number;
+  @ApiProperty({ type: 'integer' }) maxBytes!: number;
+}
+
+export class DocumentViewUrlDto {
+  @ApiProperty({
+    type: String,
+    description:
+      'Short-lived on purpose. A link to a driver’s licence that works for a week is a link that ends up in a chat message, an email thread and a browser history.',
+  })
+  url!: string;
+
+  @ApiProperty({ type: 'integer' }) expiresInSeconds!: number;
 }

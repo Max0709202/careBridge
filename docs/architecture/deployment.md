@@ -1,7 +1,10 @@
 # Deployment
 
-Terraform and the production pipeline land in Stage 4. This document is the
-target, and the parts already true are marked.
+Built. `infrastructure/terraform/` holds the modules and the two environments;
+`.github/workflows/deploy.yml` holds the pipeline. This document is the
+reasoning behind them — where something below is a decision rather than a
+description, the Terraform says the same thing in a comment beside the
+resource.
 
 ## Environments
 
@@ -22,7 +25,7 @@ CI builds the API image on every pull request and smoke-tests that it starts
 and answers liveness. That is already in place: a build that only happens at
 release time fails at release time.
 
-## The pipeline (Stage 4)
+## The pipeline
 
 ```
 merge to main
@@ -96,8 +99,30 @@ image, a repository, or a client bundle.
   and audit row. It is the only thing connecting "it said something went wrong"
   to a stack trace.
 
-## Alarms (Stage 4)
+## Alarms
 
-Error rate, p95 latency, queue depth, failed payments, payment/ledger drift,
-map spend, and — specific to this product — **active rides with no position
-update inside the staleness threshold**.
+In `modules/observability`. Each one is here because somebody would have to be
+telephoned about it — an alarm nobody acts on trains people to ignore pages —
+so every alarm's description names the next move rather than restating the
+metric.
+
+| Alarm | What it means |
+| --- | --- |
+| Unhealthy tasks | Readiness is failing. Missing data counts as breaching: a balancer reporting nothing is not "fine". |
+| 5xx rate | Correlate by correlation id. Missing data does **not** breach — no requests is a quiet night. |
+| p95 latency | Usually the database's CPU or the routing vendor's breaker. |
+| Database CPU, free storage | Read the slow query log before resizing anything. |
+| **Stale tracking** | The one specific to this product: rides in flight with no recent position. A family is watching a map that has stopped. Telephone the dispatcher before looking at anything technical. Threshold is 3 in five minutes, not 1 — a single driver entering a tunnel is ordinary. |
+| Payment failures | A spike not spread across accounts is the processor, not the cards. |
+| Routing circuit open | Arrival estimates have fallen back to straight-line distance. Degraded, not broken. |
+
+## What Terraform deliberately does not own
+
+The Stripe account, the maps key, the FCM project and the domain registration.
+Terraform that creates billing relationships is Terraform that can cancel them;
+Terraform that owns a domain can release one. They are bought by a person and
+referenced by ARN — see `infrastructure/terraform/bootstrap.md`.
+
+The state backend is the same argument turned inward: a state bucket Terraform
+creates is one Terraform can destroy, and recovering means reconstructing the
+mapping between every resource and its address by hand.

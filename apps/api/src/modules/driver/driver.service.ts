@@ -14,6 +14,7 @@ import {
 } from '../../domain/driver-authority';
 import { isAssignable } from '../../domain/driver-status';
 import { allowsLocationSharing, type RideStatus } from '../../domain/ride-status';
+import type { DriverDocumentKind } from '../../domain/driver-documents';
 import {
   LOCATION_BACKLOG_MS,
   TrackingFreshness,
@@ -22,6 +23,7 @@ import {
 import { RidesService } from '../care/rides.service';
 import { LiveTrackingService } from '../tracking/live-tracking.service';
 import { EtaService } from '../tracking/eta.service';
+import { DocumentsService } from '../dispatch/documents.service';
 import type { ReportLocationDto } from '../care/dto/ride.dto';
 import type {
   DriverProfileDto,
@@ -64,6 +66,7 @@ export class DriverService {
     private readonly audit: AuditService,
     private readonly tracking: LiveTrackingService,
     private readonly eta: EtaService,
+    private readonly paperwork: DocumentsService,
   ) {}
 
   // ─── who is calling ───────────────────────────────────────────────────────
@@ -433,6 +436,53 @@ export class DriverService {
       ignored: points.length - written.count,
       positionUpdated: movesTheMap,
     };
+  }
+
+  // ─── paperwork ────────────────────────────────────────────────────────────
+
+  /**
+   * What this driver has handed in, and what is still wanted.
+   *
+   * The driver sees the same compliance answer their operator does, including
+   * a rejection note. Being told "you cannot drive" without being told which
+   * document and why is how somebody re-uploads the same unreadable photograph
+   * three times and then telephones.
+   */
+  async documents(userId: string) {
+    const driver = await this.requireDriver(userId);
+    const now = new Date();
+
+    const [state, documents] = await Promise.all([
+      this.paperwork.complianceFor(driver.id, now),
+      this.paperwork.listFor(driver.id),
+    ]);
+
+    return { state, documents };
+  }
+
+  /**
+   * Authorises one upload of one document.
+   *
+   * The driver acts as themselves — there is no driver id in the path — so
+   * there is nothing here to swap for a colleague's, and no way to put a file
+   * into somebody else's file.
+   */
+  async requestDocumentUpload(
+    userId: string,
+    input: { kind: DriverDocumentKind; contentType: string; expiresAt: Date | null },
+    ctx: RequestContext,
+  ) {
+    const driver = await this.requireDriver(userId);
+    return this.paperwork.requestUpload(driver.id, input, userId, ctx);
+  }
+
+  async confirmDocumentUpload(
+    userId: string,
+    documentId: string,
+    ctx: RequestContext,
+  ): Promise<void> {
+    const driver = await this.requireDriver(userId);
+    await this.paperwork.confirmUpload(driver.id, documentId, userId, ctx);
   }
 
   // ─── plumbing ─────────────────────────────────────────────────────────────

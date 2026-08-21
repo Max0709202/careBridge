@@ -18,6 +18,7 @@ const productionReady = {
   PUSH_DRIVER: 'fcm',
   FCM_SERVICE_ACCOUNT_JSON: '{"project_id":"x"}',
   MAPS_DRIVER: 'google',
+  STORAGE_DRIVER: 's3',
   MAPS_API_KEY: 'k',
   PAYMENTS_DRIVER: 'stripe',
   STRIPE_SECRET_KEY: 'sk_live_x',
@@ -80,6 +81,15 @@ describe('configuration', () => {
   });
 
   // ─── the adapters ───────────────────────────────────────────────────────
+
+  it('refuses a document store that does not survive a deploy', () => {
+    // An insurance certificate on a container's ephemeral disk is a document
+    // that vanishes at the next deploy — and the driver it belonged to is
+    // suddenly unapprovable with no record of why.
+    expect(() =>
+      loadConfig({ ...productionReady, STORAGE_DRIVER: 'filesystem' }),
+    ).toThrow(/STORAGE_DRIVER=filesystem/);
+  });
 
   it('refuses the log-only adapters in production', () => {
     // Each of these succeeds while doing nothing, which is the failure mode

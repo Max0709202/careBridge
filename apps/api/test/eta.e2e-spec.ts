@@ -4,6 +4,7 @@ import {
   createAppointment,
   createClinic,
   createPatient,
+  giveDriverPaperwork,
   registerUser,
   uniqueEmail,
   verifyEmail,
@@ -92,6 +93,7 @@ describe('the arrival estimate', () => {
       .expect(201);
     const driverId = (created.body as { id: string }).id;
 
+    await giveDriverPaperwork(harness, driverId, owner.userId);
     for (const to of ['pendingApproval', 'approved']) {
       await authed(harness, owner.accessToken)
         .post(`/api/v1/organizations/${organization.id}/drivers/${driverId}/status`)

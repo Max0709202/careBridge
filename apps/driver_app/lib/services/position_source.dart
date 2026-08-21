@@ -128,19 +128,37 @@ class GeolocatorPositionSource implements PositionSource {
 }
 
 /// What the cadence rule reads about the battery.
+/// One look at the battery.
+///
+/// The raw figures rather than the band, because two callers want different
+/// things from the same platform read: the cadence rule wants three bands, and
+/// the field-test recorder wants the percentage and whether it is climbing. A
+/// port that answered only in bands would have the recorder taking a second
+/// reading to learn something the first one already knew.
+class BatteryReading {
+  const BatteryReading({this.percent, this.charging = false});
+
+  /// Null when the platform will not say.
+  final int? percent;
+  final bool charging;
+
+  BatteryPressure get pressure =>
+      BatteryPressure.from(percent: percent, charging: charging);
+}
+
 abstract class BatterySource {
-  Future<BatteryPressure> pressure();
+  Future<BatteryReading> read();
 }
 
 class BatteryPlusSource implements BatterySource {
   final _battery = Battery();
 
   @override
-  Future<BatteryPressure> pressure() async {
+  Future<BatteryReading> read() async {
     try {
       final level = await _battery.batteryLevel;
       final state = await _battery.batteryState;
-      return BatteryPressure.from(
+      return BatteryReading(
         percent: level,
         charging: state == BatteryState.charging || state == BatteryState.full,
       );
@@ -148,7 +166,7 @@ class BatteryPlusSource implements BatterySource {
       // A platform that will not answer is not a reason to back off. Assuming
       // the worst here would slow every driver's cadence on any device whose
       // battery API misbehaves.
-      return BatteryPressure.none;
+      return const BatteryReading();
     }
   }
 }

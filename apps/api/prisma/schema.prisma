@@ -16,12 +16,35 @@ datasource db {
 
 // ─── identity ────────────────────────────────────────────────────────────────
 
+/// Standing inside CareBridge itself, as distinct from inside a customer's
+/// organisation.
+///
+/// `OrgRole` says what somebody may do at the transport operator that employs
+/// them. This says whether they work for the platform, and it is deliberately
+/// a different axis: an operator's owner has complete authority over their own
+/// company and none at all over anybody else's, while support has a narrow
+/// read-only view across all of them.
+enum PlatformRole {
+  /// Everybody. The overwhelming majority of accounts.
+  none
+  /// Read the audit log and the operational dashboard. No writes anywhere.
+  support
+  /// The above, plus refunds and feature flags.
+  admin
+}
+
 model User {
   id           String  @id @default(uuid())
   email        String  @unique
   passwordHash String
   fullName     String
   phone        String?
+
+  /// Almost always `none`. Granted out of band — there is deliberately no
+  /// endpoint that promotes an account, because an endpoint that can create a
+  /// platform administrator is the single most valuable thing in the system to
+  /// find a flaw in.
+  platformRole PlatformRole @default(none)
 
   /// Null until the address is proven. Nothing is blocked on it in the MVP —
   /// locking a family out of a ride they have already booked because a
@@ -64,6 +87,14 @@ model User {
   seatChanges             SeatLedgerEntry[]
   driversApproved         Driver[]                 @relation("DriverApprover")
   driverProfile           Driver?                  @relation("DriverAccount")
+  documentsReviewed       DriverDocument[]         @relation("DocumentReviewer")
+  refundsRequested        Refund[]                 @relation("RefundRequester")
+  flagsChanged            FeatureFlag[]            @relation("FlagEditor")
+  caregiverProfile        Caregiver?               @relation("CaregiverAccount")
+  bookingsRequested       CaregiverBooking[]       @relation("BookingRequester")
+  reviewsWritten          CaregiverReview[]        @relation("ReviewAuthor")
+  disputesRaised          BookingDispute[]         @relation("DisputeRaiser")
+  disputesResolved        BookingDispute[]         @relation("DisputeResolver")
 
   @@map("users")
 }
@@ -108,6 +139,7 @@ model Organization {
   memberships    OrganizationMembership[]
   drivers        Driver[]
   vehicles       Vehicle[]
+  clinics        Clinic[]
   billingAccount BillingAccount?
   settledRides   Ride[]
 
@@ -357,6 +389,7 @@ model Patient {
   appointments      Appointment[]
   rides             Ride[]
   invitations       PatientInvitation[]
+  careBookings      CaregiverBooking[]
 
   @@map("patients")
 }
@@ -489,9 +522,20 @@ model Clinic {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// The clinic network that runs this site, when one has claimed it.
+  ///
+  /// Null for the overwhelming majority: a clinic record is created by a
+  /// **family** typing where their relative's appointment is, and most of
+  /// those will never have anybody from the clinic sign in. Claiming is what
+  /// turns one into a portal, and it is deliberately not required for the
+  /// clinic to work as an address.
+  organizationId String?
+
   address      Address       @relation(fields: [addressId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
   appointments Appointment[]
 
+  @@index([organizationId])
   @@map("clinics")
 }
 
@@ -548,6 +592,22 @@ model Appointment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  /// The clinic confirming the patient is physically there.
+  ///
+  /// Distinct from the ride reaching `completed`, which only says a car
+  /// arrived at the address. A family watching a screen has been told their
+  /// relative was dropped off; this is somebody inside the building saying
+  /// they came in.
+  checkedInAt DateTime?
+
+  /// The clinic saying the visit is over and a car may be sent.
+  ///
+  /// This is what a `flexibleReturn` ride has always been waiting for. Nobody
+  /// knows when a cardiology follow-up will finish, which is why the return
+  /// leg is booked without a time — and until now nothing could tell it the
+  /// time had come.
+  readyForReturnAt DateTime?
 
   patient   Patient                    @relation(fields: [patientId], references: [id], onDelete: Cascade)
   clinic    Clinic                     @relation(fields: [clinicId], references: [id])
@@ -714,6 +774,7 @@ model Driver {
   user         User?             @relation("DriverAccount", fields: [userId], references: [id])
   rides        Ride[]
   seatChanges  SeatLedgerEntry[]
+  documents    DriverDocument[]
 
   @@index([organizationId, status])
   /// The claim lookup. Partial in spirit — most rows have no invited address —
@@ -721,6 +782,96 @@ model Driver {
   /// email drive for anyone".
   @@index([organizationId, invitedEmail])
   @@map("drivers")
+}
+
+/// What a driver has to hand in before anybody will let them carry a
+/// passenger.
+///
+/// The list is short and every entry is a legal requirement rather than a
+/// preference. Nothing here is optional and nothing else is collected: a
+/// transport operator has no business holding a driver's passport because the
+/// upload form happened to allow one.
+enum DriverDocumentKind {
+  driversLicence
+  vehicleInsurance
+  vehicleRegistration
+  backgroundCheck
+}
+
+/// Where a document is in review.
+///
+/// `expired` is a status rather than a deletion, and that is the point of it:
+/// an insurance certificate that lapsed in March has to stay answerable for
+/// the rides that happened in February.
+enum DriverDocumentStatus {
+  /// A slot exists and the file has not arrived. Created when the upload is
+  /// authorised, so an abandoned upload is visible as an empty slot rather
+  /// than as nothing at all.
+  awaitingUpload
+  submitted
+  approved
+  rejected
+  expired
+}
+
+/// One file a driver has submitted, and the decision made about it.
+///
+/// The **bytes are not here**. This row holds a key into object storage, and
+/// every read of the file goes through a short-lived pre-signed URL minted for
+/// one authorised person. A licence scan carries a home address, a date of
+/// birth and a photograph — the three things this product otherwise refuses to
+/// store — so it lives behind a URL that expires rather than behind a path
+/// anybody who learns it can fetch forever.
+model DriverDocument {
+  id       String             @id @default(uuid())
+  driverId String
+  kind     DriverDocumentKind
+
+  status DriverDocumentStatus @default(awaitingUpload)
+
+  /// The object key. Contains no name, no licence number and no readable
+  /// identifier — a bucket listing must not be a roster.
+  storageKey String @unique
+
+  contentType String
+  byteSize    Int?
+
+  /// Present only after the file arrives. Lets a re-upload of the identical
+  /// file be recognised, and lets a stored object be checked against what was
+  /// submitted.
+  checksum String?
+
+  /// When the document itself stops being valid — the date printed on the
+  /// licence, not a retention deadline. Null for documents that do not expire.
+  expiresAt DateTime?
+
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+
+  reviewedByUserId String?
+
+  /// Required when rejecting. "Rejected" with no reason is a driver who
+  /// re-uploads the same unreadable photograph three times.
+  reviewNote String?
+
+  /// Set when a renewal replaces this document. A superseded row is never
+  /// deleted: "which certificate was in force on the 3rd of March" has to stay
+  /// answerable after any number of renewals.
+  supersededAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  driver     Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  reviewedBy User?  @relation("DocumentReviewer", fields: [reviewedByUserId], references: [id])
+
+  /// One live document per kind per driver. A superseded one is kept — a
+  /// renewal must not erase the certificate that covered last month's rides —
+  /// so this is enforced in application code against the non-superseded row
+  /// rather than by a constraint here.
+  @@index([driverId, kind])
+  @@index([status])
+  @@map("driver_documents")
 }
 
 enum RideDirection {
@@ -1458,6 +1609,7 @@ model Invoice {
   subscription   Subscription?       @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   period         SubscriptionPeriod? @relation(fields: [periodId], references: [id], onDelete: SetNull)
   payments       Payment[]
+  refunds        Refund[]
 
   @@index([billingAccountId, issuedAt])
   @@index([status, nextAttemptAt])
@@ -1509,6 +1661,7 @@ model Payment {
   invoice        Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   billingAccount BillingAccount @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
   paymentMethod  PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  refunds        Refund[]
 
   @@index([invoiceId, createdAt])
   @@index([billingAccountId, createdAt])
@@ -1549,6 +1702,325 @@ model ProcessorEvent {
 /// that a phone number was edited is what an investigation needs; storing the
 /// old and new number would make the audit log a second copy of the data it
 /// exists to protect.
+enum RefundStatus {
+  pending
+  succeeded
+  failed
+}
+
+/// Money going back, and who decided it should.
+///
+/// Refunds were **reconciled** before this existed: one issued in the
+/// processor's console landed against its invoice through the webhook, and
+/// there was deliberately no endpoint to start one without an approval surface
+/// behind it. This is that surface. The row exists before the processor is
+/// called, for the same reason a payment attempt does — a refund that succeeded
+/// at the processor and failed to record here is money that left the business
+/// with nothing to explain it.
+model Refund {
+  id        String @id @default(uuid())
+  invoiceId String
+  paymentId String
+
+  /// Never more than the payment. Partial refunds are ordinary — a ride was
+  /// half completed, a surcharge was applied in error.
+  amountCents Int
+  currency    String @default("usd")
+
+  /// Required. A refund with no reason is an unexplained credit in a ledger
+  /// somebody will have to justify to an accountant a quarter later.
+  reason String
+
+  status RefundStatus @default(pending)
+
+  externalRefundId String? @unique
+
+  /// Submitted to the processor under this key, so a retry after a lost
+  /// response cannot refund twice.
+  idempotencyKey String @unique
+
+  failureMessage String?
+
+  /// Who authorised it. Not nullable: every refund has a person behind it.
+  requestedByUserId String
+
+  createdAt DateTime  @default(now())
+  settledAt DateTime?
+
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  payment     Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  requestedBy User    @relation("RefundRequester", fields: [requestedByUserId], references: [id])
+
+  @@index([invoiceId, createdAt])
+  @@map("refunds")
+}
+
+/// A switch, and how far it is turned.
+///
+/// Keyed by a string rather than an enum on purpose: a flag's whole value is
+/// that it can be added without a migration and removed without one. The cost
+/// is that a typo is a flag that is simply off, which is the safe direction.
+model FeatureFlag {
+  key         String @id
+  description String
+
+  /// The master switch. False means off for everybody regardless of rollout.
+  enabled Boolean @default(false)
+
+  /// Nought to a hundred. Applied to a stable hash of the subject, so a given
+  /// user is on the same side of the line on every request — a flag that
+  /// flipped per request would be worse than one that is simply off.
+  rolloutPercent Int @default(0)
+
+  updatedByUserId String?
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+
+  updatedBy User? @relation("FlagEditor", fields: [updatedByUserId], references: [id])
+
+  @@map("feature_flags")
+}
+
+// ─── caregiver marketplace (Stage 5A) ────────────────────────────────────────
+//
+// **Companion care, not clinical care.** Sitting with somebody, helping them to
+// a door, being in the room. Nothing here is a nurse, and nothing in this
+// schema records a treatment, a medication or a condition — the same absence
+// the rest of the model keeps.
+//
+// The hard rule this whole section is written around: **a platform check is
+// not a safety guarantee.** CareBridge records that identity was confirmed and
+// that a background check was run, with its date and its provider. It does not
+// say the person is safe, it does not rank by it, and the copy that reaches a
+// family says exactly that.
+
+enum CaregiverStatus {
+  /// Applied. Visible to nobody.
+  applied
+  /// Identity confirmed and a check on file. Bookable.
+  verified
+  /// Temporarily stopped — a complaint under review, a lapsed check.
+  suspended
+  /// Gone. Terminal, and the record stays so past bookings still name
+  /// somebody.
+  offboarded
+}
+
+model Caregiver {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  /// First name and last initial, like a driver. A family needs to recognise
+  /// the person at the door, not to be able to look them up.
+  displayName String
+
+  /// Written by the caregiver. Never contains a qualification claim the
+  /// platform has not checked — moderated on write.
+  bio String
+
+  yearsExperience Int      @default(0)
+  languages       String[] @default([])
+
+  /// Integer cents per hour. Money never touches a float.
+  hourlyRateCents Int
+
+  /// How far they will travel, from the area they work out of.
+  serviceRadiusMiles Int    @default(10)
+  serviceAreaCity    String
+  serviceAreaState   String
+
+  status CaregiverStatus @default(applied)
+
+  /// When identity was confirmed, and when a background check was last run.
+  ///
+  /// Two separate dates because they are two separate things, and because "a
+  /// check was run in 2019" is a materially different statement from "a check
+  /// was run last month". Both are shown to a family with their dates, so the
+  /// family judges rather than the platform.
+  identityVerifiedAt DateTime?
+  backgroundCheckAt  DateTime?
+  backgroundCheckRef String?
+  suspensionReason   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User                    @relation("CaregiverAccount", fields: [userId], references: [id], onDelete: Cascade)
+  availability CaregiverAvailability[]
+  bookings     CaregiverBooking[]
+  reviews      CaregiverReview[]
+
+  @@index([status, serviceAreaState, serviceAreaCity])
+  @@map("caregivers")
+}
+
+/// A recurring weekly window somebody is willing to work.
+///
+/// Weekly rather than a list of dates: a caregiver who has to re-enter their
+/// availability every Sunday stops doing it by the third week, and a
+/// marketplace whose availability is stale is a marketplace of dead ends.
+model CaregiverAvailability {
+  id          String @id @default(uuid())
+  caregiverId String
+
+  /// 1 = Monday, 7 = Sunday, matching ISO-8601 and Luxon.
+  weekday Int
+
+  /// Minutes from midnight, in the caregiver's own zone.
+  startMinute Int
+  endMinute   Int
+
+  timeZone String @default("America/New_York")
+
+  caregiver Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@index([caregiverId, weekday])
+  @@map("caregiver_availability")
+}
+
+enum BookingStatus {
+  /// The family asked. The caregiver has not answered.
+  requested
+  confirmed
+  /// The caregiver arrived and said so.
+  inProgress
+  completed
+  cancelledByFamily
+  cancelledByCaregiver
+  /// Nobody came. Distinct from a cancellation, because it is the outcome a
+  /// family is owed an explanation for.
+  noShow
+}
+
+/// One engagement.
+model CaregiverBooking {
+  id          String @id @default(uuid())
+  caregiverId String
+  patientId   String
+
+  /// Who arranged it, and therefore who is charged.
+  bookedByUserId String
+
+  startsAt DateTime
+  endsAt   DateTime
+
+  status BookingStatus @default(requested)
+
+  /// The rate agreed **at booking**, not today's. A caregiver raising their
+  /// price must not re-price an engagement somebody has already agreed to —
+  /// the same rule the ride pricing follows.
+  hourlyRateCents Int
+
+  /// Basis points of the total, stamped at booking for the same reason.
+  commissionBasisPoints Int
+
+  /// Set when the work actually happens. The charge is computed from these
+  /// rather than from the booked window: a visit that ran twenty minutes over
+  /// is twenty minutes of somebody's afternoon.
+  checkedInAt  DateTime?
+  checkedOutAt DateTime?
+
+  /// Written at completion, from the checked times.
+  billableMinutes      Int?
+  totalCents           Int?
+  platformFeeCents     Int?
+  caregiverPayoutCents Int?
+
+  cancellationReason String?
+  cancelledAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  caregiver Caregiver        @relation(fields: [caregiverId], references: [id])
+  patient   Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  bookedBy  User             @relation("BookingRequester", fields: [bookedByUserId], references: [id])
+  review    CaregiverReview?
+  dispute   BookingDispute?
+
+  @@index([caregiverId, startsAt])
+  @@index([patientId, startsAt])
+  @@index([status])
+  @@map("caregiver_bookings")
+}
+
+/// A rating, tied to one booking.
+///
+/// One per booking, and only from a booking that actually happened. Both are
+/// enforced: a marketplace where anybody can rate anybody is a marketplace
+/// with a reputation attack in it, and one where a family can rate a visit
+/// that never took place is worse.
+model CaregiverReview {
+  id          String @id @default(uuid())
+  bookingId   String @unique
+  caregiverId String
+
+  /// One to five. Stored as an integer because half-stars are a display
+  /// decision and averaging them is a different problem.
+  rating Int
+
+  comment String?
+
+  authorUserId String
+
+  createdAt DateTime @default(now())
+
+  booking   CaregiverBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  caregiver Caregiver        @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  author    User             @relation("ReviewAuthor", fields: [authorUserId], references: [id])
+
+  @@index([caregiverId, createdAt])
+  @@map("caregiver_reviews")
+}
+
+enum DisputeStatus {
+  open
+  /// Somebody at CareBridge has looked and decided.
+  resolved
+  /// Withdrawn by whoever raised it.
+  withdrawn
+}
+
+enum DisputeOutcome {
+  /// The charge stands.
+  upheld
+  /// Refunded in part or in whole.
+  refunded
+  /// No charge was made and none will be.
+  waived
+}
+
+/// A disagreement about an engagement.
+///
+/// Deliberately a first-class row rather than a support email. A dispute
+/// decides whether money moves and whether somebody keeps working here, and
+/// both have to be answerable months later with who decided and why.
+model BookingDispute {
+  id        String @id @default(uuid())
+  bookingId String @unique
+
+  raisedByUserId String
+  reason         String
+
+  status  DisputeStatus   @default(open)
+  outcome DisputeOutcome?
+
+  /// Required when resolving. A decision with no reasoning is one nobody can
+  /// defend when the same question is asked again.
+  resolutionNote   String?
+  resolvedByUserId String?
+  resolvedAt       DateTime?
+
+  createdAt DateTime @default(now())
+
+  booking    CaregiverBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  raisedBy   User             @relation("DisputeRaiser", fields: [raisedByUserId], references: [id])
+  resolvedBy User?            @relation("DisputeResolver", fields: [resolvedByUserId], references: [id])
+
+  @@index([status, createdAt])
+  @@map("booking_disputes")
+}
+
 model AuditLog {
   id            String   @id @default(uuid())
   at            DateTime @default(now())

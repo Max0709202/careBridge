@@ -21,6 +21,13 @@ dependencies:
   http: ^1.6.0
   url_launcher: ^6.3.2
 
+  # Picking a licence photograph off the phone.
+  #
+  # Deliberately offers the gallery as well as the camera: a driver has usually
+  # already photographed their documents, and forcing a fresh photograph of a
+  # piece of paper held in one hand is how an upload gets abandoned halfway.
+  image_picker: ^1.1.2
+
   # Location, and on Android the foreground service that keeps it running with
   # the screen off. A ride is thirty minutes of driving with the phone in a
   # cradle and the app behind a navigation app; without the foreground service

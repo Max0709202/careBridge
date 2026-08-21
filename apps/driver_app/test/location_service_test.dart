@@ -50,12 +50,12 @@ class FakePositionSource implements PositionSource {
 }
 
 class FakeBattery implements BatterySource {
-  FakeBattery([this.value = BatteryPressure.none]);
+  FakeBattery([this.value = const BatteryReading(percent: 80)]);
 
-  BatteryPressure value;
+  BatteryReading value;
 
   @override
-  Future<BatteryPressure> pressure() async => value;
+  Future<BatteryReading> read() async => value;
 }
 
 /// A server that records what it was sent and can be told to fail.

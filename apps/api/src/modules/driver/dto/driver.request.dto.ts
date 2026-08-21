@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
+  IsUUID,
   ArrayNotEmpty,
   IsBoolean,
   IsIn,
@@ -61,4 +62,14 @@ export class ReportLocationBatchDto {
   @ValidateNested({ each: true })
   @Type(() => ReportLocationDto)
   points!: ReportLocationDto[];
+}
+
+export class ConfirmDocumentUploadDto {
+  @ApiProperty({
+    format: 'uuid',
+    description:
+      'The slot the upload was authorised against. The server checks storage rather than believing this — a client that says “done” is a client that could say it without having uploaded anything.',
+  })
+  @IsUUID()
+  documentId!: string;
 }

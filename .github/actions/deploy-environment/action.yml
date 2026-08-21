@@ -1,0 +1,105 @@
+name: Deploy one environment
+description: >-
+  Migrations as a task, then the service, then a readiness check. In that order
+  and never overlapping — a rolling update would otherwise run the migration
+  once per task, concurrently.
+
+inputs:
+  environment:
+    required: true
+  image_tag:
+    required: true
+  region:
+    required: true
+  url:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve the cluster and the task definition
+      shell: bash
+      run: |
+        echo "CLUSTER=carebridge-${{ inputs.environment }}" >> "$GITHUB_ENV"
+        echo "SERVICE=carebridge-${{ inputs.environment }}-api" >> "$GITHUB_ENV"
+        echo "FAMILY=carebridge-${{ inputs.environment }}-api" >> "$GITHUB_ENV"
+
+    - name: Register a task definition for this image
+      shell: bash
+      run: |
+        set -euo pipefail
+        aws ecs describe-task-definition --task-definition "$FAMILY" \
+          --query taskDefinition > current.json
+
+        REGISTRY=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ inputs.region }}.amazonaws.com
+        IMAGE="$REGISTRY/carebridge-${{ inputs.environment }}-api:${{ inputs.image_tag }}"
+
+        jq --arg image "$IMAGE" '
+          .containerDefinitions[0].image = $image
+          | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                .compatibilities, .registeredAt, .registeredBy)
+        ' current.json > next.json
+
+        ARN=$(aws ecs register-task-definition --cli-input-json file://next.json \
+          --query taskDefinition.taskDefinitionArn --output text)
+        echo "TASK_DEF=$ARN" >> "$GITHUB_ENV"
+
+    # A separate one-shot task, before the service updates.
+    #
+    # Two reasons, and both have bitten real deployments. A rolling update runs
+    # container startup N times concurrently, so a migration there races itself.
+    # And a failed migration should stop the deploy rather than produce a
+    # service whose tasks are crash-looping while the old ones drain.
+    - name: Run migrations
+      shell: bash
+      run: |
+        set -euo pipefail
+        NETWORK=$(aws ecs describe-services --cluster "$CLUSTER" --services "$SERVICE" \
+          --query 'services[0].networkConfiguration' --output json)
+
+        TASK=$(aws ecs run-task \
+          --cluster "$CLUSTER" \
+          --task-definition "$TASK_DEF" \
+          --launch-type FARGATE \
+          --network-configuration "$NETWORK" \
+          --overrides '{"containerOverrides":[{"name":"api","command":["node","node_modules/prisma/build/index.js","migrate","deploy"]}]}' \
+          --query 'tasks[0].taskArn' --output text)
+
+        aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK"
+
+        CODE=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK" \
+          --query 'tasks[0].containers[0].exitCode' --output text)
+        REASON=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK" \
+          --query 'tasks[0].stoppedReason' --output text)
+
+        if [ "$CODE" != "0" ]; then
+          echo "::error::Migration task exited ${CODE}: ${REASON}"
+          exit 1
+        fi
+
+    - name: Update the service
+      shell: bash
+      run: |
+        set -euo pipefail
+        aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" \
+          --task-definition "$TASK_DEF" >/dev/null
+        # The service's own circuit breaker rolls back on its own if the new
+        # tasks never become healthy; this wait is what makes the *pipeline*
+        # fail when that happens, rather than reporting a green deploy.
+        aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+
+    # Readiness, not liveness. Liveness only says the process is running, which
+    # it would be even if it could not reach the database.
+    - name: Check it is ready
+      shell: bash
+      run: |
+        set -euo pipefail
+        for attempt in $(seq 1 20); do
+          if curl -fsS --max-time 10 "${{ inputs.url }}/api/v1/health/ready"; then
+            echo "Ready."
+            exit 0
+          fi
+          sleep 15
+        done
+        echo "::error::${{ inputs.environment }} did not become ready."
+        exit 1

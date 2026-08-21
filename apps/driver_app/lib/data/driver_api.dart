@@ -2,6 +2,8 @@
 // **wire** types and several share a name with this app's domain enums —
 // `RideStatus` above all. The prefix keeps the domain model primary, which is
 // the right way round.
+import 'dart:typed_data';
+
 import 'package:carebridge_api/carebridge_api.dart' as wire;
 import 'package:carebridge_client/carebridge_client.dart';
 
@@ -96,6 +98,69 @@ class DriverApi extends ApiTransport {
       ),
     ),
   );
+
+  // ─── paperwork ────────────────────────────────────────────────────────────
+
+  Future<wire.DriverDocumentsDto> documents() async =>
+      wire.DriverDocumentsDto.fromJson(await send('GET', '/driver/documents'));
+
+  /// Authorises one upload and returns where to PUT the bytes.
+  ///
+  /// The file never passes through the API. This app uploads it straight to
+  /// object storage with the URL and headers the server signed — which is why
+  /// the headers below are sent exactly as given rather than merged with
+  /// anything this client thinks is a good idea.
+  Future<wire.PresignedUploadDto> authoriseUpload({
+    required String kind,
+    required String contentType,
+    DateTime? expiresAt,
+  }) async => wire.PresignedUploadDto.fromJson(
+    await send(
+      'POST',
+      '/driver/documents',
+      body: {
+        'kind': kind,
+        'contentType': contentType,
+        if (expiresAt != null) 'expiresAt': expiresAt.toUtc().toIso8601String(),
+      },
+    ),
+  );
+
+  /// PUTs the bytes to the signed URL.
+  ///
+  /// Outside [ApiTransport] on purpose: this request carries no bearer token,
+  /// goes to a different host in production, and must send exactly the headers
+  /// the signature covers. Routing it through the shared transport would
+  /// attach an Authorization header S3 would reject.
+  Future<void> uploadBytes({
+    required wire.PresignedUploadDto slot,
+    required Uint8List bytes,
+  }) async {
+    // The shared client, so the connection pool is shared and a test can
+    // replace it — but **not** `send`, which would attach the session. An
+    // Authorization header here is a bearer token handed to a third party, and
+    // S3 would reject the request for it anyway.
+    final response = await httpClient.put(
+      Uri.parse(slot.url),
+      headers: slot.headers.map(
+        (key, value) => MapEntry(key, value.toString()),
+      ),
+      body: bytes,
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw const NetworkFailure();
+    }
+  }
+
+  Future<wire.DriverDocumentsDto> confirmUpload(String documentId) async =>
+      wire.DriverDocumentsDto.fromJson(
+        await send(
+          'POST',
+          '/driver/documents/confirm',
+          body: {'documentId': documentId},
+        ),
+      );
 
   // ─── position ─────────────────────────────────────────────────────────────
 

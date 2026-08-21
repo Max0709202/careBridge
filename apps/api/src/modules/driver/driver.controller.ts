@@ -1,13 +1,28 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Put } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { Ctx, CurrentUser, RequestContext } from '../../common/request-context';
 import { Idempotent } from '../../common/idempotency.interceptor';
 import type { RideStatus } from '../../domain/ride-status';
 import { DriverService } from './driver.service';
-import { DriverProfileDto, DriverRideDto, LocationBatchResultDto } from './driver.dto';
+import {
+  DriverDocumentsDto,
+  DriverProfileDto,
+  DriverRideDto,
+  LocationBatchResultDto,
+} from './driver.dto';
+import { PresignedUploadDto } from '../dispatch/dispatch.dto';
+import { RequestDocumentUploadDto } from '../dispatch/dto/dispatch.request.dto';
+import type { DriverDocumentKind } from '../../domain/driver-documents';
 import {
   AdvanceRideDto,
+  ConfirmDocumentUploadDto,
   DriverShiftDto,
   ReportLocationBatchDto,
 } from './dto/driver.request.dto';
@@ -85,6 +100,75 @@ export class DriverController {
       body.reason ?? null,
       ctx,
     );
+  }
+
+  // ─── paperwork ────────────────────────────────────────────────────────────
+
+  @Get('documents')
+  @ApiOperation({
+    summary: 'What has been handed in, and what is still wanted',
+    description:
+      'Includes the rejection note. Being told “you cannot drive” without being told which document and why is how somebody re-uploads the same unreadable photograph three times.',
+  })
+  @ApiOkResponse({ type: DriverDocumentsDto })
+  async documents(@CurrentUser() userId: string): Promise<DriverDocumentsDto> {
+    const { state, documents } = await this.driver.documents(userId);
+    return {
+      compliant: state.compliant,
+      missing: [...state.missing],
+      expiringSoon: [...state.expiringSoon],
+      documents: documents.map((document) => ({
+        id: document.id,
+        kind: document.kind,
+        status: document.status,
+        contentType: document.contentType,
+        byteSize: document.byteSize,
+        expiresAt: document.expiresAt?.toISOString() ?? null,
+        submittedAt: document.submittedAt?.toISOString() ?? null,
+        reviewedAt: document.reviewedAt?.toISOString() ?? null,
+        reviewNote: document.reviewNote,
+        superseded: document.supersededAt !== null,
+      })),
+    };
+  }
+
+  @Post('documents')
+  @ApiOperation({
+    summary: 'Authorise one upload',
+    description:
+      'Returns a URL to PUT the file to. The bytes never pass through this API — a multipart body would be a copy of the file in the heap of a process that is also holding a WebSocket open for every live ride, and an API that can stream any object is an API where one bug hands over the bucket.',
+  })
+  @ApiCreatedResponse({ type: PresignedUploadDto })
+  requestUpload(
+    @CurrentUser() userId: string,
+    @Body() body: RequestDocumentUploadDto,
+    @Ctx() ctx: RequestContext,
+  ): Promise<PresignedUploadDto> {
+    return this.driver.requestDocumentUpload(
+      userId,
+      {
+        kind: body.kind as DriverDocumentKind,
+        contentType: body.contentType,
+        expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
+      },
+      ctx,
+    );
+  }
+
+  @Post('documents/confirm')
+  @ApiOperation({
+    summary: 'Say the upload finished',
+    description:
+      'The server checks storage rather than believing the client. A client reporting its own success could report it without uploading, and an operator would then see a complete file with an empty object behind it.',
+  })
+  @ApiOkResponse({ type: DriverDocumentsDto })
+  async confirmUpload(
+    @CurrentUser() userId: string,
+    @Body() body: ConfirmDocumentUploadDto,
+    @Ctx() ctx: RequestContext,
+  ): Promise<DriverDocumentsDto> {
+    await this.driver.confirmDocumentUpload(userId, body.documentId, ctx);
+    return this.documents(userId);
   }
 
   @Post('rides/:rideId/locations')

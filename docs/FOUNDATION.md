@@ -719,8 +719,25 @@ route to. Patients are now geocoded on create and on every save, because a
 stale pin is worse than none: it sends a car confidently to where somebody used
 to live.
 
-**Still outstanding in this stage:** driver documents to S3 and the upload
-behind approval, and the documented real-device field test.
+**Landed since (slice six — the paperwork):** driver documents in object
+storage behind pre-signed URLs ([ADR-0012](adr/0012-documents-in-object-storage.md)).
+The bytes never pass through the API: a driver's app is given a URL that
+permits exactly one PUT of one type up to one size for ten minutes, and a
+reviewer is given one that permits one GET for two. Every view is audited with
+the actor, because "who has seen this driver's licence" is a question an
+investigation asks and cannot be answered retroactively. Approval is gated on
+compliance **inside the transaction** — the console greys the button out, but a
+check only a screen performs is one a second tab can race past, and what it
+guards is whether somebody carries a passenger uninsured.
+
+The required set deliberately **excludes the background check**. A platform
+lookup is of variable quality and coverage; treating it as the thing that makes
+somebody safe would be a claim this product does not make.
+
+**Still outstanding in this stage:** the documented real-device field test. Its
+protocol, its instrumentation and the arithmetic that decides whether a run
+passed are built — see [the runbook](runbooks/field-test.md) — but running it
+needs two phones, a car and a driver.
 
 **Risks (highest of any stage):** ~~Flutter Web ops console unvalidated~~
 (R1, resolved — the console is built, tested and containerised);
@@ -784,13 +801,39 @@ attempt inside the shortest grace window any plan offers; and the signed
 webhook endpoint, whose event ids are claimed by a unique constraint so a
 redelivery cannot credit an account twice.
 
-**Still outstanding in this stage:** the administration surfaces — audit-log
-viewer, driver approval, refund initiation, feature flags; the operations
-analytics dashboard; Terraform and the deployment pipeline; the backup restore
-rehearsal; and the pilot documentation set. Refunds are *reconciled* rather
-than initiated: a refund issued in the processor's console lands against its
-invoice through the webhook, and there is deliberately no endpoint to start one
-without an approval surface behind it.
+**Landed since (slice two of this stage — the administration surfaces):** a
+`PlatformRole` axis distinct from `OrgRole`, because an operator's owner has
+complete authority over their own company and none at all over anybody else's,
+while support has a narrow read-only view across all of them. Every
+administration route requires that standing **and a confirmed second factor** —
+FOUNDATION §5 deferred MFA enforcement to "when those roles arrive", and they
+have arrived, so it is enforced rather than warned about. A caller without
+standing gets the same 404 every other refused lookup returns, so probing
+`/admin` cannot map the surface out.
+
+Behind it: the audit-log viewer, keyset-paged because a table appended to on
+every authenticated action would lose rows between offset pages, and a log that
+quietly omits rows is worse than none; **refund initiation**, three-committed
+like the collection path so a refund that succeeded at the processor and failed
+to record here is still explicable; feature flags with sticky percentage
+rollouts, where narrowing one has to be confirmed because it takes a feature
+away from people who already have it; and an operational dashboard whose every
+number implies an action rather than being interesting.
+
+**Landed since (slice three — Terraform and the pipeline):** modules for
+network, data, storage, ECS and observability, with staging and production
+sharing them and differing only in size and in what may be destroyed. Both
+environments `terraform validate` in CI. The pipeline builds one image, runs
+migrations as a **separate task before the service updates**, and watches
+production for fifteen minutes before calling a deploy done.
+
+What Terraform deliberately does not own: the Stripe account, the maps key, the
+FCM project, the domain, and its own state backend. Terraform that creates
+billing relationships can cancel them; Terraform that owns a domain can release
+one; a state bucket Terraform creates is one it can destroy.
+
+**Still outstanding in this stage:** the backup restore rehearsal, and the pilot
+documentation set. Both need an AWS account rather than a keyboard.
 
 **Risks:** payment/ledger drift (reconciliation job plus alerting); webhook
 replay and out-of-order delivery (idempotency table plus event-ID uniqueness);
@@ -809,7 +852,34 @@ copy or docs.
 
 ## Stage 5 — Expansion (gated on pilot evidence)
 
-Not begun until pilot metrics and feedback justify it. **5A** caregiver
+**5A and 5B are built and switched off.** Both sit behind feature flags that
+seed as `enabled: false`. The gate is unchanged — nothing here should be turned
+on until pilot metrics justify it — but the code exists so that the decision is
+about the product rather than about the schedule.
+
+**5A, the caregiver marketplace**, is companion care and not clinical care:
+nothing in its schema records a treatment, a medication or a condition. The
+hard rule from the brief is enforced rather than promised. A family is shown a
+**sentence** describing what was checked and when, never a badge; the words
+"safe", "vetted", "approved", "trusted" and "guaranteed" appear nowhere in the
+module, including inside a denial, and a test asserts their absence on the
+wire. Verification is not part of the ranking — ordering by it would be the
+platform quietly asserting the claim it says it does not make.
+
+Search orders by a **Wilson lower bound** rather than by the displayed rating,
+and that split came out of a test. The displayed rating shrinks towards a prior
+so one bad review cannot halve a career; but shrinkage pulls both ways, so
+fifty honest fours scored *below* three — telling a family the person with less
+of a record was the better bet.
+
+**5B, the clinic portal**, turned out to complete something Stage 3 left
+hanging. A `flexibleReturn` ride has been in the schema since round trips
+existed, booked without a time because nobody knows when a cardiology follow-up
+will finish — and nothing could tell it the time had come. A clinic saying "the
+visit is over" is that thing. A clinic sees a name, a time and whether a car is
+coming; no home address, no telephone number, no care circle.
+
+The rest is not begun until pilot metrics and feedback justify it. **5A** caregiver
 marketplace (profiles, availability, booking, check-in/out, ratings, commission,
 disputes — with no claim that platform checks replace background screening).
 **5B** clinic portal (organisation accounts, expected arrivals, confirmation,

@@ -1,0 +1,6 @@
+# Copy to staging.tfvars. Not committed: it names a real hosted zone.
+domain_name     = "staging.carebridge.example"
+ops_domain_name = "ops.staging.carebridge.example"
+hosted_zone_id  = "Z0000000000000000000"
+image           = "000000000000.dkr.ecr.us-east-1.amazonaws.com/carebridge-staging-api:bootstrap"
+alert_emails    = ["engineering@carebridge.example"]

@@ -5,7 +5,9 @@ import '../data/location_queue.dart';
 import '../domain/location_cadence.dart';
 import '../domain/models.dart';
 import '../domain/ride_status.dart';
+import 'field_recorder.dart';
 import 'position_source.dart';
+import '../domain/field_test.dart';
 
 /// What the screen needs to know about location sharing.
 class SharingState {
@@ -54,13 +56,20 @@ class LocationService {
     required this.positions,
     required this.battery,
     LocationQueue? queue,
+    FieldRecorder? recorder,
     this.batchSize = 240,
-  }) : _queue = queue ?? LocationQueue();
+  }) : _queue = queue ?? LocationQueue(),
+       recorder = recorder ?? FieldRecorder(battery: battery);
 
   final DriverApi api;
   final PositionSource positions;
   final BatterySource battery;
   final LocationQueue _queue;
+
+  /// Off unless a field test is running — see [FieldRecorder]. Wired here
+  /// rather than bolted on afterwards, because the numbers a field test needs
+  /// are the ones this class already has and nothing else can see.
+  final FieldRecorder recorder;
 
   /// The server's own cap on one batch. Matching it means a long backlog
   /// drains in several requests rather than being refused whole.
@@ -113,7 +122,7 @@ class LocationService {
     _rideId = job.id;
     _status = job.status;
 
-    _pressure = await battery.pressure();
+    _pressure = (await battery.read()).pressure;
     final wanted = cadenceFor(
       CadenceInputs(status: job.status, battery: _pressure),
     );
@@ -131,6 +140,11 @@ class LocationService {
     }
 
     await _subscribe(wanted);
+    recorder.observe(
+      status: job.status,
+      cadence: wanted,
+      queueDepth: _queue.length,
+    );
     _publish();
   }
 
@@ -149,11 +163,13 @@ class LocationService {
     _queue.clear();
     _rideId = null;
     _cadence = null;
+    recorder.stop();
     _publish();
   }
 
   Future<void> dispose() async {
     await stop();
+    recorder.dispose();
     await _states.close();
   }
 
@@ -165,16 +181,26 @@ class LocationService {
     // times a ride rather than continuously.
     if (_fixes != null && _cadence == cadence) return;
 
+    final first = _fixes == null;
     await _fixes?.cancel();
     _cadence = cadence;
     _fixes = positions.watch(cadence: cadence).listen(_onFix, onError: (_) {});
+    if (first) recorder.start();
   }
 
   Future<void> _onFix(Fix fix) async {
     final rideId = _rideId;
     if (rideId == null) return;
 
+    final before = _queue.dropped;
     _queue.add(fix);
+    recorder.observe(queueDepth: _queue.length);
+    recorder.record(
+      FieldEvent.fix,
+      speedMetersPerSecond: fix.speedMetersPerSecond,
+      accuracyMeters: fix.accuracyMeters,
+    );
+    if (_queue.dropped > before) recorder.record(FieldEvent.queueOverflowed);
     _publish();
 
     // Speed comes from the fix that has just arrived, so the cadence responds
@@ -203,9 +229,11 @@ class LocationService {
       await api.flush(rideId, batch);
       _queue.commit(batch);
       _lastSentAt = DateTime.now();
+      recorder.record(FieldEvent.flushSucceeded);
     } catch (_) {
       // Kept. The next fix tries again, which on a patchy road is a retry
       // every few seconds without a timer to leak.
+      recorder.record(FieldEvent.flushFailed);
     } finally {
       _flushing = false;
       _publish();

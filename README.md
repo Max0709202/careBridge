@@ -33,6 +33,7 @@ dispatcher, and a driver:
 | family app, `:8080` | `sarah@example.com` |
 | ops console, `:8081` | `dispatch@meridiantransit.example` |
 | driver app, on a device | `marcus@meridiantransit.example` |
+| admin API, `/api/v1/admin` | `admin@carebridge.example` — seeded with a confirmed second factor, because the guard refuses platform staff without one |
 
 Seven containers come up: PostgreSQL 16, Redis 7, Mailpit, MinIO, the API, and
 the two Flutter web surfaces behind nginx — the family app and the dispatch
@@ -197,6 +198,12 @@ apps/api/                     NestJS modular monolith
     │   ├── eta.ts                    when to ask a routing vendor, and what
     │   │                              to say between asks
     │   ├── circuit-breaker.ts        a pure state machine, no clock of its own
+    │   ├── driver-documents.ts       what is collected, and what approval waits on
+    │   ├── feature-flags.ts          sticky percentage rollouts
+    │   ├── clinic-visit.ts           checking in is not the ride completing
+    │   ├── caregiver-booking.ts      rounding, commission, cancellation windows
+    │   ├── caregiver-reputation.ts   what the platform says about a person —
+    │   │                              and the words it never uses
     │   ├── totp.ts                   RFC 6238, against the published vectors
     │   ├── reminder-schedule.ts      offsets in local wall time, DST-correct
     │   └── notification-policy.ts    which channels, per event kind
@@ -259,6 +266,15 @@ apps/driver_app/              Flutter, Android + iOS — the one surface that
 
 infrastructure/nginx/         same-origin proxy, SPA fallback, CSP and the
                               other response headers the app is served with
+
+infrastructure/terraform/     staging and production, sharing one set of
+│                             modules and differing only in size and in what
+│                             may be destroyed. Both `terraform validate` in CI.
+├── modules/network/          VPC, three tiers, security groups by reference
+├── modules/data/             RDS, ElastiCache, Secrets Manager
+├── modules/storage/          the document bucket and the image registry
+├── modules/ecs/              ALB, WAF, cluster, task, autoscaling
+└── modules/observability/    alarms, each naming the next move
 ```
 
 Dependencies point downward on both sides: `domain/` depends on nothing but

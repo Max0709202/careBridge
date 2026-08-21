@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { AddressDto } from '../care/care.dto';
-import { VehicleDto } from '../dispatch/dispatch.dto';
+import { DriverDocumentDto, VehicleDto } from '../dispatch/dispatch.dto';
 import { DRIVER_STATUSES } from '../../domain/driver-status';
 import { RIDE_STATUSES } from '../../domain/ride-status';
 
@@ -126,4 +126,27 @@ export class LocationBatchResultDto {
       'Whether the batch moved the position the family sees. False for a batch that drained late: its readings are history, and history must not overwrite a fresher position.',
   })
   positionUpdated!: boolean;
+}
+
+export class DriverDocumentsDto {
+  @ApiProperty({
+    type: Boolean,
+    description: 'Whether the paperwork permits the operator approving this driver.',
+  })
+  compliant!: boolean;
+
+  @ApiProperty({
+    type: [String],
+    description: 'Every required document still wanted, not just the first.',
+  })
+  missing!: string[];
+
+  @ApiProperty({ type: [String] }) expiringSoon!: string[];
+
+  @ApiProperty({
+    type: () => [DriverDocumentDto],
+    description:
+      'Including the rejection note. Being told “you cannot drive” without being told which document and why is how somebody re-uploads the same unreadable photograph three times and then telephones.',
+  })
+  documents!: DriverDocumentDto[];
 }

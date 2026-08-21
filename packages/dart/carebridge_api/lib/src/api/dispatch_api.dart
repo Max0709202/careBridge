@@ -103,6 +103,60 @@ class DispatchApi {
     return DriverDto.fromJson(response as Map<String, dynamic>);
   }
 
+  /// What this driver has handed in, and what is still missing
+  ///
+  /// The `compliant` flag is what the approval button turns on. It is advisory
+  /// here — the same check runs inside the approval transaction, because a
+  /// check only a screen performs is one a second tab can race past.
+  Future<DriverComplianceDto> documentsFor({
+    required String organizationId,
+    required String driverId,
+  }) async {
+    final response = await _client.send(
+      method: 'GET',
+      path:
+          '/organizations/${Uri.encodeComponent(organizationId)}/drivers/${Uri.encodeComponent(driverId)}/documents',
+    );
+    return DriverComplianceDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// A short-lived link to one document
+  ///
+  /// A POST rather than a GET because it is not a read: it mints a credential
+  /// and writes an audit row saying that a named person looked at a named
+  /// driver’s licence. “Who has seen this” cannot be answered after the fact.
+  Future<DocumentViewUrlDto> viewDocument({
+    required String organizationId,
+    required String driverId,
+    required String documentId,
+  }) async {
+    final response = await _client.send(
+      method: 'POST',
+      path:
+          '/organizations/${Uri.encodeComponent(organizationId)}/drivers/${Uri.encodeComponent(driverId)}/documents/${Uri.encodeComponent(documentId)}/view',
+    );
+    return DocumentViewUrlDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Approve or reject a document
+  ///
+  /// A rejection must say why — enforced here and by a check constraint on the
+  /// table.
+  Future<DriverComplianceDto> reviewDocument({
+    required String organizationId,
+    required String driverId,
+    required String documentId,
+    required ReviewDocumentDto body,
+  }) async {
+    final response = await _client.send(
+      method: 'POST',
+      path:
+          '/organizations/${Uri.encodeComponent(organizationId)}/drivers/${Uri.encodeComponent(driverId)}/documents/${Uri.encodeComponent(documentId)}/review',
+      body: body.toJson(),
+    );
+    return DriverComplianceDto.fromJson(response as Map<String, dynamic>);
+  }
+
   /// Rides waiting for a car, ordered by when the car is needed
   ///
   /// Not by when the request arrived: a ride booked this morning for 4pm is not

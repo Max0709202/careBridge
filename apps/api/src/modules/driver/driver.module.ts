@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { CareModule } from '../care/care.module';
 import { TrackingModule } from '../tracking/tracking.module';
+import { DispatchModule } from '../dispatch/dispatch.module';
 import { DriverController } from './driver.controller';
 import { DriverService } from './driver.service';
 
@@ -18,10 +19,13 @@ import { DriverService } from './driver.service';
  * `CareModule` for the ride state machine — the machine that decides what a
  * ride may do next stays in one place, and this module only narrows it to what
  * belongs to the driver. `TrackingModule` so a flushed queue reaches the
- * family's map as well as the database.
+ * family's map as well as the database. `DispatchModule` for `DocumentsService`:
+ * a driver uploads their paperwork and an operator reviews it, and the rules
+ * about what may be uploaded belong in one place rather than being written
+ * twice for the two sides of the same table.
  */
 @Module({
-  imports: [CareModule, TrackingModule],
+  imports: [CareModule, TrackingModule, DispatchModule],
   controllers: [DriverController],
   providers: [DriverService],
 })

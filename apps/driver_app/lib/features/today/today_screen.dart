@@ -26,6 +26,11 @@ class TodayScreen extends ConsumerWidget {
         title: const Text('Today'),
         actions: [
           IconButton(
+            tooltip: 'Your paperwork',
+            onPressed: () => context.push('/documents'),
+            icon: const Icon(Icons.folder_outlined),
+          ),
+          IconButton(
             tooltip: 'Sign out',
             onPressed: () => ref.read(sessionProvider.notifier).signOut(),
             icon: const Icon(Icons.logout),
@@ -136,11 +141,20 @@ class _ShiftCard extends ConsumerWidget {
                     )
                   : null,
             )
-          else
+          else ...[
             Text(
               'Your operator has not approved you to drive yet.',
               style: theme.textTheme.bodyMedium,
             ),
+            const SizedBox(height: DriverSpacing.sm),
+            // The next thing to do, rather than a dead end. Approval waits on
+            // paperwork far more often than on anything else.
+            OutlinedButton.icon(
+              onPressed: () => context.push('/documents'),
+              icon: const Icon(Icons.folder_outlined),
+              label: const Text('Check your paperwork'),
+            ),
+          ],
         ],
       ),
     );

@@ -264,6 +264,31 @@ jobs:
         working-directory: apps/driver_app
         run: flutter build apk --debug
 
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      # Formatting and validation, not a plan. A plan needs credentials and
+      # would let a pull request read production state; `validate` catches the
+      # things that actually break — a mistyped attribute, a missing variable,
+      # a module wired to an output that does not exist.
+      - run: terraform fmt -check -recursive infrastructure/terraform
+
+      - name: Validate every environment
+        run: |
+          set -euo pipefail
+          for env in staging production; do
+            echo "── $env"
+            terraform -chdir=infrastructure/terraform/environments/$env init -backend=false
+            terraform -chdir=infrastructure/terraform/environments/$env validate
+          done
+
   docker:
     name: Docker image
     runs-on: ubuntu-latest

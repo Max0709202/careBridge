@@ -14,6 +14,7 @@ import { z } from 'zod';
 const mailDriver = z.enum(['smtp', 'log']).default('log');
 const pushDriver = z.enum(['fcm', 'log']).default('log');
 const mapsDriver = z.enum(['google', 'deterministic']).default('deterministic');
+const storageDriver = z.enum(['s3', 'filesystem']).default('filesystem');
 const paymentsDriver = z.enum(['stripe', 'local']).default('local');
 
 const schema = z.object({
@@ -156,6 +157,30 @@ const schema = z.object({
   MAPS_API_KEY: z.string().optional(),
 
   /**
+   * Where driver documents live — see ADR-0012.
+   *
+   * `filesystem` plays out the whole pre-signed-URL flow against a local
+   * directory, so a developer exercises the same shape the deployed system
+   * uses rather than a multipart upload that exists nowhere else. It is
+   * refused in production below, because an insurance certificate on a
+   * container's ephemeral disk is a document that vanishes at the next deploy.
+   */
+  STORAGE_DRIVER: storageDriver,
+  STORAGE_BUCKET: z.string().default('carebridge-documents'),
+  STORAGE_REGION: z.string().default('us-east-1'),
+  /** Set for MinIO and other S3-compatible endpoints; absent for real S3. */
+  STORAGE_ENDPOINT: z.string().optional(),
+  /**
+   * Absent in production on purpose: the container carries an IAM task role
+   * and the SDK's default provider chain finds it, so there are no keys in the
+   * environment to leak, rotate or commit. These exist for MinIO.
+   */
+  STORAGE_ACCESS_KEY_ID: z.string().optional(),
+  STORAGE_SECRET_ACCESS_KEY: z.string().optional(),
+  /** Where the filesystem adapter keeps objects, and mints URLs against. */
+  STORAGE_LOCAL_ROOT: z.string().default('./.storage'),
+
+  /**
    * The processor that actually moves money — see ADR-0006.
    *
    * `local` decides an outcome from the card's last four digits, using
@@ -279,6 +304,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     if (config.PAYMENTS_DRIVER === 'local') {
       localAdapters.push('PAYMENTS_DRIVER=local');
     }
+    if (config.STORAGE_DRIVER === 'filesystem') {
+      localAdapters.push('STORAGE_DRIVER=filesystem');
+    }
     if (localAdapters.length > 0) {
       throw new Error(
         `These adapters do nothing but log, and must not run in production: ${localAdapters.join(', ')}.`,
@@ -299,6 +327,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
   if (config.MAPS_DRIVER === 'google' && !config.MAPS_API_KEY) {
     throw new Error('MAPS_API_KEY is required when MAPS_DRIVER=google.');
+  }
+  if (config.STORAGE_DRIVER === 's3' && !config.STORAGE_BUCKET) {
+    throw new Error('STORAGE_BUCKET is required when STORAGE_DRIVER=s3.');
   }
   if (config.PAYMENTS_DRIVER === 'stripe') {
     if (!config.STRIPE_SECRET_KEY) {

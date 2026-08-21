@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/auth/sign_in_screen.dart';
+import '../features/documents/documents_screen.dart';
 import '../features/job/job_screen.dart';
 import '../features/today/today_screen.dart';
 import '../state/providers.dart';
@@ -30,6 +31,10 @@ GoRouter buildRouter(Ref ref) => GoRouter(
       builder: (context, state) => const SignInScreen(),
     ),
     GoRoute(path: '/today', builder: (context, state) => const TodayScreen()),
+    GoRoute(
+      path: '/documents',
+      builder: (context, state) => const DocumentsScreen(),
+    ),
     GoRoute(
       path: '/job/:rideId',
       builder: (context, state) =>

@@ -1,3 +1,4 @@
+import 'package:carebridge_api/carebridge_api.dart' as wire;
 import 'package:carebridge_client/carebridge_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -112,6 +113,24 @@ final vehiclesProvider = FutureProvider.family<List<Vehicle>, String>(
 final seatsProvider = FutureProvider.family<SeatSummary, String>(
   (ref, organizationId) => ref.watch(opsApiProvider).seats(organizationId),
 );
+
+/// One driver's paperwork, and whether it permits approving them.
+///
+/// Keyed by both ids because a driver id alone is not a capability here: every
+/// endpoint is scoped by the organisation in the path, and the provider key
+/// mirrors that rather than hiding it.
+final driverDocumentsProvider =
+    FutureProvider.family<
+      wire.DriverComplianceDto,
+      ({String organizationId, String driverId})
+    >(
+      (ref, key) => ref
+          .watch(opsApiProvider)
+          .documentsFor(
+            organizationId: key.organizationId,
+            driverId: key.driverId,
+          ),
+    );
 
 /// Refreshes everything a dispatch decision can change.
 ///

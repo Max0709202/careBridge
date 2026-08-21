@@ -6,6 +6,7 @@ import '../../domain/dispatch.dart';
 import '../../domain/models.dart';
 import '../../state/providers.dart';
 import '../../widgets/common.dart';
+import '../documents/document_review_sheet.dart';
 
 /// The roster: who may drive, and who is driving today.
 ///
@@ -243,11 +244,20 @@ class _DriverRowState extends ConsumerState<_DriverRow> {
                 ),
             ],
           ),
-          if (widget.canAdminister && transitions.isNotEmpty) ...[
+          if (widget.canAdminister) ...[
             const Divider(height: AppSpacing.lg),
             Wrap(
               spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: [
+                // Paperwork first, because approval is refused without it and
+                // a dispatcher who cannot see why telephones support about a
+                // bug that is not one.
+                OutlinedButton.icon(
+                  onPressed: _busy ? null : _reviewDocuments,
+                  icon: const Icon(Icons.folder_outlined, size: 18),
+                  label: const Text('Paperwork'),
+                ),
                 for (final to in transitions)
                   OutlinedButton(
                     onPressed: _busy ? null : () => _changeStatus(to),
@@ -257,6 +267,24 @@ class _DriverRowState extends ConsumerState<_DriverRow> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  /// Opens the paperwork panel.
+  ///
+  /// A sheet rather than a page: reviewing documents is something a dispatcher
+  /// does *while* looking at the roster, and losing their place in a list of
+  /// forty drivers to approve one is how the list gets abandoned halfway.
+  Future<void> _reviewDocuments() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => DocumentReviewSheet(
+        organizationId: widget.organizationId,
+        driverId: widget.driver.id,
+        driverName: widget.driver.displayName,
       ),
     );
   }

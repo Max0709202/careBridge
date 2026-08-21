@@ -4,6 +4,7 @@ import {
   createAppointment,
   createClinic,
   createPatient,
+  giveDriverPaperwork,
   registerUser,
   verifyEmail,
 } from './support/factories';
@@ -94,7 +95,21 @@ describe('dispatch', () => {
     return (response.body as { id: string }).id;
   }
 
-  async function approve(token: string, organizationId: string, driverId: string) {
+  /**
+   * Approving a driver, paperwork included.
+   *
+   * The paperwork is a precondition rather than the subject here — approval is
+   * refused without current documents, which is asserted in
+   * documents.e2e-spec.ts. `reviewerUserId` is required because a document
+   * cannot be approved by nobody.
+   */
+  async function approve(
+    token: string,
+    organizationId: string,
+    driverId: string,
+    reviewerUserId: string,
+  ) {
+    await giveDriverPaperwork(harness, driverId, reviewerUserId);
     await authed(harness, token)
       .post(`/api/v1/organizations/${organizationId}/drivers/${driverId}/status`)
       .send({ to: 'pendingApproval' })
@@ -158,7 +173,7 @@ describe('dispatch', () => {
       const vehicleId = await addVehicle(owner.accessToken, organizationId, false);
       const driverId = await addDriver(owner.accessToken, organizationId, vehicleId);
 
-      await approve(owner.accessToken, organizationId, driverId);
+      await approve(owner.accessToken, organizationId, driverId, owner.userId);
 
       const response = await authed(harness, owner.accessToken)
         .get(`/api/v1/organizations/${organizationId}/seats`)
@@ -183,7 +198,7 @@ describe('dispatch', () => {
       const { owner, organizationId } = await operator();
       const vehicleId = await addVehicle(owner.accessToken, organizationId, false);
       const driverId = await addDriver(owner.accessToken, organizationId, vehicleId);
-      await approve(owner.accessToken, organizationId, driverId);
+      await approve(owner.accessToken, organizationId, driverId, owner.userId);
 
       // An unexplained suspension is a dispute nobody can settle later.
       const refused = await authed(harness, owner.accessToken)
@@ -213,7 +228,7 @@ describe('dispatch', () => {
       const { owner, organizationId } = await operator();
       const vehicleId = await addVehicle(owner.accessToken, organizationId, false);
       const driverId = await addDriver(owner.accessToken, organizationId, vehicleId);
-      await approve(owner.accessToken, organizationId, driverId);
+      await approve(owner.accessToken, organizationId, driverId, owner.userId);
 
       await authed(harness, owner.accessToken)
         .post(`/api/v1/organizations/${organizationId}/drivers/${driverId}/status`)
@@ -261,7 +276,7 @@ describe('dispatch', () => {
       const { owner, organizationId } = await operator();
       const vehicleId = await addVehicle(owner.accessToken, organizationId, false);
       const driverId = await addDriver(owner.accessToken, organizationId, vehicleId);
-      await approve(owner.accessToken, organizationId, driverId);
+      await approve(owner.accessToken, organizationId, driverId, owner.userId);
 
       await authed(harness, owner.accessToken)
         .put(`/api/v1/organizations/${organizationId}/drivers/${driverId}/shift`)
@@ -324,7 +339,7 @@ describe('dispatch', () => {
       const { owner, organizationId } = await operator();
       const vehicleId = await addVehicle(owner.accessToken, organizationId, false);
       const driverId = await addDriver(owner.accessToken, organizationId, vehicleId);
-      await approve(owner.accessToken, organizationId, driverId);
+      await approve(owner.accessToken, organizationId, driverId, owner.userId);
       await bookedRide({ wheelchair: true });
 
       const response = await authed(harness, owner.accessToken)
@@ -382,7 +397,7 @@ describe('dispatch', () => {
         op.organizationId,
         vehicleId,
       );
-      await approve(op.owner.accessToken, op.organizationId, driverId);
+      await approve(op.owner.accessToken, op.organizationId, driverId, op.owner.userId);
       await authed(harness, op.owner.accessToken)
         .put(`/api/v1/organizations/${op.organizationId}/drivers/${driverId}/shift`)
         .send({ onShift: true })
@@ -426,7 +441,7 @@ describe('dispatch', () => {
         op.organizationId,
         vehicleId,
       );
-      await approve(op.owner.accessToken, op.organizationId, driverId);
+      await approve(op.owner.accessToken, op.organizationId, driverId, op.owner.userId);
       await authed(harness, op.owner.accessToken)
         .put(`/api/v1/organizations/${op.organizationId}/drivers/${driverId}/shift`)
         .send({ onShift: true })
@@ -504,7 +519,7 @@ describe('dispatch', () => {
         vehicleId,
         'Priya N.',
       );
-      await approve(owner.accessToken, organizationId, second);
+      await approve(owner.accessToken, organizationId, second, owner.userId);
       await authed(harness, owner.accessToken)
         .put(`/api/v1/organizations/${organizationId}/drivers/${second}/shift`)
         .send({ onShift: true })

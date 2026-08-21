@@ -191,6 +191,51 @@ class OpsApi extends ApiTransport {
     ),
   );
 
+  // ─── paperwork ────────────────────────────────────────────────────────────
+
+  Future<wire.DriverComplianceDto> documentsFor({
+    required String organizationId,
+    required String driverId,
+  }) async => wire.DriverComplianceDto.fromJson(
+    await send(
+      'GET',
+      '/organizations/$organizationId/drivers/$driverId/documents',
+    ),
+  );
+
+  /// A short-lived link to one document.
+  ///
+  /// A POST rather than a GET because it is not a read: it mints a credential
+  /// and writes an audit row saying that a named person looked at a named
+  /// driver's licence. "Who has seen this" cannot be answered after the fact.
+  Future<wire.DocumentViewUrlDto> viewDocument({
+    required String organizationId,
+    required String driverId,
+    required String documentId,
+  }) async => wire.DocumentViewUrlDto.fromJson(
+    await send(
+      'POST',
+      '/organizations/$organizationId/drivers/$driverId/documents/$documentId/view',
+    ),
+  );
+
+  Future<wire.DriverComplianceDto> reviewDocument({
+    required String organizationId,
+    required String driverId,
+    required String documentId,
+    required bool approve,
+    String? note,
+  }) async => wire.DriverComplianceDto.fromJson(
+    await send(
+      'POST',
+      '/organizations/$organizationId/drivers/$driverId/documents/$documentId/review',
+      body: {
+        'decision': approve ? 'approved' : 'rejected',
+        if (note != null && note.isNotEmpty) 'note': note,
+      },
+    ),
+  );
+
   // ─── seats ────────────────────────────────────────────────────────────────
 
   Future<SeatSummary> seats(String organizationId) async => seatsFromWire(

@@ -2206,6 +2206,167 @@
         ]
       }
     },
+    "/organizations/{organizationId}/drivers/{driverId}/documents": {
+      "get": {
+        "description": "The `compliant` flag is what the approval button turns on. It is advisory here — the same check runs inside the approval transaction, because a check only a screen performs is one a second tab can race past.",
+        "operationId": "Dispatch_documentsFor",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "driverId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverComplianceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "What this driver has handed in, and what is still missing",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/drivers/{driverId}/documents/{documentId}/view": {
+      "post": {
+        "description": "A POST rather than a GET because it is not a read: it mints a credential and writes an audit row saying that a named person looked at a named driver’s licence. “Who has seen this” cannot be answered after the fact.",
+        "operationId": "Dispatch_viewDocument",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "driverId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentViewUrlDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "A short-lived link to one document",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/drivers/{driverId}/documents/{documentId}/review": {
+      "post": {
+        "description": "A rejection must say why — enforced here and by a check constraint on the table.",
+        "operationId": "Dispatch_reviewDocument",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "driverId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverComplianceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Approve or reject a document",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
     "/organizations/{organizationId}/dispatch/queue": {
       "get": {
         "description": "Not by when the request arrived: a ride booked this morning for 4pm is not more urgent than one booked five minutes ago for 2pm.",
@@ -2460,6 +2621,108 @@
         ]
       }
     },
+    "/driver/documents": {
+      "get": {
+        "description": "Includes the rejection note. Being told “you cannot drive” without being told which document and why is how somebody re-uploads the same unreadable photograph three times.",
+        "operationId": "Driver_documents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverDocumentsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "What has been handed in, and what is still wanted",
+        "tags": [
+          "driver"
+        ]
+      },
+      "post": {
+        "description": "Returns a URL to PUT the file to. The bytes never pass through this API — a multipart body would be a copy of the file in the heap of a process that is also holding a WebSocket open for every live ride, and an API that can stream any object is an API where one bug hands over the bucket.",
+        "operationId": "Driver_requestUpload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestDocumentUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUploadDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Authorise one upload",
+        "tags": [
+          "driver"
+        ]
+      }
+    },
+    "/driver/documents/confirm": {
+      "post": {
+        "description": "The server checks storage rather than believing the client. A client reporting its own success could report it without uploading, and an operator would then see a complete file with an empty object behind it.",
+        "operationId": "Driver_confirmUpload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmDocumentUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverDocumentsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Say the upload finished",
+        "tags": [
+          "driver"
+        ]
+      }
+    },
     "/driver/rides/{rideId}/locations": {
       "post": {
         "description": "Safe to send twice: one device takes one reading per instant, so a retry after a lost response inserts nothing. Readings too old to present as current are still kept as journey history — they simply do not move the position the family is watching.",
@@ -2504,6 +2767,1203 @@
         "summary": "Flush the offline queue",
         "tags": [
           "driver"
+        ]
+      }
+    },
+    "/admin/audit": {
+      "get": {
+        "description": "Keyset paged. An offset over a table appended to on every authenticated action would skip rows between pages — and quietly omitting rows is the one failure a log like this cannot have.",
+        "operationId": "Admin_auditLog",
+        "parameters": [
+          {
+            "name": "actorUserId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 60,
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "description": "Matched as a prefix, so `driver.` returns everything about drivers.",
+            "schema": {
+              "maxLength": 80,
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "From the previous page. Keyset rather than an offset: an audit log is appended to constantly, and an offset would skip or repeat rows between pages.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The audit log, filtered and paged",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/stats": {
+      "get": {
+        "description": "Each number implies an action rather than being interesting. “Stale tracking now” is a list of telephone calls; “drivers with expiring documents” is a list of drivers who come off the road unless somebody chases them.",
+        "operationId": "Admin_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformStatsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The operational dashboard",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/flags": {
+      "get": {
+        "operationId": "Admin_flags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeatureFlagDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Every feature flag and how far it is rolled out",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/flags/{key}": {
+      "put": {
+        "description": "Narrowing a rollout needs `confirmNarrowing`: it takes a feature away from people who already have it, which reads to them as a bug rather than as a decision.",
+        "operationId": "Admin_setFlag",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetFeatureFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeatureFlagDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Create or update a flag",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/invoices/{invoiceId}/refunds": {
+      "get": {
+        "operationId": "Admin_refundable",
+        "parameters": [
+          {
+            "name": "invoiceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundableInvoiceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "What may still be refunded, and what already was",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "description": "The row is written before the processor is called, in the same shape the collection path uses: a refund that succeeded externally and failed to record here would be money that left the business with nothing to explain it.",
+        "operationId": "Admin_issueRefund",
+        "parameters": [
+          {
+            "name": "invoiceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueRefundDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundableInvoiceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Send money back",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/clinic/sites": {
+      "get": {
+        "operationId": "Clinic_sites",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClinicSiteDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The sites this network has claimed",
+        "tags": [
+          "clinic"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/clinic/sites/{clinicId}/claim": {
+      "post": {
+        "description": "A claim rather than a creation: the record was almost certainly typed by a family saying where their relative’s appointment is. Restricted to an admin and audited, because claiming a site grants sight of every appointment anybody has ever booked there.",
+        "operationId": "Clinic_claim",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clinicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimClinicDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClinicSiteDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Attach an existing clinic record to this network",
+        "tags": [
+          "clinic"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/clinic/day": {
+      "get": {
+        "description": "The date is resolved in the **clinic’s** own zone rather than the server’s. A portal that showed yesterday’s list to a west-coast clinic every morning would be useless by nine o’clock.",
+        "operationId": "Clinic_day",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "on",
+            "required": false,
+            "in": "query",
+            "description": "Clinic-local date. Defaults to today **in the clinic’s own zone**, not the server’s — a portal that showed yesterday’s list to a west-coast clinic every morning would be useless by nine o’clock.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "name": "clinicId",
+            "required": false,
+            "in": "query",
+            "description": "One site rather than all of them.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicDayDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Everybody expected today, and where their car is",
+        "tags": [
+          "clinic"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/clinic/appointments/{appointmentId}/check-in": {
+      "post": {
+        "description": "Never inferred from the ride completing. A completed ride says a car reached an address; this says somebody inside the building saw them, and the gap between the two is an eighty-year-old at the wrong entrance of a hospital.",
+        "operationId": "Clinic_checkIn",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "appointmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpectedArrivalDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The patient walked in",
+        "tags": [
+          "clinic"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/clinic/appointments/{appointmentId}/ready": {
+      "post": {
+        "description": "What a `flexibleReturn` ride has been waiting for since it was booked. Nobody knows when a cardiology follow-up will finish, which is why the return leg is created without a time; this is the thing that tells it the time has come.",
+        "operationId": "Clinic_ready",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "appointmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpectedArrivalDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The visit is over — send the car",
+        "tags": [
+          "clinic"
+        ]
+      }
+    },
+    "/marketplace/caregivers": {
+      "get": {
+        "description": "Ordered by a lower confidence bound on the rating, so a longer good record always outranks a shorter one and a single five-star review cannot reach the top. **Not** ordered by verification: ranking by it would be the platform asserting the safety claim it says it does not make.",
+        "operationId": "Marketplace_search",
+        "parameters": [
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 60,
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 2,
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "required": false,
+            "in": "query",
+            "description": "A language they speak.",
+            "schema": {
+              "maxLength": 40,
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxHourlyRateCents",
+            "required": false,
+            "in": "query",
+            "description": "Integer cents per hour.",
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CaregiverCardDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Search bookable caregivers",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/caregivers/{caregiverId}": {
+      "get": {
+        "operationId": "Marketplace_profile",
+        "parameters": [
+          {
+            "name": "caregiverId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaregiverProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "One caregiver, with their availability and reviews",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/me": {
+      "put": {
+        "description": "Always lands as `applied`. There is deliberately no endpoint that marks somebody verified — one that could would be the most valuable thing in this module to find a flaw in.",
+        "operationId": "Marketplace_saveProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCaregiverProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaregiverProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Create or update your own listing",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/me/availability": {
+      "put": {
+        "description": "Weekly rather than a list of dates: somebody who has to re-enter their availability every Sunday stops by the third week, and a marketplace of stale availability is a marketplace of dead ends.",
+        "operationId": "Marketplace_setAvailability",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaregiverProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Replace your weekly availability",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/bookings": {
+      "get": {
+        "operationId": "Marketplace_bookings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Everything you are part of, either side of it",
+        "tags": [
+          "marketplace"
+        ]
+      },
+      "post": {
+        "description": "Requires the same `requestTransport` grant that arranging a car does. Booking somebody to sit with a patient is at least as consequential, and a separate permission would mean two answers to “who may arrange care”.",
+        "operationId": "Marketplace_book",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Ask a caregiver for a visit",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/bookings/{bookingId}/accept": {
+      "post": {
+        "operationId": "Marketplace_accept",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The caregiver accepting",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/bookings/{bookingId}/decline": {
+      "post": {
+        "operationId": "Marketplace_decline",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The caregiver declining",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/bookings/{bookingId}/cancellation-quote": {
+      "get": {
+        "description": "Free with more than a day’s notice; half after that, never the whole visit. A caregiver cancelling never charges the family.",
+        "operationId": "Marketplace_quote",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancellationQuoteDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "What cancelling would cost, before committing to it",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/bookings/{bookingId}/cancel": {
+      "post": {
+        "operationId": "Marketplace_cancel",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Call it off",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/bookings/{bookingId}/check-in": {
+      "post": {
+        "operationId": "Marketplace_checkIn",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The caregiver arriving",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/bookings/{bookingId}/check-out": {
+      "post": {
+        "description": "Charged from the checked times rather than the booked window, rounded up to a quarter-hour: a visit that ran twenty minutes over is twenty minutes of somebody’s afternoon, and rounding down would have a caregiver work fourteen minutes for nothing.",
+        "operationId": "Marketplace_checkOut",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The caregiver leaving, and the moment the money is decided",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/bookings/{bookingId}/no-show": {
+      "post": {
+        "description": "Reported by the family only. A caregiver marking their own booking as a no-show would be marking the family.",
+        "operationId": "Marketplace_noShow",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Nobody came",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/bookings/{bookingId}/review": {
+      "post": {
+        "description": "Only a completed booking, and only once. A marketplace where a cancelled engagement can be rated is one where a family who never met somebody can end their career.",
+        "operationId": "Marketplace_review",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Rate a visit that happened",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/marketplace/bookings/{bookingId}/dispute": {
+      "post": {
+        "operationId": "Marketplace_dispute",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RaiseDisputeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Raise a disagreement about a visit",
+        "tags": [
+          "marketplace"
+        ]
+      }
+    },
+    "/admin/marketplace/bookings/{bookingId}/dispute/resolve": {
+      "post": {
+        "description": "Names an outcome, a reason and a person — enforced by a check constraint as well as here. A decision with none of those is one nobody can defend when the same question is asked again.",
+        "operationId": "MarketplaceAdmin_resolve",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveDisputeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Decide a dispute",
+        "tags": [
+          "marketplace"
         ]
       }
     },
@@ -5705,6 +7165,162 @@
           "onShift"
         ]
       },
+      "DriverDocumentKind": {
+        "type": "string",
+        "enum": [
+          "driversLicence",
+          "vehicleInsurance",
+          "vehicleRegistration",
+          "backgroundCheck"
+        ]
+      },
+      "DriverDocumentStatus": {
+        "type": "string",
+        "enum": [
+          "awaitingUpload",
+          "submitted",
+          "approved",
+          "rejected",
+          "expired"
+        ]
+      },
+      "DriverDocumentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DriverDocumentKind"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DriverDocumentStatus"
+              }
+            ]
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "byteSize": {
+            "type": "integer",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "The date printed on the document. An approved certificate past this date stops counting immediately, rather than when a sweep next notices."
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reviewNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "superseded": {
+            "type": "boolean",
+            "description": "Replaced by a newer upload. Kept rather than deleted, so “which certificate was in force in March” stays answerable."
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "contentType",
+          "byteSize",
+          "expiresAt",
+          "submittedAt",
+          "reviewedAt",
+          "reviewNote",
+          "superseded"
+        ]
+      },
+      "DriverComplianceDto": {
+        "type": "object",
+        "properties": {
+          "compliant": {
+            "type": "boolean",
+            "description": "Whether the paperwork permits approving this driver. Re-checked inside the approval transaction — the console greys the button out, but a check only the screen performs is one a second tab can race past."
+          },
+          "missing": {
+            "description": "Every required document still missing, not just the first. Deliberately excludes the background check: a platform lookup is not what makes somebody safe, and treating it as such would be a claim this product does not make.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expiringSoon": {
+            "description": "Valid today, lapsing within thirty days.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriverDocumentDto"
+            }
+          }
+        },
+        "required": [
+          "compliant",
+          "missing",
+          "expiringSoon",
+          "documents"
+        ]
+      },
+      "DocumentViewUrlDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Short-lived on purpose. A link to a driver’s licence that works for a week is a link that ends up in a chat message, an email thread and a browser history."
+          },
+          "expiresInSeconds": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "url",
+          "expiresInSeconds"
+        ]
+      },
+      "ReviewDocumentDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Required when rejecting. “Rejected” with no reason is a driver who re-uploads the same unreadable photograph three times."
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
       "DispatchUrgency": {
         "type": "string",
         "enum": [
@@ -6049,6 +7665,114 @@
           "to"
         ]
       },
+      "DriverDocumentsDto": {
+        "type": "object",
+        "properties": {
+          "compliant": {
+            "type": "boolean",
+            "description": "Whether the paperwork permits the operator approving this driver."
+          },
+          "missing": {
+            "description": "Every required document still wanted, not just the first.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expiringSoon": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "documents": {
+            "description": "Including the rejection note. Being told “you cannot drive” without being told which document and why is how somebody re-uploads the same unreadable photograph three times and then telephones.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriverDocumentDto"
+            }
+          }
+        },
+        "required": [
+          "compliant",
+          "missing",
+          "expiringSoon",
+          "documents"
+        ]
+      },
+      "RequestDocumentUploadDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "A short list of legal requirements and nothing else. A server that stored whatever arrived would be an operator holding a driver’s passport because the form allowed one.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DriverDocumentKind"
+              }
+            ]
+          },
+          "contentType": {
+            "type": "string",
+            "description": "Signed into the upload URL, so it is a bound rather than a request: a slot authorised for a JPEG cannot be filled with anything else.",
+            "example": "image/jpeg"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date printed on the document, where it has one. Not a retention deadline — this is what makes an insurance certificate stop counting the day it lapses."
+          }
+        },
+        "required": [
+          "kind",
+          "contentType"
+        ]
+      },
+      "PresignedUploadDto": {
+        "type": "object",
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "description": "PUT the file here. The bytes never pass through this API: a multipart body would be a copy of the file in the heap of a process that is also holding a WebSocket open for every live ride."
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Send these exactly. They are covered by the signature, which is what stops a slot authorised for a 4 MB photograph being filled with 400 MB of something else."
+          },
+          "expiresInSeconds": {
+            "type": "integer"
+          },
+          "maxBytes": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "documentId",
+          "url",
+          "headers",
+          "expiresInSeconds",
+          "maxBytes"
+        ]
+      },
+      "ConfirmDocumentUploadDto": {
+        "type": "object",
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The slot the upload was authorised against. The server checks storage rather than believing this — a client that says “done” is a client that could say it without having uploaded anything."
+          }
+        },
+        "required": [
+          "documentId"
+        ]
+      },
       "ReportLocationBatchDto": {
         "type": "object",
         "properties": {
@@ -6085,6 +7809,1006 @@
           "stored",
           "ignored",
           "positionUpdated"
+        ]
+      },
+      "AuditEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actorUserId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The actor’s name, resolved for display. Absent for actions the system took on its own."
+          },
+          "action": {
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string",
+            "nullable": true
+          },
+          "changedFields": {
+            "description": "Field **names** only, never values — the whole reason this log can be read by somebody who may not read the records it describes.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "correlationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "actorUserId",
+          "actorName",
+          "action",
+          "entityType",
+          "entityId",
+          "changedFields",
+          "correlationId",
+          "ip"
+        ]
+      },
+      "AuditPageDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEntryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `cursor` for the next page. Keyset rather than an offset: an audit log is appended to constantly, and an offset would skip or repeat rows between pages."
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "PlatformStatsDto": {
+        "type": "object",
+        "properties": {
+          "ridesLast7Days": {
+            "type": "integer"
+          },
+          "ridesCompletedLast7Days": {
+            "type": "integer"
+          },
+          "ridesNoShowLast7Days": {
+            "type": "integer",
+            "description": "Rides that ended without the passenger travelling. Counted beside completions rather than buried, because it is the number that says whether the product is working for the people it is for."
+          },
+          "ridesCancelledLast7Days": {
+            "type": "integer"
+          },
+          "activeRidesNow": {
+            "type": "integer"
+          },
+          "staleTrackingNow": {
+            "type": "integer",
+            "description": "Rides in flight whose last position is older than the staleness bound — the number a dispatcher would want telephoned about."
+          },
+          "familiesSubscribed": {
+            "type": "integer"
+          },
+          "operatorsSubscribed": {
+            "type": "integer"
+          },
+          "driversApproved": {
+            "type": "integer"
+          },
+          "driversWithExpiringDocuments": {
+            "type": "integer",
+            "description": "Approved drivers whose paperwork lapses within thirty days. Each one is a driver who comes off the road unless somebody telephones."
+          },
+          "documentsAwaitingReview": {
+            "type": "integer"
+          },
+          "invoicesPastDue": {
+            "type": "integer",
+            "description": "Invoices that have failed at least once and have not been paid. The dunning queue, as a single number."
+          },
+          "revenueCentsLast30Days": {
+            "type": "integer"
+          },
+          "refundedCentsLast30Days": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ridesLast7Days",
+          "ridesCompletedLast7Days",
+          "ridesNoShowLast7Days",
+          "ridesCancelledLast7Days",
+          "activeRidesNow",
+          "staleTrackingNow",
+          "familiesSubscribed",
+          "operatorsSubscribed",
+          "driversApproved",
+          "driversWithExpiringDocuments",
+          "documentsAwaitingReview",
+          "invoicesPastDue",
+          "revenueCentsLast30Days",
+          "refundedCentsLast30Days"
+        ]
+      },
+      "FeatureFlagDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "rolloutPercent": {
+            "type": "integer",
+            "description": "Applied to a stable hash of the subject, so a given user is on the same side of the line on every request. A flag that flipped per request would be worse than one that is simply off."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedByName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "key",
+          "description",
+          "enabled",
+          "rolloutPercent",
+          "updatedAt",
+          "updatedByName"
+        ]
+      },
+      "SetFeatureFlagDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "rolloutPercent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "confirmNarrowing": {
+            "type": "boolean",
+            "description": "Required when narrowing a rollout. Taking a feature away from people who already had it reads to them as a bug, so it has to be said out loud rather than typed by accident."
+          }
+        },
+        "required": [
+          "description",
+          "enabled",
+          "rolloutPercent"
+        ]
+      },
+      "RefundDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "invoiceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "invoiceNumber": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "integer"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "succeeded",
+              "failed"
+            ]
+          },
+          "failureMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "requestedByName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "settledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "invoiceId",
+          "invoiceNumber",
+          "amountCents",
+          "currency",
+          "reason",
+          "status",
+          "failureMessage",
+          "requestedByName",
+          "createdAt",
+          "settledAt"
+        ]
+      },
+      "RefundableInvoiceDto": {
+        "type": "object",
+        "properties": {
+          "invoiceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "invoiceNumber": {
+            "type": "string"
+          },
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paidCents": {
+            "type": "integer"
+          },
+          "refundableCents": {
+            "type": "integer",
+            "description": "What is left to refund: the payment less everything already refunded against it. The ceiling on a new refund."
+          },
+          "refunds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RefundDto"
+            }
+          }
+        },
+        "required": [
+          "invoiceId",
+          "invoiceNumber",
+          "paymentId",
+          "paidCents",
+          "refundableCents",
+          "refunds"
+        ]
+      },
+      "IssueRefundDto": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountCents": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Integer cents, never a float. Bounded above by what is left on the payment."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Required. An unexplained credit is something somebody has to justify to an accountant a quarter later, by which time whoever issued it has forgotten."
+          }
+        },
+        "required": [
+          "paymentId",
+          "amountCents",
+          "reason"
+        ]
+      },
+      "ClinicSiteDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "addressLine": {
+            "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "addressLine",
+          "timeZone"
+        ]
+      },
+      "ClaimClinicDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Why this network is claiming this site. Recorded in the audit log — claiming a clinic grants sight of every appointment booked there."
+          }
+        }
+      },
+      "ExpectedArrivalDto": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clinicId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clinicName": {
+            "type": "string"
+          },
+          "patientName": {
+            "type": "string",
+            "description": "The name the family uses. Never a full legal name."
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "appointmentType": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "expected",
+              "checkedIn",
+              "readyForReturn",
+              "returning",
+              "finished"
+            ],
+            "description": "Checking in is deliberately **not** inferred from the ride completing. A completed ride says a car reached an address; a check-in says somebody inside the building saw the patient, and the gap between the two is the case this product exists for."
+          },
+          "outboundStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "returnStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "etaMinutes": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Minutes until the car arrives, when one is on its way."
+          },
+          "driverName": {
+            "type": "string",
+            "nullable": true
+          },
+          "vehicleDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "wheelchairRequired": {
+            "type": "boolean"
+          },
+          "checkedInAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "readyForReturnAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "waitingMinutes": {
+            "type": "integer",
+            "nullable": true,
+            "description": "How long since the clinic said the visit was over. Shown because the person who pressed the button is standing next to somebody in a coat by the door."
+          },
+          "overdue": {
+            "type": "boolean",
+            "description": "The wait has stopped being ordinary. Twenty-five minutes."
+          },
+          "canDispatchReturn": {
+            "type": "boolean",
+            "description": "Whether the “send a car home” button should do anything."
+          },
+          "cannotDispatchReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "appointmentId",
+          "clinicId",
+          "clinicName",
+          "patientName",
+          "startsAt",
+          "appointmentType",
+          "stage",
+          "outboundStatus",
+          "returnStatus",
+          "etaMinutes",
+          "driverName",
+          "vehicleDescription",
+          "wheelchairRequired",
+          "checkedInAt",
+          "readyForReturnAt",
+          "waitingMinutes",
+          "overdue",
+          "canDispatchReturn",
+          "cannotDispatchReason"
+        ]
+      },
+      "ClinicDayDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "The clinic-local date, ISO."
+          },
+          "arrivals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExpectedArrivalDto"
+            }
+          },
+          "waitingForReturn": {
+            "type": "integer",
+            "description": "Patients the clinic has said are ready, still waiting for a car."
+          },
+          "overdueReturns": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date",
+          "arrivals",
+          "waitingForReturn",
+          "overdueReturns"
+        ]
+      },
+      "CaregiverStatus": {
+        "type": "string",
+        "enum": [
+          "applied",
+          "verified",
+          "suspended",
+          "offboarded"
+        ]
+      },
+      "CaregiverCardDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "First name and last initial. Never a full legal name."
+          },
+          "bio": {
+            "type": "string"
+          },
+          "yearsExperience": {
+            "type": "integer"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hourlyRateCents": {
+            "type": "integer"
+          },
+          "serviceArea": {
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CaregiverStatus"
+              }
+            ]
+          },
+          "rating": {
+            "type": "number",
+            "format": "float",
+            "nullable": true,
+            "description": "Pulled towards a prior, so one bad review cannot halve a career. Null until there are enough reviews to say anything — a number from one opinion looks exactly like a number from a hundred."
+          },
+          "rawAverage": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "reviewCount": {
+            "type": "integer"
+          },
+          "verificationStatement": {
+            "type": "string",
+            "description": "What was checked and when, in a sentence. Deliberately not a badge: this platform does not assert that anybody is safe, and a tick would say exactly that."
+          },
+          "identityConfirmed": {
+            "type": "boolean"
+          },
+          "backgroundCheckRun": {
+            "type": "boolean"
+          },
+          "backgroundCheckAgeDays": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "bio",
+          "yearsExperience",
+          "languages",
+          "hourlyRateCents",
+          "serviceArea",
+          "status",
+          "rating",
+          "rawAverage",
+          "reviewCount",
+          "verificationStatement",
+          "identityConfirmed",
+          "backgroundCheckRun",
+          "backgroundCheckAgeDays"
+        ]
+      },
+      "AvailabilityWindowDto": {
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "type": "integer",
+            "description": "1 = Monday, 7 = Sunday (ISO)."
+          },
+          "startMinute": {
+            "type": "integer"
+          },
+          "endMinute": {
+            "type": "integer"
+          },
+          "timeZone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "weekday",
+          "startMinute",
+          "endMinute",
+          "timeZone"
+        ]
+      },
+      "ReviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rating": {
+            "type": "integer"
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "rating",
+          "comment",
+          "createdAt"
+        ]
+      },
+      "CaregiverProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "First name and last initial. Never a full legal name."
+          },
+          "bio": {
+            "type": "string"
+          },
+          "yearsExperience": {
+            "type": "integer"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hourlyRateCents": {
+            "type": "integer"
+          },
+          "serviceArea": {
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CaregiverStatus"
+              }
+            ]
+          },
+          "rating": {
+            "type": "number",
+            "format": "float",
+            "nullable": true,
+            "description": "Pulled towards a prior, so one bad review cannot halve a career. Null until there are enough reviews to say anything — a number from one opinion looks exactly like a number from a hundred."
+          },
+          "rawAverage": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "reviewCount": {
+            "type": "integer"
+          },
+          "verificationStatement": {
+            "type": "string",
+            "description": "What was checked and when, in a sentence. Deliberately not a badge: this platform does not assert that anybody is safe, and a tick would say exactly that."
+          },
+          "identityConfirmed": {
+            "type": "boolean"
+          },
+          "backgroundCheckRun": {
+            "type": "boolean"
+          },
+          "backgroundCheckAgeDays": {
+            "type": "integer",
+            "nullable": true
+          },
+          "availability": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvailabilityWindowDto"
+            }
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "bio",
+          "yearsExperience",
+          "languages",
+          "hourlyRateCents",
+          "serviceArea",
+          "status",
+          "rating",
+          "rawAverage",
+          "reviewCount",
+          "verificationStatement",
+          "identityConfirmed",
+          "backgroundCheckRun",
+          "backgroundCheckAgeDays",
+          "availability",
+          "reviews"
+        ]
+      },
+      "SaveCaregiverProfileDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "yearsExperience": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60
+          },
+          "languages": {
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hourlyRateCents": {
+            "type": "number",
+            "minimum": 1
+          },
+          "serviceAreaCity": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "serviceAreaState": {
+            "type": "string",
+            "maxLength": 2
+          }
+        },
+        "required": [
+          "displayName",
+          "bio",
+          "yearsExperience",
+          "languages",
+          "hourlyRateCents",
+          "serviceAreaCity",
+          "serviceAreaState"
+        ]
+      },
+      "BookingStatus": {
+        "type": "string",
+        "enum": [
+          "requested",
+          "confirmed",
+          "inProgress",
+          "completed",
+          "cancelledByFamily",
+          "cancelledByCaregiver",
+          "noShow"
+        ]
+      },
+      "BookingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "caregiverId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "caregiverName": {
+            "type": "string"
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientName": {
+            "type": "string"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BookingStatus"
+              }
+            ]
+          },
+          "hourlyRateCents": {
+            "type": "integer",
+            "description": "The rate agreed at booking, not today’s. A caregiver raising their price must not re-price work somebody has already agreed to."
+          },
+          "checkedInAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "checkedOutAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "billableMinutes": {
+            "type": "integer",
+            "nullable": true
+          },
+          "totalCents": {
+            "type": "integer",
+            "nullable": true
+          },
+          "caregiverPayoutCents": {
+            "type": "integer",
+            "nullable": true,
+            "description": "What the caregiver keeps. Derived by subtraction, so the two halves always add up."
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasReview": {
+            "type": "boolean"
+          },
+          "hasOpenDispute": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "caregiverId",
+          "caregiverName",
+          "patientId",
+          "patientName",
+          "startsAt",
+          "endsAt",
+          "status",
+          "hourlyRateCents",
+          "checkedInAt",
+          "checkedOutAt",
+          "billableMinutes",
+          "totalCents",
+          "caregiverPayoutCents",
+          "cancellationReason",
+          "hasReview",
+          "hasOpenDispute"
+        ]
+      },
+      "CreateBookingDto": {
+        "type": "object",
+        "properties": {
+          "caregiverId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "caregiverId",
+          "patientId",
+          "startsAt",
+          "endsAt"
+        ]
+      },
+      "CancellationQuoteDto": {
+        "type": "object",
+        "properties": {
+          "feeCents": {
+            "type": "integer"
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Shown before the family confirms, in their own words."
+          }
+        },
+        "required": [
+          "feeCents",
+          "explanation"
+        ]
+      },
+      "CancelBookingDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Required. A cancellation with no reason is a dispute nobody can settle, and the caregiver has kept the time free."
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ReviewBookingDto": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "rating"
+        ]
+      },
+      "RaiseDisputeDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ResolveDisputeDto": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "upheld",
+              "refunded",
+              "waived"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Required. A decision with no reasoning is one nobody can defend when the same question is asked again."
+          }
+        },
+        "required": [
+          "outcome",
+          "note"
         ]
       },
       "RegisterDto": {

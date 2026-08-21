@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsEmail,
   IsIn,
+  IsISO8601,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -13,6 +14,7 @@ import {
   Min,
 } from 'class-validator';
 
+import { DRIVER_DOCUMENT_KINDS } from '../../../domain/driver-documents';
 import { DRIVER_STATUSES } from '../../../domain/driver-status';
 
 export class CreateVehicleDto {
@@ -112,4 +114,50 @@ export class AssignRideDto {
   @IsString()
   @MaxLength(300)
   reason?: string;
+}
+
+export class RequestDocumentUploadDto {
+  @ApiProperty({
+    enum: DRIVER_DOCUMENT_KINDS,
+    enumName: 'DriverDocumentKind',
+    description:
+      'A short list of legal requirements and nothing else. A server that stored whatever arrived would be an operator holding a driver’s passport because the form allowed one.',
+  })
+  @IsIn(DRIVER_DOCUMENT_KINDS)
+  kind!: string;
+
+  @ApiProperty({
+    description:
+      'Signed into the upload URL, so it is a bound rather than a request: a slot authorised for a JPEG cannot be filled with anything else.',
+    example: 'image/jpeg',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(120)
+  contentType!: string;
+
+  @ApiPropertyOptional({
+    format: 'date-time',
+    description:
+      'The date printed on the document, where it has one. Not a retention deadline — this is what makes an insurance certificate stop counting the day it lapses.',
+  })
+  @IsOptional()
+  @IsISO8601()
+  expiresAt?: string;
+}
+
+export class ReviewDocumentDto {
+  @ApiProperty({ enum: ['approved', 'rejected'] })
+  @IsIn(['approved', 'rejected'])
+  decision!: string;
+
+  @ApiPropertyOptional({
+    maxLength: 300,
+    description:
+      'Required when rejecting. “Rejected” with no reason is a driver who re-uploads the same unreadable photograph three times.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  note?: string;
 }

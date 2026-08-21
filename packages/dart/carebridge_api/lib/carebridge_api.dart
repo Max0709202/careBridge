@@ -19,13 +19,16 @@ library;
 
 export 'src/api_client.dart';
 export 'src/models.dart';
+export 'src/api/admin_api.dart';
 export 'src/api/appointments_api.dart';
 export 'src/api/auth_api.dart';
 export 'src/api/billing_api.dart';
 export 'src/api/care_api.dart';
+export 'src/api/clinic_api.dart';
 export 'src/api/clinics_api.dart';
 export 'src/api/dispatch_api.dart';
 export 'src/api/driver_api.dart';
+export 'src/api/marketplace_api.dart';
 export 'src/api/me_api.dart';
 export 'src/api/notifications_api.dart';
 export 'src/api/organizations_api.dart';

@@ -3,6 +3,8 @@ import type { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { DocumentsService } from './documents.service';
+import type { DocumentViewUrlDto, DriverComplianceDto } from './dispatch.dto';
 import { BillingService } from '../billing/billing.service';
 import { OrganizationsService } from '../organizations/organizations.service';
 import { RidesService } from '../care/rides.service';
@@ -73,6 +75,7 @@ export class DispatchService {
     private readonly billing: BillingService,
     private readonly rides: RidesService,
     private readonly audit: AuditService,
+    private readonly documents: DocumentsService,
   ) {}
 
   // ─── may this operator work at all ────────────────────────────────────────
@@ -259,6 +262,21 @@ export class DispatchService {
         throw new ValidationError('Say why the driver is being suspended.', 'reason');
       }
 
+      if (to === 'approved') {
+        // Read inside the transaction, not offered as advice to a screen. The
+        // console greys the button out, but a check only the screen performs
+        // is a check a second dispatcher on a second tab can race past — and
+        // what it guards is whether somebody carries a passenger uninsured.
+        const compliance = await this.documents.complianceFor(driverId, now, tx);
+        if (!compliance.compliant) {
+          throw new ValidationError(
+            `Approval needs current paperwork. Still missing: ${compliance.missing
+              .map(readableKind)
+              .join(', ')}.`,
+          );
+        }
+      }
+
       const held = occupiesSeat(current.status);
       const holds = occupiesSeat(to);
 
@@ -349,6 +367,103 @@ export class DispatchService {
 
     const active = await this.activeRideCounts([driverId]);
     return toDriverDto(updated, active.get(driverId) ?? 0);
+  }
+
+  // ─── paperwork ────────────────────────────────────────────────────────────
+
+  /**
+   * What a driver has handed in, and what approval is still waiting on.
+   *
+   * Scoped by the organisation in the path like everything else here: a
+   * driver id belonging to another company answers 404, indistinguishable
+   * from one that does not exist.
+   */
+  async documentsFor(
+    userId: string,
+    organizationId: string,
+    driverId: string,
+  ): Promise<DriverComplianceDto> {
+    await this.organizations.requireMembership(userId, organizationId, DISPATCH_ROLES);
+    await this.requireDriverOf(organizationId, driverId);
+    return this.complianceDto(driverId);
+  }
+
+  async viewDocument(
+    userId: string,
+    organizationId: string,
+    driverId: string,
+    documentId: string,
+    ctx: RequestContext,
+  ): Promise<DocumentViewUrlDto> {
+    // Admin rather than dispatch. A dispatcher needs to know whether somebody
+    // may drive; they do not need to look at the licence, and the smallest set
+    // of people who can open the file is the right one.
+    await this.organizations.requireMembership(userId, organizationId, ADMIN_ROLES);
+    await this.requireDriverOf(organizationId, driverId);
+    await this.requireDocumentOf(driverId, documentId);
+
+    return this.documents.viewUrl(documentId, userId, ctx);
+  }
+
+  async reviewDocument(
+    userId: string,
+    organizationId: string,
+    driverId: string,
+    documentId: string,
+    decision: 'approved' | 'rejected',
+    note: string | null,
+    ctx: RequestContext,
+  ): Promise<DriverComplianceDto> {
+    await this.organizations.requireMembership(userId, organizationId, ADMIN_ROLES);
+    await this.requireDriverOf(organizationId, driverId);
+    await this.requireDocumentOf(driverId, documentId);
+
+    await this.documents.review(documentId, decision, note, userId, ctx);
+    return this.complianceDto(driverId);
+  }
+
+  private async requireDriverOf(organizationId: string, driverId: string) {
+    const driver = await this.prisma.driver.findUnique({ where: { id: driverId } });
+    if (!driver || driver.organizationId !== organizationId) {
+      throw new AuthorizationError();
+    }
+    return driver;
+  }
+
+  private async requireDocumentOf(driverId: string, documentId: string) {
+    const document = await this.prisma.driverDocument.findUnique({
+      where: { id: documentId },
+    });
+    // Checked against the driver in the path as well as existing. Without it,
+    // an admin at one operator could review another operator's document by id.
+    if (!document || document.driverId !== driverId) throw new AuthorizationError();
+    return document;
+  }
+
+  private async complianceDto(driverId: string): Promise<DriverComplianceDto> {
+    const now = new Date();
+    const [state, documents] = await Promise.all([
+      this.documents.complianceFor(driverId, now),
+      this.documents.listFor(driverId),
+    ]);
+
+    return {
+      compliant: state.compliant,
+      missing: [...state.missing],
+      expiringSoon: [...state.expiringSoon],
+      documents: documents.map((document) => ({
+        id: document.id,
+        kind: document.kind,
+        status: document.status,
+        contentType: document.contentType,
+        byteSize: document.byteSize,
+        expiresAt: document.expiresAt?.toISOString() ?? null,
+        submittedAt: document.submittedAt?.toISOString() ?? null,
+        reviewedAt: document.reviewedAt?.toISOString() ?? null,
+        reviewNote: document.reviewNote,
+        superseded: document.supersededAt !== null,
+      })),
+    };
   }
 
   // ─── the queue ────────────────────────────────────────────────────────────
@@ -637,4 +752,21 @@ function toDriverDto(
     // who the account belongs to.
     hasAppAccount: row.userId !== null,
   };
+}
+
+/**
+ * Document kinds in the words a dispatcher would use on the telephone.
+ *
+ * "vehicleInsurance is missing" is a field name read out loud; "the vehicle
+ * insurance" is a sentence somebody can act on.
+ */
+function readableKind(kind: string): string {
+  return (
+    {
+      driversLicence: 'the driving licence',
+      vehicleInsurance: 'the vehicle insurance',
+      vehicleRegistration: 'the vehicle registration',
+      backgroundCheck: 'the background check',
+    }[kind] ?? kind
+  );
 }

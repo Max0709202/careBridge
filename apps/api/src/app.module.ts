@@ -12,6 +12,7 @@ import { QueueModule } from './infrastructure/queue/queue.module';
 import { MailModule } from './infrastructure/mail/mail.module';
 import { PushModule } from './infrastructure/push/push.module';
 import { MapsModule } from './infrastructure/maps/maps.module';
+import { StorageModule } from './infrastructure/storage/storage.module';
 import { TrackingInfrastructureModule } from './infrastructure/tracking/tracking.module';
 import { PaymentsModule } from './infrastructure/payments/payments.module';
 import { RateLimitModule } from './infrastructure/rate-limit/rate-limit.module';
@@ -26,6 +27,9 @@ import { BillingModule } from './modules/billing/billing.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { DispatchModule } from './modules/dispatch/dispatch.module';
 import { DriverModule } from './modules/driver/driver.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { ClinicModule } from './modules/clinic/clinic.module';
+import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -41,6 +45,7 @@ import { HealthModule } from './modules/health/health.module';
     MailModule,
     PushModule,
     MapsModule,
+    StorageModule,
     PaymentsModule,
     TrackingInfrastructureModule,
     RateLimitModule,
@@ -50,6 +55,9 @@ import { HealthModule } from './modules/health/health.module';
     CareModule,
     DispatchModule,
     DriverModule,
+    AdminModule,
+    ClinicModule,
+    MarketplaceModule,
     AuthModule,
     HealthModule,
     RetentionModule,
