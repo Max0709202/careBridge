@@ -222,6 +222,12 @@ jobs:
       - run: dart run melos run analyze
       - run: dart run melos run test
 
+      # And once more with coverage, for the one package whose lib/domain is
+      # not a mirror of the server's rules. The cadence rules live only there.
+      - run: flutter test --coverage
+        working-directory: apps/driver_app
+      - run: node scripts/check-dart-coverage.mjs apps/driver_app
+
       # The generated client is analysed separately and on purpose. It is a
       # pure Dart package, and it is the one place a generator bug surfaces as
       # a compile error rather than as a test that quietly does not exist.
@@ -230,6 +236,33 @@ jobs:
         run: |
           dart pub get
           dart analyze
+
+  android:
+    name: Driver app builds for a device
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The driver app is the one surface with no Docker image to prove it
+      # compiles. `flutter analyze` will not catch a missing Android
+      # permission, a plugin that does not resolve or a manifest merge
+      # conflict, and all three fail at exactly the moment somebody tries to
+      # install it on a phone.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Build the driver APK
+        working-directory: apps/driver_app
+        run: flutter build apk --debug
 
   docker:
     name: Docker image

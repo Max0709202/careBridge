@@ -26,6 +26,14 @@ ops: ## Run the dispatch console in Chrome against a local API.
 	cd apps/ops_console && flutter run -d chrome \
 		--dart-define=CAREBRIDGE_API_BASE_URL=http://localhost:3000/api/v1
 
+.PHONY: driver
+driver: ## Run the driver app on an attached device or emulator.
+	@# 10.0.2.2 is the Android emulator's alias for the host machine's
+	@# loopback. On a physical handset, replace it with the machine's LAN
+	@# address — localhost on a phone is the phone.
+	cd apps/driver_app && flutter run \
+		--dart-define=CAREBRIDGE_API_BASE_URL=http://10.0.2.2:3000/api/v1
+
 .PHONY: up
 up: ## Start Postgres, Redis, Mailpit and MinIO.
 	docker compose up -d db redis mailpit minio
@@ -102,6 +110,11 @@ test: ## Unit tests, with the coverage floors enforced.
 	@# Covers the ops console and carebridge_client, which are workspace
 	@# members rather than the root package.
 	$(MELOS) run test
+	@# The driver app runs again with coverage, because it is the one package
+	@# whose lib/domain is not a mirror of anything: the cadence rules exist
+	@# only there, so nothing on the server would catch them being wrong.
+	cd apps/driver_app && flutter test --coverage
+	node scripts/check-dart-coverage.mjs apps/driver_app
 
 .PHONY: test-integration
 test-integration: ## Integration tests against containerised Postgres and Redis.

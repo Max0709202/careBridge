@@ -1,5 +1,5 @@
 name: carebridge_client
-description: "Failure types, secure token storage and error mapping shared by the CareBridge family app and ops console."
+description: "The request/refresh loop, failure types, secure token storage and error mapping shared by the CareBridge family app, ops console and driver app."
 publish_to: 'none'
 version: 0.1.0
 
@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_secure_storage: ^11.0.0
+  http: ^1.6.0
   uuid: ^4.6.0
 
 dev_dependencies:

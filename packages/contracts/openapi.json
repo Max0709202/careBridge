@@ -2307,6 +2307,206 @@
         ]
       }
     },
+    "/driver/me": {
+      "get": {
+        "description": "A driver is added to a roster before they have an account. This is where the two are joined — by matching the address the operator recorded against a **verified** address on the account, because an unverified match would let anyone who knows a driver’s email inherit their assignments.",
+        "operationId": "Driver_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The signed-in driver, claiming their roster place on first use",
+        "tags": [
+          "driver"
+        ]
+      }
+    },
+    "/driver/shift": {
+      "put": {
+        "description": "Refuses to end one mid-trip: dispatch reads “on shift” to decide who can be offered the next job, and a driver who leaves that list while carrying somebody is a passenger nobody is accountable for.",
+        "operationId": "Driver_setShift",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DriverShiftDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Start or end a shift",
+        "tags": [
+          "driver"
+        ]
+      }
+    },
+    "/driver/rides": {
+      "get": {
+        "description": "Not a history. A finished ride leaves this list and takes the passenger’s address and telephone number with it — the record of who was carried where belongs to the operator, not to a phone in a glovebox.",
+        "operationId": "Driver_rides",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DriverRideDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The work still to do, soonest first",
+        "tags": [
+          "driver"
+        ]
+      }
+    },
+    "/driver/rides/{rideId}/advance": {
+      "post": {
+        "description": "Only the driver’s own moves. Accepting requires an approved driver on shift; finishing a trip already begun requires neither, because a driver suspended mid-journey still has somebody in the car.",
+        "operationId": "Driver_advance",
+        "parameters": [
+          {
+            "name": "rideId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvanceRideDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverRideDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Move a ride to its next state",
+        "tags": [
+          "driver"
+        ]
+      }
+    },
+    "/driver/rides/{rideId}/locations": {
+      "post": {
+        "description": "Safe to send twice: one device takes one reading per instant, so a retry after a lost response inserts nothing. Readings too old to present as current are still kept as journey history — they simply do not move the position the family is watching.",
+        "operationId": "Driver_reportLocations",
+        "parameters": [
+          {
+            "name": "rideId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportLocationBatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationBatchResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Flush the offline queue",
+        "tags": [
+          "driver"
+        ]
+      }
+    },
     "/auth/register": {
       "post": {
         "description": "Signs the new account in immediately and sends a verification email. Nothing is blocked on verification — locking a family out of a ride they have already booked because an email went to spam is the worse outcome — but invitations require a verified address.",
@@ -4326,6 +4526,15 @@
           },
           "activeRideCount": {
             "type": "integer"
+          },
+          "invitedEmail": {
+            "type": "string",
+            "nullable": true,
+            "description": "The address this driver will sign into the driver app with, as recorded by the operator."
+          },
+          "hasAppAccount": {
+            "type": "boolean",
+            "description": "Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for."
           }
         },
         "required": [
@@ -4339,7 +4548,9 @@
           "approvedAt",
           "suspensionReason",
           "occupiesSeat",
-          "activeRideCount"
+          "activeRideCount",
+          "invitedEmail",
+          "hasAppAccount"
         ]
       },
       "SurchargeDto": {
@@ -5454,6 +5665,12 @@
             "type": "number",
             "minimum": 0,
             "maximum": 60
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "description": "The address this driver will sign into the driver app with. Recorded, not invited: the link is only made once an account exists at that address **and has verified it**, so writing it here grants nothing on its own."
           }
         },
         "required": [
@@ -5626,6 +5843,252 @@
         },
         "required": [
           "driverId"
+        ]
+      },
+      "DriverProfileDto": {
+        "type": "object",
+        "properties": {
+          "driverId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationName": {
+            "type": "string",
+            "description": "Shown in the app so a driver working for two companies can tell at a glance which one is dispatching them."
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DriverStatus"
+              }
+            ]
+          },
+          "onShift": {
+            "type": "boolean"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/VehicleDto"
+          },
+          "canWork": {
+            "type": "boolean",
+            "description": "Whether this driver may go on shift at all. False until the operator has approved them, and false again the moment they are suspended."
+          },
+          "suspensionReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the operator stopped them. Shown to the driver: being locked out of your own job with no reason given is how support queues fill up."
+          }
+        },
+        "required": [
+          "driverId",
+          "organizationId",
+          "organizationName",
+          "displayName",
+          "status",
+          "onShift",
+          "vehicle",
+          "canWork",
+          "suspensionReason"
+        ]
+      },
+      "DriverShiftDto": {
+        "type": "object",
+        "properties": {
+          "onShift": {
+            "type": "boolean",
+            "description": "A driver may take themselves on and off shift. The dispatcher can too — they are the one who hears about the flat tyre first."
+          }
+        },
+        "required": [
+          "onShift"
+        ]
+      },
+      "RideStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "requested",
+          "awaitingAssignment",
+          "assigned",
+          "driverAccepted",
+          "driverEnRoute",
+          "driverArrived",
+          "passengerOnboard",
+          "inProgress",
+          "arrivedAtDestination",
+          "completed",
+          "canceled",
+          "noShow",
+          "reassignmentRequired"
+        ]
+      },
+      "DriverRideDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RideStatus"
+              }
+            ]
+          },
+          "scheduledPickupAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "passengerName": {
+            "type": "string",
+            "description": "The name to call out at the door. Never a full legal name."
+          },
+          "passengerPhone": {
+            "type": "string",
+            "nullable": true,
+            "description": "For ringing from the kerb, which is what stops a five-minute wait becoming a no-show."
+          },
+          "pickup": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "wheelchairRequired": {
+            "type": "boolean"
+          },
+          "assistanceRequired": {
+            "type": "boolean"
+          },
+          "notesForDriver": {
+            "type": "string",
+            "nullable": true
+          },
+          "isDelayed": {
+            "type": "boolean"
+          },
+          "availableTransitions": {
+            "description": "The moves this driver may make right now — the intersection of what the ride allows and what belongs to the driver. Advisory: the server asserts it again.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "noShowAvailableInSeconds": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Seconds left on the kerbside wait before a no-show may be declared, or null when a no-show is not on offer at all."
+          },
+          "shareLocation": {
+            "type": "boolean",
+            "description": "Whether the app should be sampling location for this ride. Derived from the status by the same rule the write path enforces, so the app is never asked to send what the server would refuse."
+          },
+          "lastCapturedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "scheduledPickupAt",
+          "direction",
+          "passengerName",
+          "passengerPhone",
+          "pickup",
+          "destination",
+          "wheelchairRequired",
+          "assistanceRequired",
+          "notesForDriver",
+          "isDelayed",
+          "availableTransitions",
+          "noShowAvailableInSeconds",
+          "shareLocation",
+          "lastCapturedAt"
+        ]
+      },
+      "DriverRideTransition": {
+        "type": "string",
+        "enum": [
+          "driverAccepted",
+          "driverEnRoute",
+          "driverArrived",
+          "passengerOnboard",
+          "inProgress",
+          "arrivedAtDestination",
+          "completed",
+          "noShow"
+        ],
+        "description": "Only the moves that belong to the driver. Cancellation and reassignment are deliberately absent: a ride the driver cannot do is still owed, and telling the family it was called off would be a different and untrue statement."
+      },
+      "AdvanceRideDto": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "description": "Only the moves that belong to the driver. Cancellation and reassignment are deliberately absent: a ride the driver cannot do is still owed, and telling the family it was called off would be a different and untrue statement.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DriverRideTransition"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "to"
+        ]
+      },
+      "ReportLocationBatchDto": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "maxItems": 240,
+            "description": "Readings in any order; the server sorts them. Two hundred and forty is twenty minutes of the fastest cadence, which is longer than any dead zone this product expects to survive — a queue longer than that is flushed in several batches rather than being silently truncated.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportLocationDto"
+            }
+          }
+        },
+        "required": [
+          "points"
+        ]
+      },
+      "LocationBatchResultDto": {
+        "type": "object",
+        "properties": {
+          "stored": {
+            "type": "integer",
+            "description": "Readings written to the journey record."
+          },
+          "ignored": {
+            "type": "integer",
+            "description": "Readings the server declined to keep — stamped in the future, or already held from an earlier flush of the same queue."
+          },
+          "positionUpdated": {
+            "type": "boolean",
+            "description": "Whether the batch moved the position the family sees. False for a batch that drained late: its readings are history, and history must not overwrite a fresher position."
+          }
+        },
+        "required": [
+          "stored",
+          "ignored",
+          "positionUpdated"
         ]
       },
       "RegisterDto": {

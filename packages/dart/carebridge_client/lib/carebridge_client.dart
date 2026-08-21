@@ -10,16 +10,19 @@
 ///     that reimplements it is an app that eventually reimplements it in
 ///     localStorage;
 ///   * [newId], because an identifier that appears in a URL must not be
-///     guessable, and that is a decision rather than a utility.
+///     guessable, and that is a decision rather than a utility;
+///   * [ApiTransport], the request and refresh loop.
 ///
-/// What deliberately does **not** live here is the request/refresh loop. Each
-/// app owns exactly one HTTP client because each owns refresh, and the two
-/// have different session shapes — the family app carries a whole snapshot
-/// back from every mutation, the console does not. Sharing the loop would mean
-/// a base class with two subclasses disagreeing about what a response is, which
-/// is more coupling than the twenty lines it saves.
+/// That last one was deliberately absent while there were two apps, on the
+/// grounds that the duplication was twenty lines and the two had different
+/// session shapes. A third app settled it: the shape difference sits entirely
+/// in what a caller does with a decoded map, and what was actually being
+/// copied is the handful of rules — one refresh attempt, clear on failure,
+/// same Idempotency-Key on the retry — where a mistake is invisible until a
+/// session storm or a double charge makes it visible.
 library;
 
+export 'src/api_transport.dart';
 export 'src/error_mapping.dart';
 export 'src/failures.dart';
 export 'src/ids.dart';

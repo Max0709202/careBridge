@@ -47,9 +47,18 @@ const ID = {
   // which company the fleet belongs to.
   meridian: '00000000-0000-4000-8000-0000000000a1',
   dispatcher: '00000000-0000-4000-8000-0000000000a2',
+  marcusAccount: '00000000-0000-4000-8000-0000000000a3',
 } as const;
 
 const DISPATCHER_EMAIL = 'dispatch@meridiantransit.example';
+
+/// The address Marcus signs into the **driver app** with.
+///
+/// It appears twice on purpose: as the account's own address, and as the
+/// `invitedEmail` the operator recorded against his roster place. Those two
+/// being equal — and the account being verified — is the whole of what joins a
+/// driver to a driver record.
+const DRIVER_EMAIL = 'marcus@meridiantransit.example';
 
 const DEMO_PASSWORD = 'demo-password';
 
@@ -74,7 +83,10 @@ async function main(): Promise<void> {
     userId: user.id,
   });
 
-  console.log(`Seeded. Sign in as ${user.email} / ${DEMO_PASSWORD}`);
+  console.log(`Seeded. Three ways in, all on ${DEMO_PASSWORD}:`);
+  console.log(`  family app    ${user.email}`);
+  console.log(`  ops console   ${DISPATCHER_EMAIL}`);
+  console.log(`  driver app    ${DRIVER_EMAIL}`);
 }
 
 async function seedPricingRule(): Promise<void> {
@@ -283,6 +295,30 @@ async function seedOperator(): Promise<{ id: string }> {
     },
     update: {},
     create: { userId: dispatcher.id, organizationId: organization.id, role: 'owner' },
+  });
+
+  // Marcus's own account, for the driver app.
+  //
+  // Deliberately **not** given an organisation membership. A driver is not a
+  // member of the operator in the sense the console means — they cannot see
+  // the queue, the roster or the invoice, and giving them a membership here to
+  // make a demo tidier would grant exactly that.
+  //
+  // Verified, because an unverified address claims nothing: the whole security
+  // of the link is that registering with a driver's email is not enough to
+  // inherit their assignments.
+  await prisma.user.upsert({
+    where: { email: DRIVER_EMAIL },
+    update: {},
+    create: {
+      id: ID.marcusAccount,
+      email: DRIVER_EMAIL,
+      passwordHash,
+      fullName: 'Marcus Tavares',
+      phone: '+1-555-0166',
+      emailVerifiedAt: new Date(),
+      timeZone: 'America/New_York',
+    },
   });
 
   return { id: organization.id };
@@ -653,6 +689,9 @@ async function seedFleet(): Promise<void> {
       rating: 4.9,
       yearsDriving: 6,
       vehicleId: ID.sienna,
+      // Recorded by the operator, and matched against a verified account the
+      // first time Marcus opens the driver app.
+      invitedEmail: DRIVER_EMAIL,
       // Approved and on shift, so the dispatch queue has somebody to offer.
       // Approval is what takes the billable seat — see `occupiesSeat`.
       status: 'approved',

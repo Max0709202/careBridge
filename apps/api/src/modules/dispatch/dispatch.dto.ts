@@ -61,6 +61,21 @@ export class DriverDto {
   occupiesSeat!: boolean;
 
   @ApiProperty({ type: 'integer' }) activeRideCount!: number;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'The address this driver will sign into the driver app with, as recorded by the operator.',
+  })
+  invitedEmail!: string | null;
+
+  @ApiProperty({
+    type: Boolean,
+    description:
+      'Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for.',
+  })
+  hasAppAccount!: boolean;
 }
 
 export class DispatchCandidateDto {

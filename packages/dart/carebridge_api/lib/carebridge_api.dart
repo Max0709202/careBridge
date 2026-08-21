@@ -25,6 +25,7 @@ export 'src/api/billing_api.dart';
 export 'src/api/care_api.dart';
 export 'src/api/clinics_api.dart';
 export 'src/api/dispatch_api.dart';
+export 'src/api/driver_api.dart';
 export 'src/api/me_api.dart';
 export 'src/api/notifications_api.dart';
 export 'src/api/organizations_api.dart';

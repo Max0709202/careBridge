@@ -25,6 +25,15 @@ docker compose up --build
 Then open **<http://localhost:8080>** and sign in with the pre-filled
 credentials (`sarah@example.com` / `demo-password`).
 
+There are three ways in, all on the same password — a family member, a
+dispatcher, and a driver:
+
+| surface | account |
+| --- | --- |
+| family app, `:8080` | `sarah@example.com` |
+| ops console, `:8081` | `dispatch@meridiantransit.example` |
+| driver app, on a device | `marcus@meridiantransit.example` |
+
 Seven containers come up: PostgreSQL 16, Redis 7, Mailpit, MinIO, the API, and
 the two Flutter web surfaces behind nginx — the family app and the dispatch
 console, on separate origins. Migrations apply on start and the demo family is
@@ -63,6 +72,14 @@ The dispatch console runs the same way, and `make ops` is the shorthand:
 
 ```bash
 make ops                     # apps/ops_console, in Chrome, against :3000
+```
+
+The driver app is the one surface that is **not** web, and the reason is the
+whole point of it: it keeps reporting position with the screen off, and no
+browser will do that. It needs a device or an emulator:
+
+```bash
+make driver                  # apps/driver_app, against the host's :3000
 ```
 
 ### Checks
@@ -203,6 +220,8 @@ apps/api/                     NestJS modular monolith
 packages/
 ├── contracts/openapi.json    GENERATED from the decorators
 ├── dart/carebridge_api/      GENERATED from openapi.json — never hand-edited
+├── dart/carebridge_client/   the request/refresh loop, failure taxonomy,
+│                             secure token storage — shared by all three apps
 ├── typescript-config/        strict, noUncheckedIndexedAccess
 └── eslint-config/            module boundaries · no console · no process.env
 
@@ -220,6 +239,20 @@ lib/                          Flutter — family + patient  (the pub workspace r
                    rides (request, detail, tracking) · notifications ·
                    settings (account security, two-factor, notification
                    preferences, your plan)
+
+apps/ops_console/             Flutter Web — the dispatcher's surface. A
+                              separate origin and a separate image from the
+                              family app, sharing the domain mirrors and the
+                              generated client rather than reimplementing them.
+
+apps/driver_app/              Flutter, Android + iOS — the one surface that
+                              cannot be web, because it has to keep reporting
+                              position with the screen off.
+├── domain/       location_cadence.dart — how often to sample, and the one
+│                 case where a flat battery outranks a fresh map
+├── data/         driver_api.dart, location_queue.dart (the dead-zone buffer)
+├── services/     position_source.dart (the port), location_service.dart
+└── features/     auth · today (the shift, and what is on it) · job
 
 infrastructure/nginx/         same-origin proxy, SPA fallback, CSP and the
                               other response headers the app is served with

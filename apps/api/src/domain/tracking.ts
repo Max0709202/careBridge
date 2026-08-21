@@ -56,3 +56,18 @@ export function checkPositionFreshness(
   }
   return { ok: true };
 }
+
+/**
+ * How far back a batched upload may reach.
+ *
+ * Deliberately outside `TrackingFreshness`, which is mirrored in the clients
+ * and must stay equal to its Dart copy — this one is a server-side bound on
+ * what a *flush of the offline queue* may contain, and no client needs it.
+ *
+ * Six hours is far longer than any dead zone a trip survives; a device that
+ * has been silent longer than that was switched off, not driving, and the
+ * readings it is offering are not part of a journey anybody is disputing.
+ * Without a bound, a queue that never drained becomes a way to write arbitrary
+ * history into a ride's record.
+ */
+export const LOCATION_BACKLOG_MS = 6 * 60 * 60 * 1000;

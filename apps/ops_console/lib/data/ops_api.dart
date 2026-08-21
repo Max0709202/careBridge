@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 // Prefixed, as in the family app: the generated package carries the **wire**
 // types and several share a name with this console's own domain enums —
 // `DriverStatus`, `DispatchUrgency`. The prefix keeps the domain model
@@ -7,7 +5,6 @@ import 'dart:convert';
 // the wire shape is an implementation detail of this file.
 import 'package:carebridge_api/carebridge_api.dart' as wire;
 import 'package:carebridge_client/carebridge_client.dart';
-import 'package:http/http.dart' as http;
 
 import '../domain/dispatch.dart';
 import '../domain/models.dart';
@@ -26,43 +23,19 @@ import 'ops_codec.dart';
 /// capability, `requireMembership` runs first on the server, and an id
 /// belonging to another company answers 404 — indistinguishable from one that
 /// does not exist. This client must not invent a distinction it was not given.
-class OpsApi {
-  OpsApi({required this.tokens, String? baseUrl, http.Client? client})
-    : _baseUrl = _resolveBaseUrl(baseUrl ?? _configuredBaseUrl),
-      _client = client ?? http.Client();
-
-  final TokenStore tokens;
-  final Uri _baseUrl;
-  final http.Client _client;
-
-  /// Relative by default: nginx serves the console and proxies `/api` to the
-  /// API from the same origin, so there is no CORS and no API hostname
-  /// compiled into the JavaScript bundle.
-  ///
-  /// Override for `flutter run` against a separate host:
-  /// `--dart-define=CAREBRIDGE_API_BASE_URL=http://localhost:3000/api/v1`
-  static const _configuredBaseUrl = String.fromEnvironment(
-    'CAREBRIDGE_API_BASE_URL',
-    defaultValue: '/api/v1',
-  );
-
-  static Uri _resolveBaseUrl(String raw) {
-    final trimmed = raw.endsWith('/') ? raw.substring(0, raw.length - 1) : raw;
-    return Uri.base.resolve(trimmed.isEmpty ? '/' : trimmed);
-  }
-
-  void dispose() => _client.close();
+class OpsApi extends ApiTransport {
+  OpsApi({required super.tokens, super.baseUrl, super.client});
 
   // ─── session ──────────────────────────────────────────────────────────────
 
   Future<void> signIn({required String email, required String password}) async {
-    final json = await _send(
+    final json = await send(
       'POST',
       '/auth/login',
       body: {'email': email.trim(), 'password': password},
       authenticated: false,
     );
-    await _storeSession(json);
+    await storeSession(json);
   }
 
   Future<void> signOut() async {
@@ -72,19 +45,10 @@ class OpsApi {
     // timed out.
     await tokens.clear();
     try {
-      await _send('POST', '/auth/logout-all');
+      await send('POST', '/auth/logout-all');
     } catch (_) {
       // Already signed out locally, which is the part that matters here.
     }
-  }
-
-  Future<void> _storeSession(Map<String, dynamic> json) async {
-    await tokens.write(
-      AuthTokens(
-        accessToken: json['accessToken'] as String,
-        refreshToken: json['refreshToken'] as String,
-      ),
-    );
   }
 
   // ─── organisations ────────────────────────────────────────────────────────
@@ -94,7 +58,7 @@ class OpsApi {
   /// The console has no notion of "the" organisation: somebody can dispatch
   /// for two operators, and picking one is a decision rather than a default.
   Future<List<Organization>> organizations() async =>
-      (await _sendList('GET', '/organizations'))
+      (await sendList('GET', '/organizations'))
           .map((e) => wire.OrganizationDto.fromJson(e as Map<String, dynamic>))
           .map(organizationFromWire)
           .nonNulls
@@ -104,7 +68,7 @@ class OpsApi {
 
   Future<DispatchQueue> queue(String organizationId) async => queueFromWire(
     wire.DispatchQueueDto.fromJson(
-      await _send('GET', '/organizations/$organizationId/dispatch/queue'),
+      await send('GET', '/organizations/$organizationId/dispatch/queue'),
     ),
   );
 
@@ -121,7 +85,7 @@ class OpsApi {
     String? reason,
   }) async => queueFromWire(
     wire.DispatchQueueDto.fromJson(
-      await _send(
+      await send(
         'POST',
         '/organizations/$organizationId/dispatch/rides/$rideId/assign',
         // A dispatcher double-tapping on a slow connection must not produce
@@ -139,7 +103,7 @@ class OpsApi {
   // ─── roster and fleet ─────────────────────────────────────────────────────
 
   Future<List<Driver>> drivers(String organizationId) async =>
-      (await _sendList('GET', '/organizations/$organizationId/drivers'))
+      (await sendList('GET', '/organizations/$organizationId/drivers'))
           .map((e) => wire.DriverDto.fromJson(e as Map<String, dynamic>))
           .map(driverFromWire)
           .nonNulls
@@ -152,7 +116,7 @@ class OpsApi {
     String? reason,
   }) async => driverFromWire(
     wire.DriverDto.fromJson(
-      await _send(
+      await send(
         'POST',
         '/organizations/$organizationId/drivers/$driverId/status',
         body: {
@@ -169,7 +133,7 @@ class OpsApi {
     required bool onShift,
   }) async => driverFromWire(
     wire.DriverDto.fromJson(
-      await _send(
+      await send(
         'PUT',
         '/organizations/$organizationId/drivers/$driverId/shift',
         body: {'onShift': onShift},
@@ -184,7 +148,7 @@ class OpsApi {
     int? yearsDriving,
   }) async => driverFromWire(
     wire.DriverDto.fromJson(
-      await _send(
+      await send(
         'POST',
         '/organizations/$organizationId/drivers',
         idempotencyKey: newId(),
@@ -198,7 +162,7 @@ class OpsApi {
   );
 
   Future<List<Vehicle>> vehicles(String organizationId) async =>
-      (await _sendList('GET', '/organizations/$organizationId/vehicles'))
+      (await sendList('GET', '/organizations/$organizationId/vehicles'))
           .map((e) => wire.VehicleDto.fromJson(e as Map<String, dynamic>))
           .map(vehicleFromWire)
           .toList();
@@ -212,7 +176,7 @@ class OpsApi {
     required bool isWheelchairAccessible,
   }) async => vehicleFromWire(
     wire.VehicleDto.fromJson(
-      await _send(
+      await send(
         'POST',
         '/organizations/$organizationId/vehicles',
         idempotencyKey: newId(),
@@ -231,149 +195,7 @@ class OpsApi {
 
   Future<SeatSummary> seats(String organizationId) async => seatsFromWire(
     wire.OrganizationSeatsDto.fromJson(
-      await _send('GET', '/organizations/$organizationId/seats'),
+      await send('GET', '/organizations/$organizationId/seats'),
     ),
   );
-
-  // ─── transport plumbing ───────────────────────────────────────────────────
-
-  Future<Map<String, dynamic>> _send(
-    String method,
-    String path, {
-    Map<String, dynamic>? body,
-    bool authenticated = true,
-    bool allowRetry = true,
-    String? idempotencyKey,
-  }) async {
-    final response = await _request(
-      method,
-      path,
-      body,
-      authenticated,
-      idempotencyKey,
-    );
-
-    // One refresh attempt, then give up. Looping on 401 would turn an expired
-    // session into a request storm against the auth endpoint.
-    if (response.statusCode == 401 && authenticated && allowRetry) {
-      if (await _refresh()) {
-        return _send(
-          method,
-          path,
-          body: body,
-          authenticated: authenticated,
-          allowRetry: false,
-          // The same key on the retry, deliberately: a 401 fixed by a refresh
-          // is one request, not two, and the server must be able to tell
-          // whether the first attempt landed before the token expired.
-          idempotencyKey: idempotencyKey,
-        );
-      }
-      await tokens.clear();
-      throw const AuthenticationFailure();
-    }
-
-    return _decode(response);
-  }
-
-  Future<List<dynamic>> _sendList(
-    String method,
-    String path, {
-    bool allowRetry = true,
-  }) async {
-    final response = await _request(method, path, null, true, null);
-
-    if (response.statusCode == 401 && allowRetry) {
-      if (await _refresh()) {
-        return _sendList(method, path, allowRetry: false);
-      }
-      await tokens.clear();
-      throw const AuthenticationFailure();
-    }
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return response.body.isEmpty
-          ? const []
-          : jsonDecode(response.body) as List<dynamic>;
-    }
-
-    throw failureFromResponse(
-      status: response.statusCode,
-      body: _bodyOf(response),
-      headers: response.headers,
-    );
-  }
-
-  Future<http.Response> _request(
-    String method,
-    String path,
-    Map<String, dynamic>? body,
-    bool authenticated,
-    String? idempotencyKey,
-  ) async {
-    final uri = Uri.parse('$_baseUrl$path');
-    final headers = <String, String>{
-      'content-type': 'application/json',
-      'Idempotency-Key': ?idempotencyKey,
-    };
-
-    if (authenticated) {
-      final stored = await tokens.read();
-      if (stored == null) throw const AuthenticationFailure();
-      headers['authorization'] = 'Bearer ${stored.accessToken}';
-    }
-
-    final request = http.Request(method, uri)..headers.addAll(headers);
-    if (body != null) request.body = jsonEncode(body);
-
-    try {
-      return await http.Response.fromStream(await _client.send(request));
-    } on http.ClientException {
-      // The message never carries a URL, a host or a stack frame.
-      throw const NetworkFailure();
-    } on FormatException {
-      throw const NetworkFailure();
-    }
-  }
-
-  Future<bool> _refresh() async {
-    final stored = await tokens.read();
-    if (stored == null) return false;
-
-    try {
-      final json = await _send(
-        'POST',
-        '/auth/refresh',
-        body: {'refreshToken': stored.refreshToken},
-        authenticated: false,
-        allowRetry: false,
-      );
-      await _storeSession(json);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Map<String, dynamic> _decode(http.Response response) {
-    final body = _bodyOf(response);
-    if (response.statusCode >= 200 && response.statusCode < 300) return body;
-
-    throw failureFromResponse(
-      status: response.statusCode,
-      body: body,
-      headers: response.headers,
-    );
-  }
-
-  Map<String, dynamic> _bodyOf(http.Response response) {
-    if (response.body.isEmpty) return const <String, dynamic>{};
-    try {
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    } on FormatException {
-      // A non-JSON body from a proxy or a gateway. Reported as a network
-      // failure rather than crashing the screen that asked.
-      return const <String, dynamic>{};
-    }
-  }
 }

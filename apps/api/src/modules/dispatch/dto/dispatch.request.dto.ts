@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsEmail,
   IsIn,
   IsInt,
   IsNotEmpty,
@@ -62,6 +63,17 @@ export class CreateDriverDto {
   @Min(0)
   @Max(60)
   yearsDriving?: number;
+
+  @ApiPropertyOptional({
+    format: 'email',
+    maxLength: 254,
+    description:
+      'The address this driver will sign into the driver app with. Recorded, not invited: the link is only made once an account exists at that address **and has verified it**, so writing it here grants nothing on its own.',
+  })
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(254)
+  email?: string;
 }
 
 export class SetDriverStatusDto {

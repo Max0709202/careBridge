@@ -25,6 +25,7 @@ import { CareModule } from './modules/care/care.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { DispatchModule } from './modules/dispatch/dispatch.module';
+import { DriverModule } from './modules/driver/driver.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -48,6 +49,7 @@ import { HealthModule } from './modules/health/health.module';
     BillingModule,
     CareModule,
     DispatchModule,
+    DriverModule,
     AuthModule,
     HealthModule,
     RetentionModule,

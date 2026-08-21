@@ -1,0 +1,5 @@
+# The same lint set as every other package in the workspace.
+#
+# One standard across the repo on purpose: an app held to a looser one is an
+# app that accumulates the warnings nobody reads.
+include: package:flutter_lints/flutter.yaml

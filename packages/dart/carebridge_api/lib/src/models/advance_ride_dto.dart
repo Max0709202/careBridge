@@ -1,0 +1,31 @@
+// GENERATED — DO NOT EDIT.
+//
+// Produced by scripts/generate-dart-client.mjs from
+// packages/contracts/openapi.json. Run `make dart-client` to regenerate.
+// Hand-editing this file makes the client and the server disagree in exactly
+// the way generating it exists to prevent.
+
+import '../models.dart';
+
+/// AdvanceRideDto, from the CareBridge API.
+class AdvanceRideDto {
+  const AdvanceRideDto({required this.to, this.reason});
+
+  /// Only the moves that belong to the driver. Cancellation and reassignment
+  /// are deliberately absent: a ride the driver cannot do is still owed, and
+  /// telling the family it was called off would be a different and untrue
+  /// statement.
+  final DriverRideTransition to;
+
+  final String? reason;
+
+  factory AdvanceRideDto.fromJson(Map<String, dynamic> json) => AdvanceRideDto(
+    to: DriverRideTransition.fromJson(json['to'] as String),
+    reason: json['reason'] as String?,
+  );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'to': to.wireName,
+    if (reason != null) 'reason': reason,
+  };
+}

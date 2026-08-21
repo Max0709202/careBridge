@@ -63,6 +63,7 @@ model User {
   billingAccount          BillingAccount?
   seatChanges             SeatLedgerEntry[]
   driversApproved         Driver[]                 @relation("DriverApprover")
+  driverProfile           Driver?                  @relation("DriverAccount")
 
   @@map("users")
 }
@@ -664,6 +665,31 @@ model Driver {
 
   status DriverStatus @default(invited)
 
+  /// The account this person signs into the **driver app** with.
+  ///
+  /// Null until claimed, because the operator builds the roster before the
+  /// driver has necessarily signed up — the same reason a driver starts as
+  /// `invited` rather than approved.
+  ///
+  /// Unique globally, and that is a product decision rather than a
+  /// convenience: assignment eligibility — "one passenger at a time" — is
+  /// enforced per *driver row*. One human holding two driver rows at two
+  /// operators would be two independently-eligible drivers, and could be sent
+  /// to two overlapping pickups by two dispatchers, neither of whom can see
+  /// the other's queue. Driving for two operators is a real thing and is
+  /// deliberately not supported until that rule spans them.
+  userId String? @unique
+
+  /// The address the operator says this driver will sign up with.
+  ///
+  /// The claim is matched on it, and only ever against a **verified** address
+  /// — otherwise registering with a driver's email would be enough to inherit
+  /// their assignments, and with them a passenger's home address and phone
+  /// number.
+  invitedEmail String?
+
+  accountLinkedAt DateTime?
+
   /// Whether the driver is working right now. A scheduling fact that changes
   /// several times a day, deliberately separate from `status`, which is the
   /// company saying whether this person may carry a passenger at all.
@@ -685,10 +711,15 @@ model Driver {
   organization Organization      @relation(fields: [organizationId], references: [id])
   vehicle      Vehicle           @relation(fields: [vehicleId], references: [id])
   approvedBy   User?             @relation("DriverApprover", fields: [approvedByUserId], references: [id])
+  user         User?             @relation("DriverAccount", fields: [userId], references: [id])
   rides        Ride[]
   seatChanges  SeatLedgerEntry[]
 
   @@index([organizationId, status])
+  /// The claim lookup. Partial in spirit — most rows have no invited address —
+  /// but scoped by organisation so it cannot become a way to ask "does this
+  /// email drive for anyone".
+  @@index([organizationId, invitedEmail])
   @@map("drivers")
 }
 
@@ -867,7 +898,12 @@ model RideLocationSample {
 
   ride Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
 
-  @@index([rideId, capturedAt])
+  /// Unique rather than merely indexed, and that is what makes a batch upload
+  /// from the driver app's offline queue safe to retry: a device takes one
+  /// reading per instant, so re-sending a batch whose response was lost
+  /// inserts nothing the second time. Without it, every dropped response
+  /// duplicates a stretch of somebody's journey in the dispute record.
+  @@unique([rideId, capturedAt])
   @@map("ride_location_samples")
 }
 

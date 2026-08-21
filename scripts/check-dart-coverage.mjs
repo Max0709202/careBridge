@@ -1,18 +1,23 @@
 #!/usr/bin/env node
 /**
- * Line-coverage floors for the app, over the lcov file `flutter test
- * --coverage` writes.
+ * Line-coverage floors for the Flutter packages, over the lcov file
+ * `flutter test --coverage` writes.
  *
  * The API enforces its own thresholds through jest. Dart has no equivalent, so
  * this reads the same lcov format and applies the same idea: a floor that
  * catches tests being deleted rather than fixed, not a target anybody should
  * feel finished at.
  *
- * Usage: flutter test --coverage && node scripts/check-dart-coverage.mjs
+ * Usage:
+ *   flutter test --coverage && node scripts/check-dart-coverage.mjs
+ *   (cd apps/driver_app && flutter test --coverage)
+ *     && node scripts/check-dart-coverage.mjs apps/driver_app
  */
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
-const LCOV = 'coverage/lcov.info';
+const PACKAGE = (process.argv[2] ?? '.').replace(/\/+$/, '');
+const LCOV = `${PACKAGE === '.' ? '' : PACKAGE + '/'}coverage/lcov.info`;
 
 /**
  * Floors are set just under what the tree has today. Two of them are the ones
@@ -28,11 +33,37 @@ const LCOV = 'coverage/lcov.info';
  * inside the overall floor rather than given one of its own, so that adding a
  * screen does not fail the build for the sin of being a screen.
  */
-const THRESHOLDS = [
-  { prefix: 'lib/domain/', minimum: 58 },
-  { prefix: 'lib/core/', minimum: 47 },
-  { prefix: 'lib/', minimum: 29 },
-];
+/**
+ * The driver app's floors are higher, and deliberately so. Its `lib/domain`
+ * is not a mirror of anything — the cadence rules exist only there, and
+ * nothing on the server would catch them being wrong. `lib/data` holds the
+ * offline queue, which is the one piece of state in this system whose failure
+ * mode is a silent hole in somebody's journey record.
+ */
+const FLOORS = {
+  '.': [
+    { prefix: 'lib/domain/', minimum: 58 },
+    { prefix: 'lib/core/', minimum: 47 },
+    { prefix: 'lib/', minimum: 29 },
+  ],
+  'apps/driver_app': [
+    // 100, the same standard the API's `src/domain` is held to and for the
+    // same reason: these are pure rules with no I/O, so there is nothing here
+    // that is hard to reach and no excuse for a line nothing exercises.
+    { prefix: 'lib/domain/', minimum: 100 },
+    { prefix: 'lib/data/', minimum: 70 },
+    { prefix: 'lib/', minimum: 60 },
+  ],
+};
+
+const THRESHOLDS = FLOORS[PACKAGE];
+if (!THRESHOLDS) {
+  console.error(
+    `No coverage floors defined for "${PACKAGE}". Add them in this file — a ` +
+      'package that runs the check without floors passes it without meaning it.',
+  );
+  process.exit(1);
+}
 
 // The generated client is analysed and compiled, never unit-tested: it has no
 // logic of its own, and a test over it would be a test of the generator.
@@ -41,7 +72,7 @@ const EXCLUDED = ['packages/'];
 // lcov paths are written relative to wherever `flutter test` ran, which is the
 // repository root — the same place this script is invoked from. Absolute paths
 // are handled too rather than silently producing a prefix that matches nothing.
-const ROOT = process.cwd().replace(/\/*$/, '') + '/';
+const ROOT = resolve(process.cwd(), PACKAGE).replace(/\/*$/, '') + '/';
 const relative = (file) =>
   file.startsWith(ROOT) ? file.slice(ROOT.length) : file.replace(/^\.\//, '');
 

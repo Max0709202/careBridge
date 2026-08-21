@@ -197,6 +197,10 @@ export class DispatchService {
           vehicleId: dto.vehicleId,
           yearsDriving: dto.yearsDriving ?? 1,
           status: 'invited',
+          // Lower-cased to match how accounts store theirs. A claim compares
+          // the two literally, and a capital letter typed by a dispatcher
+          // would otherwise mean a driver whose app never finds them.
+          invitedEmail: dto.email?.trim().toLowerCase() ?? null,
         },
         include: DRIVER_INCLUDE,
       });
@@ -627,5 +631,10 @@ function toDriverDto(
     suspensionReason: row.suspensionReason,
     occupiesSeat: occupiesSeat(row.status),
     activeRideCount,
+    invitedEmail: row.invitedEmail,
+    // The account itself is never exposed here — only whether one is attached.
+    // A dispatcher needs to know a driver can be reached through the app, not
+    // who the account belongs to.
+    hasAppAccount: row.userId !== null,
   };
 }

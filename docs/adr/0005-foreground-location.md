@@ -1,6 +1,6 @@
 # ADR-0005 · Foreground-service location first
 
-**Status:** Accepted · **Date:** 2026-07-27
+**Status:** Accepted · **Implemented** in `apps/driver_app` · **Date:** 2026-07-27
 
 ## Context
 
@@ -17,9 +17,12 @@ removes the product's core feature.
 **iOS:** while-in-use background location. We do **not** request the "Always"
 entitlement in v1 (T2).
 
-Tracking starts on `driverEnRoute` and stops on `completed` / `canceled` /
-`noShow`. Cadence adapts: ~5 s moving, ~30 s stationary, paused when the device
-has not moved beyond the accuracy radius.
+Tracking starts on `driverEnRoute` and stops the moment the ride leaves a state
+that permits sharing. Cadence adapts — 4 s approaching a pickup, 10 s driving,
+25 s stationary — and backs off further on a low battery. See
+`docs/architecture/realtime-tracking.md` for the full table and for the one
+case where the app accepts looking stale in order to leave the driver a working
+phone.
 
 ## Alternatives
 
@@ -46,6 +49,11 @@ grounds before cost.
 - Adaptive cadence is a battery, data *and* cost decision — every point is also
   a write and, downstream, an ETA recalculation.
 - Platform-channel work for the Android foreground service is accepted cost.
+  **In the event it was not needed**: `geolocator`'s
+  `ForegroundNotificationConfig` provides the service, so no platform channel
+  was written. `ACCESS_BACKGROUND_LOCATION` is deliberately not requested —
+  the service runs only while a ride is under way, and asking for the always-on
+  permission would be asking for more than the product does.
 
 ## Revisit when
 

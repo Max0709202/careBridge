@@ -646,17 +646,59 @@ place a decision is made once and then keeps paying out, and the three things
 that must close a stream — the ride ending, access being revoked, the session
 being ended — are all invisible to a check that ran an hour ago.
 
+**Landed since (slice four — the driver app):** `apps/driver_app`, and with it
+the thing every earlier slice was waiting for — positions that come from a
+driver's phone rather than from the server-side preview trip. Three parts are
+worth naming.
+
+The first is a **link that did not exist**: `Driver` had no account. An
+operator builds a roster before anybody has signed up, so the two are joined at
+first use, by matching the address the operator recorded against a **verified**
+address on the account. The verification is the whole of the security — without
+it, registering with a driver's email address would be enough to inherit their
+assignments, and with them a series of passengers' home addresses and telephone
+numbers. The claim is a compare-and-set behind a unique index, so a place
+cannot be taken twice.
+
+The second is **what a driver may do**, as pure rules
+(`domain/driver-authority.ts`, mirrored in the app). Cancellation and
+reassignment are deliberately absent: a ride the driver would rather not do is
+still owed, and telling the family it was called off is a different and untrue
+statement. A no-show is theirs, but only after a five-minute kerbside wait
+computed from the ride's own history — declared thirty seconds after arriving,
+a no-show means the driver did not wait, and after the fact the two are
+indistinguishable unless the clock is part of the rule.
+
+The third is the **adaptive-cadence location service and its offline queue**.
+Cadence follows how fast the answer is changing rather than how much anyone
+cares about it, and backs off on a low battery — including one case where the
+app accepts looking stale to leave the driver a phone that still works at four
+o'clock. Positions go up in batches over HTTP rather than over the socket, and
+that departure from the original design is stated and argued in
+`docs/architecture/realtime-tracking.md` rather than quietly made. The Android
+foreground service came with it.
+
+One refactor rode along, because a third app is what changed the arithmetic:
+the request/refresh loop moved into `packages/dart/carebridge_client` as
+`ApiTransport`. It was deliberately *not* shared while there were two apps; the
+part actually being copied is the handful of rules — one refresh attempt, clear
+on failure, the same Idempotency-Key on the retry — where a mistake is
+invisible until a session storm or a double charge makes it visible.
+
 **Still outstanding in this stage:** driver documents to S3 and the upload
-behind approval; the driver app and its adaptive-cadence location service; the
-ETA service with cache and circuit breaker; and the Android foreground service.
-Positions still originate from the server-side preview trip rather than a
-driver's phone — the gateway, the store and the authorisation are real; what
-feeds them is not.
+behind approval; the ETA service with cache and circuit breaker; and the
+documented real-device field test. `etaMinutes` reaches the family from
+whatever the driver's device reports rather than from a routing service, which
+is the last stand-in left in the tracking path.
 
 **Risks (highest of any stage):** ~~Flutter Web ops console unvalidated~~
-(R1, resolved — the console is built, tested and containerised); background-location platform restrictions and
-store review (T2); battery drain damaging driver adoption; map/routing cost at
-scale; ~~WebSocket authorisation errors leaking a patient's live position~~ —
+(R1, resolved — the console is built, tested and containerised);
+background-location platform restrictions and store review (T2) — narrowed:
+the app requests while-in-use only and never `ACCESS_BACKGROUND_LOCATION`, and
+the foreground notification says what is being shared and with whom, which is
+the version of this permission a review is most likely to accept; battery drain
+damaging driver adoption — addressed by the adaptive cadence, and unproven
+until the field test measures it; map/routing cost at scale; ~~WebSocket authorisation errors leaking a patient's live position~~ —
 the **P0 security surface**, now addressed: authorisation is resolved
 server-side per subscription, revocation is in the query on both the family and
 the operator path, and every open room is re-checked on a fifteen-second timer

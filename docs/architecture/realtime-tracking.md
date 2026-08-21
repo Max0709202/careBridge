@@ -1,6 +1,9 @@
 # Real-time tracking
 
-Stage 3. This document is the design; the code lands with the driver app.
+Stage 3, and now **built end to end**: the driver app samples, the API stores
+and fans out, and the family app draws it. Where the implementation departs
+from the design below, the design has been updated and the departure is stated
+rather than quietly reconciled — see *Transport*.
 
 **This is a P0 security surface.** A WebSocket authorisation error leaks a
 patient's live position. Everything below is shaped by that.
@@ -22,19 +25,76 @@ Tracking starts on transition to `driverEnRoute` and stops on `completed`,
   until a real trip proves we need it (T2) — it is the entitlement most likely
   to fail store review and the one users most distrust.
 
-**Cadence adapts:** roughly 5 s while moving, 30 s while stationary, paused
-entirely when the device has not moved beyond the accuracy radius. This is a
-battery, data and cost decision as much as an accuracy one — and battery drain
-is a *revenue* risk, because a driver who disables the app removes the product
-(R2).
+**Cadence adapts**, and the governing idea is that it follows *how fast the
+answer is changing*, not how much anyone cares about it — the moment a family
+is refreshing hardest is often the moment the car is standing still at a light.
+The rule lives in `apps/driver_app/lib/domain/location_cadence.dart`:
+
+| situation | interval |
+| --- | --- |
+| approaching the pickup, moving | 4 s |
+| driving, carrying a passenger | 10 s |
+| stationary, or parked at a kerb | 25 s |
+| battery under 15%, not charging | 30 s |
+| battery under 5%, not charging | 90 s |
+| ride not in a state that permits sharing | not sampling |
+
+Every interval except the last two is inside the 45-second staleness bound, so
+a healthy device is never labelled out of date. **The 90-second one breaks that
+deliberately**: below five per cent the app accepts a visibly stale marker in
+exchange for leaving the driver a phone that can still run a navigation app and
+make a telephone call. A stale marker with a working driver behind it is a far
+better outcome than a fresh marker that stops for good twenty minutes later.
+
+Asking the platform for a longer interval is what actually reduces the radio
+duty cycle, so a change of band means a new subscription — which restarts the
+Android foreground service. That is why the rule returns one of a handful of
+values rather than a continuous function: re-subscribing is a real cost, and it
+should happen a few times a ride rather than continuously.
+
+This is a battery, data and cost decision as much as an accuracy one — and
+battery drain is a *revenue* risk, because a driver who disables the app
+removes the product (R2).
 
 ## Transport
 
-Points go over the authenticated Socket.IO connection, batched when several
-have queued. On network loss the app buffers a **bounded** ring of about 100
-points, retries with jittered backoff, and drops the oldest rather than growing
-without limit. A queue that grows without limit in a dead zone is an app that
-gets killed by the OS at the worst moment.
+**Departure from the original design.** Points go up over **HTTP**, batched, to
+`POST /driver/rides/:rideId/locations` — not over the Socket.IO connection the
+design first called for. The socket carries positions *out* to watchers and
+nothing in. Four reasons, in order of weight:
+
+1. **The write path needs the request pipeline.** Idempotency, rate limiting,
+   correlation ids, request logging and the audit context are all wired to HTTP
+   in this codebase. A write handler inside a gateway would have none of them,
+   and would grow its own versions.
+2. **A flush needs an answer.** The app has to know what was stored and what
+   was refused before it can drop anything from the queue. That is a
+   request/response shape; a push is not.
+3. **The dead zone is exactly when the socket is down.** A batch upload has to
+   work the instant a single request can complete, which is well before a
+   WebSocket will hold open.
+4. **It keeps the gateway one-directional**, which is a much smaller surface to
+   reason about for something FOUNDATION marks P0.
+
+On network loss the app buffers a bounded queue — 720 fixes, two hours at the
+fastest cadence — and **drops the oldest**. Right way round twice over: the
+newest fix is the one that will move the family's map, and the oldest is the
+one the server is most likely to refuse as backlog anyway. A queue that grows
+without limit in a dead zone is an app the OS kills at the worst moment.
+
+Retrying is safe without a backoff schedule to get wrong: `(rideId, capturedAt)`
+is unique, and a device takes one reading per instant, so re-sending a batch
+whose response was lost inserts nothing. The queue is **not** persisted across
+an app restart — the ride row still holds the last position the server
+received, so a restart re-reads rather than reconstructs, and persisting would
+mean writing a stream of somebody's locations to disk on the device in this
+system most likely to be lost or left in a vehicle.
+
+A batch that drains late is kept as **history but does not move the map**: its
+readings belong in the journey record, and they must not overwrite a fresher
+position the family is already looking at. A batch arriving after the ride has
+ended is refused whole rather than filtered — location stops being collectable
+the moment the ride is over.
 
 ## Server authorisation — the security-critical step
 

@@ -13,6 +13,7 @@ workspace:
   - packages/dart/carebridge_api
   - packages/dart/carebridge_client
   - apps/ops_console
+  - apps/driver_app
 
 environment:
   # Widened from ^3.12.2 so the app builds on the newest published Flutter
