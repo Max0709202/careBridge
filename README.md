@@ -194,6 +194,9 @@ apps/api/                     NestJS modular monolith
     │   ├── driver-status.ts           driver lifecycle; which status is billed
     │   ├── dispatch.ts                assignment eligibility, queue ordering
     │   ├── tracking.ts               freshness bounds (mirrored in the client)
+    │   ├── eta.ts                    when to ask a routing vendor, and what
+    │   │                              to say between asks
+    │   ├── circuit-breaker.ts        a pure state machine, no clock of its own
     │   ├── totp.ts                   RFC 6238, against the published vectors
     │   ├── reminder-schedule.ts      offsets in local wall time, DST-correct
     │   └── notification-policy.ts    which channels, per event kind

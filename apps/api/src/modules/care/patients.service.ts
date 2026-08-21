@@ -9,6 +9,7 @@ import type { RequestContext } from '../../common/request-context';
 import { CareService } from './care.service';
 import type { SavePatientDto, SetPermissionsDto } from './dto/patient.dto';
 import type { AddressInput } from './dto/address.dto';
+import { GeocodingService } from './geocoding.service';
 
 @Injectable()
 export class PatientsService {
@@ -16,6 +17,7 @@ export class PatientsService {
     private readonly prisma: PrismaService,
     private readonly care: CareService,
     private readonly audit: AuditService,
+    private readonly geocoding: GeocodingService,
   ) {}
 
   /**
@@ -29,6 +31,16 @@ export class PatientsService {
     dto: SavePatientDto,
     ctx: RequestContext,
   ): Promise<string> {
+    // Geocoded before the write, and outside the transaction: it is a network
+    // call to a vendor, and holding a database transaction open across one is
+    // how a slow third party becomes a table lock.
+    //
+    // This is the pickup coordinate for every outbound ride the patient ever
+    // takes, which makes it the one the "is the car outside yet" countdown is
+    // measured to. A home address stored without a pin is a ride with no
+    // arrival estimate.
+    const located = await this.geocoding.resolve(dto.homeAddress);
+
     const patientId = await this.prisma.$transaction(async (tx) => {
       const patient = await tx.patient.create({
         data: {
@@ -40,7 +52,7 @@ export class PatientsService {
           mobilityNeeds: dto.mobilityNeeds ?? [],
           mobilityNotes: dto.mobilityNotes?.trim() || null,
           preferredClinicId: dto.preferredClinicId ?? null,
-          homeAddress: { create: addressCreate(dto.homeAddress) },
+          homeAddress: { create: { ...addressCreate(dto.homeAddress), ...located } },
           emergencyContacts: {
             create: (dto.emergencyContacts ?? []).map((c) => ({
               name: c.name.trim(),
@@ -109,10 +121,15 @@ export class PatientsService {
     });
     if (!existing) throw new NotFoundError();
 
+    // Re-resolved on every save, because the address may have changed and a
+    // stale pin is worse than none: it sends a car confidently to where
+    // somebody used to live.
+    const located = await this.geocoding.resolve(dto.homeAddress);
+
     await this.prisma.$transaction(async (tx) => {
       await tx.address.update({
         where: { id: existing.homeAddressId },
-        data: addressCreate(dto.homeAddress),
+        data: { ...addressCreate(dto.homeAddress), ...located },
       });
 
       await tx.patient.update({

@@ -668,7 +668,7 @@ describe('the driver app', () => {
 
       const response = await authed(harness, context.account.accessToken)
         .post(`/api/v1/driver/rides/${rideId}/locations`)
-        .send({ points: [point(30), point(20), point(10, { etaMinutes: 6 })] })
+        .send({ points: [point(30), point(20), point(10)] })
         .expect(201);
 
       expect(response.body).toMatchObject({
@@ -680,7 +680,13 @@ describe('the driver app', () => {
       const ride = await harness.prisma.ride.findUniqueOrThrow({
         where: { id: rideId },
       });
-      expect(ride.etaMinutes).toBe(6);
+      // Each reading carries a slightly different latitude, so the row says
+      // which of the three the map ended up on. The ten-second-old one is the
+      // newest.
+      expect(ride.lastLatitude).toBeCloseTo(point(10).latitude, 6);
+      // And the arrival estimate is the server's own, computed from that
+      // position — there is no field on the report for a device to set.
+      expect(ride.etaMinutes).toBeGreaterThan(0);
       expect(await harness.prisma.rideLocationSample.count({ where: { rideId } })).toBe(
         3,
       );
@@ -691,7 +697,7 @@ describe('the driver app', () => {
 
       await authed(harness, context.account.accessToken)
         .post(`/api/v1/driver/rides/${rideId}/locations`)
-        .send({ points: [point(10, { etaMinutes: 4 }), point(40), point(25)] })
+        .send({ points: [point(10), point(40), point(25)] })
         .expect(201);
 
       const ride = await harness.prisma.ride.findUniqueOrThrow({
@@ -699,7 +705,7 @@ describe('the driver app', () => {
       });
       // The ten-second-old reading is the newest, whatever position it held in
       // the array a phone happened to send.
-      expect(ride.etaMinutes).toBe(4);
+      expect(ride.lastLatitude).toBeCloseTo(point(10).latitude, 6);
     });
 
     it('is free to send twice', async () => {
@@ -732,19 +738,24 @@ describe('the driver app', () => {
 
       await authed(harness, context.account.accessToken)
         .post(`/api/v1/driver/rides/${rideId}/locations`)
-        .send({ points: [point(5, { etaMinutes: 3 })] })
+        .send({ points: [point(5)] })
         .expect(201);
 
       const late = await authed(harness, context.account.accessToken)
         .post(`/api/v1/driver/rides/${rideId}/locations`)
-        .send({ points: [point(240, { etaMinutes: 99 })] })
+        .send({ points: [point(240)] })
         .expect(201);
 
       expect(late.body).toMatchObject({ stored: 1, positionUpdated: false });
       const ride = await harness.prisma.ride.findUniqueOrThrow({
         where: { id: rideId },
       });
-      expect(ride.etaMinutes).toBe(3);
+      // Still the five-second-old reading. The four-minute-old one went into
+      // the journey record and nowhere near the family's map.
+      expect(ride.lastLatitude).toBeCloseTo(point(5).latitude, 6);
+      expect(await harness.prisma.rideLocationSample.count({ where: { rideId } })).toBe(
+        2,
+      );
     });
 
     it('refuses a reading stamped in the future', async () => {

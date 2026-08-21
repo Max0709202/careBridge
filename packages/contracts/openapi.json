@@ -4765,7 +4765,8 @@
           },
           "etaMinutes": {
             "type": "integer",
-            "nullable": true
+            "nullable": true,
+            "description": "Minutes until the driver reaches the stop in question — the pickup while they are on the way, the destination once the passenger is aboard. Computed server-side from the reported position; there is deliberately no field on the position report for a device to set it. Null while the car is standing at a kerb, and null when the address never geocoded."
           },
           "createdAt": {
             "type": "string",
@@ -5489,11 +5490,6 @@
             "type": "string",
             "format": "date-time",
             "description": "When the **device** took the reading, not when the server received it. Every freshness label ages against this, so the server judges it before storing."
-          },
-          "etaMinutes": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 600
           }
         },
         "required": [

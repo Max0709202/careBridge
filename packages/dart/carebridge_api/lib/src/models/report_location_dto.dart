@@ -12,7 +12,6 @@ class ReportLocationDto {
     required this.longitude,
     this.accuracyMeters,
     required this.capturedAt,
-    this.etaMinutes,
   });
 
   final double latitude;
@@ -26,8 +25,6 @@ class ReportLocationDto {
   /// storing.
   final DateTime capturedAt;
 
-  final double? etaMinutes;
-
   factory ReportLocationDto.fromJson(Map<String, dynamic> json) =>
       ReportLocationDto(
         latitude: (json['latitude'] as num).toDouble(),
@@ -36,9 +33,6 @@ class ReportLocationDto {
             ? null
             : (json['accuracyMeters'] as num).toDouble(),
         capturedAt: DateTime.parse(json['capturedAt'] as String),
-        etaMinutes: json['etaMinutes'] == null
-            ? null
-            : (json['etaMinutes'] as num).toDouble(),
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -46,6 +40,5 @@ class ReportLocationDto {
     'longitude': longitude,
     if (accuracyMeters != null) 'accuracyMeters': accuracyMeters,
     'capturedAt': capturedAt.toIso8601String(),
-    if (etaMinutes != null) 'etaMinutes': etaMinutes,
   };
 }

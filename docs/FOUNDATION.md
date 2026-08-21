@@ -685,11 +685,42 @@ part actually being copied is the handful of rules — one refresh attempt, clea
 on failure, the same Idempotency-Key on the retry — where a mistake is
 invisible until a session storm or a double charge makes it visible.
 
+**Landed since (slice five — the arrival estimate):** routing behind the same
+port geocoding already used, and `EtaService` in front of it. Until now
+`etaMinutes` came from the scripted preview trip and from a field on the
+position report that no real driver ever set — which is to say the product's
+central claim, "the driver is six minutes away", had nothing behind it in
+production.
+
+The field is gone. An ETA is a promise made to somebody waiting by a window,
+and a field the reporting device could set would let anything holding a
+driver's token hold a family at "two minutes" indefinitely, so the number is
+computed server-side from the reported position and nowhere else. What it
+counts down to is a pure rule — the pickup, then the destination, and nothing
+at all while the car is at a kerb, because "arriving in 1 minute" beside a
+driver already at the door is the number that makes somebody keep waiting
+inside.
+
+Two guards make it affordable and safe to depend on. A **cache** reuses a route
+for a minute and ages it by the elapsed time, recomputing early only when the
+stop changes or the car strays from the route it was measured against —
+without which a position report every few seconds would cost roughly $0.60 a
+trip against R4's $0.50 ceiling. A **circuit breaker**, written as a pure state
+machine, stops calling after three consecutive failures — not to protect the
+vendor but because each failed call costs a three-second timeout, and a hundred
+live rides would otherwise be a hundred sockets waiting. Behind both, a
+straight-line fallback means a vendor outage costs accuracy rather than the
+feature.
+
+Building it surfaced a pre-existing gap worth naming: **patient home addresses
+were never geocoded** — only clinics were — so the pickup coordinate did not
+exist, and the most important countdown in the product had no destination to
+route to. Patients are now geocoded on create and on every save, because a
+stale pin is worse than none: it sends a car confidently to where somebody used
+to live.
+
 **Still outstanding in this stage:** driver documents to S3 and the upload
-behind approval; the ETA service with cache and circuit breaker; and the
-documented real-device field test. `etaMinutes` reaches the family from
-whatever the driver's device reports rather than from a routing service, which
-is the last stand-in left in the tracking path.
+behind approval, and the documented real-device field test.
 
 **Risks (highest of any stage):** ~~Flutter Web ops console unvalidated~~
 (R1, resolved — the console is built, tested and containerised);

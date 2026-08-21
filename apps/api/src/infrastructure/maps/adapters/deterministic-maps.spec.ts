@@ -67,3 +67,52 @@ describe('deterministic geocoding', () => {
     ).toBeNull();
   });
 });
+
+describe('routing without a vendor', () => {
+  const adapter = new DeterministicMapsAdapter();
+  const house = { latitude: 40.651, longitude: -73.958 };
+  const clinic = { latitude: 40.6558, longitude: -73.945 };
+
+  it('gives a city-sized answer for a city-sized journey', async () => {
+    const route = await adapter.route(house, clinic);
+
+    expect(route.distanceMiles).toBeGreaterThan(0.5);
+    expect(route.distanceMiles).toBeLessThan(3);
+    expect(route.durationMinutes).toBeGreaterThan(1);
+    expect(route.durationMinutes).toBeLessThan(15);
+  });
+
+  it('says which adapter produced it', () => {
+    // The third property that makes this more than a mock: nothing downstream
+    // can mistake a straight line for a traffic-aware route.
+    return expect(adapter.route(house, clinic)).resolves.toMatchObject({
+      source: 'deterministic',
+    });
+  });
+
+  it('gives the same answer every time, on every machine', async () => {
+    const first = await adapter.route(house, clinic);
+    const second = await adapter.route(house, clinic);
+
+    expect(first).toEqual(second);
+  });
+
+  it('never returns zero minutes for two different places', async () => {
+    // An ETA of zero renders as "arriving now" beside a car that has not
+    // moved, which is the one thing a tracking screen must not say.
+    const nextDoor = { latitude: 40.65101, longitude: -73.95801 };
+    expect((await adapter.route(house, nextDoor)).durationMinutes).toBe(1);
+  });
+
+  it('leaves out the boarding buffer the fare estimate carries', async () => {
+    // The fare estimate answers "how long does the whole trip take". A live
+    // countdown answers "when does the car arrive", and six minutes of
+    // boarding on every ETA would be a permanent lie.
+    const nearby = { latitude: 40.6515, longitude: -73.9585 };
+    expect((await adapter.route(house, nearby)).durationMinutes).toBeLessThan(6);
+  });
+
+  it('does not throw, because there is no vendor to be unavailable', async () => {
+    await expect(adapter.route(house, house)).resolves.toBeDefined();
+  });
+});

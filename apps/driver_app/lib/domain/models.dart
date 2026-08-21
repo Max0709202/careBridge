@@ -9,7 +9,6 @@ class Fix {
     required this.capturedAt,
     this.accuracyMeters = 12,
     this.speedMetersPerSecond,
-    this.etaMinutes,
   });
 
   final double latitude;
@@ -21,15 +20,22 @@ class Fix {
   final DateTime capturedAt;
 
   final double accuracyMeters;
-  final double? speedMetersPerSecond;
-  final int? etaMinutes;
 
+  /// From the platform's own fix. Used locally to decide how often to sample —
+  /// cadence follows movement — and deliberately not sent: the server has no
+  /// use for it, and a position report should carry the position and nothing
+  /// it could be second-guessed by.
+  final double? speedMetersPerSecond;
+
+  /// Note what is absent: an arrival estimate. The server computes that from
+  /// the reported position, because an ETA is a promise made to somebody
+  /// waiting by a window — and a device that could set it could hold a family
+  /// at "two minutes" indefinitely.
   Map<String, dynamic> toJson() => {
     'latitude': latitude,
     'longitude': longitude,
     'accuracyMeters': accuracyMeters,
     'capturedAt': capturedAt.toUtc().toIso8601String(),
-    if (etaMinutes != null) 'etaMinutes': etaMinutes,
   };
 }
 

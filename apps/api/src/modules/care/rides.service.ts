@@ -22,6 +22,7 @@ import { AppointmentsService } from './appointments.service';
 import { CareService } from './care.service';
 import { BillingService } from '../billing/billing.service';
 import { LiveTrackingService } from '../tracking/live-tracking.service';
+import { EtaService } from '../tracking/eta.service';
 import type {
   CancelRideDto,
   ReportLocationDto,
@@ -40,6 +41,7 @@ export class RidesService {
     private readonly audit: AuditService,
     private readonly billing: BillingService,
     private readonly tracking: LiveTrackingService,
+    private readonly eta: EtaService,
   ) {}
 
   /**
@@ -445,6 +447,10 @@ export class RidesService {
     // was reporting is gone, and their last position must not linger.
     if (clearsTracking) {
       await this.tracking.end(input.rideId);
+      // The cached route described a journey that is over, or one a different
+      // driver is about to make. Either way it must not be aged into an ETA
+      // for the next leg.
+      await this.eta.forget(input.rideId);
     }
   }
 
@@ -534,7 +540,7 @@ export class RidesService {
   ): Promise<void> {
     const ride = await tx.ride.findUnique({
       where: { id: rideId },
-      select: { status: true },
+      select: { status: true, pickup: COORDS, destination: COORDS },
     });
     if (!ride) throw new NotFoundError();
 
@@ -558,6 +564,19 @@ export class RidesService {
 
     const accuracyMeters = dto.accuracyMeters ?? 12;
 
+    // Computed here, never taken from the caller. An ETA is a promise the
+    // product makes to somebody waiting by a window, and a reporting device
+    // that could set it would be a device that could tell a family "two
+    // minutes" indefinitely.
+    const etaMinutes = await this.eta.estimate({
+      rideId,
+      status: ride.status,
+      at: { latitude: dto.latitude, longitude: dto.longitude },
+      pickup: coordsOrNull(ride.pickup),
+      destination: coordsOrNull(ride.destination),
+      now,
+    });
+
     await tx.ride.update({
       where: { id: rideId },
       data: {
@@ -565,7 +584,7 @@ export class RidesService {
         lastLongitude: dto.longitude,
         lastAccuracyMeters: accuracyMeters,
         lastCapturedAt: capturedAt,
-        etaMinutes: dto.etaMinutes ?? null,
+        etaMinutes,
         // Sampled history, for dispute resolution. Thirty-day retention,
         // enforced by the retention job.
         locationSamples: {
@@ -593,7 +612,7 @@ export class RidesService {
       longitude: dto.longitude,
       accuracyMeters,
       capturedAt: capturedAt.toISOString(),
-      etaMinutes: dto.etaMinutes ?? null,
+      etaMinutes,
     });
   }
 
@@ -797,4 +816,16 @@ function notificationFor(
     default:
       return null;
   }
+}
+
+/** The two columns an ETA needs from an address, and nothing else. */
+const COORDS = { select: { latitude: true, longitude: true } } as const;
+
+function coordsOrNull(
+  address: { latitude: number | null; longitude: number | null } | null,
+): { latitude: number; longitude: number } | null {
+  if (!address || address.latitude === null || address.longitude === null) {
+    return null;
+  }
+  return { latitude: address.latitude, longitude: address.longitude };
 }

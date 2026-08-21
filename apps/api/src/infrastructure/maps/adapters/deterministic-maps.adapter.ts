@@ -1,6 +1,13 @@
 import { createHash } from 'node:crypto';
 
-import type { AddressInput, GeocodeResult, MapsPort } from '../maps.port';
+import { AVERAGE_CITY_MPH, distanceMiles } from '../../../domain/geo';
+import type {
+  AddressInput,
+  Coordinates,
+  GeocodeResult,
+  MapsPort,
+  RouteResult,
+} from '../maps.port';
 
 /**
  * A geocoder with no network, no key and no drift.
@@ -42,6 +49,28 @@ export class DeterministicMapsAdapter implements MapsPort {
       longitude: round(box.minLng + lngFraction * (box.maxLng - box.minLng)),
       precision: 'approximate',
       formattedAddress: null,
+      source: 'deterministic',
+    };
+  }
+
+  /**
+   * A straight line with a detour factor, at a conservative city average.
+   *
+   * The same three properties as the geocoder, and the third is the one that
+   * matters most here. This is **honest**: it is exactly the estimate the
+   * system falls back to when a real vendor is unreachable, so a developer
+   * running without a key sees the degraded answer rather than a fictional
+   * traffic-aware one. There is nothing this adapter could know about traffic,
+   * and pretending otherwise would make a local run look better than
+   * production ever does.
+   *
+   * It never throws. There is no vendor to be unavailable.
+   */
+  async route(from: Coordinates, to: Coordinates): Promise<RouteResult> {
+    const miles = distanceMiles(from, to);
+    return {
+      distanceMiles: round(miles),
+      durationMinutes: Math.max(1, Math.ceil((miles / AVERAGE_CITY_MPH) * 60)),
       source: 'deterministic',
     };
   }

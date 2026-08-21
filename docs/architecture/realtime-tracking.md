@@ -96,6 +96,38 @@ position the family is already looking at. A batch arriving after the ride has
 ended is refused whole rather than filtered — location stops being collectable
 the moment the ride is over.
 
+## The arrival estimate
+
+The number the product is named for — "the driver is six minutes away" — is
+computed **server-side, from the reported position**, and never taken from the
+client. There is deliberately no `etaMinutes` field on the inbound position
+report. An ETA is a promise made to somebody waiting by a window, and a field
+the reporting device could set would let anything holding a driver's token hold
+a family at "two minutes" indefinitely.
+
+What it counts down to depends on where the ride is: the pickup while the
+driver is on the way, the destination once the passenger is in the car, and
+**nothing at all** while the car is standing at a kerb. "Arriving in 1 minute"
+beside a driver who is already at the door is worse than no number — it is the
+number that makes somebody keep waiting inside.
+
+Three things sit between the claim and the vendor:
+
+| | why |
+| --- | --- |
+| **Cache** | A route is reused for a minute and aged by the time that has passed. Position reports arrive every four to ten seconds; a lookup each would cost roughly $0.60 on a half-hour trip, against a ceiling of $0.50 a ride (R4). It is recomputed early when the stop changes or the car strays half a mile from where the route was measured. |
+| **Circuit breaker** | Three consecutive failures stop the calls for thirty seconds. Not to protect the vendor: each failed call costs a three-second timeout, and a hundred live rides would otherwise be a hundred sockets waiting while the API stops being able to do anything else. |
+| **Fallback** | A straight line at a conservative city average. Worse than a real route and enormously better than a blank space where an arrival time was. |
+
+An answer no road produces — a ferry leg, a closed road, a units mix-up — is
+**discarded rather than clamped**, because a number quietly bent into range is
+indistinguishable from a real one and the fallback is at least honestly
+derived.
+
+A batch flushed after a dead zone routes **once**, for the newest reading only.
+Twenty positions from a tunnel are history; the question being answered is
+where the car is now.
+
 ## Server authorisation — the security-critical step
 
 For **every inbound point** the server verifies:

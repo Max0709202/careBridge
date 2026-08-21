@@ -1,6 +1,13 @@
 import { Logger } from '@nestjs/common';
 
-import type { AddressInput, GeocodeResult, MapsPort } from '../maps.port';
+import {
+  MapsUnavailableError,
+  type AddressInput,
+  type Coordinates,
+  type GeocodeResult,
+  type MapsPort,
+  type RouteResult,
+} from '../maps.port';
 
 /**
  * Google Geocoding API.
@@ -74,6 +81,102 @@ export class GoogleMapsAdapter implements MapsPort {
       source: 'google',
     };
   }
+
+  /**
+   * The Routes API, asked for traffic-aware driving time.
+   *
+   * `TRAFFIC_AWARE` rather than `TRAFFIC_AWARE_OPTIMAL`: the optimal mode is
+   * several times the price for an accuracy difference measured in seconds,
+   * and routing spend is the one vendor cost that grows exactly as the product
+   * succeeds (R4).
+   *
+   * The field mask is not an optimisation. Google bills this endpoint by which
+   * fields are requested, and asking for the default set would return a full
+   * polyline and step-by-step instructions — data this product has no use for,
+   * at a materially higher tier. Asking for two numbers is the whole
+   * requirement.
+   *
+   * Two coordinates leave the process and nothing else: no ride id, no
+   * patient, no address text. The vendor learns that somebody drove between
+   * two points.
+   */
+  async route(from: Coordinates, to: Coordinates): Promise<RouteResult | null> {
+    let response: Response;
+    try {
+      response = await fetch(
+        'https://routes.googleapis.com/directions/v2:computeRoutes',
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'X-Goog-Api-Key': this.apiKey,
+            'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters',
+          },
+          body: JSON.stringify({
+            origin: { location: { latLng: latLng(from) } },
+            destination: { location: { latLng: latLng(to) } },
+            travelMode: 'DRIVE',
+            routingPreference: 'TRAFFIC_AWARE',
+          }),
+          // Shorter than the geocoding timeout, and deliberately. This sits
+          // behind a position report that arrives every few seconds; a call
+          // that takes longer than the gap between reports has already lost,
+          // because the answer describes a place the car has left.
+          signal: AbortSignal.timeout(3_000),
+        },
+      );
+    } catch (error) {
+      throw new MapsUnavailableError(
+        error instanceof Error ? error.message : 'request failed',
+      );
+    }
+
+    // 4xx is our fault — a bad key, a malformed body, a quota that has run
+    // out — and retrying will not fix it, but it is still a state where we do
+    // not know the answer. Both map to unavailable so the breaker stops the
+    // calls; the log is what distinguishes them for whoever has to fix it.
+    if (!response.ok) {
+      this.logger.warn(`Routing returned ${response.status}`);
+      throw new MapsUnavailableError(`status ${response.status}`);
+    }
+
+    let body: GoogleRoutesResponse;
+    try {
+      body = (await response.json()) as GoogleRoutesResponse;
+    } catch {
+      throw new MapsUnavailableError('unreadable response');
+    }
+
+    const first = body.routes?.[0];
+    // An empty `routes` array is the documented answer for "no route exists",
+    // which is a real answer rather than a failure: two points with no road
+    // between them will not acquire one by being asked again.
+    if (!first) return null;
+
+    const seconds = parseSeconds(first.duration);
+    if (seconds === null || first.distanceMeters === undefined) {
+      throw new MapsUnavailableError('route missing duration or distance');
+    }
+
+    return {
+      distanceMiles: first.distanceMeters / METRES_PER_MILE,
+      durationMinutes: Math.max(1, Math.round(seconds / 60)),
+      source: 'google',
+    };
+  }
+}
+
+function latLng(point: Coordinates): { latitude: number; longitude: number } {
+  return { latitude: point.latitude, longitude: point.longitude };
+}
+
+/** `"612s"` — a protobuf duration, which JSON has no type for. */
+function parseSeconds(duration: string | undefined): number | null {
+  if (!duration) return null;
+  const match = /^(\d+(?:\.\d+)?)s$/.exec(duration);
+  if (!match?.[1]) return null;
+  const seconds = Number(match[1]);
+  return Number.isFinite(seconds) ? seconds : null;
 }
 
 /**
@@ -90,6 +193,17 @@ function mapPrecision(locationType: string | undefined): GeocodeResult['precisio
     default:
       return 'approximate';
   }
+}
+
+/** Metres to miles, and seconds to minutes, in one place. */
+const METRES_PER_MILE = 1609.344;
+
+interface GoogleRoutesResponse {
+  routes?: Array<{
+    /** Google returns a protobuf duration as a string: "612s". */
+    duration?: string;
+    distanceMeters?: number;
+  }>;
 }
 
 interface GoogleGeocodeResponse {

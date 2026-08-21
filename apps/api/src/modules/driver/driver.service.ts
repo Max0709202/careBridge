@@ -21,6 +21,7 @@ import {
 } from '../../domain/tracking';
 import { RidesService } from '../care/rides.service';
 import { LiveTrackingService } from '../tracking/live-tracking.service';
+import { EtaService } from '../tracking/eta.service';
 import type { ReportLocationDto } from '../care/dto/ride.dto';
 import type {
   DriverProfileDto,
@@ -62,6 +63,7 @@ export class DriverService {
     private readonly rideMachine: RidesService,
     private readonly audit: AuditService,
     private readonly tracking: LiveTrackingService,
+    private readonly eta: EtaService,
   ) {}
 
   // ─── who is calling ───────────────────────────────────────────────────────
@@ -345,7 +347,14 @@ export class DriverService {
 
     const ride = await this.prisma.ride.findUnique({
       where: { id: rideId },
-      select: { id: true, driverId: true, status: true, lastCapturedAt: true },
+      select: {
+        id: true,
+        driverId: true,
+        status: true,
+        lastCapturedAt: true,
+        pickup: COORDS,
+        destination: COORDS,
+      },
     });
     if (!ride || ride.driverId !== driver.id) throw new AuthorizationError();
 
@@ -381,6 +390,20 @@ export class DriverService {
 
     if (movesTheMap) {
       const accuracyMeters = newest.accuracyMeters ?? DEFAULT_ACCURACY_METERS;
+
+      // Only the newest reading gets an ETA, and only when it is the reading
+      // that moves the map. A batch drained after a tunnel holds twenty
+      // positions; routing each of them would bill twenty lookups to answer a
+      // question about where the car is *now*.
+      const etaMinutes = await this.eta.estimate({
+        rideId,
+        status: ride.status,
+        at: { latitude: newest.latitude, longitude: newest.longitude },
+        pickup: coordsOrNull(ride.pickup),
+        destination: coordsOrNull(ride.destination),
+        now,
+      });
+
       await this.prisma.ride.update({
         where: { id: rideId },
         data: {
@@ -388,7 +411,7 @@ export class DriverService {
           lastLongitude: newest.longitude,
           lastAccuracyMeters: accuracyMeters,
           lastCapturedAt: newest.capturedAt,
-          etaMinutes: newest.etaMinutes ?? null,
+          etaMinutes,
         },
       });
 
@@ -401,7 +424,7 @@ export class DriverService {
         longitude: newest.longitude,
         accuracyMeters,
         capturedAt: newest.capturedAt.toISOString(),
-        etaMinutes: newest.etaMinutes ?? null,
+        etaMinutes,
       });
     }
 
@@ -445,6 +468,18 @@ export class DriverService {
 }
 
 const DEFAULT_ACCURACY_METERS = 12;
+
+/** The two columns an ETA needs from an address, and nothing else. */
+const COORDS = { select: { latitude: true, longitude: true } } as const;
+
+function coordsOrNull(
+  address: { latitude: number | null; longitude: number | null } | null,
+): { latitude: number; longitude: number } | null {
+  if (!address || address.latitude === null || address.longitude === null) {
+    return null;
+  }
+  return { latitude: address.latitude, longitude: address.longitude };
+}
 
 interface UsablePoint {
   latitude: number;

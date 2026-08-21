@@ -3,7 +3,6 @@ import {
   IsBoolean,
   IsIn,
   IsISO8601,
-  IsInt,
   IsLatitude,
   IsLongitude,
   IsNotEmpty,
@@ -106,10 +105,9 @@ export class ReportLocationDto {
   @IsISO8601()
   capturedAt!: string;
 
-  @ApiPropertyOptional({ minimum: 0, maximum: 600 })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(600)
-  etaMinutes?: number;
+  // There is deliberately no `etaMinutes` here. The arrival estimate is
+  // computed server-side from the reported position — see `EtaService` — and
+  // a field the device could set would be a field anything holding a driver's
+  // token could use to tell a family "two minutes" indefinitely. It is a
+  // promise the product makes, so the product makes it.
 }

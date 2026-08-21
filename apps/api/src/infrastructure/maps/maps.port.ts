@@ -36,6 +36,41 @@ export interface GeocodeResult extends Coordinates {
   source: string;
 }
 
+/** A drivable route between two points. */
+export interface RouteResult {
+  distanceMiles: number;
+
+  /**
+   * Drive time, without any boarding allowance. The caller decides whether a
+   * buffer belongs on top; a fare estimate wants one and a live countdown does
+   * not.
+   */
+  durationMinutes: number;
+
+  /** Which adapter produced this, recorded so a wrong ETA can be explained. */
+  source: string;
+}
+
+/**
+ * The vendor could not be reached, or answered with something unusable.
+ *
+ * Distinct from `route` returning null, and the distinction is the whole
+ * reason this exists: **null means there is no route** — two points with no
+ * road between them, which asking again will not change — while this means
+ * **we do not know**, which is a temporary condition the caller should stop
+ * asking about for a while. A circuit breaker cannot be written without being
+ * able to tell those apart.
+ *
+ * It never reaches a user. Everything above the port falls back to a
+ * straight-line estimate, so an outage costs accuracy rather than the feature.
+ */
+export class MapsUnavailableError extends Error {
+  constructor(reason: string) {
+    super(`Routing unavailable: ${reason}`);
+    this.name = 'MapsUnavailableError';
+  }
+}
+
 export interface MapsPort {
   readonly driver: 'google' | 'deterministic';
 
@@ -49,6 +84,19 @@ export interface MapsPort {
    * clinic record.
    */
   geocode(address: AddressInput): Promise<GeocodeResult | null>;
+
+  /**
+   * Road distance and drive time between two points.
+   *
+   * Note the asymmetry with `geocode`, which swallows every failure: this one
+   * **throws** `MapsUnavailableError` when the vendor cannot be reached. The
+   * two are on different kinds of path and that is the reason. Geocoding
+   * happens when somebody is creating a clinic record, where a vendor outage
+   * must not become a form that will not submit. Routing happens behind a
+   * position report, where the caller has a real fallback and needs to know to
+   * use it — and needs to know to stop calling.
+   */
+  route(from: Coordinates, to: Coordinates): Promise<RouteResult | null>;
 }
 
 export const MAPS = Symbol('MAPS');

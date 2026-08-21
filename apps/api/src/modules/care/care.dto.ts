@@ -305,7 +305,12 @@ export class RideDto {
   @ApiProperty({ type: () => TrackingPointDto, nullable: true })
   lastKnownPosition!: TrackingPointDto | null;
 
-  @ApiProperty({ type: 'integer', nullable: true })
+  @ApiProperty({
+    type: 'integer',
+    nullable: true,
+    description:
+      'Minutes until the driver reaches the stop in question — the pickup while they are on the way, the destination once the passenger is aboard. Computed server-side from the reported position; there is deliberately no field on the position report for a device to set it. Null while the car is standing at a kerb, and null when the address never geocoded.',
+  })
   etaMinutes!: number | null;
 
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;

@@ -191,7 +191,6 @@ export class RideSimulatorService implements OnModuleInit, OnModuleDestroy {
           longitude: position.longitude,
           accuracyMeters: 12,
           capturedAt: now.toISOString(),
-          etaMinutes: etaFor(current.status, t) ?? undefined,
         },
         now,
       ),
@@ -267,20 +266,6 @@ function positionFor(
   }
 }
 
-function etaFor(status: RideStatus, t: number): number | null {
-  if (status === 'driverEnRoute') {
-    return clampInt(Math.ceil(((30 - t) / 60) * 9), 1, 15);
-  }
-  if (status === 'inProgress') {
-    return clampInt(Math.ceil(((75 - t) / 60) * 14), 1, 25);
-  }
-  return null;
-}
-
 function clamp(value: number): number {
   return Math.min(1, Math.max(0, value));
-}
-
-function clampInt(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }

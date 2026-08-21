@@ -82,6 +82,11 @@ class RideDto {
 
   final TrackingPointDto? lastKnownPosition;
 
+  /// Minutes until the driver reaches the stop in question — the pickup while
+  /// they are on the way, the destination once the passenger is aboard.
+  /// Computed server-side from the reported position; there is deliberately no
+  /// field on the position report for a device to set it. Null while the car is
+  /// standing at a kerb, and null when the address never geocoded.
   final int? etaMinutes;
 
   final DateTime createdAt;

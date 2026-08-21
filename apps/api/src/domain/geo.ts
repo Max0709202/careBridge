@@ -32,10 +32,21 @@ export function distanceMiles(
 }
 
 /**
+ * City driving, averaged over lights, turns and the sort of traffic a medical
+ * appointment is scheduled around. Named because two things use it — the fare
+ * estimate and the fallback ETA — and a second copy would let them disagree
+ * about how long the same journey takes.
+ */
+export const AVERAGE_CITY_MPH = 24;
+
+/**
  * Rough drive time. Deliberately conservative: an estimate that runs early
  * costs a family nothing, one that runs late costs them an appointment.
  */
-export function estimateDriveMinutes(miles: number, averageMph = 24): number {
+export function estimateDriveMinutes(
+  miles: number,
+  averageMph = AVERAGE_CITY_MPH,
+): number {
   if (miles <= 0) return 0;
   const boardingBufferMinutes = 6;
   return Math.ceil((miles / averageMph) * 60) + boardingBufferMinutes;
