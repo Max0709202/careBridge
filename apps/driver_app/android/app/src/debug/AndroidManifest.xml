@@ -4,4 +4,9 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Permits cleartext to the local API only; see res/xml. Merged into the
+         application element of the main manifest for this build type alone,
+         so the release build keeps Android's TLS-only default. -->
+    <application android:networkSecurityConfig="@xml/network_security_config" />
 </manifest>

@@ -693,7 +693,19 @@ async function seedFleet(): Promise<void> {
   // at the kerb, not to be able to look them up.
   await prisma.driver.upsert({
     where: { id: ID.marcus },
-    update: {},
+    // Not `update: {}`.
+    //
+    // `invitedEmail` was added by a later migration, nullable and without a
+    // backfill, so every database seeded before it has Marcus's row with a
+    // null invite. An empty update means re-seeding can never repair that, and
+    // the failure is invisible from the API: `claim()` finds no row whose
+    // `invitedEmail` matches the signed-in address and refuses exactly as it
+    // refuses a stranger, so the driver app gets a 404 that says nothing.
+    //
+    // Restated on every run because it is the link between an operator's
+    // roster entry and an account, which is the one fact the driver app cannot
+    // start without.
+    update: { invitedEmail: DRIVER_EMAIL },
     create: {
       id: ID.marcus,
       organizationId: ID.meridian,

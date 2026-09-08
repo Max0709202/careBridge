@@ -43,11 +43,33 @@ ThemeData driverTheme(Brightness brightness) {
     brightness: brightness,
   );
 
-  final base = ThemeData(colorScheme: scheme, useMaterial3: true);
+  // 17px base rather than Material's 16, per the "bigger is right" note above.
+  //
+  // Scaled on the *typography geometry* rather than on `base.textTheme`.
+  // `ThemeData.textTheme` carries colour and no sizes — every style has a null
+  // `fontSize`, and the sizes are merged in later, at build time, from
+  // whichever geometry the locale calls for. `textTheme.apply(fontSizeFactor:)`
+  // therefore asserts on the first frame:
+  //
+  //   'fontSize != null || (fontSizeFactor == 1.0 && fontSizeDelta == 0.0)'
+  //
+  // Scaling all three geometries keeps that locale switch intact: a Burmese or
+  // Chinese driver still gets the `tall` / `dense` metrics, 6% larger, rather
+  // than English metrics imposed on their script.
+  const scale = 1.06;
+  final typography = Typography.material2021(colorScheme: scheme);
+  final base = ThemeData(
+    colorScheme: scheme,
+    useMaterial3: true,
+    typography: typography.copyWith(
+      englishLike: typography.englishLike.apply(fontSizeFactor: scale),
+      dense: typography.dense.apply(fontSizeFactor: scale),
+      tall: typography.tall.apply(fontSizeFactor: scale),
+    ),
+  );
 
   return base.copyWith(
     scaffoldBackgroundColor: scheme.surface,
-    textTheme: base.textTheme.apply(fontSizeFactor: 1.06),
     appBarTheme: AppBarTheme(
       backgroundColor: scheme.surface,
       foregroundColor: scheme.onSurface,

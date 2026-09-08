@@ -23,6 +23,7 @@ COPY pubspec.yaml pubspec.lock ./
 COPY packages/dart/carebridge_api/pubspec.yaml packages/dart/carebridge_api/
 COPY packages/dart/carebridge_client/pubspec.yaml packages/dart/carebridge_client/
 COPY apps/ops_console/pubspec.yaml apps/ops_console/
+COPY apps/driver_app/pubspec.yaml apps/driver_app/
 RUN flutter pub get
 
 COPY . .

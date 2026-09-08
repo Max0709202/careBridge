@@ -9,6 +9,19 @@ SHELL := /bin/bash
 PNPM ?= pnpm
 MELOS ?= dart run melos
 
+# The host port the API is published on.
+#
+# docker-compose publishes it as `127.0.0.1:$${API_PORT:-3000}:3000`, so an
+# .env that moves the port moves it for the app too — and the app fails the
+# only way it can: `NetworkFailure`, rendered as "We could not reach
+# CareBridge. Check your connection." Nothing in that message can tell a
+# developer they are dialling a port nobody is listening on, so the number is
+# read from the same place compose reads it rather than written twice.
+API_PORT ?= $(strip $(shell sed -n 's/^API_PORT=//p' .env 2>/dev/null | tail -1))
+ifeq ($(API_PORT),)
+API_PORT := 3000
+endif
+
 .PHONY: help
 help: ## Show this help.
 	@grep -hE '^[a-zA-Z0-9_.-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -24,7 +37,7 @@ install: ## Install TypeScript and Dart dependencies.
 .PHONY: ops
 ops: ## Run the dispatch console in Chrome against a local API.
 	cd apps/ops_console && flutter run -d chrome \
-		--dart-define=CAREBRIDGE_API_BASE_URL=http://localhost:3000/api/v1
+		--dart-define=CAREBRIDGE_API_BASE_URL=http://localhost:$(API_PORT)/api/v1
 
 .PHONY: driver
 driver: ## Run the driver app on an attached device or emulator.
@@ -32,7 +45,7 @@ driver: ## Run the driver app on an attached device or emulator.
 	@# loopback. On a physical handset, replace it with the machine's LAN
 	@# address — localhost on a phone is the phone.
 	cd apps/driver_app && flutter run \
-		--dart-define=CAREBRIDGE_API_BASE_URL=http://10.0.2.2:3000/api/v1
+		--dart-define=CAREBRIDGE_API_BASE_URL=http://10.0.2.2:$(API_PORT)/api/v1
 
 .PHONY: up
 up: ## Start Postgres, Redis, Mailpit and MinIO.
