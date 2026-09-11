@@ -1,4 +1,4 @@
-package com.carebridge.carebridge_driver
+package com.carebridge.driver
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -15,6 +15,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # Not used by this app's own code. The framework reaches for Cupertino
+  # glyphs on iOS — which this app ships on — and without the package the
+  # build warns that it cannot find them and the glyph renders as a blank box
+  # on a device nobody tests on first. Tree-shaking takes it to under a
+  # kilobyte, so the honest cost of keeping it is nothing.
+  cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.4.1
   go_router: ^17.3.0
   intl: ^0.20.3

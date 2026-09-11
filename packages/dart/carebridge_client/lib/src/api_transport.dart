@@ -68,7 +68,31 @@ abstract class ApiTransport {
     final trimmed = raw.endsWith('/') ? raw.substring(0, raw.length - 1) : raw;
     // A relative value resolves against the page the app was served from,
     // which is exactly what makes the same-origin proxy work.
-    return Uri.base.resolve(trimmed.isEmpty ? '/' : trimmed);
+    final resolved = Uri.base.resolve(trimmed.isEmpty ? '/' : trimmed);
+
+    // Off web there is no page to be relative to. `Uri.base` is the process's
+    // working directory, so the `/api/v1` default resolves to `file:///api/v1`
+    // and every request fails as a connection error — which the app renders,
+    // correctly for what it can see, as "We could not reach CareBridge. Check
+    // your connection."
+    //
+    // That is the same sentence a phone in a tunnel gets, so an iOS or Android
+    // build that forgot its `--dart-define` compiles, signs, uploads, passes
+    // review, installs, opens, and is broken for every person who downloads
+    // it — while telling each of them it is their network. There is no runtime
+    // remedy for it and no way for a user to report it usefully, so it is
+    // raised where it is still a build mistake.
+    if (!kIsWeb && resolved.scheme != 'http' && resolved.scheme != 'https') {
+      throw StateError(
+        'CAREBRIDGE_API_BASE_URL must be an absolute http(s) URL on iOS and '
+        'Android — "$raw" resolved to "$resolved". Only the web builds may '
+        'leave it relative, because only they are served by an nginx that '
+        'proxies /api from the same origin. Rebuild with, for example:\n'
+        '  --dart-define=CAREBRIDGE_API_BASE_URL=https://api.carebridge.example/api/v1',
+      );
+    }
+
+    return resolved;
   }
 
   @mustCallSuper

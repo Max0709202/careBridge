@@ -81,7 +81,15 @@ class TrackingSocket {
   /// same-origin wherever the app is — which is what keeps the
   /// Content-Security-Policy at `connect-src 'self'` and the API hostname out
   /// of the bundle.
-  static Uri _originFor(String raw) => Uri.base.resolve(raw);
+  ///
+  /// Through `ApiTransport.resolveBaseUrl` rather than `Uri.base.resolve`
+  /// directly, so that a mobile build with no configured host fails the same
+  /// way here as it does on the HTTP path. A second copy of the resolution is
+  /// exactly where the two would drift, and this is the side where the drift
+  /// would be invisible: a refused subscription is deliberately silent, so a
+  /// socket dialling `file:///api/v1` produces no error anywhere — just a map
+  /// that never moves.
+  static Uri _originFor(String raw) => ApiTransport.resolveBaseUrl(raw);
 
   /// Positions for one ride, for as long as the returned stream is listened to.
   ///

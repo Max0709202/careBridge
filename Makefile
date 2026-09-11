@@ -47,6 +47,49 @@ driver: ## Run the driver app on an attached device or emulator.
 	cd apps/driver_app && flutter run \
 		--dart-define=CAREBRIDGE_API_BASE_URL=http://10.0.2.2:$(API_PORT)/api/v1
 
+# ─── release builds ──────────────────────────────────────────────────────────
+#
+# The one thing these targets exist to enforce is that API_URL is set. A
+# release build with no base URL used to compile, sign, upload, install and
+# then fail every request as a network error — the default `/api/v1` is
+# relative, which only means anything on web, where nginx proxies it from the
+# same origin. That is now refused at startup rather than shipped, and refused
+# here rather than at startup.
+
+API_URL ?=
+
+.PHONY: _require-api-url
+_require-api-url:
+	@if [ -z "$(API_URL)" ]; then \
+		echo "API_URL is required for a release build. On a device there is no"; \
+		echo "page for the default /api/v1 to be relative to."; \
+		echo; \
+		echo "  make $(MAKECMDGOALS) API_URL=https://staging.carebridge.example/api/v1"; \
+		exit 1; \
+	fi
+
+.PHONY: release-android
+release-android: _require-api-url ## Build both Android app bundles. Needs API_URL=https://…
+	flutter build appbundle --release --dart-define=CAREBRIDGE_API_BASE_URL=$(API_URL)
+	cd apps/driver_app && flutter build appbundle --release \
+		--dart-define=CAREBRIDGE_API_BASE_URL=$(API_URL)
+	@echo
+	@echo "  family → build/app/outputs/bundle/release/app-release.aab"
+	@echo "  driver → apps/driver_app/build/app/outputs/bundle/release/app-release.aab"
+	@echo
+	@echo "Unsigned with a real key unless android/key.properties exists."
+	@echo "See docs/runbooks/release-android.md."
+
+.PHONY: release-ios
+release-ios: _require-api-url ## Build both iOS archives. macOS only. Needs API_URL=https://…
+	@# There is no way around the macOS requirement: the iOS toolchain, the
+	@# code signer and the uploader are macOS-only binaries.
+	flutter build ipa --release --dart-define=CAREBRIDGE_API_BASE_URL=$(API_URL)
+	cd apps/driver_app && flutter build ipa --release \
+		--dart-define=CAREBRIDGE_API_BASE_URL=$(API_URL)
+	@echo
+	@echo "Upload with Transporter. See docs/runbooks/release-ios.md."
+
 .PHONY: up
 up: ## Start Postgres, Redis, Mailpit and MinIO.
 	docker compose up -d db redis mailpit minio

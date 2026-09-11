@@ -77,3 +77,18 @@ apps/*/build/
 *.tfvars
 !*.tfvars.example
 crash.log
+
+# Android signing. The upload key is what Play proves a release came from us;
+# committing it hands anyone with repository access the ability to publish as
+# CareBridge, and it cannot be rotated without Google's involvement. The
+# runbook (docs/runbooks/release-android.md) says where the real copy lives.
+key.properties
+**/key.properties
+*.jks
+*.keystore
+
+# iOS signing. Certificates and profiles come from Apple on demand; a .p12 in
+# a repository is the same mistake as a .jks.
+*.p12
+*.mobileprovision
+*.cer

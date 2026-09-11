@@ -596,10 +596,52 @@ where the two share a name.
 
 ---
 
+## Shipping it
+
+The family app and the driver app are Flutter apps, so the same source that
+serves the web surfaces builds for iOS and Android. Both now have their own
+identity rather than the Flutter template's — `com.carebridge.family` and
+`com.carebridge.driver`, an icon each, a release signing path that does not
+quietly fall back to a debug key, and the iOS privacy manifests Apple has
+required since May 2024.
+
+```bash
+make release-android API_URL=https://staging.carebridge.example/api/v1
+make release-ios     API_URL=https://staging.carebridge.example/api/v1   # macOS only
+```
+
+`API_URL` is required and the target refuses without it. The default base URL
+is the relative `/api/v1`, which is right on web — nginx proxies it from the
+same origin — and meaningless on a phone, where there is no page to be relative
+to. A build that omitted it used to compile, sign, upload, install, and then
+render every screen as "We could not reach CareBridge. Check your connection."
+— the same sentence a phone in a tunnel gets, on an app that was never going to
+work for anybody. It now fails at startup instead, and the check is pinned by
+`packages/dart/carebridge_client/test/base_url_test.dart`.
+
+| | |
+| --- | --- |
+| [`docs/runbooks/release-ios.md`](docs/runbooks/release-ios.md) | A device, TestFlight, the App Store, and what gets an app in this shape rejected |
+| [`docs/runbooks/release-android.md`](docs/runbooks/release-android.md) | A handset, the test tracks, Play, and the location policy |
+| [`docs/product/store-listing.md`](docs/product/store-listing.md) | One set of answers for both stores' privacy forms, so they cannot drift |
+| [`docs/runbooks/pilot-readiness.md`](docs/runbooks/pilot-readiness.md) | What has to become real before people who are not on the team use it |
+
+**One thing blocks both stores: there is no account deletion.** Apple requires
+it in-app, Play requires it in-app and at a public URL, and neither accepts a
+support email address. The behaviour was designed in the retention schedule and
+never implemented; the per-relation policy — what is deleted, what is
+anonymised, and what deletion is refused for — is
+[ADR-0013](docs/adr/0013-account-deletion.md), written so that building it is a
+mechanical exercise rather than twenty-five judgment calls made at a keyboard.
+
+---
+
 ## Not built
 
-Real maps and routing · a client surface for the caregiver marketplace and the
-clinic portal · the backup-restore rehearsal and the pilot documentation set.
+Account deletion ([ADR-0013](docs/adr/0013-account-deletion.md), and the one
+store blocker) · real maps and routing · a client surface for the caregiver
+marketplace and the clinic portal · the backup-restore rehearsal and the pilot
+documentation set.
 
 The **marketplace** and the **clinic portal** are built on the server and
 switched off behind flags that seed as `enabled: false`. The gate is

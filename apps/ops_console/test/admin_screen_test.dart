@@ -86,7 +86,8 @@ class _NoTokens implements TokenStore {
 /// answers come off the script in order, so a test says what the server
 /// returns without also having to model it.
 class ScriptedAudit extends OpsApi {
-  ScriptedAudit(this.pages) : super(tokens: _NoTokens());
+  ScriptedAudit(this.pages)
+    : super(tokens: _NoTokens(), baseUrl: 'http://localhost/api/v1');
 
   final List<AuditPage> pages;
   final List<({AuditFilter filter, String? cursor})> calls = [];

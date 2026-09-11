@@ -12,6 +12,7 @@ Eight documents, in the order they are worth reading:
 | [non-goals.md](non-goals.md) | What we are deliberately not building, and why |
 | [business-model.md](business-model.md) | How this makes money and what that constrains |
 | [success-metrics.md](success-metrics.md) | What we will measure in the pilot, and the numbers that would stop us |
+| [store-listing.md](store-listing.md) | What both app stores are told: description, privacy answers, content rating, and the notes a reviewer needs |
 
 `../FOUNDATION.md` is the source these expand on. Where the two disagree,
 FOUNDATION is the record of the decision and these are out of date.

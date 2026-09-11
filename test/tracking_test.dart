@@ -96,7 +96,10 @@ void main() {
         // single-subscription stream would throw the second time anything
         // listened, which on this screen means the first time the ride status
         // changes underneath it.
-        final socket = TrackingSocket(tokens: InMemoryTokenStore());
+        final socket = TrackingSocket(
+          tokens: InMemoryTokenStore(),
+          baseUrl: 'http://localhost/api/v1',
+        );
         addTearDown(socket.dispose);
 
         final stream = socket.watch('ride-1');
@@ -116,7 +119,10 @@ void main() {
       // stream still exists and simply stays quiet, so the screen falls back
       // to the polled snapshot rather than showing an error for a state that
       // is not one.
-      final socket = TrackingSocket(tokens: InMemoryTokenStore());
+      final socket = TrackingSocket(
+        tokens: InMemoryTokenStore(),
+        baseUrl: 'http://localhost/api/v1',
+      );
       addTearDown(socket.dispose);
 
       final events = <TrackingUpdate>[];

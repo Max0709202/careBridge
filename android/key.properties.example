@@ -1,0 +1,20 @@
+# Copy to `key.properties` beside this file and fill in. Never committed —
+# see the root .gitignore and docs/runbooks/release-android.md.
+#
+# Generate the keystore once, and keep the only copy somewhere that survives
+# this laptop:
+#
+#   keytool -genkey -v -keystore ~/carebridge-upload.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# `validity 10000` is ~27 years and is not optimism: Play requires an upload
+# key valid past 2033, and a key that expires mid-life cannot be renewed, only
+# replaced through support.
+
+storePassword=
+keyPassword=
+keyAlias=upload
+
+# Absolute path. A relative one resolves against the Gradle module and moves
+# when the build is run from somewhere else.
+storeFile=/home/you/carebridge-upload.jks

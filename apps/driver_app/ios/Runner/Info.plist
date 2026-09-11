@@ -15,10 +15,17 @@
 	<array>
 		<string>location</string>
 	</array>
+	<!-- HTTPS and the Keychain, and nothing else. That is the standard
+	     exemption, and declaring it here rather than in the upload form stops
+	     App Store Connect asking the same question on every single build —
+	     which is a prompt people learn to click through, on a question that
+	     deserves an answer. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Carebridge Driver</string>
+	<string>CareBridge Driver</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
