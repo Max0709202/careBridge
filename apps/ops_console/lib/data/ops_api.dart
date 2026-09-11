@@ -6,8 +6,12 @@
 import 'package:carebridge_api/carebridge_api.dart' as wire;
 import 'package:carebridge_client/carebridge_client.dart';
 
+import '../domain/admin.dart';
+import '../domain/billing.dart';
 import '../domain/dispatch.dart';
 import '../domain/models.dart';
+import 'admin_codec.dart';
+import 'billing_codec.dart';
 import 'ops_codec.dart';
 
 /// The console's HTTP client.
@@ -241,6 +245,258 @@ class OpsApi extends ApiTransport {
   Future<SeatSummary> seats(String organizationId) async => seatsFromWire(
     wire.OrganizationSeatsDto.fromJson(
       await send('GET', '/organizations/$organizationId/seats'),
+    ),
+  );
+
+  // ─── the operator's subscription ──────────────────────────────────────────
+  //
+  // The **second** payer (ADR-0011). Scoped by organisation id in the path
+  // like everything else above, and answered by `requireMembership` before any
+  // of it runs — a role that may work the queue is not necessarily a role that
+  // may change what the company is billed, and the server is what decides
+  // that.
+
+  Future<BillingAccount> billing(String organizationId) async =>
+      accountFromWire(
+        wire.BillingAccountDto.fromJson(
+          await send('GET', '/organizations/$organizationId/billing'),
+        ),
+      );
+
+  /// The operator side of the plan catalogue.
+  ///
+  /// Filtered by the server through `?payer=`, not here. A console that
+  /// filtered a full catalogue client-side would be one release away from
+  /// offering a household plan to a transport company.
+  Future<List<OperatorPlan>> plans() async =>
+      (await sendList('GET', '/billing/plans?payer=dispatchOrganization'))
+          .map(
+            (e) => wire.SubscriptionPlanDto.fromJson(e as Map<String, dynamic>),
+          )
+          .map(planFromWire)
+          .nonNulls
+          .toList();
+
+  Future<List<Invoice>> invoices(String organizationId) async =>
+      (await sendList('GET', '/organizations/$organizationId/billing/invoices'))
+          .map((e) => wire.InvoiceDto.fromJson(e as Map<String, dynamic>))
+          .map(invoiceFromWire)
+          .nonNulls
+          .toList();
+
+  Future<BillingAccount> subscribe({
+    required String organizationId,
+    required String planCode,
+    required BillingInterval interval,
+  }) async => accountFromWire(
+    wire.BillingAccountDto.fromJson(
+      await send(
+        'POST',
+        '/organizations/$organizationId/billing/subscribe',
+        // A double-tap on a slow connection must not start two subscriptions,
+        // and at the HTTP level a retry is indistinguishable from a second
+        // decision.
+        idempotencyKey: newId(),
+        body: {'planCode': planCode, 'interval': interval.wire},
+      ),
+    ),
+  );
+
+  Future<BillingAccount> changeInterval({
+    required String organizationId,
+    required BillingInterval interval,
+  }) async => accountFromWire(
+    wire.BillingAccountDto.fromJson(
+      await send(
+        'POST',
+        '/organizations/$organizationId/billing/change-interval',
+        body: {'interval': interval.wire},
+      ),
+    ),
+  );
+
+  Future<BillingAccount> cancelSubscription(String organizationId) async =>
+      accountFromWire(
+        wire.BillingAccountDto.fromJson(
+          await send('POST', '/organizations/$organizationId/billing/cancel'),
+        ),
+      );
+
+  /// Puts a card on the operator's account.
+  ///
+  /// [token] is a reference obtained **directly from the payment processor**.
+  /// No endpoint in this system accepts a card number and this method cannot
+  /// be given one — ADR-0006 puts that boundary at the client, which is why
+  /// the parameter is a token rather than a number this console would then
+  /// have to be trusted not to log.
+  Future<PaymentMethod?> attachPaymentMethod({
+    required String organizationId,
+    required String token,
+  }) async => paymentMethodFromWire(
+    wire.PaymentMethodDto.fromJson(
+      await send(
+        'POST',
+        '/organizations/$organizationId/billing/payment-method',
+        idempotencyKey: newId(),
+        body: {'token': token},
+      ),
+    ),
+  );
+
+  Future<void> detachPaymentMethod({
+    required String organizationId,
+    required String paymentMethodId,
+  }) async {
+    await send(
+      'DELETE',
+      '/organizations/$organizationId/billing/payment-method/$paymentMethodId',
+    );
+  }
+
+  /// Charges an open invoice now.
+  ///
+  /// For the moment after a declined card is replaced: waiting a day for the
+  /// scheduled retry, while the screen still says the payment failed, reads as
+  /// the update not having worked.
+  Future<Invoice?> payInvoice({
+    required String organizationId,
+    required String invoiceId,
+  }) async => invoiceFromWire(
+    wire.InvoiceDto.fromJson(
+      await send(
+        'POST',
+        '/organizations/$organizationId/billing/invoices/$invoiceId/pay',
+      ),
+    ),
+  );
+
+  // ─── administration ───────────────────────────────────────────────────────
+  //
+  // Not scoped by organisation, and that is the difference that shapes the
+  // whole section: an operator's owner has complete authority over their own
+  // company and none at all over anybody else's, while platform support has a
+  // narrow read-only view across all of them. `PlatformRoleGuard` decides,
+  // per request rather than from the token, and refuses with the same 404
+  // every other lookup uses.
+  //
+  // Support reads and admin writes. The console cannot tell which it is
+  // holding — nothing on the wire says so, by design — so it offers the write
+  // controls and renders the refusal plainly if one comes back. Hiding them on
+  // a guess would hide them from the people who have the standing too.
+
+  /// Whether this account can see the administration surface at all.
+  ///
+  /// A probe rather than a claim on a profile: the server deliberately does
+  /// not tell a client what platform standing it holds, because an endpoint
+  /// that did would let an ordinary account discover that `/admin` exists.
+  /// Asking for the cheapest support-level read and treating a refusal as
+  /// "no" gets the same answer without adding that endpoint.
+  ///
+  /// Any failure answers false. A network error is indistinguishable from a
+  /// refusal from here, and the console's only use for the answer is whether
+  /// to show a navigation item — an item that is briefly missing during an
+  /// outage is a smaller wrong than one that is shown and then 404s.
+  Future<bool> hasPlatformAccess() async {
+    try {
+      await stats();
+      return true;
+    } on Failure {
+      return false;
+    }
+  }
+
+  Future<PlatformStats> stats() async => statsFromWire(
+    wire.PlatformStatsDto.fromJson(await send('GET', '/admin/stats')),
+  );
+
+  /// One keyset page of the audit log.
+  ///
+  /// [cursor] comes from the previous page and nothing else. Building one by
+  /// hand — a timestamp, a row count — is how a reader ends up with a page
+  /// that silently omits the rows appended while they were reading.
+  Future<AuditPage> auditLog({
+    AuditFilter filter = const AuditFilter(),
+    String? cursor,
+  }) async {
+    final query = <String, String>{
+      if ((filter.action ?? '').isNotEmpty) 'action': filter.action!,
+      if ((filter.entityType ?? '').isNotEmpty)
+        'entityType': filter.entityType!,
+      if ((filter.entityId ?? '').isNotEmpty) 'entityId': filter.entityId!,
+      'cursor': ?cursor,
+    };
+    final suffix = query.isEmpty
+        ? ''
+        : '?${query.entries.map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}').join('&')}';
+
+    return auditPageFromWire(
+      wire.AuditPageDto.fromJson(await send('GET', '/admin/audit$suffix')),
+    );
+  }
+
+  Future<List<FeatureFlag>> flags() async =>
+      (await sendList('GET', '/admin/flags'))
+          .map((e) => wire.FeatureFlagDto.fromJson(e as Map<String, dynamic>))
+          .map(flagFromWire)
+          .toList();
+
+  /// Creates or updates a flag.
+  ///
+  /// [confirmNarrowing] is sent only when the console has actually asked. The
+  /// server refuses a narrowing that did not say so, and a client that always
+  /// sent `true` would turn a deliberate speed bump into a field nobody reads.
+  Future<List<FeatureFlag>> setFlag({
+    required String key,
+    required String description,
+    required bool enabled,
+    required int rolloutPercent,
+    bool confirmNarrowing = false,
+  }) async =>
+      (await sendList(
+            'PUT',
+            '/admin/flags/${Uri.encodeComponent(key)}',
+            body: {
+              'description': description.trim(),
+              'enabled': enabled,
+              'rolloutPercent': rolloutPercent,
+              if (confirmNarrowing) 'confirmNarrowing': true,
+            },
+          ))
+          .map((e) => wire.FeatureFlagDto.fromJson(e as Map<String, dynamic>))
+          .map(flagFromWire)
+          .toList();
+
+  Future<RefundableInvoice> refundable(String invoiceId) async =>
+      refundableFromWire(
+        wire.RefundableInvoiceDto.fromJson(
+          await send('GET', '/admin/invoices/$invoiceId/refunds'),
+        ),
+      );
+
+  /// Sends money back.
+  ///
+  /// [paymentId] is carried from the lookup rather than resolved server-side,
+  /// so a refund cannot be applied to a payment the reader was not looking at.
+  /// [amountCents] is bounded by what is left on that payment, and the server
+  /// checks the bound again — this one only keeps the screen honest.
+  Future<RefundableInvoice> issueRefund({
+    required String invoiceId,
+    required String paymentId,
+    required int amountCents,
+    required String reason,
+  }) async => refundableFromWire(
+    wire.RefundableInvoiceDto.fromJson(
+      await send(
+        'POST',
+        '/admin/invoices/$invoiceId/refunds',
+        // A retried refund must not be a second one.
+        idempotencyKey: newId(),
+        body: {
+          'paymentId': paymentId,
+          'amountCents': amountCents,
+          'reason': reason.trim(),
+        },
+      ),
     ),
   );
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/theme.dart';
+import '../../core/money.dart';
 import '../../domain/models.dart';
 import '../../state/providers.dart';
 import '../../widgets/common.dart';
@@ -62,7 +63,11 @@ class SeatsScreen extends ConsumerWidget {
               _row(theme, 'Drivers on the road', '${summary.activeDrivers}'),
               _row(theme, 'Billed at last renewal', '${summary.billedSeats}'),
               if (summary.renewalTotalCents != null)
-                _row(theme, 'Next renewal', _money(summary.renewalTotalCents!)),
+                _row(
+                  theme,
+                  'Next renewal',
+                  formatCents(summary.renewalTotalCents!),
+                ),
               // The two numbers differ whenever a driver was approved
               // mid-period, and the difference is not a discrepancy — the seat
               // was charged immediately by proration and folds into the
@@ -143,17 +148,10 @@ class SeatsScreen extends ConsumerWidget {
           // Zero on a release, and that is the rule rather than a gap: a
           // released seat is not refunded, because it stays usable until the
           // period that paid for it ends.
-          entry.prorationCents > 0 ? _money(entry.prorationCents) : '—',
+          entry.prorationCents > 0 ? formatCents(entry.prorationCents) : '—',
           style: theme.textTheme.bodyMedium,
         ),
       ],
     ),
   );
-
-  static String _money(int cents) {
-    final negative = cents < 0;
-    final abs = cents.abs();
-    final remainder = (abs % 100).toString().padLeft(2, '0');
-    return '${negative ? '-' : ''}\$${abs ~/ 100}.$remainder';
-  }
 }

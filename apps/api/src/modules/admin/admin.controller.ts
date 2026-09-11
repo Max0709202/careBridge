@@ -17,6 +17,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { Idempotent } from '../../common/idempotency.interceptor';
 import { Ctx, CurrentUser, RequestContext } from '../../common/request-context';
 import { AdminService } from './admin.service';
 import { PlatformRoleGuard, RequiresPlatform } from './platform-role.guard';
@@ -113,6 +114,13 @@ export class AdminController {
 
   @Post('invoices/:invoiceId/refunds')
   @RequiresPlatform('admin')
+  // The same mark every other route that creates something carries, and the
+  // consequence of omitting it is larger here than anywhere else. `remaining`
+  // counts pending refunds, so a duplicated *full* refund is refused by the
+  // ceiling — but a duplicated partial one is not, and at the HTTP level a
+  // retry after a dropped connection is indistinguishable from a second
+  // intention. For a refund, that difference is money leaving twice.
+  @Idempotent()
   @ApiOperation({
     summary: 'Send money back',
     description:

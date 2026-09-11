@@ -22,6 +22,7 @@ class ConsoleShell extends ConsumerWidget {
     (path: '/roster', icon: Icons.people_outline, label: 'Roster'),
     (path: '/fleet', icon: Icons.directions_car_outlined, label: 'Fleet'),
     (path: '/seats', icon: Icons.receipt_long_outlined, label: 'Seats'),
+    (path: '/billing', icon: Icons.credit_card_outlined, label: 'Billing'),
   ];
 
   int _indexFor(String location) {
@@ -56,6 +57,16 @@ class ConsoleShell extends ConsumerWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
+            ),
+          // Shown only to an account the server answered a platform read for.
+          // Administration is not part of the dispatch loop — it is a separate
+          // job done by different people — so it is one door out of this frame
+          // rather than five more rail items competing with the queue.
+          if (ref.watch(platformAccessProvider).value ?? false)
+            IconButton(
+              tooltip: 'Administration',
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              onPressed: () => context.go('/admin'),
             ),
           IconButton(
             tooltip: 'Switch operator',

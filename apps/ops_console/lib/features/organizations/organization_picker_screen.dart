@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../state/providers.dart';
@@ -18,11 +19,18 @@ class OrganizationPickerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final organizations = ref.watch(organizationsProvider);
+    final isPlatform = ref.watch(platformAccessProvider).value ?? false;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Choose an operator'),
         actions: [
+          if (isPlatform)
+            IconButton(
+              tooltip: 'Administration',
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              onPressed: () => context.go('/admin'),
+            ),
           IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout),
@@ -50,12 +58,27 @@ class OrganizationPickerScreen extends ConsumerWidget {
               // administrator is the only actionable thing there is, and it
               // beats an empty screen that looks broken.
               if (list.isEmpty) {
-                return const EmptyState(
+                // A platform account is the one case where this is not a dead
+                // end. Platform standing and operator membership are separate
+                // axes: somebody who administers CareBridge need hold no
+                // membership anywhere, and before there was a door here they
+                // arrived at this screen with nowhere to go.
+                return EmptyState(
                   icon: Icons.business_outlined,
                   title: 'No operators yet',
-                  message:
-                      'This account is not a member of any transport operator. '
-                      'Ask an owner or administrator to add you.',
+                  message: isPlatform
+                      ? 'This account is not a member of any transport '
+                            'operator, so there is no queue to work. The '
+                            'administration surface does not need one.'
+                      : 'This account is not a member of any transport '
+                            'operator. Ask an owner or administrator to add '
+                            'you.',
+                  action: isPlatform
+                      ? FilledButton(
+                          onPressed: () => context.go('/admin'),
+                          child: const Text('Open administration'),
+                        )
+                      : null,
                 );
               }
 

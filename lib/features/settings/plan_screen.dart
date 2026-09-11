@@ -211,9 +211,79 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                 style: theme.textTheme.bodyMedium,
               ),
             ),
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              FilledButton.icon(
+                onPressed: _busy ? null : _addCard,
+                icon: const Icon(Icons.add_card_outlined),
+                label: Text(card == null ? 'Add a card' : 'Replace this card'),
+              ),
+              if (card != null)
+                TextButton(
+                  onPressed: _busy ? null : () => _removeCard(card),
+                  child: const Text('Remove'),
+                ),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  /// Puts a card on file.
+  ///
+  /// The card number never reaches this app. ADR-0006 puts that boundary at
+  /// the client — the processor's own sheet takes the number and hands back a
+  /// token — and [PaymentTokenDialog] is where that sheet will be, holding the
+  /// place until the SDK is wired to a real account. The API call below does
+  /// not change when it is.
+  Future<void> _addCard() async {
+    final token = await showDialog<String>(
+      context: context,
+      builder: (context) => const PaymentTokenDialog(),
+    );
+    if (token == null || token.isEmpty) return;
+
+    await _run(
+      () async => ref.read(careApiProvider).attachPaymentMethod(token),
+    );
+  }
+
+  Future<void> _removeCard(PaymentMethod card) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove this card?'),
+        // Both halves said plainly. The first is what somebody needs to hear
+        // before they do it; the second is what they would otherwise wonder
+        // about afterwards — a payment that has already happened still names
+        // the card that made it.
+        content: Text(
+          'Your plan will have nothing to charge when it next renews, and it '
+          'will lapse unless you add another card first.\n\n'
+          '${card.label} stays on the payments it already made.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Keep it'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Remove card'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed ?? false) {
+      await _run(
+        () async => ref.read(careApiProvider).detachPaymentMethod(card.id),
+      );
+    }
   }
 
   /// One invoice, itemised.
@@ -542,5 +612,96 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     if (confirmed ?? false) {
       await _run(() async => ref.read(careApiProvider).cancelSubscription());
     }
+  }
+}
+
+/// Where a card is put on file, without a card number reaching this app.
+///
+/// ADR-0006 is unambiguous about where that boundary sits: the payment
+/// processor's own sheet takes the number, and CareBridge only ever sees a
+/// token. That SDK needs a Stripe account and platform configuration that do
+/// not exist yet, so this dialog stands in for the sheet and asks for **the
+/// token itself** — which is exactly what `POST /billing/payment-method`
+/// accepts and exactly what the sheet will hand over when it lands. Replacing
+/// this widget is then the whole change; no endpoint moves.
+///
+/// The obvious alternative — collect a card number here and turn it into a
+/// token ourselves — would put a card number through this app and its logs,
+/// which is the one thing ADR-0006 exists to prevent. Doing it "only in
+/// development" is how it reaches production.
+class PaymentTokenDialog extends StatefulWidget {
+  const PaymentTokenDialog({super.key});
+
+  @override
+  State<PaymentTokenDialog> createState() => _PaymentTokenDialogState();
+}
+
+class _PaymentTokenDialogState extends State<PaymentTokenDialog> {
+  final _token = TextEditingController();
+
+  @override
+  void dispose() {
+    _token.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text('Add a card'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'CareBridge never sees your card number. Your bank\u2019s payment '
+            'provider takes the card and gives us a reference to it, and that '
+            'reference is what goes in the box below.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextField(
+            controller: _token,
+            autofocus: true,
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (value) => Navigator.of(
+              context,
+            ).pop(value.trim().isEmpty ? null : value.trim()),
+            decoration: const InputDecoration(
+              labelText: 'Card reference',
+              hintText: 'tok_\u2026',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            // The local payments adapter exists so that a decline, and the
+            // dunning that follows it, are reachable without a Stripe account
+            // — and they are unreachable if nobody is told which digits
+            // produce them. Stripe's own test-card meanings, so a developer
+            // reproducing a ticket uses the number from the ticket.
+            'Running against the local payments adapter, any text works and '
+            'its last four digits decide the outcome: 4242 succeeds, 9995 is '
+            'declined.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _token.text.trim().isEmpty
+              ? null
+              : () => Navigator.of(context).pop(_token.text.trim()),
+          child: const Text('Save card'),
+        ),
+      ],
+    );
   }
 }

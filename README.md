@@ -25,15 +25,15 @@ docker compose up --build
 Then open **<http://localhost:8080>** and sign in with the pre-filled
 credentials (`sarah@example.com` / `demo-password`).
 
-There are three ways in, all on the same password — a family member, a
-dispatcher, and a driver:
+There are four ways in, all on the same password — a family member, a
+dispatcher, a driver, and CareBridge's own staff:
 
 | surface | account |
 | --- | --- |
 | family app, `:8080` | `sarah@example.com` |
 | ops console, `:8081` | `dispatch@meridiantransit.example` |
 | driver app, on a device | `marcus@meridiantransit.example` |
-| admin API, `/api/v1/admin` | `admin@carebridge.example` — seeded with a confirmed second factor, because the guard refuses platform staff without one |
+| administration, `:8081` behind the shield icon | `admin@carebridge.example` — seeded with a confirmed second factor, because the guard refuses platform staff without one |
 
 Seven containers come up: PostgreSQL 16, Redis 7, Mailpit, MinIO, the API, and
 the two Flutter web surfaces behind nginx — the family app and the dispatch
@@ -143,20 +143,26 @@ REDIS_URL=redis://127.0.0.1:56379 make test-integration  # the real BullMQ path
 | Real | Standing in |
 | ---- | ----------- |
 | Every Stage-2 feature is reachable **from the app**: care-circle invitations, the session list, two-factor enrolment, notification preferences, the verification prompt | |
-| PostgreSQL is the source of truth. Nothing resets on restart. | The **driver app** — "Preview controls" ask the server to run the same transitions |
-| **Dispatch**: the driver lifecycle (invite → approve → suspend → offboard), shifts, a queue ordered by when the car is needed, and assignment with reassignment reasons | The **dispatch console** — the API is real, the Flutter Web surface for it is not |
-| Full auth lifecycle: argon2id, rotating refresh tokens with family revocation, email verification, password reset, session list and revoke, sign-out-everywhere | The **dispatch service** — assignment is scripted, not matched |
-| TOTP MFA end to end — enrol, confirm, sign in with a code, spend a recovery code — verified against the RFC 6238 vectors, secret encrypted at rest | Real GPS, maps and routing — the route view is a schematic, deliberately, and positions come from the preview runner |
-| Assignment eligibility asserted server-side: a wheelchair trip cannot be given to a saloon car, an unapproved driver cannot be given anybody, and no driver carries two passengers at once | Driver **documents** — approval is a decision an admin records; the S3 upload behind it is still to come |
-| Family invitations: single-use, expiring, email-bound, verified-address-bound, no grant broader than the inviter's | Live push: the client polls while a trip is running. The Socket.IO gateway is Stage 3 |
-| Server-owned ride, appointment and **driver** state machines, with illegal transitions rejected | **Charging a card.** The fee model is real — two payers, plans, periods, seats, entitlements — but no money moves until Stage 4 wires Stripe up |
+| PostgreSQL is the source of truth. Nothing resets on restart. | The **dispatch service** — assignment is a dispatcher picking from a server-ordered queue, not automatic matching |
+| **Dispatch**, end to end: the driver lifecycle (invite → approve → suspend → offboard), shifts, a queue ordered by when the car is needed, and assignment with reassignment reasons — through the `ops_console`, not only the API | Real GPS, maps and routing — the route view is a schematic, deliberately |
+| The **driver app**: today's jobs, the state machine one tap at a time, a location queue that survives a tunnel, and document upload | A **real device in traffic.** The field-test recorder exists; the drive has not happened |
+| **Administration**: the operational dashboard, the keyset-paged audit viewer, feature flags with sticky rollouts, and refunds — behind a platform role **and** a confirmed second factor | A **real Stripe account.** `PAYMENTS_DRIVER=local` scripts each outcome from the card's last four digits; the Stripe adapter is written and has not been exercised against a live account |
+| **Both** payers can reach their own money: a household manages its plan, card and invoices in the app; an operator manages its subscription, seat-derived renewal, card and invoices in the console | The processor's **card sheet.** No card number reaches either app — both take the token the sheet will supply, and swapping the widget is the whole change (ADR-0006) |
+| Full auth lifecycle: argon2id, rotating refresh tokens with family revocation, email verification, password reset, session list and revoke, sign-out-everywhere | Live **push**: the Socket.IO gateway carries positions, and a status change is still found by a 5-second poll |
+| TOTP MFA end to end — enrol, confirm, sign in with a code, spend a recovery code — verified against the RFC 6238 vectors, secret encrypted at rest | A real mail or push vendor — `MAIL_DRIVER=smtp` points at Mailpit locally and SES in production; `PUSH_DRIVER=fcm` is written and untested against a live project |
+| Assignment eligibility asserted server-side: a wheelchair trip cannot be given to a saloon car, an unapproved driver cannot be given anybody, and no driver carries two passengers at once | A real maps vendor — `MAPS_DRIVER=google` is written; production refuses the deterministic one |
+| Driver **documents**: presigned upload to object storage, an audited view link, and an approval that moves a billable seat | Redis in the default local setup — without it the API falls back to an in-process scheduler and says so at boot |
+| Family invitations: single-use, expiring, email-bound, verified-address-bound, no grant broader than the inviter's | The **caregiver marketplace** and the **clinic portal** — built server-side, flagged off, and with no client surface until pilot evidence justifies one |
+| Server-owned ride, appointment and **driver** state machines, with illegal transitions rejected | |
+| Live tracking over a Socket.IO gateway, re-authorised on every `watch`, with staleness the client cannot render away | |
 | `Idempotency-Key` honoured on every create — a retried request books one ride, not two | |
 | Rate limits on every credential endpoint — sign-in, registration, reset, verification, invitation, MFA — counted per IP *and* per address, shared across instances through Redis | |
-| Per-patient permission model resolved server-side on every request, **and** an organisation-membership model beside it for operator staff | The `ops_console`, the driver app, and everything in Stage 4 |
-| Notification delivery on three channels with per-user, per-channel preferences | A real mail or push vendor — `MAIL_DRIVER=smtp` points at Mailpit locally and SES in production; `PUSH_DRIVER=fcm` is written and untested against a live project |
-| BullMQ reminder scheduling, timezone-correct across both DST boundaries | Redis in the default local setup — without it the API falls back to an in-process scheduler and says so at boot |
-| Geocoding behind the maps interface, with a deterministic dev adapter | A real maps vendor — `MAPS_DRIVER=google` is written; production refuses the deterministic one |
-| Fare calculation in integer cents, itemised, versioned, priced from a `pricing_rules` row | S3 — MinIO is up, nothing writes to it until driver documents land |
+| Per-patient permission model resolved server-side on every request, an organisation-membership model beside it for operator staff, and a platform-role axis distinct from both | |
+| Notification delivery on three channels with per-user, per-channel preferences | |
+| BullMQ reminder scheduling, timezone-correct across both DST boundaries | |
+| Geocoding behind the maps interface, with a deterministic dev adapter | |
+| Fare calculation in integer cents, itemised, versioned, priced from a `pricing_rules` row | |
+| Money moves: invoices, payment attempts, cards on file, the hourly billing sweep, dunning pinned inside the shortest grace window, and a signed webhook whose event ids cannot be replayed | |
 | **Two-sided subscriptions** — a household plan and a dispatch operator priced by drivers on the road, monthly or annual, with graduated seat tiers, proration, a grace window and an append-only seat ledger | |
 | Every fare settled once, at driver assignment: an operator on a per-driver plan keeps the whole fare, and which way it went is stamped on the ride | |
 | Contentless notifications, fanned out to everyone with access, verified by test | |
@@ -165,10 +171,13 @@ REDIS_URL=redis://127.0.0.1:56379 make test-integration  # the real BullMQ path
 | Structured logging with the redaction denylist applied at the logger | |
 | OpenAPI generated from the decorators → generated Dart client | |
 
-Nothing in the preview controls takes a shortcut: they call the same
-`POST /rides/:id/preview/start`, which drives the same `RidesService.transition`
-a real driver's app will. When the driver app lands, that widget and
-`ride-simulator.service.ts` are deleted and the state machine stays.
+The **preview controls** on a ride are still there, and they stay. They were
+written as a stand-in for the driver app; the driver app has since landed, but
+they take no shortcut — `POST /rides/:id/preview/start` drives the same
+`RidesService.transition` a driver's tap does — and they are the only way
+`docker compose up` demonstrates a whole trip on a machine with no Android
+device attached. Deleting them would remove the walkthrough below, not a
+shortcut.
 
 ---
 
@@ -250,10 +259,20 @@ lib/                          Flutter — family + patient  (the pub workspace r
                    settings (account security, two-factor, notification
                    preferences, your plan)
 
-apps/ops_console/             Flutter Web — the dispatcher's surface. A
-                              separate origin and a separate image from the
-                              family app, sharing the domain mirrors and the
-                              generated client rather than reimplementing them.
+apps/ops_console/             Flutter Web — the dispatcher's surface, and
+                              CareBridge's own. A separate origin and a
+                              separate image from the family app, sharing the
+                              domain mirrors and the generated client rather
+                              than reimplementing them.
+├── domain/       dispatch.dart (why a driver cannot take a trip) ·
+│                 billing.dart (the operator's side of ADR-0011) ·
+│                 admin.dart (what an audit row may say, and what narrowing a
+│                 rollout takes away)
+└── features/     queue (assign, reassign) · roster · fleet · documents ·
+                  seats (the ledger an invoice is answerable from) · billing
+                  (plan, card, invoices) · admin, in its own shell because
+                  nothing under it is scoped to an operator: overview, audit,
+                  flags, refunds
 
 apps/driver_app/              Flutter, Android + iOS — the one surface that
                               cannot be web, because it has to keep reporting
@@ -579,17 +598,25 @@ where the two share a name.
 
 ## Not built
 
-Driver app · real maps and routing · S3 driver documents · caregiver
-marketplace · clinic portal · Terraform and AWS.
+Real maps and routing · a client surface for the caregiver marketplace and the
+clinic portal · the backup-restore rehearsal and the pilot documentation set.
 
-Live tracking is pushed over a WebSocket, but the positions still come from the
-server-side preview trip rather than from a driver's phone — there is no driver
-app yet. The gateway, the position store, the authorisation and the staleness
-watchdog are real; what feeds them is not.
+The **marketplace** and the **clinic portal** are built on the server and
+switched off behind flags that seed as `enabled: false`. The gate is
+deliberate: nothing there should be turned on until pilot metrics justify it,
+and the code exists so that the decision is about the product rather than about
+the schedule. Neither has an app screen yet, and neither should until it does.
+
+**Terraform** describes staging and production and both validate in CI, but the
+restore rehearsal is outstanding — it needs an AWS account rather than a
+keyboard, and a backup nobody has restored is not a backup.
 
 Money moves, but only through the local adapter by default: `PAYMENTS_DRIVER`
 selects between it and Stripe, and the Stripe path is written and typed but has
-not been exercised against a live account.
+not been exercised against a live account. Neither app collects a card number —
+both take the processor token the payment sheet will hand over, which is the
+boundary ADR-0006 draws and the piece of it still to be wired to a real
+account.
 
 CareBridge coordinates appointments and transport. It is not an EHR, not a
 medical service, and not an emergency service.

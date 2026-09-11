@@ -3017,6 +3017,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {

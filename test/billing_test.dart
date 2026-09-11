@@ -1,4 +1,6 @@
 import 'package:carebridge_family/domain/billing.dart';
+import 'package:carebridge_family/features/settings/plan_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The client's view of a subscription.
@@ -102,6 +104,49 @@ void main() {
       for (final entitlement in Entitlement.values) {
         expect(entitlement.label, isNotEmpty);
       }
+    });
+  });
+
+  group('putting a card on file', () {
+    /// ADR-0006 says the card number never reaches this app. The dialog is
+    /// where that promise is either kept or quietly broken by somebody adding
+    /// a "card number" field to make local testing easier — so the promise is
+    /// asserted rather than left to the copy.
+    testWidgets('asks for a reference, never for a card number', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: PaymentTokenDialog())),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('never sees your card number'),
+        findsOneWidget,
+      );
+      expect(find.text('Card reference'), findsOneWidget);
+      expect(find.textContaining('Card number'), findsNothing);
+      expect(find.textContaining('CVV'), findsNothing);
+    });
+
+    testWidgets('will not save an empty reference', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: PaymentTokenDialog())),
+      );
+      await tester.pumpAndSettle();
+
+      final save = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Save card'),
+      );
+      expect(save.onPressed, isNull);
+
+      await tester.enterText(find.byType(TextField), 'tok_4242');
+      await tester.pump();
+
+      final enabled = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Save card'),
+      );
+      expect(enabled.onPressed, isNotNull);
     });
   });
 }

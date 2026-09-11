@@ -832,6 +832,34 @@ FCM project, the domain, and its own state backend. Terraform that creates
 billing relationships can cancel them; Terraform that owns a domain can release
 one; a state bucket Terraform creates is one it can destroy.
 
+**Landed since (slice four — the surfaces for slices one and two):** slices one
+and two built the money and the administration on the server and stopped there,
+which left two holes that were only visible from a client. An operator could be
+billed but could not see a plan, add a card, read an invoice or cancel — the
+whole second half of the two-sided model had no surface at all; and a family
+could subscribe but could not put a card on file, so every renewal was destined
+to fail. Both are now reachable: the operator's plan, seat-derived renewal,
+card and invoices in the console, and the household's card in the app.
+
+Neither takes a card number. ADR-0006 puts that boundary at the client, so both
+ask for the processor token the payment sheet will hand over; wiring the sheet
+to a live account replaces one widget and moves no endpoint.
+
+The administration surface is here too — the operational dashboard, the
+keyset-paged audit viewer, feature flags and refunds — in **its own shell**,
+because platform standing and operator membership are different axes and a
+shared frame would suggest otherwise. It also gives a platform account with no
+operator membership somewhere to be; before it existed, the console's only
+entry point was the operator picker, and such an account arrived at "no
+operators yet" with nowhere to go.
+
+The console cannot tell whether it holds `support` or `admin`. Nothing on the
+wire says so, deliberately — an endpoint that answered it would let an ordinary
+account discover that `/admin` exists — so it probes the cheapest support-level
+read to decide whether to show the door at all, offers the write controls, and
+renders a refusal plainly if one comes back. Hiding them on a guess would hide
+them from the people who have the standing too.
+
 **Still outstanding in this stage:** the backup restore rehearsal, and the pilot
 documentation set. Both need an AWS account rather than a keyboard.
 
@@ -878,6 +906,12 @@ existed, booked without a time because nobody knows when a cardiology follow-up
 will finish — and nothing could tell it the time had come. A clinic saying "the
 visit is over" is that thing. A clinic sees a name, a time and whether a car is
 coming; no home address, no telephone number, no care circle.
+
+Neither has a client surface, and that is the same gate rather than an
+oversight: a screen is what makes a feature real to somebody, and building one
+for a module that is switched off would be building the thing the gate exists
+to defer. The server side is complete and tested; the app screens wait for the
+evidence.
 
 The rest is not begun until pilot metrics and feedback justify it. **5A** caregiver
 marketplace (profiles, availability, booking, check-in/out, ratings, commission,
@@ -1419,7 +1453,7 @@ first, tracking second, `ops-console` last.
 
 | ID | Risk | Mitigation |
 | -- | ---- | ---------- |
-| **R1** | Dispatcher has no adequate surface until the Flutter Web console lands. | **Closed.** The REST surface — roster, shifts, queue, assign, reassign — landed in Stage 3 slice one; `apps/ops_console` landed in slice two with the queue, assignment, roster, fleet and seat ledger, on its own origin and image. Auto-assignment remains deferred by choice: the eligibility filter it would rank is in place, and manual assignment from a server-ordered queue is the MVP. Still wants a dispatcher's sign-off against real traffic. |
+| **R1** | Dispatcher has no adequate surface until the Flutter Web console lands. | **Closed.** The REST surface — roster, shifts, queue, assign, reassign — landed in Stage 3 slice one; `apps/ops_console` landed in slice two with the queue, assignment, roster, fleet and seat ledger, on its own origin and image; operator billing and the administration surface followed in Stage 4 slice four, which is the point at which every server-side capability has a way in. Auto-assignment remains deferred by choice: the eligibility filter it would rank is in place, and manual assignment from a server-ordered queue is the MVP. Still wants a dispatcher's sign-off against real traffic. |
 | **R2** | Background location on iOS/Android may fail store review or drain battery. | Foreground-service-first (T2); real-device field test is a Stage 3 acceptance item. |
 | **R3** | Flutter Web accessibility is weaker than DOM. | Internal tool only; patient-facing surfaces stay native. |
 | **R4** | Map/routing spend scales with tracked rides. | Vendor behind an interface; ETA throttled and cached; cost alarm from Stage 3. |

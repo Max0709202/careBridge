@@ -414,6 +414,36 @@ describe('the administration surfaces', () => {
       expect(body.refundableCents).toBe(body.paidCents - 500);
     });
 
+    it('a retried refund is one refund, not two', async () => {
+      // A partial refund sent twice is not stopped by the ceiling — there is
+      // room on the payment for both — and at the HTTP level a retry after a
+      // dropped connection is indistinguishable from a second decision. So
+      // the route carries `@Idempotent()` like every other route that creates
+      // something, and here that difference is money leaving twice.
+      const admin = await staff('admin');
+      const { invoiceId, paymentId } = await paidInvoice();
+      const key = `refund-${invoiceId}`;
+      const body = { paymentId, amountCents: 250, reason: 'Wait time in error.' };
+
+      const first = await authed(harness, admin.accessToken)
+        .post(`/api/v1/admin/invoices/${invoiceId}/refunds`)
+        .set('Idempotency-Key', key)
+        .send(body)
+        .expect(201);
+
+      const replay = await authed(harness, admin.accessToken)
+        .post(`/api/v1/admin/invoices/${invoiceId}/refunds`)
+        .set('Idempotency-Key', key)
+        .send(body)
+        .expect(201);
+
+      expect(replay.headers['idempotent-replay']).toBe('true');
+      expect(replay.body).toEqual(first.body);
+
+      const refunds = await harness.prisma.refund.findMany({ where: { invoiceId } });
+      expect(refunds).toHaveLength(1);
+    });
+
     it('writes the row before calling the processor', async () => {
       // Same shape the collection path uses. A refund that succeeded
       // externally and failed to record here would be money that left the
