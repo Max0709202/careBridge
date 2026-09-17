@@ -8,6 +8,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { AccountDeletionService } from './account-deletion.service';
 import { AuthService } from './auth.service';
 import { MfaService } from './mfa.service';
 import { SessionsService } from './sessions.service';
@@ -27,6 +28,13 @@ import {
   TokenDto,
   TokenPairDto,
 } from './auth.dto';
+import {
+  DeletionReceiptDto,
+  DeletionStatusDto,
+  DeletionTokenDto,
+  PublicDeletionRequestDto,
+} from './account-deletion.dto';
+import { DELETION_GRACE_DAYS } from '../../domain/account-deletion';
 import { Public } from './auth.guard';
 import { RateLimit } from '../../common/rate-limit.guard';
 import {
@@ -47,6 +55,7 @@ export class AuthController {
     private readonly care: CareService,
     private readonly sessions: SessionsService,
     private readonly mfa: MfaService,
+    private readonly deletion: AccountDeletionService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -249,6 +258,118 @@ export class AuthController {
     @Ctx() ctx: RequestContext,
   ): Promise<void> {
     await this.sessions.revoke(userId, familyId, ctx);
+  }
+
+  // ─── account deletion ─────────────────────────────────────────────────────
+
+  @Get('account/deletion')
+  @ApiBearerAuth('access-token')
+  @ApiOkResponse({ type: DeletionStatusDto })
+  @ApiOperation({
+    summary: 'Whether a deletion could be started, and why not if not',
+    description:
+      'Returns the blockers so the screen can explain itself before the person commits, rather than accepting a tap and then refusing it. It reports no pending deletion because there can be no session in which one is visible — the request signs every device out, and signing back in cancels it.',
+  })
+  async deletionStatus(@CurrentUser() userId: string): Promise<DeletionStatusDto> {
+    const status = await this.deletion.status(userId);
+    return {
+      blockers: [...status.blockers],
+      blockerMessages: [...status.blockerMessages],
+      graceDays: DELETION_GRACE_DAYS,
+    };
+  }
+
+  @Get('account/export')
+  @ApiBearerAuth('access-token')
+  @ApiOkResponse({
+    description: 'Everything CareBridge holds about this account.',
+    schema: { type: 'object', additionalProperties: true },
+  })
+  @ApiOperation({
+    summary: 'Download everything we hold about this account',
+    description:
+      'Available on its own, not only as part of a deletion. Sign-in credentials, two-factor secrets and recovery codes are deliberately excluded — a file containing those is a credential in somebody’s inbox.',
+  })
+  async exportAccount(@CurrentUser() userId: string): Promise<Record<string, unknown>> {
+    return this.deletion.exportFor(userId) as unknown as Record<string, unknown>;
+  }
+
+  /**
+   * Apple 5.1.1(v): an app that supports account creation must support account
+   * deletion from inside the app, and a support email address is explicitly not
+   * sufficient.
+   *
+   * Schedules rather than executes, and answers with the export — this request
+   * signs every device out, so it is the last moment the account holder can be
+   * handed their own data.
+   */
+  @Delete('account')
+  @HttpCode(200)
+  @ApiBearerAuth('access-token')
+  @ApiOkResponse({ type: DeletionReceiptDto })
+  @ApiOperation({
+    summary: 'Delete this account',
+    description:
+      'Schedules deletion 30 days out, signs every device out immediately, and returns a full export. Signing in again before the date cancels it. Refused with 409 while a journey is under way, while the account is the last owner of an operator that still has drivers, or while an invoice is unpaid.',
+  })
+  async deleteAccount(
+    @CurrentUser() userId: string,
+    @Ctx() ctx: RequestContext,
+  ): Promise<DeletionReceiptDto> {
+    const receipt = await this.deletion.request(userId, ctx);
+    return {
+      scheduledFor: receipt.scheduledFor.toISOString(),
+      graceDays: receipt.graceDays,
+      alreadyPending: receipt.alreadyPending,
+      data: receipt.data as unknown as Record<string, unknown>,
+    };
+  }
+
+  /**
+   * Google Play requires deletion to be requestable at a publicly reachable
+   * URL, without installing the app — so whoever reaches this is by definition
+   * not signed in, and the emailed link is what proves they hold the address.
+   */
+  @Public()
+  @RateLimit('emailDispatch')
+  @Post('account/deletion-request')
+  @HttpCode(202)
+  @ApiAcceptedResponse({
+    description: 'Accepted, whatever the address turns out to be.',
+  })
+  @ApiOperation({
+    summary: 'Request a deletion link by email, without signing in',
+    description:
+      'Always accepted. Anything else turns this endpoint into a way to enumerate the customer list — which for this product is a list of people with a vulnerable relative.',
+  })
+  async requestDeletionByEmail(
+    @Body() dto: PublicDeletionRequestDto,
+    @Ctx() ctx: RequestContext,
+  ): Promise<void> {
+    await this.deletion.requestByEmail(dto.email, ctx);
+  }
+
+  @Public()
+  @RateLimit('tokenGuess')
+  @Post('account/deletion-request/confirm')
+  @HttpCode(200)
+  @ApiOkResponse({ type: DeletionReceiptDto })
+  @ApiOperation({
+    summary: 'Confirm a deletion requested from the public page',
+    description:
+      'Spends the emailed token and schedules the deletion on the same terms as the in-app path, blockers included: the public route does not get to skip the rule about somebody being in a car.',
+  })
+  async confirmDeletionByToken(
+    @Body() dto: DeletionTokenDto,
+    @Ctx() ctx: RequestContext,
+  ): Promise<DeletionReceiptDto> {
+    const receipt = await this.deletion.confirmByToken(dto.token, ctx);
+    return {
+      scheduledFor: receipt.scheduledFor.toISOString(),
+      graceDays: receipt.graceDays,
+      alreadyPending: receipt.alreadyPending,
+      data: receipt.data as unknown as Record<string, unknown>,
+    };
   }
 
   // ─── multi-factor authentication ──────────────────────────────────────────

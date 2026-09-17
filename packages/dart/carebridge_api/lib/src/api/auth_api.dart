@@ -160,6 +160,80 @@ class AuthApi {
     return;
   }
 
+  /// Whether a deletion could be started, and why not if not
+  ///
+  /// Returns the blockers so the screen can explain itself before the person
+  /// commits, rather than accepting a tap and then refusing it. It reports no
+  /// pending deletion because there can be no session in which one is visible —
+  /// the request signs every device out, and signing back in cancels it.
+  Future<DeletionStatusDto> deletionStatus() async {
+    final response = await _client.send(
+      method: 'GET',
+      path: '/auth/account/deletion',
+    );
+    return DeletionStatusDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Download everything we hold about this account
+  ///
+  /// Available on its own, not only as part of a deletion. Sign-in credentials,
+  /// two-factor secrets and recovery codes are deliberately excluded — a file
+  /// containing those is a credential in somebody’s inbox.
+  Future<Map<String, dynamic>> exportAccount() async {
+    final response = await _client.send(
+      method: 'GET',
+      path: '/auth/account/export',
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// Delete this account
+  ///
+  /// Schedules deletion 30 days out, signs every device out immediately, and
+  /// returns a full export. Signing in again before the date cancels it.
+  /// Refused with 409 while a journey is under way, while the account is the
+  /// last owner of an operator that still has drivers, or while an invoice is
+  /// unpaid.
+  Future<DeletionReceiptDto> deleteAccount() async {
+    final response = await _client.send(
+      method: 'DELETE',
+      path: '/auth/account',
+    );
+    return DeletionReceiptDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Request a deletion link by email, without signing in
+  ///
+  /// Always accepted. Anything else turns this endpoint into a way to enumerate
+  /// the customer list — which for this product is a list of people with a
+  /// vulnerable relative.
+  Future<void> requestDeletionByEmail({
+    required PublicDeletionRequestDto body,
+  }) async {
+    await _client.send(
+      method: 'POST',
+      path: '/auth/account/deletion-request',
+      body: body.toJson(),
+    );
+    return;
+  }
+
+  /// Confirm a deletion requested from the public page
+  ///
+  /// Spends the emailed token and schedules the deletion on the same terms as
+  /// the in-app path, blockers included: the public route does not get to skip
+  /// the rule about somebody being in a car.
+  Future<DeletionReceiptDto> confirmDeletionByToken({
+    required DeletionTokenDto body,
+  }) async {
+    final response = await _client.send(
+      method: 'POST',
+      path: '/auth/account/deletion-request/confirm',
+      body: body.toJson(),
+    );
+    return DeletionReceiptDto.fromJson(response as Map<String, dynamic>);
+  }
+
   /// Two-factor authentication status
   Future<MfaStatusDto> mfaStatus() async {
     final response = await _client.send(method: 'GET', path: '/auth/mfa');

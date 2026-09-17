@@ -4337,6 +4337,156 @@
         ]
       }
     },
+    "/auth/account/deletion": {
+      "get": {
+        "description": "Returns the blockers so the screen can explain itself before the person commits, rather than accepting a tap and then refusing it. It reports no pending deletion because there can be no session in which one is visible — the request signs every device out, and signing back in cancels it.",
+        "operationId": "Auth_deletionStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Whether a deletion could be started, and why not if not",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/account/export": {
+      "get": {
+        "description": "Available on its own, not only as part of a deletion. Sign-in credentials, two-factor secrets and recovery codes are deliberately excluded — a file containing those is a credential in somebody’s inbox.",
+        "operationId": "Auth_exportAccount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Everything CareBridge holds about this account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Download everything we hold about this account",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/account": {
+      "delete": {
+        "description": "Schedules deletion 30 days out, signs every device out immediately, and returns a full export. Signing in again before the date cancels it. Refused with 409 while a journey is under way, while the account is the last owner of an operator that still has drivers, or while an invoice is unpaid.",
+        "operationId": "Auth_deleteAccount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionReceiptDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Delete this account",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/account/deletion-request": {
+      "post": {
+        "description": "Always accepted. Anything else turns this endpoint into a way to enumerate the customer list — which for this product is a list of people with a vulnerable relative.",
+        "operationId": "Auth_requestDeletionByEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicDeletionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted, whatever the address turns out to be."
+          },
+          "429": {
+            "description": "Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account."
+          }
+        },
+        "summary": "Request a deletion link by email, without signing in",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/account/deletion-request/confirm": {
+      "post": {
+        "description": "Spends the emailed token and schedules the deletion on the same terms as the in-app path, blockers included: the public route does not get to skip the rule about somebody being in a car.",
+        "operationId": "Auth_confirmDeletionByToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletionTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionReceiptDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account."
+          }
+        },
+        "summary": "Confirm a deletion requested from the public page",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/auth/mfa": {
       "get": {
         "operationId": "Auth_mfaStatus",
@@ -9041,6 +9191,89 @@
           "createdAt",
           "lastUsedAt",
           "expiresAt"
+        ]
+      },
+      "DeletionStatusDto": {
+        "type": "object",
+        "properties": {
+          "blockers": {
+            "description": "Machine-readable reasons deletion is currently refused: `rideInFlight`, `lastOrganizationOwner`, `unpaidInvoice`. Empty when it would succeed.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blockerMessages": {
+            "description": "The same reasons, each with the remedy, as shown to the account holder. A refusal with no remedy is what makes somebody email support instead — which is the thing both app stores refuse to accept.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "graceDays": {
+            "type": "integer",
+            "description": "The grace period, in days, so the screen can say it.",
+            "example": 30
+          }
+        },
+        "required": [
+          "blockers",
+          "blockerMessages",
+          "graceDays"
+        ]
+      },
+      "DeletionReceiptDto": {
+        "type": "object",
+        "properties": {
+          "scheduledFor": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "graceDays": {
+            "type": "integer",
+            "example": 30
+          },
+          "alreadyPending": {
+            "type": "boolean",
+            "description": "True when a deletion was already pending. The request is idempotent — a second tap, or a retry after a dropped connection, is not a second deletion."
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Everything CareBridge holds about this account, taken before anything changed. Returned in the response rather than left behind an endpoint, because the request signs every device out — so this is the last moment the account holder can be handed their own data. Credentials are deliberately excluded."
+          }
+        },
+        "required": [
+          "scheduledFor",
+          "graceDays",
+          "alreadyPending",
+          "data"
+        ]
+      },
+      "PublicDeletionRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "ada@example.com",
+            "format": "email",
+            "description": "Always accepted, whatever the address turns out to be. Whether an address has an account is a fact about a person, and for this product that person has a vulnerable relative."
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "DeletionTokenDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The single-use token from the emailed link."
+          }
+        },
+        "required": [
+          "token"
         ]
       },
       "MfaStatusDto": {

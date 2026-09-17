@@ -17,6 +17,7 @@ import '../features/rides/ride_detail_screen.dart';
 import '../features/rides/ride_request_screen.dart';
 import '../features/rides/tracking_screen.dart';
 import '../features/settings/account_security_screen.dart';
+import '../features/settings/delete_account_screen.dart';
 import '../features/settings/notification_preferences_screen.dart';
 import '../features/settings/plan_screen.dart';
 import '../features/settings/settings_screen.dart';
@@ -137,6 +138,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                       GoRoute(
                         path: 'two-factor',
                         builder: (context, state) => const TwoFactorScreen(),
+                      ),
+                      GoRoute(
+                        path: 'delete',
+                        builder: (context, state) =>
+                            const DeleteAccountScreen(),
                       ),
                     ],
                   ),

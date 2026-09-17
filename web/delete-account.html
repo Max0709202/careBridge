@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<!--
+  The public account-deletion page.
+
+  Google Play requires deletion to be requestable at a reachable URL *without*
+  installing the app, so this cannot be a screen inside the Flutter bundle: a
+  reviewer, and a person who has already uninstalled, both need a page that
+  works on its own. It is plain HTML for that reason — it loads instantly, with
+  no bundle and no framework, on whatever the person happens to be holding.
+
+  The script is a separate file rather than inline because the app origin is
+  served under `script-src 'self'` with no 'unsafe-inline' (see
+  infrastructure/nginx/security-headers.conf). Styles are inline because that
+  same policy does allow 'unsafe-inline' for CSS, which Flutter requires.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Delete your CareBridge account</title>
+    <style>
+      :root {
+        --ink: #16191c;
+        --muted: #5c6772;
+        --accent: #0d4a5c;
+        --danger: #97331f;
+        --rule: #dbe1e5;
+        --tint: #f4f8f9;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 24px 20px 64px;
+        font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        color: var(--ink);
+        background: #fff;
+      }
+      main { max-width: 34rem; margin: 0 auto; }
+      h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 0.6rem; color: var(--accent); }
+      h2 { font-size: 1.05rem; margin: 1.8rem 0 0.4rem; }
+      p { margin: 0 0 0.9rem; }
+      .muted { color: var(--muted); }
+      ul { padding-left: 1.2rem; margin: 0 0 1rem; }
+      li { margin-bottom: 0.35rem; }
+      label { display: block; font-weight: 600; margin-bottom: 0.4rem; }
+      input[type="email"] {
+        width: 100%;
+        /* 17px, because anything under 16 makes iOS Safari zoom the page on focus. */
+        font-size: 17px;
+        padding: 0.7rem 0.75rem;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+      }
+      input[type="email"]:focus-visible,
+      button:focus-visible { outline: 3px solid #1c6e84; outline-offset: 2px; }
+      button {
+        font-size: 16px;
+        font-weight: 600;
+        /* 44px minimum, the same floor the apps use. */
+        min-height: 44px;
+        padding: 0.6rem 1.1rem;
+        border-radius: 8px;
+        border: 0;
+        cursor: pointer;
+      }
+      button[disabled] { opacity: 0.55; cursor: default; }
+      .primary { background: var(--accent); color: #fff; }
+      .destructive { background: var(--danger); color: #fff; }
+      .secondary { background: #eef1f3; color: var(--ink); }
+      .box {
+        background: var(--tint);
+        border-left: 3px solid var(--accent);
+        padding: 0.9rem 1rem;
+        margin: 0 0 1.2rem;
+        border-radius: 0 8px 8px 0;
+      }
+      .box.bad { background: #fdf1ee; border-left-color: var(--danger); }
+      .row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; }
+      footer {
+        margin-top: 2.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--rule);
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root { --ink: #e8ecef; --muted: #a2adb6; --rule: #2b3238; --tint: #16232a; --accent: #7fc4d6; --danger: #e59182; }
+        body { background: #0f1316; }
+        input[type="email"] { background: #161c20; color: var(--ink); }
+        .primary { background: #12414d; color: #fff; }
+        .destructive { background: #7d2a18; color: #fff; }
+        .secondary { background: #222a30; color: var(--ink); }
+        .box.bad { background: #2a1a16; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Delete your CareBridge account</h1>
+
+      <!-- Step one: prove you hold the address. -->
+      <section id="request-step" hidden>
+        <p>
+          Enter the email address on the account. We will send you a link to
+          confirm — that link is what proves the account is yours, since we
+          cannot ask you to sign in here.
+        </p>
+        <form id="request-form" novalidate>
+          <label for="email">Email address</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            required
+            placeholder="you@example.com"
+          />
+          <div class="row">
+            <button type="submit" class="primary" id="request-submit">
+              Send the confirmation link
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Step two: the link was opened. -->
+      <section id="confirm-step" hidden>
+        <p>Deleting this account will:</p>
+        <ul>
+          <li>sign out every device straight away;</li>
+          <li>
+            schedule the account for deletion 30 days from now — signing in
+            again before then cancels it;
+          </li>
+          <li>
+            remove your name, address, phone number, sign-in details and
+            notification history when it runs.
+          </li>
+        </ul>
+        <div class="box">
+          <p style="margin: 0">
+            <strong>Some records are kept.</strong> Invoices, payments and the
+            log of actions taken on the account are retained for as long as
+            financial and audit rules require — with nothing left on them that
+            identifies you. We would rather say so now than have you find out
+            later.
+          </p>
+        </div>
+        <div class="row">
+          <button type="button" class="destructive" id="confirm-submit">
+            Delete my account
+          </button>
+        </div>
+      </section>
+
+      <!-- Outcomes. -->
+      <section id="result" hidden>
+        <div class="box" id="result-box"><p id="result-text" style="margin: 0"></p></div>
+        <div class="row" id="result-actions" hidden>
+          <button type="button" class="secondary" id="download">
+            Download a copy of my data
+          </button>
+        </div>
+      </section>
+
+      <noscript>
+        <div class="box bad">
+          <p style="margin: 0">
+            This page needs JavaScript to reach our servers. If you would rather
+            not enable it, you can delete your account from Settings inside the
+            CareBridge app — Account security, then Delete account.
+          </p>
+        </div>
+      </noscript>
+
+      <footer>
+        <p>
+          CareBridge coordinates medical appointments and transport. It is not a
+          medical service and not for emergencies.
+        </p>
+        <p id="app-hint">
+          You can also do this inside the app: <strong>Settings → Account
+          security → Delete account</strong>.
+        </p>
+      </footer>
+    </main>
+
+    <script src="delete-account.js"></script>
+  </body>
+</html>

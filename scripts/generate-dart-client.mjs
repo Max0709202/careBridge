@@ -320,6 +320,13 @@ function isSelfContained(type, selfName) {
     PRIMITIVES.has(inner) ||
     inner === 'DateTime' ||
     inner === 'Map<String, dynamic>' ||
+    // `Map<String, dynamic>` reduces to `dynamic` through the regex above, and
+    // a dynamic value names no model — a free-form JSON object is the whole
+    // reason the field has no type. Without this, a model whose only
+    // non-primitive field is such an object emits an unused import and the
+    // analyzer warns on generated code, which is how people learn to ignore
+    // analyzer warnings.
+    inner === 'dynamic' ||
     inner === selfName
   );
 }

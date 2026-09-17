@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AccountDeletionService } from './account-deletion.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
@@ -23,12 +24,13 @@ import { BillingModule } from '../billing/billing.module';
   ],
   controllers: [AuthController],
   providers: [
+    AccountDeletionService,
     AuthService,
     AuthGuard,
     CredentialTokensService,
     MfaService,
     SessionsService,
   ],
-  exports: [AuthService, AuthGuard, CredentialTokensService],
+  exports: [AuthService, AuthGuard, CredentialTokensService, AccountDeletionService],
 })
 export class AuthModule {}

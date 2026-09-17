@@ -109,9 +109,11 @@ the user*. The patient is usually not the account holder. A consent model that
 only asks the daughter is not consent, and both stores require a reachable
 privacy policy URL before submission.
 
-**Account deletion.** Required by both stores and not implemented — see
-[ADR-0013](../adr/0013-account-deletion.md). This blocks the Play Data safety
-form, which asks directly whether users can request deletion.
+**Account deletion.** ~~Required by both stores and not implemented.~~ Built
+2026-09-17 — [ADR-0013](../adr/0013-account-deletion.md). Both doors exist: in
+the app, and at `/delete-account` without it. What is left is not code: the Play
+Data safety form wants a *hosted* URL, so this is now waiting on item 1 like
+everything else.
 
 **A restore drill.** `docs/architecture/disaster-recovery.md` describes the
 RPO and RTO. Nothing has ever been restored. A backup nobody has restored is
@@ -131,8 +133,12 @@ AWS account ─┬─> staging applied ─┬─> device builds ─> internal te
              │                    │
 SES sandbox ─┘                    └─> field test ─> pilot
                                                      ▲
-account deletion (ADR-0013) ─> store submission ─────┘
+                        store submission ────────────┘
 ```
+
+Account deletion used to be the third root of that graph. It is built, so the
+two long poles below are now the only things that can be started before a cloud
+account exists.
 
 The two long poles are **Apple Developer enrolment** (days to weeks for an
 organisation) and **SES sandbox exit** (days). Both are pure waiting and both

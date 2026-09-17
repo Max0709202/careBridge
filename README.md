@@ -148,6 +148,7 @@ REDIS_URL=redis://127.0.0.1:56379 make test-integration  # the real BullMQ path
 | The **driver app**: today's jobs, the state machine one tap at a time, a location queue that survives a tunnel, and document upload | A **real device in traffic.** The field-test recorder exists; the drive has not happened |
 | **Administration**: the operational dashboard, the keyset-paged audit viewer, feature flags with sticky rollouts, and refunds — behind a platform role **and** a confirmed second factor | A **real Stripe account.** `PAYMENTS_DRIVER=local` scripts each outcome from the card's last four digits; the Stripe adapter is written and has not been exercised against a live account |
 | **Both** payers can reach their own money: a household manages its plan, card and invoices in the app; an operator manages its subscription, seat-derived renewal, card and invoices in the console | The processor's **card sheet.** No card number reaches either app — both take the token the sheet will supply, and swapping the widget is the whole change (ADR-0006) |
+| **Account deletion**, end to end: a 30-day grace period cancelled by signing in, an export handed over before anything changes, and a retention-sweep erasure that repoints every surviving row at a tombstone rather than cascading seven years of invoices away — in the app, and on a public page without it |
 | Full auth lifecycle: argon2id, rotating refresh tokens with family revocation, email verification, password reset, session list and revoke, sign-out-everywhere | Live **push**: the Socket.IO gateway carries positions, and a status change is still found by a 5-second poll |
 | TOTP MFA end to end — enrol, confirm, sign in with a code, spend a recovery code — verified against the RFC 6238 vectors, secret encrypted at rest | A real mail or push vendor — `MAIL_DRIVER=smtp` points at Mailpit locally and SES in production; `PUSH_DRIVER=fcm` is written and untested against a live project |
 | Assignment eligibility asserted server-side: a wheelchair trip cannot be given to a saloon car, an unapproved driver cannot be given anybody, and no driver carries two passengers at once | A real maps vendor — `MAPS_DRIVER=google` is written; production refuses the deterministic one |
@@ -626,22 +627,24 @@ work for anybody. It now fails at startup instead, and the check is pinned by
 | [`docs/product/store-listing.md`](docs/product/store-listing.md) | One set of answers for both stores' privacy forms, so they cannot drift |
 | [`docs/runbooks/pilot-readiness.md`](docs/runbooks/pilot-readiness.md) | What has to become real before people who are not on the team use it |
 
-**One thing blocks both stores: there is no account deletion.** Apple requires
-it in-app, Play requires it in-app and at a public URL, and neither accepts a
-support email address. The behaviour was designed in the retention schedule and
-never implemented; the per-relation policy — what is deleted, what is
-anonymised, and what deletion is refused for — is
-[ADR-0013](docs/adr/0013-account-deletion.md), written so that building it is a
-mechanical exercise rather than twenty-five judgment calls made at a keyboard.
+**Account deletion is in.** Apple requires it in-app, Play requires it in-app
+*and* at a public URL, and neither accepts a support email address. Both exist:
+`/settings/security/delete` in the app, and `web/delete-account.html` — a
+standalone page rather than a screen in the bundle, because a store reviewer and
+somebody who has already uninstalled both need it to work without one. The
+per-relation policy is [ADR-0013](docs/adr/0013-account-deletion.md).
+
+What still needs filling in for a submission is the *listing* — the public
+privacy-policy and deletion URLs in `docs/product/store-listing.md` are
+reachable paths on a deployed environment, and there is no deployed environment
+yet.
 
 ---
 
 ## Not built
 
-Account deletion ([ADR-0013](docs/adr/0013-account-deletion.md), and the one
-store blocker) · real maps and routing · a client surface for the caregiver
-marketplace and the clinic portal · the backup-restore rehearsal and the pilot
-documentation set.
+Real maps and routing · a client surface for the caregiver marketplace and the
+clinic portal · the backup-restore rehearsal and the pilot documentation set.
 
 The **marketplace** and the **clinic portal** are built on the server and
 switched off behind flags that seed as `enabled: false`. The gate is

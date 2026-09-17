@@ -171,6 +171,33 @@ class CareApi extends ApiTransport {
     body: {'currentPassword': currentPassword, 'newPassword': newPassword},
   );
 
+  // ─── deleting the account ─────────────────────────────────────────────────
+
+  /// What the deletion screen needs before it offers the button: whether one
+  /// is already pending, and every reason it would currently be refused.
+  Future<wire.DeletionStatusDto> deletionStatus() async =>
+      wire.DeletionStatusDto.fromJson(
+        await send('GET', '/auth/account/deletion'),
+      );
+
+  Future<Map<String, dynamic>> exportAccount() async =>
+      send('GET', '/auth/account/export');
+
+  /// Schedules the deletion and returns the export.
+  ///
+  /// The local tokens are cleared on success because the server has already
+  /// raised the account's token version — this session is dead on its next
+  /// request either way, and keeping it would leave the app on a screen that
+  /// 401s instead of on the sign-in screen. On a refusal they are kept, so the
+  /// screen can show why.
+  Future<wire.DeletionReceiptDto> deleteAccount() async {
+    final receipt = wire.DeletionReceiptDto.fromJson(
+      await send('DELETE', '/auth/account'),
+    );
+    await tokens.clear();
+    return receipt;
+  }
+
   Future<void> requestPasswordReset(String email) async => send(
     'POST',
     '/auth/password-reset',

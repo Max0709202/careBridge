@@ -21,10 +21,20 @@ import 'package:http/testing.dart';
 ///   | jq .state > test/fixtures/care_state_snapshot.json
 /// ```
 class FakeApi {
-  FakeApi({Map<String, dynamic>? snapshot})
-    : _snapshot = snapshot ?? loadSnapshotFixture();
+  FakeApi({
+    Map<String, dynamic>? snapshot,
+    this.deletionStatus,
+    this.deletionReceipt,
+  }) : _snapshot = snapshot ?? loadSnapshotFixture();
 
   final Map<String, dynamic> _snapshot;
+
+  /// What `GET /auth/account/deletion` answers. Set by the deletion tests to
+  /// put the screen into its blocked state.
+  final Map<String, dynamic>? deletionStatus;
+
+  /// What `DELETE /auth/account` answers.
+  final Map<String, dynamic>? deletionReceipt;
 
   /// Every request the fake received, in order — so a test can assert that a
   /// button actually reached the server rather than only changing local state.
@@ -76,6 +86,34 @@ class FakeApi {
       }
 
       if (path.endsWith('/auth/logout')) return http.Response('', 204);
+
+      if (path.endsWith('/auth/account/deletion')) {
+        return _json(
+          deletionStatus ??
+              {
+                'blockers': <String>[],
+                'blockerMessages': <String>[],
+                'graceDays': 30,
+              },
+        );
+      }
+
+      if (request.method == 'DELETE' && path.endsWith('/auth/account')) {
+        return _json(
+          deletionReceipt ??
+              {
+                'scheduledFor': '2026-10-17T09:00:00.000Z',
+                'graceDays': 30,
+                'alreadyPending': false,
+                'data': {
+                  'exportedAt': '2026-09-17T09:00:00.000Z',
+                  'formatVersion': 1,
+                  'note': 'Credentials are deliberately excluded.',
+                  'account': {'email': 'sarah@example.com'},
+                },
+              },
+        );
+      }
 
       // Reads and mutations alike answer with the whole snapshot, exactly as
       // the real API does.

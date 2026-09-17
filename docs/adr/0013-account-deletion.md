@@ -1,8 +1,11 @@
 # ADR-0013 · Account deletion erases a person, not the record that events happened
 
-**Status:** Proposed · **Date:** 2026-09-11 · **Implemented:** not yet — this
-record exists so that the implementation is a mechanical exercise rather than a
-series of decisions made at a keyboard
+**Status:** Accepted · **Date:** 2026-09-11 · **Implemented:** 2026-09-17
+
+The record did its job: the implementation was mechanical. Five things had to be
+decided at the keyboard anyway, and they are recorded under "What the
+implementation added" below, because they are the parts a reader of this
+document would otherwise be surprised by.
 
 ## Context
 
@@ -114,6 +117,72 @@ A `deletionRequestedAt` on `User`, a tombstone user per deletion, a
 export, and a sweep step in `RetentionService` that already has the shape for
 it. The web URL Play requires can be a page on the marketing site that submits
 the same request.
+
+As built: `deletionRequestedAt`, `deletionScheduledFor` and `isTombstone` on
+`User`; `orphanedAt` and `purgedAt` on `Patient`; an `accountDeletion`
+credential-token type for the public path; `AccountDeletionService`; two steps
+in the retention sweep; `/settings/security/delete` in the family app; and
+`web/delete-account.html`, a standalone page rather than one on a marketing
+site that does not exist yet — a reviewer and somebody who has already
+uninstalled both need a page that works without the bundle.
+
+Four endpoints, not five: `GET /auth/account/deletion` (the blockers),
+`GET /auth/account/export`, `DELETE /auth/account`, and the public pair
+`POST /auth/account/deletion-request` and `…/confirm`. There is no
+authenticated cancel — see the fifth point below.
+
+## What the implementation added
+
+Five decisions this record did not contain, made while building it.
+
+**Seven relations had no disposition here.** The table above lists nineteen;
+`User` declares twenty-four. The missing ones were `consents`, `memberships`,
+`driverProfile`, `caregiverProfile`, `bookingsRequested`, `reviewsWritten` and
+`disputesRaised`, and all seven are **anonymise** — consent is the evidence of
+our own compliance, membership answers "who could see the dispatch queue last
+March", and the rest are a person's own service history, which is money and
+dispute material. They are now in `domain/account-deletion.ts`, and
+`account-deletion.spec.ts` reads `schema.prisma` and fails if the two ever
+disagree again. That test is the only thing that would have caught this
+omission, which is the argument for it.
+
+**Repointing a foreign key is not enough.** Four surviving rows carry identity
+in their own columns — `BillingAccount.billingEmail`, `Driver.displayName` and
+`invitedEmail`, `Caregiver.displayName` and `bio`, and the `email` on an
+invitation this person accepted. Anonymising them means overwriting those
+columns as well as moving the key, or the row stops being *linked* to a person
+while still spelling their name out.
+
+**Purging an orphaned patient cannot delete the patient row.**
+`Ride.patientId` is `ON DELETE CASCADE`, so removing the patient would take
+every completed ride and its fare with it — exactly what this record refuses to
+let deletion mean. A purge therefore scrubs the record in place and deletes the
+emergency contacts, which are a third party's phone number held only to be rung
+during a journey. The ride's own pickup and destination are separate rows copied
+at booking, so scrubbing the patient's home address cannot rewrite where a
+completed journey went.
+
+**Steps 2 and 3 together make a pending deletion unobservable, and that is
+load-bearing.** Step 3 signs every device out *on request*; step 2 cancels the
+deletion on the next sign-in. So between the request and the execution there is
+no session in which the pending state can be read — and anything built to
+report one could only ever return null. The first version of this
+implementation had a `deletionScheduledFor` field on the app's user snapshot, a
+"scheduled for deletion" card on the deletion screen, and an authenticated
+`POST /auth/account/deletion/cancel`. All three were unreachable and all three
+were removed; the integration suite now asserts their absence, so they cannot
+come back by accident. The date reaches the account holder in the response to
+the request and in the email, which is enough.
+
+If a visible pending state is ever wanted, the change is to step 3 — keep the
+requesting session alive and revoke only the others — and it should be made
+here, deliberately, rather than by adding a field that looks like it works.
+
+**Deleting a driver's account moves money.** A driver occupies a billable seat
+exactly while they are `approved`, so the erasure offboards the driver profile
+and calls `BillingService.recordSeatChange` inside the same transaction — the
+same invariant an administrator's offboarding has. Leaving an operator billed
+for a person who no longer exists is the error that ends a contract.
 
 ## What would make us revisit
 

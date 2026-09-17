@@ -35,7 +35,13 @@ Implementation: `apps/api/src/modules/retention/retention.service.ts`.
 
 ## Account deletion
 
-Stage 4. On request, the account holder receives an export, then:
+Implemented 2026-09-17 — [ADR-0013](../adr/0013-account-deletion.md) is the
+per-relation policy, `domain/account-deletion.ts` is that policy as code, and a
+test reads `schema.prisma` and fails if a relation on `User` has no disposition.
+
+Requested in the app or at a public URL, scheduled 30 days out, cancelled by
+signing in, and executed by the retention sweep below. On request, the account
+holder receives an export, then:
 
 - Data we are not required to keep is **deleted**.
 - Data that audit or financial regulation requires us to keep is
@@ -45,6 +51,13 @@ Stage 4. On request, the account holder receives an export, then:
 The distinction is the point: "delete my account" cannot mean "delete the
 record that a payment happened", and saying so plainly is better than a
 deletion that quietly does not.
+
+A patient whose last caregiver was the person leaving is archived immediately
+and scrubbed 30 days later — so a patient's data outlives the account by up to
+sixty days in total. That is deliberate: the patient has no account, and once
+the last grant is gone nobody can ask for any of it back on their behalf. The
+patient *row* survives the scrub, because `Ride.patientId` cascades and
+removing it would delete every completed journey and its fare.
 
 ## What is deliberately not retained at all
 

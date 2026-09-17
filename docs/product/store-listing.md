@@ -150,8 +150,9 @@ into a private bucket where every view link is audited (ADR-0012).
 ## Google Play — Data safety
 
 Same facts, Play's vocabulary. **Data is encrypted in transit: yes. Users can
-request deletion: yes** — and that answer requires ADR-0013 to be implemented
-first, so this form cannot be truthfully submitted before it is.
+request deletion: yes** — truthful since 2026-09-17: in-app at
+`/settings/security/delete`, and without the app at `/delete-account`, which is
+the URL this form's "web deletion" field wants.
 
 | Category | Type | Collected | Shared | Optional | Purpose |
 | --- | --- | --- | --- | --- | --- |
@@ -248,7 +249,7 @@ not reset out from under them.
 | Play feature graphic | 1024×500 | **TBD** |
 | Play phone screenshots | 2–8, min 320px | **TBD** |
 | Privacy policy URL | Public, reachable, required by both | **TBD** |
-| Account deletion URL | Public, required by Play | **TBD** — blocked on ADR-0013 |
+| Account deletion URL | Public, required by Play | **Built, not yet hosted** — `web/delete-account.html`, served at `/delete-account`. The path is real; the hostname needs a deployed environment |
 
 Screenshots should be taken against seeded data, not an empty account, and
 should not contain a real person's name or address. The demo family is

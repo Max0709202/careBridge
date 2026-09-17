@@ -172,6 +172,32 @@ class _AccountSecurityScreenState extends ConsumerState<AccountSecurityScreen> {
                       ],
                     ),
                   ),
+
+                  // Last, and deliberately not dressed up as a warning. The
+                  // most common reason somebody reaches it in this product is
+                  // that the person they were coordinating care for has died,
+                  // and a screen that shouts at them about consequences is the
+                  // wrong tone for that. The explaining happens on the screen
+                  // itself.
+                  const SizedBox(height: AppSpacing.lg),
+                  const SectionHeader('Leaving'),
+                  AppCard(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.xs,
+                    ),
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.delete_outline,
+                        color: theme.colorScheme.error,
+                      ),
+                      title: const Text('Delete account'),
+                      subtitle: const Text(
+                        'What is removed, what is kept, and how to undo it',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/settings/security/delete'),
+                    ),
+                  ),
                 ],
               ),
             ),

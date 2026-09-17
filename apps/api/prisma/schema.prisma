@@ -68,6 +68,23 @@ model User {
   selectedPatientId String?
   simplifiedMode    Boolean @default(false)
 
+  /// Set when the account holder asks to be deleted. Nulled again if they sign
+  /// in during the grace period, which is the whole cancellation mechanism —
+  /// ADR-0013 chose it because a deletion request in this product's domain is
+  /// usually made by somebody having a bad week.
+  deletionRequestedAt DateTime?
+
+  /// When the retention sweep will execute it. Stored rather than derived from
+  /// `deletionRequestedAt` so the grace period can be changed without
+  /// silently moving the date out from under requests already made.
+  deletionScheduledFor DateTime?
+
+  /// A tombstone: the anonymous owner that a deleted account's surviving rows
+  /// are repointed at. One per deletion. Carries no name, no phone and an
+  /// address under `.invalid`; can never authenticate, and is excluded from
+  /// every listing. See `domain/account-deletion.ts`.
+  isTombstone Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -96,6 +113,7 @@ model User {
   disputesRaised          BookingDispute[]         @relation("DisputeRaiser")
   disputesResolved        BookingDispute[]         @relation("DisputeResolver")
 
+  @@index([deletionScheduledFor])
   @@map("users")
 }
 
@@ -183,6 +201,12 @@ model OrganizationMembership {
 enum CredentialTokenType {
   emailVerification
   passwordReset
+
+  /// Confirms a deletion requested from the public web form, which Google Play
+  /// requires to work without installing the app — so the requester is by
+  /// definition not signed in, and the emailed link is what proves they hold
+  /// the address.
+  accountDeletion
 }
 
 /// Email verification and password reset, in one table because they are the
@@ -380,6 +404,20 @@ model Patient {
   /// Soft delete: audit and dispute resolution need the record to survive.
   archivedAt DateTime?
 
+  /// Set when a deletion removed the patient's last access grant. Nobody can
+  /// reach this record any more and nobody can ask for it back, so it is
+  /// purged outright after `PATIENT_PURGE_GRACE_DAYS` rather than left
+  /// orphaned — a row carrying a home address and mobility needs, reachable by
+  /// nobody and deletable by nobody, is the worst of the three options.
+  orphanedAt DateTime?
+
+  /// When the purge actually ran. The row itself survives, scrubbed, because
+  /// `Ride.patientId` cascades — deleting the patient would take every
+  /// completed ride and its fare with it, which is the one thing ADR-0013
+  /// refuses to let "delete my account" mean. So a purge empties the record
+  /// rather than removing it, and this is what stops the sweep doing it twice.
+  purgedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -391,6 +429,7 @@ model Patient {
   invitations       PatientInvitation[]
   careBookings      CaregiverBooking[]
 
+  @@index([orphanedAt])
   @@map("patients")
 }
 

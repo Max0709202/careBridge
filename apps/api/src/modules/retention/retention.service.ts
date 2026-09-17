@@ -7,6 +7,7 @@ import {
 
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { QUEUE, QUEUES, type QueuePort } from '../../infrastructure/queue/queue.port';
+import { AccountDeletionService } from '../auth/account-deletion.service';
 import { CredentialTokensService } from '../auth/credential-tokens.service';
 import { InvitationsService } from '../care/invitations.service';
 import { DevicesService } from '../care/devices.service';
@@ -23,6 +24,13 @@ import { DevicesService } from '../care/devices.service';
  * Stage 3 and are included because the table already exists and the sweep is
  * the same shape; audit logs are deliberately absent, because they are
  * append-only for seven years and nothing in this service may delete one.
+ *
+ * Account deletion is executed here too, and that is a deliberate choice
+ * rather than convenience — ADR-0013 step 4. A job scheduled at request time
+ * can be lost by a restart, and a deletion that was requested and then
+ * silently never happened is the worst failure this feature has. A sweep
+ * cannot be forgotten: the row still says a deletion is due, so the next pass
+ * picks it up.
  */
 @Injectable()
 export class RetentionService implements OnApplicationBootstrap {
@@ -51,6 +59,7 @@ export class RetentionService implements OnApplicationBootstrap {
   constructor(
     private readonly prisma: PrismaService,
     private readonly credentials: CredentialTokensService,
+    private readonly deletions: AccountDeletionService,
     private readonly invitations: InvitationsService,
     private readonly devices: DevicesService,
     @Inject(QUEUE) private readonly queue: QueuePort,
@@ -125,6 +134,20 @@ export class RetentionService implements OnApplicationBootstrap {
           where: { createdAt: { lt: hoursBefore(now, windows.idempotencyHours) } },
         })
         .then((r) => r.count),
+    );
+
+    // Accounts whose thirty days have run out. Isolated like every other step:
+    // an erasure that fails must not stop the windows below it, and the
+    // account stays due until one succeeds.
+    await this.step(results, 'accountDeletions', () => this.deletions.executeDue(now));
+
+    // And the patients those deletions orphaned, thirty days after the
+    // erasure that left them with nobody. A purge empties the record rather
+    // than deleting the row — `Ride.patientId` cascades, and a completed ride
+    // and its fare are the one thing "delete my account" must not take with
+    // it.
+    await this.step(results, 'patientPurges', () =>
+      this.deletions.purgeOrphanedPatients(now),
     );
 
     const total = Object.values(results).reduce((sum, n) => sum + n, 0);

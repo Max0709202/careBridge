@@ -4,6 +4,7 @@ import * as argon2 from 'argon2';
 import { randomBytes, randomUUID } from 'node:crypto';
 
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
+import { AccountDeletionService } from './account-deletion.service';
 import { AuditService } from '../audit/audit.service';
 import { BillingService } from '../billing/billing.service';
 import { AccessTokenVerifier } from './access-token.module';
@@ -110,6 +111,7 @@ export class AuthService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     private readonly billing: BillingService,
     private readonly accessTokens: AccessTokenVerifier,
+    private readonly deletion: AccountDeletionService,
   ) {
     this.dummyHash = argon2.hash(randomBytes(32).toString('hex'), ARGON2_OPTIONS);
   }
@@ -205,7 +207,10 @@ export class AuthService {
     const hash = user?.passwordHash ?? (await this.dummyHash);
     const ok = await argon2.verify(hash, input.password).catch(() => false);
 
-    if (!user || !ok) {
+    // A tombstone can never sign in. Its `passwordHash` is unusable bytes, so
+    // the verify above already fails — this is the explicit statement of the
+    // intent, checked in the same branch so the timing stays uniform.
+    if (!user || !ok || user.isTombstone) {
       await this.recordFailedLogin(lockKey);
       await this.audit.record({
         actorUserId: user?.id ?? null,
@@ -258,6 +263,19 @@ export class AuthService {
       ip: ctx.ip,
       userAgent: ctx.userAgent,
     });
+
+    // ADR-0013: a thirty-day grace period, cancellable by signing in. This is
+    // the whole undo mechanism, and it is here rather than on a button because
+    // a deletion request in this product's domain is usually made by somebody
+    // having a bad week — and the thing they do when they change their mind is
+    // open the app.
+    //
+    // After the audit row above, so the sequence reads login-then-cancelled
+    // rather than the other way round, and after MFA, so a password alone
+    // cannot call off somebody else's deletion.
+    if (user.deletionRequestedAt != null) {
+      await this.deletion.cancel(user.id, ctx);
+    }
 
     const tokens = await this.issueTokens(user.id, randomUUID(), ctx);
     return { userId: user.id, tokens };
