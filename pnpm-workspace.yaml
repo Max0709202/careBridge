@@ -4,6 +4,7 @@
 # produces a build system nobody can debug.
 packages:
   - 'apps/api'
+  - 'apps/family_web'
   - 'packages/typescript-config'
   - 'packages/eslint-config'
   - 'packages/contracts'
