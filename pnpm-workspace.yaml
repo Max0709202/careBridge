@@ -5,6 +5,8 @@
 packages:
   - 'apps/api'
   - 'apps/family_web'
+  - 'apps/driver_web'
+  - 'apps/ops_web'
   - 'packages/typescript-config'
   - 'packages/eslint-config'
   - 'packages/contracts'

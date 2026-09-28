@@ -174,6 +174,38 @@ services:
     ports:
       - '${OPS_PORT:-8081}:80'
 
+  # The driver app in a browser, on its own origin for the same reasons as
+  # `ops`. Document uploads on the local stack go to the API's filesystem
+  # storage under PUBLIC_APP_URL, which is another origin from this one, so it
+  # is named in the page's connect-src. Location needs a secure context:
+  # http://localhost works, a LAN address over plain HTTP does not.
+  driver-web:
+    build:
+      context: .
+      dockerfile: apps/driver_web/Dockerfile
+      args:
+        UPLOAD_ORIGIN: ${PUBLIC_APP_URL:-http://localhost:8080}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '${DRIVER_WEB_PORT:-8082}:80'
+
+  # The ops console rebuilt for the browser in React (apps/ops_web), on its own
+  # origin for the reasons `ops` has one. The same screens, URLs and API as
+  # `ops`; either can serve dispatchers.
+  ops-web:
+    build:
+      context: .
+      dockerfile: apps/ops_web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '${OPS_WEB_PORT:-8083}:80'
+
 volumes:
   carebridge-db:
   carebridge-redis:
