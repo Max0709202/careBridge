@@ -115,6 +115,42 @@ describe('configuration', () => {
     ).toThrow(/PAYMENTS_DRIVER=local/);
   });
 
+  it('accepts a single-host deployment that declares its disk and its pilot', () => {
+    const config = loadConfig({
+      ...productionReady,
+      PUSH_DRIVER: 'none',
+      MAPS_DRIVER: 'osm',
+      MAPS_CONTACT: 'ops@example.com',
+      STORAGE_DRIVER: 'filesystem',
+      STORAGE_LOCAL_ROOT: '/srv/carebridge/storage',
+      STORAGE_LOCAL_DURABLE: 'true',
+      PAYMENTS_DRIVER: 'local',
+      PAYMENTS_UNBILLED_PILOT: 'true',
+    });
+    expect(config.STORAGE_LOCAL_DURABLE).toBe(true);
+    expect(config.PAYMENTS_UNBILLED_PILOT).toBe(true);
+  });
+
+  it('refuses filesystem storage in production unless durable and absolute', () => {
+    const fs = { ...productionReady, STORAGE_DRIVER: 'filesystem' };
+    expect(() => loadConfig({ ...fs, STORAGE_LOCAL_ROOT: '/srv/storage' })).toThrow(
+      /STORAGE_LOCAL_DURABLE/,
+    );
+    expect(() =>
+      loadConfig({ ...fs, STORAGE_LOCAL_ROOT: './.storage', STORAGE_LOCAL_DURABLE: 'true' }),
+    ).toThrow(/STORAGE_DRIVER=filesystem/);
+  });
+
+  it('refuses the local payments adapter in production without the pilot flag', () => {
+    expect(() => loadConfig({ ...productionReady, PAYMENTS_DRIVER: 'local' })).toThrow(
+      /PAYMENTS_UNBILLED_PILOT/,
+    );
+  });
+
+  it('requires a contact for the OpenStreetMap servers', () => {
+    expect(() => loadConfig({ ...valid, MAPS_DRIVER: 'osm' })).toThrow(/MAPS_CONTACT/);
+  });
+
   it('requires Redis in production, where the in-process fallback is wrong', () => {
     const { REDIS_URL: _dropped, ...withoutRedis } = productionReady;
     expect(() => loadConfig(withoutRedis)).toThrow(/REDIS_URL/);

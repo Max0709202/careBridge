@@ -1,3 +1,5 @@
+import { isAbsolute } from 'node:path';
+
 import { z } from 'zod';
 
 /**
@@ -12,14 +14,26 @@ import { z } from 'zod';
 
 /** Vendors sit behind interfaces; this is where the live adapter is chosen. */
 const mailDriver = z.enum(['smtp', 'log']).default('log');
-const pushDriver = z.enum(['fcm', 'log']).default('log');
-const mapsDriver = z.enum(['google', 'deterministic']).default('deterministic');
+/**
+ * `none` is not `log` renamed. `log` stands in for a vendor that should be
+ * there; `none` declares a deployment with no device apps — the web apps show
+ * the same notifications in their inbox, and there is no device to push to.
+ */
+const pushDriver = z.enum(['fcm', 'log', 'none']).default('log');
+const mapsDriver = z.enum(['google', 'osm', 'deterministic']).default('deterministic');
 const storageDriver = z.enum(['s3', 'filesystem']).default('filesystem');
 const paymentsDriver = z.enum(['stripe', 'local']).default('local');
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
+  /**
+   * The interface to listen on. Every interface suits a container, whose
+   * network is private; on a host with a reverse proxy in front it must be
+   * loopback, or a caller can skip the proxy and forge the forwarded address
+   * that TRUST_PROXY_HOPS tells us to believe.
+   */
+  HOST: z.string().default('0.0.0.0'),
 
   /** Stamped on every log line, so a line can be traced to a build. */
   SERVICE_VERSION: z.string().default('0.2.0'),
@@ -155,6 +169,15 @@ const schema = z.object({
 
   MAPS_DRIVER: mapsDriver,
   MAPS_API_KEY: z.string().optional(),
+  /** The OpenStreetMap adapter's servers; point them at your own instances as volume grows. */
+  MAPS_GEOCODER_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
+  MAPS_ROUTER_URL: z.string().url().default('https://router.project-osrm.org'),
+  /**
+   * An address the OpenStreetMap operators can reach you at. Their usage
+   * policy requires an identifiable caller; required when MAPS_DRIVER=osm.
+   */
+  MAPS_CONTACT: z.string().optional(),
+  MAPS_COUNTRY_CODES: z.string().default('us'),
 
   /**
    * Where driver documents live — see ADR-0012.
@@ -179,6 +202,22 @@ const schema = z.object({
   STORAGE_SECRET_ACCESS_KEY: z.string().optional(),
   /** Where the filesystem adapter keeps objects, and mints URLs against. */
   STORAGE_LOCAL_ROOT: z.string().default('./.storage'),
+  /**
+   * The filesystem adapter on a disk that outlives deploys — a single host
+   * that is the deployment, rather than a container. Production accepts the
+   * adapter only with this set and an absolute STORAGE_LOCAL_ROOT, so the
+   * choice is a statement about the disk rather than a default nobody made.
+   */
+  STORAGE_LOCAL_DURABLE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  /**
+   * Where the filesystem adapter's URLs point. Defaults to PUBLIC_APP_URL's
+   * API; set `/api/v1` when several web apps on different origins each proxy
+   * the API, so an upload from any of them stays same-origin.
+   */
+  STORAGE_PUBLIC_BASE_URL: z.string().optional(),
 
   /**
    * The processor that actually moves money — see ADR-0006.
@@ -203,6 +242,16 @@ const schema = z.object({
    * real — the live secret is STRIPE_WEBHOOK_SECRET.
    */
   PAYMENTS_WEBHOOK_SECRET: z.string().min(1).default('local-webhook-secret'),
+
+  /**
+   * A pilot that charges nobody, on purpose. Production accepts the local
+   * payments adapter only with this set, and says so at boot: plans can be
+   * chosen and seats counted, but no money moves until Stripe is configured.
+   */
+  PAYMENTS_UNBILLED_PILOT: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
 
   /**
    * How long an invoice may sit open before the first charge is attempted.
@@ -301,11 +350,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     if (config.MAPS_DRIVER === 'deterministic') {
       localAdapters.push('MAPS_DRIVER=deterministic');
     }
-    if (config.PAYMENTS_DRIVER === 'local') {
-      localAdapters.push('PAYMENTS_DRIVER=local');
+    if (config.PAYMENTS_DRIVER === 'local' && !config.PAYMENTS_UNBILLED_PILOT) {
+      localAdapters.push('PAYMENTS_DRIVER=local (set PAYMENTS_UNBILLED_PILOT=true to run a pilot that charges nobody)');
     }
-    if (config.STORAGE_DRIVER === 'filesystem') {
-      localAdapters.push('STORAGE_DRIVER=filesystem');
+    if (
+      config.STORAGE_DRIVER === 'filesystem' &&
+      !(config.STORAGE_LOCAL_DURABLE && isAbsolute(config.STORAGE_LOCAL_ROOT))
+    ) {
+      localAdapters.push('STORAGE_DRIVER=filesystem (without STORAGE_LOCAL_DURABLE=true and an absolute STORAGE_LOCAL_ROOT)');
     }
     if (localAdapters.length > 0) {
       throw new Error(
@@ -327,6 +379,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
   if (config.MAPS_DRIVER === 'google' && !config.MAPS_API_KEY) {
     throw new Error('MAPS_API_KEY is required when MAPS_DRIVER=google.');
+  }
+  if (config.MAPS_DRIVER === 'osm' && !config.MAPS_CONTACT) {
+    throw new Error('MAPS_CONTACT is required when MAPS_DRIVER=osm.');
   }
   if (config.STORAGE_DRIVER === 's3' && !config.STORAGE_BUCKET) {
     throw new Error('STORAGE_BUCKET is required when STORAGE_DRIVER=s3.');

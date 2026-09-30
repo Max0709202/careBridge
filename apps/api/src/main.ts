@@ -71,7 +71,7 @@ async function bootstrap(): Promise<void> {
 
   app.enableShutdownHooks();
 
-  await app.listen(config.PORT, '0.0.0.0');
+  await app.listen(config.PORT, config.HOST);
 
   rootLogger.info(
     {
@@ -94,6 +94,13 @@ async function bootstrap(): Promise<void> {
     },
     'CareBridge API listening',
   );
+
+  if (config.PAYMENTS_DRIVER === 'local' && config.PAYMENTS_UNBILLED_PILOT) {
+    rootLogger.warn(
+      { context: 'Bootstrap' },
+      'PAYMENTS_UNBILLED_PILOT: plans and seats are recorded but no money moves. Configure Stripe (PAYMENTS_DRIVER=stripe) before charging anybody.',
+    );
+  }
 
   if (!config.REDIS_URL) {
     rootLogger.warn(

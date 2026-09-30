@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 
+import { accountLinks } from '../accountLinks';
 import { Failure, failureMessage } from '../api/failures';
 import { Button, TextField } from '../components/ui';
 import { useStore } from '../state/context';
@@ -99,6 +100,15 @@ export function SignInScreen() {
         <Button type="submit" busy={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </Button>
+        {accountLinks && (
+          <div className="stack gap-sm">
+            <a href={accountLinks.forgotPassword}>Forgot your password?</a>
+            <p className="t-small muted">
+              No account yet? <a href={accountLinks.register}>Create one</a> and verify your email, then
+              send that address to your CareBridge contact &mdash; they grant access to the console.
+            </p>
+          </div>
+        )}
       </form>
     </main>
   );

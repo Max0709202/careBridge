@@ -72,7 +72,7 @@ export class MapsUnavailableError extends Error {
 }
 
 export interface MapsPort {
-  readonly driver: 'google' | 'deterministic';
+  readonly driver: 'google' | 'osm' | 'deterministic';
 
   /**
    * Returns `null` when the address cannot be located, rather than throwing.

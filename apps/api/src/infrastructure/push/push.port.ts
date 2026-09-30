@@ -30,7 +30,7 @@ export interface PushResult {
 }
 
 export interface PushPort {
-  readonly driver: 'fcm' | 'log';
+  readonly driver: 'fcm' | 'log' | 'none';
   send(message: PushMessage): Promise<PushResult>;
 }
 

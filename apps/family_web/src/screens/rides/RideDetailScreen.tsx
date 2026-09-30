@@ -172,7 +172,7 @@ export function RideDetailScreen() {
         {rideIsActive(ride) && (
           <>
             <div className="mt-lg">
-              <DemoControls rideId={id} />
+              {import.meta.env.DEV && <DemoControls rideId={id} />}
             </div>
             <Button variant="outlined-danger" icon={CircleOff} block className="mt-md" onClick={cancel}>
               Cancel this ride

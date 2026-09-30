@@ -13,6 +13,13 @@ import { ServicesProvider } from '../src/state/context';
 import { loadSnapshot, Seeded } from './support/fixture';
 import { fakeServer, type Handler } from './support/fakeServer';
 
+/** Signs in as a person would: the form starts empty. */
+function submitSignIn(email = 'ada@example.com', password = 'a-real-password') {
+  fireEvent.change(screen.getByLabelText('Email address'), { target: { value: email } });
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: password } });
+  fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+}
+
 type Snapshot = components['schemas']['CareStateDto'];
 
 const BASE = 'http://localhost/api/v1';
@@ -102,7 +109,7 @@ describe('the family web app', () => {
     });
     expect(location()).toBe('/sign-in?next=%2Faccept-invitation%3Ftoken%3Dinv-123');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    submitSignIn();
     await screen.findByText('Join a care circle');
     expect(location()).toBe('/accept-invitation?token=inv-123');
 
@@ -129,7 +136,7 @@ describe('the family web app', () => {
       },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    submitSignIn();
     const code = await screen.findByLabelText('Authentication code');
     fireEvent.change(code, { target: { value: '123456' } });
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
@@ -137,6 +144,13 @@ describe('the family web app', () => {
     await screen.findByText('Caring for');
     expect(attempts).toBe(2);
     expect(requests.filter((r) => r.path === '/auth/login')[1]!.body).toMatchObject({ mfaCode: '123456' });
+  });
+
+  it('starts with an empty form — there is no demo account to pre-fill', async () => {
+    await renderApp('/sign-in', { signedIn: false });
+    expect((screen.getByLabelText('Email address') as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
+    expect(screen.queryByText('Demo account')).toBeNull();
   });
 
   it('shows a sign-in failure instead of navigating away', async () => {
@@ -149,7 +163,7 @@ describe('the family web app', () => {
         }),
       },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    submitSignIn();
     await screen.findByText('That email address and password do not match an account.');
     expect(location()).toBe('/sign-in');
   });

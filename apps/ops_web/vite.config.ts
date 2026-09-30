@@ -18,10 +18,12 @@ export default defineConfig({
       '/api': { target: apiTarget, changeOrigin: false },
     },
   },
+  // `xfwd` so the API's rate limits see each visitor's address rather than
+  // this proxy's, when the preview build is served to other machines.
   preview: {
     port: 4175,
     proxy: {
-      '/api': { target: apiTarget, changeOrigin: false },
+      '/api': { target: apiTarget, changeOrigin: false, xfwd: true },
     },
   },
   build: {

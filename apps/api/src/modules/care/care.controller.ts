@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 
 import {
@@ -19,6 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { PreviewToolsGuard } from '../../common/preview-tools.guard';
 import { Ctx, CurrentUser, RequestContext } from '../../common/request-context';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { CareService } from './care.service';
@@ -391,6 +393,7 @@ export class RidesController {
   }
 
   @Post(':id/delay')
+  @UseGuards(PreviewToolsGuard)
   @ApiOkResponse({ type: CareStateDto })
   async delay(
     @CurrentUser() userId: string,
@@ -410,6 +413,7 @@ export class RidesController {
    * ride-state checks in `reportLocation` apply either way.
    */
   @Post(':id/location')
+  @UseGuards(PreviewToolsGuard)
   @ApiOkResponse({ type: CareStateDto })
   async location(
     @CurrentUser() userId: string,
@@ -424,6 +428,7 @@ export class RidesController {
   }
 
   @Post(':id/preview/start')
+  @UseGuards(PreviewToolsGuard)
   @ApiOkResponse({ type: CareStateDto })
   async startPreview(
     @CurrentUser() userId: string,
@@ -434,6 +439,7 @@ export class RidesController {
   }
 
   @Post(':id/preview/stop')
+  @UseGuards(PreviewToolsGuard)
   @ApiOkResponse({ type: CareStateDto })
   async stopPreview(
     @CurrentUser() userId: string,

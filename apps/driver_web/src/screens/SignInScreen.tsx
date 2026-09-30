@@ -2,6 +2,7 @@ import { CarFront } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { accountLinks } from '../accountLinks';
 import { Failure, failureMessage } from '../api/failures';
 import { Button, TextField } from '../components/ui';
 import { useStore } from '../state/context';
@@ -93,6 +94,16 @@ export function SignInScreen() {
         <Button type="submit" busy={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </Button>
+        {accountLinks && (
+          <div className="stack gap-sm center">
+            <a href={accountLinks.forgotPassword}>Forgot your password?</a>
+            <p className="t-small muted">
+              New driver? <a href={accountLinks.register}>Create your CareBridge account</a> and verify
+              your email, then give that address to your transport company. Once they add you to their
+              roster, sign in here.
+            </p>
+          </div>
+        )}
       </form>
     </main>
   );

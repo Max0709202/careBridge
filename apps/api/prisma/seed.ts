@@ -75,6 +75,17 @@ async function main(): Promise<void> {
 
   await seedPricingRule();
   await seedPlanCatalogue();
+
+  // `--reference-only`: what a real deployment needs and nothing it does not —
+  // the fare rule, the plan catalogue and the (off) feature flags. No people,
+  // no demo password, no fictional family: every account on a live system is
+  // one somebody created.
+  if (process.argv.includes('--reference-only')) {
+    await seedFeatureFlags();
+    console.log('Seeded reference data only: pricing rule, plan catalogue, feature flags.');
+    return;
+  }
+
   const operator = await seedOperator();
   await seedFleet();
 

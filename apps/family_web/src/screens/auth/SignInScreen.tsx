@@ -1,11 +1,11 @@
-import { Eye, EyeOff, Info, ShieldPlus } from 'lucide-react';
+import { Eye, EyeOff, ShieldPlus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { Failure } from '../../api/failures';
 import { safeNext } from '../../App';
 import { useFeedback } from '../../components/feedback';
-import { AppCard, Button, IconButton, Page, TextField } from '../../components/ui';
+import { Button, IconButton, Page, TextField } from '../../components/ui';
 import { useStore } from '../../state/context';
 
 export function SignInScreen() {
@@ -14,10 +14,8 @@ export function SignInScreen() {
   const location = useLocation();
   const { showFailure } = useFeedback();
 
-  // Pre-filled with the seeded demo family, exactly as the app is — see the
-  // notice below for what these are and are not.
-  const [email, setEmail] = useState('sarah@example.com');
-  const [password, setPassword] = useState('demo-password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
   const [needsCode, setNeedsCode] = useState(false);
   const [obscure, setObscure] = useState(true);
@@ -112,30 +110,7 @@ export function SignInScreen() {
             Forgot your password?
           </Link>
         </form>
-
-        <DemoNotice />
       </div>
     </Page>
-  );
-}
-
-/**
- * The pre-filled credentials are a **seeded demo account**, not a bypass: the
- * password is checked against an argon2id hash like any other.
- */
-function DemoNotice() {
-  return (
-    <AppCard className="mt-md">
-      <div className="row start" style={{ gap: 12 }}>
-        <Info className="ink-primary" aria-hidden style={{ flex: '0 0 auto' }} />
-        <div className="grow">
-          <p className="t-body-lg bold">Demo account</p>
-          <p className="t-body muted mt-xs">
-            These credentials belong to a seeded family and are checked like any other — everything
-            you do is saved to the database. Create an account to see the first-run experience.
-          </p>
-        </div>
-      </div>
-    </AppCard>
   );
 }

@@ -35,7 +35,10 @@ import { LocalStorageController } from './local-storage.controller';
             })
           : new FilesystemStorageAdapter(
               config.STORAGE_LOCAL_ROOT,
-              `${config.PUBLIC_APP_URL.replace(/\/+$/, '')}/api/v1`,
+              (
+                config.STORAGE_PUBLIC_BASE_URL ??
+                `${config.PUBLIC_APP_URL.replace(/\/+$/, '')}/api/v1`
+              ).replace(/\/+$/, ''),
             ),
     },
   ],
