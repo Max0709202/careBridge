@@ -14,6 +14,9 @@ import { PushModule } from './infrastructure/push/push.module';
 import { MapsModule } from './infrastructure/maps/maps.module';
 import { StorageModule } from './infrastructure/storage/storage.module';
 import { TrackingInfrastructureModule } from './infrastructure/tracking/tracking.module';
+import { RealtimeInfrastructureModule } from './infrastructure/realtime/realtime.module';
+import { TelephonyModule } from './infrastructure/telephony/telephony.module';
+import { AccessQueriesModule } from './common/access.queries';
 import { PaymentsModule } from './infrastructure/payments/payments.module';
 import { RateLimitModule } from './infrastructure/rate-limit/rate-limit.module';
 import { RetentionModule } from './modules/retention/retention.module';
@@ -31,6 +34,8 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ClinicModule } from './modules/clinic/clinic.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { HealthModule } from './modules/health/health.module';
+import { MessagingModule } from './modules/messaging/messaging.module';
+import { CallsModule } from './modules/calls/calls.module';
 
 @Module({
   imports: [
@@ -48,6 +53,9 @@ import { HealthModule } from './modules/health/health.module';
     StorageModule,
     PaymentsModule,
     TrackingInfrastructureModule,
+    RealtimeInfrastructureModule,
+    TelephonyModule,
+    AccessQueriesModule,
     RateLimitModule,
     AuditModule,
     OrganizationsModule,
@@ -58,6 +66,8 @@ import { HealthModule } from './modules/health/health.module';
     AdminModule,
     ClinicModule,
     MarketplaceModule,
+    MessagingModule,
+    CallsModule,
     AuthModule,
     HealthModule,
     RetentionModule,

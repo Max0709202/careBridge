@@ -4,6 +4,7 @@ import {
   CreditCard,
   ListChecks,
   LogOut,
+  MessageSquare,
   ReceiptText,
   ShieldCheck,
   Users,
@@ -12,6 +13,8 @@ import {
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { IconButton } from '../components/ui';
+import { useInbox } from '../messaging/react';
+import { IncomingCallBanner } from './messages/IncomingCallBanner';
 import { usePlatformAccess, useSelectedOrganization, useSession, useStore } from '../state/context';
 
 export interface Destination {
@@ -19,10 +22,13 @@ export interface Destination {
   icon: LucideIcon;
   label: string;
   end?: boolean;
+  /** A count to show on the item — unread messages. */
+  badge?: number;
 }
 
 const destinations: Destination[] = [
   { path: '/queue', icon: ListChecks, label: 'Queue' },
+  { path: '/messages', icon: MessageSquare, label: 'Messages' },
   { path: '/roster', icon: Users, label: 'Roster' },
   { path: '/fleet', icon: Car, label: 'Fleet' },
   { path: '/seats', icon: ReceiptText, label: 'Seats' },
@@ -44,9 +50,17 @@ export function ConsoleShell() {
   const organization = useSelectedOrganization();
   const { organizationId } = useSession();
   const isPlatform = usePlatformAccess();
+  const { inbox } = useInbox();
+  // Unread for the operator on screen only: another company's messages are
+  // that company's, and a badge here for them would be a badge you cannot clear.
+  const unread = (inbox ?? [])
+    .filter((c) => c.organizationId === organizationId)
+    .reduce((sum, c) => sum + c.unreadCount, 0);
+  const items = destinations.map((d) => (d.path === '/messages' ? { ...d, badge: unread } : d));
 
   return (
     <div className="shell">
+      <IncomingCallBanner />
       <header className="app-bar">
         {/*
           The operator is named in the title bar at all times. Somebody
@@ -75,7 +89,7 @@ export function ConsoleShell() {
         </div>
       </header>
       <div className="shell-body">
-        <Rail label="Console" destinations={destinations} />
+        <Rail label="Console" destinations={items} />
         {/* Keyed by operator, so switching never shows one company's screen state under another's name. */}
         <main className="shell-content" key={organizationId ?? ''}>
           <Outlet />
@@ -89,10 +103,21 @@ export function ConsoleShell() {
 export function Rail(props: { label: string; destinations: Destination[] }) {
   return (
     <nav className="rail" aria-label={props.label}>
-      {props.destinations.map(({ path, icon: Icon, label, end }) => (
-        <NavLink key={path} to={path} end={end} className="rail-item">
+      {props.destinations.map(({ path, icon: Icon, label, end, badge }) => (
+        <NavLink
+          key={path}
+          to={path}
+          end={end}
+          className="rail-item"
+          aria-label={badge ? `${label}, ${badge} unread` : undefined}
+        >
           <span className="rail-icon">
             <Icon size={22} aria-hidden />
+            {badge ? (
+              <span className="badge rail-badge" aria-hidden>
+                {badge > 99 ? '99+' : badge}
+              </span>
+            ) : null}
           </span>
           <span>{label}</span>
         </NavLink>

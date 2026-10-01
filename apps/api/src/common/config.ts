@@ -23,6 +23,13 @@ const pushDriver = z.enum(['fcm', 'log', 'none']).default('log');
 const mapsDriver = z.enum(['google', 'osm', 'deterministic']).default('deterministic');
 const storageDriver = z.enum(['s3', 'filesystem']).default('filesystem');
 const paymentsDriver = z.enum(['stripe', 'local']).default('local');
+/**
+ * `none` by default, not `log`: calling is a feature a deployment opts into
+ * once it has a relay number, and until then the apps say calling is not set
+ * up rather than pretending to ring someone. `log` walks a call through its
+ * states on timers, for development and tests.
+ */
+const telephonyDriver = z.enum(['twilio', 'log', 'none']).default('none');
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -141,6 +148,14 @@ const schema = z.object({
   TOKEN_GUESS_MAX_ATTEMPTS: z.coerce.number().int().positive().default(10),
   TOKEN_GUESS_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
 
+  // Per signed-in user, not per IP: a dispatch office is a dozen people
+  // behind one address. Sending is generous — a real conversation at the
+  // kerb is quick — and exists to stop a stuck client looping. Calls are
+  // tight because every one of them is billed by the telephony provider.
+  MESSAGE_SEND_MAX_PER_MINUTE: z.coerce.number().int().positive().default(30),
+  CALL_START_MAX_ATTEMPTS: z.coerce.number().int().positive().default(10),
+  CALL_START_WINDOW_MINUTES: z.coerce.number().int().positive().default(10),
+
   // `silent` is a real pino level and the right one for a test run: the suite
   // asserts on behaviour, and a thousand log lines between two failures is how
   // a failing assertion becomes hard to find.
@@ -166,6 +181,33 @@ const schema = z.object({
 
   PUSH_DRIVER: pushDriver,
   FCM_SERVICE_ACCOUNT_JSON: z.string().optional(),
+
+  /**
+   * Web Push (VAPID) for the React web apps — background notifications in a
+   * browser. Both keys or neither; generate them with
+   * `npx ts-node scripts/generate-vapid-keys.ts`. Without them, browsers
+   * simply are not offered background notifications.
+   */
+  WEB_PUSH_VAPID_PUBLIC_KEY: z.string().optional(),
+  WEB_PUSH_VAPID_PRIVATE_KEY: z.string().optional(),
+  WEB_PUSH_SUBJECT: z.string().default('mailto:support@carebridge.example'),
+
+  // ─── relay calls (ADR-0014) ─────────────────────────────────────────────
+  TELEPHONY_DRIVER: telephonyDriver,
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  /** The number both sides see. E.164. */
+  TELEPHONY_RELAY_NUMBER: z.string().default('+15550100000'),
+  /**
+   * The API's public base, as the provider reaches it — webhooks are signed
+   * over the exact URL, so this must be what the provider calls, not what the
+   * container thinks its hostname is. e.g. https://carebridge.example/api/v1
+   */
+  TELEPHONY_WEBHOOK_BASE_URL: z.string().url().optional(),
+  /** Country code assumed for numbers written without one. */
+  TELEPHONY_DEFAULT_COUNTRY_CODE: z.string().regex(/^[1-9]\d{0,2}$/).default('1'),
+  /** `log` only: how long each simulated step takes. */
+  TELEPHONY_LOG_STEP_MS: z.coerce.number().int().positive().default(1500),
 
   MAPS_DRIVER: mapsDriver,
   MAPS_API_KEY: z.string().optional(),
@@ -347,6 +389,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     const localAdapters: string[] = [];
     if (config.MAIL_DRIVER === 'log') localAdapters.push('MAIL_DRIVER=log');
     if (config.PUSH_DRIVER === 'log') localAdapters.push('PUSH_DRIVER=log');
+    if (config.TELEPHONY_DRIVER === 'log') {
+      localAdapters.push('TELEPHONY_DRIVER=log (use twilio, or none to switch calling off)');
+    }
     if (config.MAPS_DRIVER === 'deterministic') {
       localAdapters.push('MAPS_DRIVER=deterministic');
     }
@@ -373,6 +418,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
   if (config.MAIL_DRIVER === 'smtp' && !config.MAIL_SMTP_HOST) {
     throw new Error('MAIL_SMTP_HOST is required when MAIL_DRIVER=smtp.');
+  }
+  if (!config.WEB_PUSH_VAPID_PUBLIC_KEY !== !config.WEB_PUSH_VAPID_PRIVATE_KEY) {
+    throw new Error('WEB_PUSH_VAPID_PUBLIC_KEY and WEB_PUSH_VAPID_PRIVATE_KEY are set together, or not at all.');
+  }
+  if (config.TELEPHONY_DRIVER === 'twilio') {
+    const missing = (
+      ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TELEPHONY_WEBHOOK_BASE_URL'] as const
+    ).filter((key) => !config[key]);
+    if (missing.length > 0) {
+      throw new Error(`${missing.join(', ')} required when TELEPHONY_DRIVER=twilio.`);
+    }
   }
   if (config.PUSH_DRIVER === 'fcm' && !config.FCM_SERVICE_ACCOUNT_JSON) {
     throw new Error('FCM_SERVICE_ACCOUNT_JSON is required when PUSH_DRIVER=fcm.');

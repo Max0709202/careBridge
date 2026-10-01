@@ -7,6 +7,8 @@ import { PUSH, type PushPort } from './push.port';
 import { FcmPushAdapter } from './adapters/fcm-push.adapter';
 import { LogPushAdapter } from './adapters/log-push.adapter';
 import { NoDevicePushAdapter } from './adapters/no-device-push.adapter';
+import { WEB_PUSH, type WebPushPort } from './web-push/web-push.port';
+import { NoWebPushAdapter, VapidWebPushAdapter } from './web-push/web-push.adapter';
 
 @Global()
 @Module({
@@ -22,7 +24,19 @@ import { NoDevicePushAdapter } from './adapters/no-device-push.adapter';
         return config.PUSH_DRIVER === 'none' ? new NoDevicePushAdapter() : new LogPushAdapter();
       },
     },
+    {
+      provide: WEB_PUSH,
+      inject: [APP_CONFIG],
+      useFactory: (config: AppConfig): WebPushPort =>
+        config.WEB_PUSH_VAPID_PUBLIC_KEY && config.WEB_PUSH_VAPID_PRIVATE_KEY
+          ? new VapidWebPushAdapter({
+              publicKey: config.WEB_PUSH_VAPID_PUBLIC_KEY,
+              privateKey: config.WEB_PUSH_VAPID_PRIVATE_KEY,
+              subject: config.WEB_PUSH_SUBJECT,
+            })
+          : new NoWebPushAdapter(),
+    },
   ],
-  exports: [PUSH],
+  exports: [PUSH, WEB_PUSH],
 })
 export class PushModule {}

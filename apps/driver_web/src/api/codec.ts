@@ -29,6 +29,7 @@ export const vehicleFromWire = (dto: S['VehicleDto']): Vehicle => ({
 
 export const profileFromWire = (dto: S['DriverProfileDto']): DriverProfile => ({
   driverId: dto.driverId,
+  organizationId: dto.organizationId,
   organizationName: dto.organizationName,
   displayName: dto.displayName,
   status: dto.status,

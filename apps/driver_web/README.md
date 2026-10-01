@@ -50,6 +50,8 @@ means instead of hiding it:
 | Here                           | Flutter counterpart                         |
 | ------------------------------ | ------------------------------------------- |
 | `src/api/transport.ts`, `failures.ts`, `tokens.ts` | shared with `apps/family_web` (copies)  |
+| `src/messaging/` — conversations, relay calls, the messaging socket, browser alerts and Web Push (ADR-0014) | shared with `apps/ops_web` and `apps/family_web` (copies — the whole folder) |
+| `public/sw.js` | the service worker, for background notifications only |
 | `src/api/driverApi.ts`         | `lib/data/driver_api.dart`                  |
 | `src/api/codec.ts`             | `lib/data/driver_codec.dart`                |
 | `src/data/locationQueue.ts`    | `lib/data/location_queue.dart`              |

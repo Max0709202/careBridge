@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Accessibility, CircleCheck, HandHelping, PhoneCall } from 'lucide-react';
+import { ArrowLeftRight, Accessibility, CircleCheck, HandHelping, MessageSquare, PhoneCall } from 'lucide-react';
 import { useState } from 'react';
 
 import { UrgencyPill } from '../components/pills';
@@ -17,6 +17,7 @@ import {
 import { useOperatorId, useResource, useStore } from '../state/context';
 import { keys, QUEUE_POLL_MS } from '../state/opsStore';
 import { AssignSheet } from './AssignSheet';
+import { useOpenThread } from './messages/useOpenThread';
 
 /**
  * The queue a dispatcher works. A port of
@@ -105,6 +106,8 @@ function QueueBody({ queue, onAssign }: { queue: DispatchQueue; onAssign: (item:
 }
 
 function QueueRow({ item, onAssign }: { item: QueueItem; onAssign: () => void }) {
+  const organizationId = useOperatorId();
+  const { openThread, busy } = useOpenThread();
   const stranded = !hasAnyoneAvailable(item);
   const available = eligibleCandidates(item).length;
   const reassignment = isReassignment(item);
@@ -147,6 +150,21 @@ function QueueRow({ item, onAssign }: { item: QueueItem; onAssign: () => void })
             {reassignment ? 'Reassign' : 'Assign'} ({available} available)
           </Button>
         )}
+      </div>
+      {/*
+        The family thread about this trip, with the patient and the family
+        callable from it — the "needs a call, not a tap" case above included.
+      */}
+      <div className="mt-sm">
+        <Button
+          variant="text"
+          icon={MessageSquare}
+          busy={busy}
+          aria-label={`Message ${item.patientName}'s family about this trip`}
+          onClick={() => void openThread({ kind: 'dispatchFamily', organizationId, rideId: item.rideId })}
+        >
+          Message family
+        </Button>
       </div>
     </Card>
   );

@@ -140,9 +140,14 @@ export class NotificationsService {
     });
   }
 
+  /**
+   * The family app's "mark all read". Scoped to the family app's own
+   * notifications: someone who also dispatches must not clear the console's
+   * unread messages from their phone.
+   */
   async markAllRead(userId: string): Promise<void> {
     await this.prisma.notification.updateMany({
-      where: { userId, readAt: null },
+      where: { userId, readAt: null, appTarget: 'family' },
       data: { readAt: new Date() },
     });
   }

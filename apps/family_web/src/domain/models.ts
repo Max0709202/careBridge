@@ -287,6 +287,8 @@ export const NOTIFICATION_KINDS = [
   'rideCompleted',
   'rideCanceled',
   'accessGranted',
+  'messageReceived',
+  'callMissed',
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -306,4 +308,6 @@ export interface AppNotification {
   readAt: Date | null;
   rideId: string | null;
   appointmentId: string | null;
+  /** A message or missed call: the thread it opens. */
+  conversationId: string | null;
 }

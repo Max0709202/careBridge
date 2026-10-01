@@ -30,6 +30,8 @@ const kindLabel: Record<NotificationKind, string> = {
   rideCompleted: 'A ride is finished',
   rideCanceled: 'A ride is cancelled',
   accessGranted: 'Someone joins the care circle',
+  messageReceived: 'Dispatch sends you a message',
+  callMissed: 'You miss a call from dispatch or the driver',
 };
 
 /**

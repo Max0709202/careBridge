@@ -8,7 +8,6 @@ import {
   Hash,
   LocateOff,
   MapPinOff,
-  Phone,
   ReceiptText,
   Star,
   TriangleAlert,
@@ -53,6 +52,7 @@ import { useCare, useLiveTracking, useNow, useStore } from '../../state/context'
 import { DemoControls } from './DemoControls';
 import { RideTimeline } from './RideTimeline';
 import { RouteMap } from './RouteMap';
+import { CallBar } from '../messages/ChatThread';
 
 /**
  * Live tracking. The screen answers one question — *is the person I love all
@@ -164,7 +164,7 @@ export function TrackingScreen() {
 
         {ride.driver && (
           <div className="mt-lg">
-            <DriverCard driver={ride.driver} />
+            <DriverCard driver={ride.driver} rideId={ride.id} />
           </div>
         )}
 
@@ -261,8 +261,7 @@ function StatusHeadline({ ride, lost, etaMinutes }: { ride: Ride; lost: boolean;
   );
 }
 
-function DriverCard({ driver }: { driver: Driver }) {
-  const { showConfirmation } = useFeedback();
+function DriverCard({ driver, rideId }: { driver: Driver; rideId: string }) {
   return (
     <AppCard>
       <div className="row">
@@ -285,22 +284,10 @@ function DriverCard({ driver }: { driver: Driver }) {
           <StatusPill label="Wheelchair accessible" icon={Accessibility} ink="positive" />
         </div>
       )}
-      <Button
-        variant="outlined"
-        icon={Phone}
-        block
-        className="mt-md"
-        onClick={() =>
-          showConfirmation(
-            'Connecting through a relay number keeps both numbers private — this arrives with the server.',
-          )
-        }
-      >
-        Call the driver
-      </Button>
-      <p className="t-small muted mt-xs">
-        Calls go through a relay number. Neither side sees the other’s real number.
-      </p>
+      {/* Through the relay: your phone rings first, and neither side sees the other's number. */}
+      <div className="mt-md">
+        <CallBar context={{ rideId }} compact />
+      </div>
     </AppCard>
   );
 }

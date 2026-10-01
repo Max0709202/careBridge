@@ -1,4 +1,4 @@
-import { FolderOpen, Users } from 'lucide-react';
+import { FolderOpen, MessageSquare, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import { Modal } from '../components/feedback';
@@ -28,6 +28,7 @@ import { canAdminister, vehicleLabel, type Driver } from '../domain/models';
 import { useOperatorId, useResource, useSelectedOrganization, useStore } from '../state/context';
 import { keys } from '../state/opsStore';
 import { DocumentReviewSheet } from './DocumentReviewSheet';
+import { useOpenThread } from './messages/useOpenThread';
 
 /**
  * The roster: who may drive, and who is driving today. A port of
@@ -117,6 +118,8 @@ function DriverRow(props: {
   const changeStatus = (to: DriverStatus, reason?: string) =>
     act(() => store.api.setDriverStatus({ organizationId, driverId: driver.id, to, reason }));
 
+  const thread = useOpenThread();
+
   return (
     <Card>
       <div className="row">
@@ -139,6 +142,17 @@ function DriverRow(props: {
         />
         <span className="grow" />
         {driver.activeRideCount > 0 && <span className="t-small muted">On a trip</span>}
+        {driver.status !== 'offboarded' && driver.status !== 'invited' && (
+          <Button
+            variant="text"
+            icon={MessageSquare}
+            busy={thread.busy}
+            aria-label={`Message ${driver.displayName}`}
+            onClick={() => void thread.openThread({ kind: 'dispatchDriver', organizationId, driverId: driver.id })}
+          >
+            Message
+          </Button>
+        )}
       </div>
       {props.canAdminister && (
         <div className="actions-row divided">

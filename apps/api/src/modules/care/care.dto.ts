@@ -345,6 +345,14 @@ export class NotificationDto {
 
   @ApiProperty({ type: String, format: 'uuid', nullable: true })
   appointmentId!: string | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'The thread a message or missed-call notification opens.',
+  })
+  conversationId!: string | null;
 }
 
 /**

@@ -43,6 +43,8 @@ export const vehicleDescription = (v: Vehicle) => `${v.color} ${v.make} ${v.mode
 
 export interface DriverProfile {
   driverId: string;
+  /** The operator. Messaging is scoped by it — colleagues are this company's drivers. */
+  organizationId: string;
   organizationName: string;
   displayName: string;
   status: string;

@@ -24,6 +24,19 @@ class MeApi {
     return CareStateDto.fromJson(response as Map<String, dynamic>);
   }
 
+  /// The key a browser subscribes to push with
+  ///
+  /// Null where web push is not configured — the web apps then do not offer
+  /// background notifications. Register the resulting subscription with POST
+  /// /me/devices, `platform: web`, the subscription JSON as `token`.
+  Future<WebPushKeyDto> webPushKey() async {
+    final response = await _client.send(
+      method: 'GET',
+      path: '/me/devices/web-push-key',
+    );
+    return WebPushKeyDto.fromJson(response as Map<String, dynamic>);
+  }
+
   /// Devices registered for push
   ///
   /// The registration token itself is never returned — it is a capability to

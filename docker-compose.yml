@@ -120,6 +120,11 @@ services:
       MAIL_SMTP_PORT: '1025'
       MAIL_FROM: ${MAIL_FROM:-CareBridge <no-reply@carebridge.local>}
       PUSH_DRIVER: ${PUSH_DRIVER:-log}
+      WEB_PUSH_VAPID_PUBLIC_KEY: ${WEB_PUSH_VAPID_PUBLIC_KEY:-}
+      WEB_PUSH_VAPID_PRIVATE_KEY: ${WEB_PUSH_VAPID_PRIVATE_KEY:-}
+      # Relay calls are simulated locally: nobody's phone rings.
+      TELEPHONY_DRIVER: ${TELEPHONY_DRIVER:-log}
+      TELEPHONY_LOG_STEP_MS: ${TELEPHONY_LOG_STEP_MS:-1500}
       STORAGE_DRIVER: ${STORAGE_DRIVER:-filesystem}
       STORAGE_LOCAL_ROOT: /app/.storage
       STORAGE_BUCKET: ${STORAGE_BUCKET:-carebridge-documents}

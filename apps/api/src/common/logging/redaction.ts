@@ -83,6 +83,15 @@ const SENSITIVE_FIELDS = [
   'mobilityNotes',
   'coordinationNotes',
   'notesForDriver',
+
+  // Messaging (ADR-0014). A message body is free text about a trip, and a
+  // sender label is a first name and a relationship. The numbers a relay call
+  // dials exist only for the length of one request, and not in a log either.
+  'body',
+  'senderLabel',
+  'callerNumber',
+  'calleeNumber',
+  'relayNumber',
 ];
 
 /**

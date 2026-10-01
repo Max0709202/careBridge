@@ -253,6 +253,7 @@ export function toNotificationDto(notification: Notification): NotificationDto {
     readAt: iso(notification.readAt),
     rideId: notification.rideId,
     appointmentId: notification.appointmentId,
+    conversationId: notification.conversationId,
   };
 }
 

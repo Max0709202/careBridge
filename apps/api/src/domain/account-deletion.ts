@@ -43,7 +43,10 @@ export type UserRelation =
   | 'bookingsRequested'
   | 'reviewsWritten'
   | 'disputesRaised'
-  | 'disputesResolved';
+  | 'disputesResolved'
+  | 'messagesSent'
+  | 'conversationReads'
+  | 'callsStarted';
 
 export type Disposition =
   /** The row's only purpose was serving this user. It goes. */
@@ -116,6 +119,18 @@ export const USER_RELATION_DISPOSITIONS: Record<UserRelation, Disposition> = {
   bookingsRequested: 'anonymise',
   reviewsWritten: 'anonymise',
   disputesRaised: 'anonymise',
+
+  // ─── messaging (ADR-0014) ─────────────────────────────────────────────────
+  /**
+   * The other side's record of the conversation — a dispatcher's account of
+   * what a family was told, a family's of what dispatch promised. The words
+   * stay; who wrote them does not.
+   */
+  messagesSent: 'anonymise',
+  /** How far one person had read. Meaningless without the person. */
+  conversationReads: 'delete',
+  /** The operator's call log. It never held a number, so only the link goes. */
+  callsStarted: 'anonymise',
 };
 
 /**
@@ -135,6 +150,8 @@ export const IDENTIFYING_COLUMNS: Readonly<Record<string, readonly string[]>> = 
   Caregiver: ['displayName', 'bio'],
   /** The address the invitation was bound to. */
   PatientInvitation: ['email'],
+  /** "Sarah (daughter)", frozen at send time. */
+  Message: ['senderLabel'],
 };
 
 /**

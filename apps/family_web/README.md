@@ -87,3 +87,12 @@ they are declared without `@ApiPropertyOptional`, so they are missing from
 `packages/contracts/openapi.json` and from the generated types. The web client
 sends `entranceNotes` the same way the Flutter app does. If the decorators are
 added and the contract is re-emitted, `pnpm gen:api` picks the fields up.
+
+## Messages and calls
+
+Conversations with dispatch and relay calls (ADR-0014). `src/messaging/` is
+shared with `apps/ops_web` and `apps/driver_web` — the whole folder is copied,
+like `src/api/transport.ts`, so a change goes into all three. The screens are
+in `src/screens/messages/`; conversations appear at the top of Updates, a
+ride's thread opens from the ride, and `public/sw.js` shows background
+notifications when they are switched on in Settings → Calls and messages.

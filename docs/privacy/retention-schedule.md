@@ -16,6 +16,9 @@ Implementation: `apps/api/src/modules/retention/retention.service.ts`.
 | Unaccepted invitations | 30 days past expiry | No evidentiary value once long dead | Retention job |
 | Device tokens | 180 days without a check-in | FCM rotates tokens on its own schedule and does not always tell us when one dies; age is the only signal for a device that simply stopped checking in | Retention job |
 | Revoked / invalidated device tokens | Immediately eligible | — | Retention job |
+| Conversations and their messages | **1 year** after the last message | Long enough to answer what a family or driver was told about a trip in a dispute; not kept as long as billing records ([ADR-0014](../adr/0014-messaging-and-relay-calls.md)) | Retention job |
+| Conversations never written in | 7 days | Nothing to keep | Retention job |
+| Relay call sessions | 1 year | Who rang whom, when, for how long. **No number and no recording is ever stored** | Retention job |
 | **Audit logs** | **7 years** | Regulatory and dispute exposure | **Never deleted by any job.** Append-only, no update or delete path exists in the application |
 | Soft-deleted patients | Grace period, then purge | Audit and dispute resolution need the record to survive the deletion request | Stage 4 |
 | Payment records and ledger | 7 years | Financial regulation | Stage 4 |

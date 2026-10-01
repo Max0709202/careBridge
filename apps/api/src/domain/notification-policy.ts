@@ -34,7 +34,9 @@ export type NotificationKindName =
   | 'rideDelayed'
   | 'rideCompleted'
   | 'rideCanceled'
-  | 'accessGranted';
+  | 'accessGranted'
+  | 'messageReceived'
+  | 'callMissed';
 
 export type ChannelName = 'inApp' | 'email' | 'push';
 
@@ -93,6 +95,16 @@ export const NOTIFICATION_POLICY: Record<NotificationKindName, KindPolicy> = {
   // who can see a vulnerable person's address and movements, so it reaches
   // outside the app on both channels.
   accessGranted: policy(ON, ON),
+
+  // Somebody wrote to you. Push, because a message is usually about a car
+  // that is moving right now; never email, because a chat that arrives as
+  // forty emails is a chat that gets its notifications switched off. Merged
+  // per conversation (ADR-0014), so a busy thread is one push, not forty.
+  messageReceived: policy(OFF, ON),
+
+  // The phone rang and nobody picked up. The ring itself was the alert; this
+  // is the record that it happened, pushed so it is seen on the lock screen.
+  callMissed: policy(OFF, ON),
 };
 
 export const ALL_CHANNELS: readonly ChannelName[] = ['inApp', 'email', 'push'];

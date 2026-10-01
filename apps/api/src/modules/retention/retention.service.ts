@@ -51,6 +51,17 @@ export class RetentionService implements OnApplicationBootstrap {
      * only preserves a hash of a request nobody is going to repeat.
      */
     idempotencyHours: 24,
+    /**
+     * Conversations, a year after the last word in them (ADR-0014). Long
+     * enough to answer "what were we told about the March pickup" in a
+     * dispute; not so long that a chat about somebody's grandmother is kept
+     * for as long as the billing records are.
+     */
+    conversationDays: 365,
+    /** A thread opened and never written in. Nothing to keep. */
+    emptyConversationDays: 7,
+    /** The call log: who rang whom and for how long. Never a number, never a recording. */
+    callSessionDays: 365,
   };
 
   /** Daily is often enough for windows measured in weeks. */
@@ -132,6 +143,33 @@ export class RetentionService implements OnApplicationBootstrap {
       this.prisma.idempotencyRecord
         .deleteMany({
           where: { createdAt: { lt: hoursBefore(now, windows.idempotencyHours) } },
+        })
+        .then((r) => r.count),
+    );
+
+    // Deleting a conversation takes its messages, read markers and message
+    // notifications with it (cascade); a call placed from it keeps its row,
+    // unlinked, until its own window below.
+    await this.step(results, 'conversations', () =>
+      this.prisma.conversation
+        .deleteMany({
+          where: {
+            OR: [
+              { lastMessageAt: { lt: daysBefore(now, windows.conversationDays) } },
+              {
+                lastMessageAt: null,
+                createdAt: { lt: daysBefore(now, windows.emptyConversationDays) },
+              },
+            ],
+          },
+        })
+        .then((r) => r.count),
+    );
+
+    await this.step(results, 'callSessions', () =>
+      this.prisma.callSession
+        .deleteMany({
+          where: { startedAt: { lt: daysBefore(now, windows.callSessionDays) } },
         })
         .then((r) => r.count),
     );

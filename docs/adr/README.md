@@ -21,6 +21,7 @@ seeming to relitigate it.
 | [0011](0011-two-sided-subscription-billing.md) | Both sides subscribe; drivers are the operator's meter | Accepted |
 | [0012](0012-documents-in-object-storage.md) | Driver documents in object storage, behind pre-signed URLs | Accepted |
 | [0013](0013-account-deletion.md) | Deletion erases a person, not the record that events happened | Accepted |
+| [0014](0014-messaging-and-relay-calls.md) | Messaging with derived membership; calls through a relay | Accepted |
 
 ## Format
 

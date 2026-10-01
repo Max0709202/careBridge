@@ -28,6 +28,9 @@ and the same Content-Security-Policy, on its own origin.
 | Here                               | Flutter counterpart                                  |
 | ---------------------------------- | ---------------------------------------------------- |
 | `src/api/transport.ts`, `failures.ts`, `tokens.ts`, `ids.ts` | shared with `apps/family_web` and `apps/driver_web` (copies) |
+| `src/messaging/` — conversations, relay calls, the messaging socket, browser alerts and Web Push (ADR-0014) | shared with `apps/family_web` and `apps/driver_web` (copies — the whole folder, and `test/messaging.test.ts`) |
+| `src/screens/messages/` | the console's Messages tab, call bar and calls-and-alerts sheet |
+| `public/sw.js` | the service worker, for background notifications only |
 | `src/api/opsApi.ts`                | `lib/data/ops_api.dart`                              |
 | `src/api/codec.ts`                 | `ops_codec.dart`, `admin_codec.dart`, `billing_codec.dart` |
 | `src/domain/*`                     | `lib/domain/*`                                       |

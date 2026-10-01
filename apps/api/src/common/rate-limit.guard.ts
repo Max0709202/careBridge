@@ -25,7 +25,21 @@ import {
  * configuration is resolved, so the route declares *what kind of abuse it is
  * exposed to* and the guard looks up what that currently costs.
  */
-export type RateLimitPolicyName = 'signIn' | 'emailDispatch' | 'tokenGuess';
+export type RateLimitPolicyName =
+  | 'signIn'
+  | 'emailDispatch'
+  | 'tokenGuess'
+  | 'messageSend'
+  | 'callStart';
+
+/**
+ * Policies for signed-in routes. Counted per user rather than per IP: the
+ * caller is known, and a dispatch office is many people behind one address.
+ */
+const PER_USER_POLICIES: ReadonlySet<RateLimitPolicyName> = new Set([
+  'messageSend',
+  'callStart',
+]);
 
 const RATE_LIMIT_KEY = 'carebridge:rate-limit';
 
@@ -81,11 +95,14 @@ export class RateLimitGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const policy = this.policyFor(name);
 
-    const ip = request.ip ?? 'unknown-ip';
-    const keys = [`${name}:ip:${ip}`];
-
-    const email = readEmail(request.body);
-    if (email) keys.push(`${name}:email:${email}`);
+    const keys: string[] = [];
+    if (PER_USER_POLICIES.has(name) && request.userId) {
+      keys.push(`${name}:user:${request.userId}`);
+    } else {
+      keys.push(`${name}:ip:${request.ip ?? 'unknown-ip'}`);
+      const email = readEmail(request.body);
+      if (email) keys.push(`${name}:email:${email}`);
+    }
 
     // Every key is consumed, not just up to the first refusal: a caller who
     // has exhausted one dimension must still count against the other, or the
@@ -120,6 +137,13 @@ export class RateLimitGuard implements CanActivate {
         return {
           limit: this.config.TOKEN_GUESS_MAX_ATTEMPTS,
           windowMs: minutes(this.config.TOKEN_GUESS_WINDOW_MINUTES),
+        };
+      case 'messageSend':
+        return { limit: this.config.MESSAGE_SEND_MAX_PER_MINUTE, windowMs: minutes(1) };
+      case 'callStart':
+        return {
+          limit: this.config.CALL_START_MAX_ATTEMPTS,
+          windowMs: minutes(this.config.CALL_START_WINDOW_MINUTES),
         };
     }
   }

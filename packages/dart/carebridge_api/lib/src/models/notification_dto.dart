@@ -16,6 +16,7 @@ class NotificationDto {
     this.readAt,
     this.rideId,
     this.appointmentId,
+    this.conversationId,
   });
 
   final String id;
@@ -36,6 +37,9 @@ class NotificationDto {
 
   final String? appointmentId;
 
+  /// The thread a message or missed-call notification opens.
+  final String? conversationId;
+
   factory NotificationDto.fromJson(Map<String, dynamic> json) =>
       NotificationDto(
         id: json['id'] as String,
@@ -48,6 +52,7 @@ class NotificationDto {
             : DateTime.parse(json['readAt'] as String),
         rideId: json['rideId'] as String?,
         appointmentId: json['appointmentId'] as String?,
+        conversationId: json['conversationId'] as String?,
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -59,5 +64,6 @@ class NotificationDto {
     if (readAt != null) 'readAt': readAt?.toIso8601String(),
     if (rideId != null) 'rideId': rideId,
     if (appointmentId != null) 'appointmentId': appointmentId,
+    if (conversationId != null) 'conversationId': conversationId,
   };
 }

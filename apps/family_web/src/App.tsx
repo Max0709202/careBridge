@@ -1,5 +1,5 @@
 import { Bell, CalendarDays, Compass, House, Settings } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
+import { useCallback, useEffect, type ReactNode } from 'react';
 import {
   Navigate,
   NavLink,
@@ -35,13 +35,20 @@ import { NotificationPreferencesScreen } from './screens/settings/NotificationPr
 import { PlanScreen } from './screens/settings/PlanScreen';
 import { SettingsScreen } from './screens/settings/SettingsScreen';
 import { TwoFactorScreen } from './screens/settings/TwoFactorScreen';
+import { MessagingProvider } from './messaging/react';
+import type { MessagingStore } from './messaging/store';
+import { CallSettingsScreen } from './screens/messages/CallSettingsScreen';
+import { ConversationScreen } from './screens/messages/ConversationScreen';
+import { IncomingCallBanner } from './screens/messages/IncomingCallBanner';
 
 /**
  * The route table — the same locations as lib/app/router.dart, so a link that
  * works in one app works in the other.
  */
-export function App() {
+export function App({ messaging }: { messaging: MessagingStore }) {
   const state = useCare();
+  const navigate = useNavigate();
+  const openThread = useCallback((id: string) => navigate(`/messages/${id}`), [navigate]);
 
   // Simplified mode raises the text floor for the whole document.
   useEffect(() => {
@@ -49,7 +56,9 @@ export function App() {
   }, [state.simplifiedMode]);
 
   return (
-    <Routes>
+    <MessagingProvider store={messaging} active={isSignedIn(state)} openThread={openThread}>
+      <IncomingCallBanner />
+      <Routes>
       <Route element={<SignedOutOnly />}>
         <Route path="/sign-in" element={<SignInScreen />} />
         <Route path="/register" element={<RegisterScreen />} />
@@ -75,6 +84,7 @@ export function App() {
           <Route path="/settings/security/delete" element={<DeleteAccountScreen />} />
           <Route path="/settings/notifications" element={<NotificationPreferencesScreen />} />
           <Route path="/settings/plan" element={<PlanScreen />} />
+          <Route path="/settings/calls" element={<CallSettingsScreen />} />
         </Route>
 
         {/* Full-screen: tracking and forms get the whole screen, no navigation bar. */}
@@ -85,10 +95,12 @@ export function App() {
         <Route path="/patients/:id/edit" element={<PatientFormScreen />} />
         <Route path="/rides/:id" element={<RideDetailScreen />} />
         <Route path="/rides/:id/track" element={<TrackingScreen />} />
+        <Route path="/messages/:conversationId" element={<ConversationScreen />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </MessagingProvider>
   );
 }
 

@@ -5,6 +5,7 @@ import {
   ChevronRight,
   FolderOpen,
   LogOut,
+  MessageSquare,
   Play,
   RefreshCw,
   CircleStop,
@@ -18,6 +19,7 @@ import { placeOneLine, vehicleDescription, type DriverProfile, type Job } from '
 import { driverLabel } from '../domain/rideStatus';
 import { useDriver, useStore } from '../state/context';
 import { formatTime } from './format';
+import { useInbox } from '../messaging/react';
 
 /**
  * The shift, and what is on it: are you working, and what is next. Read in a
@@ -28,6 +30,7 @@ export function TodayScreen() {
   const { profile } = useDriver();
   const navigate = useNavigate();
   const { run, busy } = useRun();
+  const { unread } = useInbox();
 
   return (
     <Page
@@ -39,6 +42,18 @@ export function TodayScreen() {
             label="Refresh"
             onClick={() => void store.refreshAll()}
           />
+          <span className="badged">
+            <IconButton
+              icon={MessageSquare}
+              label={unread > 0 ? `Messages, ${unread} unread` : 'Messages'}
+              onClick={() => navigate('/messages')}
+            />
+            {unread > 0 && (
+              <span className="count-badge on-icon" aria-hidden>
+                {unread > 99 ? '99+' : unread}
+              </span>
+            )}
+          </span>
           <IconButton icon={FolderOpen} label="Your paperwork" onClick={() => navigate('/documents')} />
           <IconButton
             icon={LogOut}

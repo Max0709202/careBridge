@@ -108,6 +108,9 @@ model User {
   refundsRequested        Refund[]                 @relation("RefundRequester")
   flagsChanged            FeatureFlag[]            @relation("FlagEditor")
   caregiverProfile        Caregiver?               @relation("CaregiverAccount")
+  messagesSent            Message[]
+  conversationReads       ConversationReadState[]
+  callsStarted            CallSession[]
   bookingsRequested       CaregiverBooking[]       @relation("BookingRequester")
   reviewsWritten          CaregiverReview[]        @relation("ReviewAuthor")
   disputesRaised          BookingDispute[]         @relation("DisputeRaiser")
@@ -160,6 +163,8 @@ model Organization {
   clinics        Clinic[]
   billingAccount BillingAccount?
   settledRides   Ride[]
+  conversations  Conversation[]
+  callSessions   CallSession[]
 
   @@map("organizations")
 }
@@ -428,6 +433,7 @@ model Patient {
   rides             Ride[]
   invitations       PatientInvitation[]
   careBookings      CaregiverBooking[]
+  conversations     Conversation[]
 
   @@index([orphanedAt])
   @@map("patients")
@@ -807,13 +813,15 @@ model Driver {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  organization Organization      @relation(fields: [organizationId], references: [id])
-  vehicle      Vehicle           @relation(fields: [vehicleId], references: [id])
-  approvedBy   User?             @relation("DriverApprover", fields: [approvedByUserId], references: [id])
-  user         User?             @relation("DriverAccount", fields: [userId], references: [id])
-  rides        Ride[]
-  seatChanges  SeatLedgerEntry[]
-  documents    DriverDocument[]
+  organization      Organization      @relation(fields: [organizationId], references: [id])
+  vehicle           Vehicle           @relation(fields: [vehicleId], references: [id])
+  approvedBy        User?             @relation("DriverApprover", fields: [approvedByUserId], references: [id])
+  user              User?             @relation("DriverAccount", fields: [userId], references: [id])
+  rides             Ride[]
+  seatChanges       SeatLedgerEntry[]
+  documents         DriverDocument[]
+  conversations     Conversation[]    @relation("ConversationDriver")
+  peerConversations Conversation[]    @relation("ConversationPeerDriver")
 
   @@index([organizationId, status])
   /// The claim lookup. Partial in spirit — most rows have no invited address —
@@ -1023,6 +1031,8 @@ model Ride {
   events          RideEvent[]
   history         RideStatusHistory[]
   locationSamples RideLocationSample[]
+  conversations   Conversation[]
+  calls           CallSession[]
 
   @@index([patientId])
   @@index([appointmentId])
@@ -1097,6 +1107,176 @@ model RideLocationSample {
   @@map("ride_location_samples")
 }
 
+// ─── messaging and calls ─────────────────────────────────────────────────────
+
+/// Who a thread is between. The rules for each are in
+/// `src/domain/conversation-access.ts`; ADR-0014 says why there is no
+/// participants table.
+enum ConversationKind {
+  /// An operator's dispatchers and a patient's family circle.
+  dispatchFamily
+  /// An operator's dispatchers and one of its drivers.
+  dispatchDriver
+  /// Two drivers at the same operator.
+  driverDriver
+  /// Every approved driver at an operator, and its dispatchers.
+  operatorDrivers
+}
+
+/// A thread. Membership is **derived, not stored**: who may read it is worked
+/// out on every request from the same edges the rest of the system uses —
+/// `PatientAccess`, `OrganizationMembership`, `Ride.driverId`. So revoking a
+/// grant, offboarding a dispatcher or reassigning a ride takes someone out of
+/// the conversation with no second list to keep in step.
+model Conversation {
+  id             String           @id @default(uuid())
+  kind           ConversationKind
+  organizationId String
+
+  /// `dispatchFamily`.
+  patientId String?
+
+  /// `dispatchDriver`: the driver. `driverDriver`: the lower of the two ids,
+  /// so a pair has one thread whichever of them started it.
+  driverId     String?
+  /// `driverDriver`: the higher of the two ids.
+  peerDriverId String?
+
+  /// The trip this thread is about, or null for a general one. A ride id is
+  /// never a capability here either: a driver reaches a ride's thread while
+  /// the ride is theirs, and not after it is reassigned.
+  rideId String?
+
+  /// Deterministic from the fields above (`conversationSubjectKey`). Unique,
+  /// which makes find-or-create a single upsert: two people opening the same
+  /// thread at the same moment get one thread, not two.
+  subjectKey String @unique
+
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  organization  Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  patient       Patient?                @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  driver        Driver?                 @relation("ConversationDriver", fields: [driverId], references: [id], onDelete: Cascade)
+  peerDriver    Driver?                 @relation("ConversationPeerDriver", fields: [peerDriverId], references: [id], onDelete: Cascade)
+  ride          Ride?                   @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  messages      Message[]
+  readStates    ConversationReadState[]
+  calls         CallSession[]
+  notifications Notification[]
+
+  @@index([organizationId, lastMessageAt])
+  @@index([patientId])
+  @@index([driverId])
+  @@index([peerDriverId])
+  @@index([rideId])
+  @@map("conversations")
+}
+
+enum MessageSenderRole {
+  dispatcher
+  family
+  driver
+  /// Written by the server: "Missed call", "Call · 3 min".
+  system
+}
+
+/// Plain text only. No attachments: a photo of a prescription in a chat log is
+/// health information with none of the controls the documents store has.
+model Message {
+  id              String            @id @default(uuid())
+  conversationId  String
+  /// Null for system lines, and after the sender's account is deleted.
+  senderUserId    String?
+  senderRole      MessageSenderRole
+  /// Frozen at send time — "Dispatch · Meridian Transit", "Marcus T.",
+  /// "Sarah (daughter)". A later rename must not rewrite what the other side
+  /// was told at the time, and a deleted account must leave a readable line.
+  senderLabel     String
+  body            String
+  /// Client-generated. Unique per sender, so a resend after a lost response
+  /// finds the message it already sent instead of posting it twice.
+  clientMessageId String
+  createdAt       DateTime          @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User?        @relation(fields: [senderUserId], references: [id], onDelete: SetNull)
+
+  @@unique([senderUserId, clientMessageId])
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+/// How far one person has read one thread. The unread count is the number of
+/// messages after this, not written by them.
+model ConversationReadState {
+  conversationId String
+  userId         String
+  lastReadAt     DateTime
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_read_states")
+}
+
+enum CallStatus {
+  initiating
+  /// The provider is ringing the caller's own phone (click-to-call, leg one).
+  ringingCaller
+  /// The caller answered; the callee's phone is ringing.
+  ringingCallee
+  inProgress
+  completed
+  noAnswer
+  busy
+  failed
+  canceled
+}
+
+enum CallPartyKind {
+  patient
+  familyMember
+  driver
+  dispatch
+}
+
+/// A relay call. **No phone number is stored here, on either side, and no
+/// recording exists.** Numbers are resolved at dial time from the patient,
+/// user or organisation row, so the call log cannot become a directory — and
+/// the whole point of a relay is that neither side learns the other's number.
+model CallSession {
+  id                String        @id @default(uuid())
+  organizationId    String
+  conversationId    String?
+  rideId            String?
+  initiatedByUserId String?
+  callerKind        CallPartyKind
+  calleeKind        CallPartyKind
+  /// The id of whatever `calleeKind` names — patient, user, driver or
+  /// organisation. Never a number.
+  calleeRef         String
+  status            CallStatus    @default(initiating)
+  /// The provider's call id, for matching status callbacks.
+  providerRef       String?       @unique
+
+  startedAt       DateTime  @default(now())
+  answeredAt      DateTime?
+  endedAt         DateTime?
+  durationSeconds Int?
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  ride         Ride?         @relation(fields: [rideId], references: [id], onDelete: SetNull)
+  initiatedBy  User?         @relation(fields: [initiatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, startedAt])
+  @@index([initiatedByUserId, startedAt])
+  @@map("call_sessions")
+}
+
 // ─── notifications ───────────────────────────────────────────────────────────
 
 enum NotificationKind {
@@ -1115,6 +1295,8 @@ enum NotificationKind {
   rideCompleted
   rideCanceled
   accessGranted
+  messageReceived
+  callMissed
 }
 
 enum NotificationChannel {
@@ -1136,10 +1318,23 @@ model Notification {
   rideId        String?
   appointmentId String?
 
-  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  deliveries NotificationDelivery[]
+  /// The thread a message or call notification opens. Also what merges them:
+  /// a recipient with an unread `messageReceived` for a conversation is not
+  /// given a second one, so a busy thread is one notification, not forty.
+  conversationId String?
+
+  /// Which install this belongs to. The same person can be a family member and
+  /// a dispatcher, and "new message from a driver" must reach the console, not
+  /// the phone on the kitchen table — so push is routed by this, and each app
+  /// lists only its own.
+  appTarget AppTarget @default(family)
+
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation?          @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  deliveries   NotificationDelivery[]
 
   @@index([userId, createdAt])
+  @@index([conversationId, userId])
   @@map("notifications")
 }
 

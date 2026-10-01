@@ -168,6 +168,9 @@ importers:
       react-router-dom:
         specifier: ^6.28.0
         version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      socket.io-client:
+        specifier: 4.8.1
+        version: 4.8.1
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.0
@@ -263,6 +266,9 @@ importers:
       react-router-dom:
         specifier: ^6.28.0
         version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      socket.io-client:
+        specifier: 4.8.1
+        version: 4.8.1
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.0

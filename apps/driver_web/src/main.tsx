@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { DriverApi } from './api/driverApi';
 import { BrowserTokenStore } from './api/tokens';
 import { App } from './App';
+import { createMessagingStore } from './messaging/react';
 import { ConfirmProvider, FeedbackProvider } from './components/feedback';
 import { LocationService } from './services/locationService';
 import { BrowserBatterySource, BrowserPositionSource, BrowserScreenKeeper } from './services/positionSource';
@@ -22,6 +23,7 @@ const location = new LocationService({
   screen: new BrowserScreenKeeper(),
 });
 const store = new DriverStore(api, location);
+const messaging = createMessagingStore(api);
 
 const root = createRoot(document.getElementById('root')!);
 
@@ -40,7 +42,7 @@ void store.restoreSession().then(() => {
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <FeedbackProvider>
             <ConfirmProvider>
-              <App />
+              <App messaging={messaging} />
             </ConfirmProvider>
           </FeedbackProvider>
         </BrowserRouter>

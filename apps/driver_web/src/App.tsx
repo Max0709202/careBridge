@@ -1,5 +1,5 @@
 import { Compass } from 'lucide-react';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 
 import { Button, EmptyState, Page } from './components/ui';
@@ -8,6 +8,12 @@ import { JobScreen } from './screens/JobScreen';
 import { SignInScreen } from './screens/SignInScreen';
 import { TodayScreen } from './screens/TodayScreen';
 import { useDriver, useStore } from './state/context';
+import { MessagingProvider } from './messaging/react';
+import type { MessagingStore } from './messaging/store';
+import { CallSettingsScreen } from './screens/messages/CallSettingsScreen';
+import { ConversationScreen } from './screens/messages/ConversationScreen';
+import { IncomingCallBanner } from './screens/messages/IncomingCallBanner';
+import { MessagesScreen } from './screens/messages/MessagesScreen';
 
 /**
  * Three screens and one redirect — the same locations as the Flutter app's
@@ -15,9 +21,11 @@ import { useDriver, useStore } from './state/context';
  * so a driver never sits looking at a list that is empty because the session
  * expired in a car park.
  */
-export function App() {
+export function App({ messaging }: { messaging: MessagingStore }) {
   const store = useStore();
   const { signedIn } = useDriver();
+  const navigate = useNavigate();
+  const openThread = useCallback((id: string) => navigate(`/messages/${id}`), [navigate]);
 
   // A phone that was locked for twenty minutes should not show twenty-minute
   // old work when it comes back: re-read the moment the page is on screen.
@@ -30,16 +38,22 @@ export function App() {
   }, [store]);
 
   return (
-    <Routes>
+    <MessagingProvider store={messaging} active={signedIn} openThread={openThread}>
+      <IncomingCallBanner />
+      <Routes>
       <Route path="/sign-in" element={signedIn ? <Navigate to="/today" replace /> : <SignInScreen />} />
       <Route element={<SignedInOnly />}>
         <Route path="/" element={<Navigate to="/today" replace />} />
         <Route path="/today" element={<TodayScreen />} />
         <Route path="/documents" element={<DocumentsScreen />} />
         <Route path="/job/:rideId" element={<JobScreen />} />
+        <Route path="/messages" element={<MessagesScreen />} />
+        <Route path="/messages/:conversationId" element={<ConversationScreen />} />
+        <Route path="/settings/calls" element={<CallSettingsScreen />} />
       </Route>
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </MessagingProvider>
   );
 }
 

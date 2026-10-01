@@ -1,4 +1,4 @@
-import { Bell, ChevronRight, Clock, CreditCard, LogOut, ShieldCheck, UserPlus } from 'lucide-react';
+import { Bell, ChevronRight, Clock, CreditCard, LogOut, Phone, ShieldCheck, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useConfirm, useFeedback } from '../../components/feedback';
@@ -94,6 +94,12 @@ export function SettingsScreen() {
               title="Notifications"
               subtitle="Which events reach you by email and push"
               onClick={() => navigate('/settings/notifications')}
+            />
+            <NavTile
+              icon={Phone}
+              title="Calls and messages"
+              subtitle="Your number for relay calls, and alerts in this browser"
+              onClick={() => navigate('/settings/calls')}
             />
           </AppCard>
         </div>

@@ -60,6 +60,7 @@ import {
   NotificationPreferenceDto,
   RegisterDeviceDto,
   SetNotificationPreferenceDto,
+  WebPushKeyDto,
 } from './dto/notification.dto';
 
 /**
@@ -107,6 +108,17 @@ export class MeController {
   }
 
   // ─── devices ────────────────────────────────────────────────────────────
+
+  @Get('devices/web-push-key')
+  @ApiOkResponse({ type: WebPushKeyDto })
+  @ApiOperation({
+    summary: 'The key a browser subscribes to push with',
+    description:
+      'Null where web push is not configured — the web apps then do not offer background notifications. Register the resulting subscription with POST /me/devices, `platform: web`, the subscription JSON as `token`.',
+  })
+  webPushKey(): WebPushKeyDto {
+    return { publicKey: this.devices.webPushKey() };
+  }
 
   @Get('devices')
   @ApiOkResponse({ type: [DeviceTokenDto] })

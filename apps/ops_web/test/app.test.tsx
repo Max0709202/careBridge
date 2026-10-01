@@ -13,6 +13,7 @@ import { ConfirmProvider, FeedbackProvider } from '../src/components/feedback';
 import { StoreProvider } from '../src/state/context';
 import { OpsStore } from '../src/state/opsStore';
 import { fakeServer, type Handler } from './support/fakeServer';
+import { fakeMessaging } from './support/fakeMessaging';
 import {
   account,
   auditEntry,
@@ -45,6 +46,7 @@ async function renderApp(
     'GET /organizations/:id/billing': () => ({ body: account() }),
     'GET /organizations/:id/billing/invoices': () => ({ body: [invoice()] }),
     'GET /billing/plans': () => ({ body: [plan()] }),
+    'GET /conversations': () => ({ body: [] }),
     ...options.routes,
   });
   const tokens = new InMemoryTokenStore();
@@ -52,21 +54,23 @@ async function renderApp(
   const organizationId = options.organizationId === undefined ? 'org-1' : options.organizationId;
   if (organizationId) window.sessionStorage.setItem('carebridge.ops.organizationId', organizationId);
 
-  const store = new OpsStore(new OpsApi(tokens, BASE, server.fetchImpl), window.sessionStorage);
+  const api = new OpsApi(tokens, BASE, server.fetchImpl);
+  const store = new OpsStore(api, window.sessionStorage);
   store.restoreSession();
+  const messaging = fakeMessaging(api);
 
   render(
     <StoreProvider store={store}>
       <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <FeedbackProvider>
           <ConfirmProvider>
-            <App />
+            <App messaging={messaging.store} />
           </ConfirmProvider>
         </FeedbackProvider>
       </MemoryRouter>
     </StoreProvider>,
   );
-  return { ...server, store, tokens };
+  return { ...server, store, tokens, messaging };
 }
 
 afterEach(() => {
@@ -516,5 +520,246 @@ describe('signing out', () => {
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy();
     expect(tokens.read()).toBeNull();
     expect(window.sessionStorage.getItem('carebridge.ops.organizationId')).toBeNull();
+  });
+});
+
+// ─── messaging ──────────────────────────────────────────────────────────────
+
+function conversationWire(over: Record<string, unknown> = {}) {
+  return {
+    id: 'c-1',
+    kind: 'dispatchFamily',
+    organizationId: 'org-1',
+    organizationName: 'Meridian Transit',
+    patientId: 'p-1',
+    driverId: null,
+    peerDriverId: null,
+    rideId: 'ride-1',
+    title: 'Eleanor · family',
+    myRole: 'dispatcher',
+    canPost: true,
+    ride: {
+      id: 'ride-1',
+      status: 'awaitingAssignment',
+      direction: 'outbound',
+      scheduledPickupAt: '2026-10-01T09:30:00Z',
+      patientName: 'Eleanor',
+    },
+    lastMessage: null,
+    lastMessageAt: '2026-10-01T09:00:00Z',
+    unreadCount: 0,
+    ...over,
+  };
+}
+
+function messageWire(over: Record<string, unknown> = {}) {
+  return {
+    id: 'm-1',
+    conversationId: 'c-1',
+    senderRole: 'family',
+    senderLabel: 'Sarah (daughter)',
+    body: 'She will wait inside.',
+    createdAt: '2026-10-01T09:00:00Z',
+    clientMessageId: 'family-1',
+    mine: false,
+    ...over,
+  };
+}
+
+describe('messages', () => {
+  it('badges unread conversations for this operator only', async () => {
+    await renderApp('/queue', {
+      routes: {
+        'GET /conversations': () => ({
+          body: [
+            conversationWire({ unreadCount: 2 }),
+            conversationWire({ id: 'c-2', organizationId: 'org-other', unreadCount: 5 }),
+          ],
+        }),
+      },
+    });
+    expect(await screen.findByRole('link', { name: 'Messages, 2 unread' })).toBeTruthy();
+  });
+
+  it('shows a thread with the trip it is about, and sends with a reusable client id', async () => {
+    const { requests } = await renderApp('/messages/c-1', {
+      routes: {
+        'GET /conversations': () => ({ body: [conversationWire({ unreadCount: 1 })] }),
+        'GET /conversations/:id/messages': () => ({ body: { messages: [messageWire()], hasMore: false } }),
+        'POST /conversations/:id/read': () => ({ status: 204 }),
+        'GET /calls/targets': () => ({ body: [] }),
+        'POST /conversations/:id/messages': (r) => ({
+          status: 201,
+          body: messageWire({
+            id: 'm-2',
+            senderRole: 'dispatcher',
+            senderLabel: 'Dana · Dispatch',
+            body: (r.body as { body: string }).body,
+            clientMessageId: (r.body as { clientMessageId: string }).clientMessageId,
+            mine: true,
+          }),
+        }),
+      },
+    });
+
+    expect(await screen.findByText('She will wait inside.')).toBeTruthy();
+    expect(screen.getByRole('note').textContent).toContain('Eleanor');
+    await waitFor(() => expect(requests.some((r) => r.path === '/conversations/c-1/read')).toBe(true));
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Driver is ten minutes away' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(await screen.findByText('Driver is ten minutes away')).toBeTruthy();
+    const sent = requests.find((r) => r.method === 'POST' && r.path === '/conversations/c-1/messages')!;
+    const { clientMessageId } = sent.body as { clientMessageId: string };
+    // The retry key and the message's own id are one and the same.
+    expect(sent.headers['idempotency-key']).toBe(clientMessageId);
+  });
+
+  it('keeps a failed message on screen with a retry that reuses its id', async () => {
+    let attempts = 0;
+    const { requests } = await renderApp('/messages/c-1', {
+      routes: {
+        'GET /conversations': () => ({ body: [conversationWire()] }),
+        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+        'GET /calls/targets': () => ({ body: [] }),
+        'POST /conversations/:id/messages': (r) => {
+          attempts += 1;
+          return attempts === 1
+            ? { status: 500, body: { error: { code: 'internal', message: 'boom' } } }
+            : { status: 201, body: messageWire({ id: 'm-9', mine: true, ...(r.body as object) }) };
+        },
+      },
+    });
+
+    fireEvent.change(await screen.findByLabelText('Message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Not sent — retry/ }));
+
+    await waitFor(() => expect(attempts).toBe(2));
+    const ids = requests
+      .filter((r) => r.method === 'POST' && r.path === '/conversations/c-1/messages')
+      .map((r) => (r.body as { clientMessageId: string }).clientMessageId);
+    expect(new Set(ids).size).toBe(1);
+  });
+
+  it('appends a message pushed over the socket, and counts it unread elsewhere', async () => {
+    const { messaging } = await renderApp('/queue', {
+      routes: { 'GET /conversations': () => ({ body: [conversationWire()] }) },
+    });
+    await screen.findByRole('link', { name: 'Messages' });
+
+    act(() => {
+      messaging.socket.push({
+        type: 'message',
+        conversationId: 'c-1',
+        rideId: 'ride-1',
+        message: {
+          id: 'm-5',
+          conversationId: 'c-1',
+          senderRole: 'family',
+          senderLabel: 'Sarah (daughter)',
+          body: 'Running late',
+          createdAt: new Date('2026-10-01T09:05:00Z'),
+          clientMessageId: 'f-5',
+          mine: false,
+        },
+      });
+    });
+
+    expect(await screen.findByRole('link', { name: 'Messages, 1 unread' })).toBeTruthy();
+  });
+
+  it('opens the family thread for a queued trip', async () => {
+    const { requests } = await renderApp('/queue', {
+      routes: {
+        'GET /organizations/:id/dispatch/queue': () => ({
+          body: queue([queueItem({ candidates: [candidate()] })]),
+        }),
+        'POST /conversations': () => ({ body: conversationWire({ lastMessageAt: null }) }),
+        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+        'GET /calls/targets': () => ({ body: [] }),
+      },
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: /Message .*family about this trip/ }));
+    expect(await screen.findByText('No messages yet. Say hello.')).toBeTruthy();
+    const opened = requests.find((r) => r.method === 'POST' && r.path === '/conversations');
+    expect(opened?.body).toMatchObject({ kind: 'dispatchFamily', organizationId: 'org-1' });
+  });
+
+  it('places a relay call and shows its progress', async () => {
+    const { requests, messaging } = await renderApp('/messages/c-1', {
+      routes: {
+        'GET /conversations': () => ({ body: [conversationWire()] }),
+        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+        'GET /calls/targets': () => ({
+          body: [
+            { kind: 'patient', id: 'p-1', label: 'Eleanor (patient)', available: true, unavailableReason: null },
+            {
+              kind: 'familyMember',
+              id: 'u-1',
+              label: 'Sarah (daughter)',
+              available: false,
+              unavailableReason: 'No phone number on file.',
+            },
+          ],
+        }),
+        'POST /calls': () => ({
+          status: 201,
+          body: {
+            id: 'call-1',
+            status: 'initiating',
+            calleeKind: 'patient',
+            calleeLabel: 'Eleanor (patient)',
+            conversationId: 'c-1',
+            rideId: 'ride-1',
+            startedAt: '2026-10-01T09:00:00Z',
+            answeredAt: null,
+            endedAt: null,
+            durationSeconds: null,
+          },
+        }),
+      },
+    });
+
+    expect((await screen.findByRole('button', { name: 'Call Sarah (daughter)' })).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Call Eleanor (patient)' }));
+    expect(await screen.findByText(/Your phone is ringing/)).toBeTruthy();
+    expect(requests.find((r) => r.path === '/calls')?.body).toEqual({
+      conversationId: 'c-1',
+      callee: { kind: 'patient', id: 'p-1' },
+    });
+
+    act(() => {
+      messaging.socket.push({
+        type: 'call',
+        call: {
+          id: 'call-1',
+          status: 'inProgress',
+          calleeKind: 'patient',
+          calleeLabel: 'Eleanor (patient)',
+          conversationId: 'c-1',
+          rideId: 'ride-1',
+          startedAt: new Date('2026-10-01T09:00:00Z'),
+          answeredAt: new Date('2026-10-01T09:00:20Z'),
+          endedAt: null,
+          durationSeconds: null,
+        },
+      });
+    });
+    expect(await screen.findByText('Connected to Eleanor (patient)')).toBeTruthy();
+  });
+
+  it('says who is calling when the phone rings with a relay call', async () => {
+    const { messaging } = await renderApp('/queue');
+    await screen.findByRole('heading', { name: 'Queue' });
+    act(() => {
+      messaging.socket.push({
+        type: 'incoming',
+        incoming: { callId: 'call-2', fromLabel: 'Marcus T.', conversationId: null, rideId: null },
+      });
+    });
+    expect((await screen.findByRole('alert')).textContent).toContain('Marcus T. is calling your phone now');
   });
 });

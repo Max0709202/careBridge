@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
+import { AccessQueries } from '../../common/access.queries';
 import { isTerminalRideStatus } from '../../domain/ride-status';
 
 /**
@@ -30,7 +31,10 @@ import { isTerminalRideStatus } from '../../domain/ride-status';
  */
 @Injectable()
 export class TrackingAuthorizer {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AccessQueries,
+  ) {}
 
   /**
    * Whether `userId` may currently receive positions for `rideId`.
@@ -64,60 +68,13 @@ export class TrackingAuthorizer {
     // completion and are rejected thereafter" — and reading is the same rule.
     if (isTerminalRideStatus(ride.status)) return false;
 
-    if (await this.hasFamilyAccess(userId, ride.patientId)) return true;
+    if (await this.access.hasFamilyAccess(userId, ride.patientId)) return true;
 
     const organizationId = ride.driver?.organizationId;
     if (!organizationId) return false;
 
-    return this.dispatchesFor(userId, organizationId);
-  }
-
-  /**
-   * An active grant, with the permission that governs seeing this patient.
-   *
-   * `revokedAt` is part of the query rather than checked afterwards. A grant
-   * read without it is the classic bug in this shape: removing somebody's
-   * access appears to work everywhere it is displayed and changes nothing
-   * about what they can still receive.
-   */
-  private async hasFamilyAccess(userId: string, patientId: string): Promise<boolean> {
-    const grant = await this.prisma.patientAccess.findFirst({
-      where: {
-        userId,
-        patientId,
-        revokedAt: null,
-        permissions: { has: 'viewProfile' },
-      },
-      select: { id: true },
-    });
-
-    return grant !== null;
-  }
-
-  /**
-   * A live membership at the operator, in a role that dispatches.
-   *
-   * `member` is excluded on purpose: holding a membership is not the same as
-   * having a reason to watch somebody's grandmother travel, and the console
-   * refuses that role at the door for the same reason.
-   */
-  private async dispatchesFor(
-    userId: string,
-    organizationId: string,
-  ): Promise<boolean> {
-    const membership = await this.prisma.organizationMembership.findFirst({
-      where: {
-        userId,
-        organizationId,
-        // Revocation is in the query, exactly as it is for the family grant
-        // above. An offboarded dispatcher keeping a live map of somebody's
-        // grandmother is the same defect wearing a different hat.
-        revokedAt: null,
-        role: { in: ['owner', 'admin', 'dispatcher'] },
-      },
-      select: { id: true },
-    });
-
-    return membership !== null;
+    // `member` is excluded on purpose: holding a membership is not the same as
+    // having a reason to watch somebody's grandmother travel.
+    return this.access.dispatchesFor(userId, organizationId);
   }
 }

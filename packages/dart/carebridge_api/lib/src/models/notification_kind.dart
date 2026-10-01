@@ -23,7 +23,9 @@ enum NotificationKind {
   rideDelayed('rideDelayed'),
   rideCompleted('rideCompleted'),
   rideCanceled('rideCanceled'),
-  accessGranted('accessGranted');
+  accessGranted('accessGranted'),
+  messageReceived('messageReceived'),
+  callMissed('callMissed');
 
   const NotificationKind(this.wireName);
 

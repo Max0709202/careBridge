@@ -841,6 +841,18 @@ export class AccountDeletionService {
       data: { invitedByUserId: tombstoneId },
     });
 
+    // Messages: the words stay in the other side's record; the name on them
+    // does not. The label is frozen at send time, so it is overwritten as well
+    // as repointed — otherwise every message would still say "Sarah (daughter)".
+    await tx.message.updateMany({
+      where: { senderUserId: userId },
+      data: { senderUserId: tombstoneId, senderLabel: 'Former member' },
+    });
+    await tx.callSession.updateMany({
+      where: { initiatedByUserId: userId },
+      data: { initiatedByUserId: tombstoneId },
+    });
+
     await this.anonymiseDriverProfile(tx, userId, tombstoneId, now);
   }
 
@@ -907,6 +919,7 @@ export class AccountDeletionService {
     await tx.deviceToken.deleteMany({ where: { userId } });
     await tx.notificationPreference.deleteMany({ where: { userId } });
     await tx.notification.deleteMany({ where: { userId } });
+    await tx.conversationReadState.deleteMany({ where: { userId } });
     await tx.idempotencyRecord.deleteMany({ where: { userId } });
     // Last of the deletes: `patientsLosingTheirLastGrant` has already been
     // asked, and after this the question cannot be answered.

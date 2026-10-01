@@ -1,4 +1,6 @@
 import {
+  MessageSquare,
+  PhoneMissed,
   AlarmClock,
   Armchair,
   BellOff,
@@ -24,6 +26,7 @@ import { formatFreshness } from '../../core/formatting';
 import { notificationIsUrgent, type AppNotification, type NotificationKind } from '../../domain/models';
 import { notificationsNewestFirst, unreadNotificationCount } from '../../state/careState';
 import { useCare, useNow, useStore } from '../../state/context';
+import { ConversationList } from '../messages/ConversationList';
 
 const kindIcon: Record<NotificationKind, LucideIcon> = {
   appointmentCreated: Calendar,
@@ -41,6 +44,8 @@ const kindIcon: Record<NotificationKind, LucideIcon> = {
   rideCompleted: CircleCheckBig,
   rideCanceled: CircleX,
   accessGranted: UserPlus,
+  messageReceived: MessageSquare,
+  callMissed: PhoneMissed,
 };
 
 export function NotificationsScreen() {
@@ -70,6 +75,7 @@ export function NotificationsScreen() {
         )
       }
     >
+      <ConversationList />
       {notifications.length === 0 ? (
         <EmptyState
           fill
@@ -107,7 +113,8 @@ function NotificationTile({ notification, now }: { notification: AppNotification
         // Navigation does not wait on the read receipt: opening the update is
         // what was asked for; marking it read is bookkeeping.
         void store.markNotificationRead(notification.id).catch(() => undefined);
-        if (notification.rideId) navigate(`/rides/${notification.rideId}`);
+        if (notification.conversationId) navigate(`/messages/${notification.conversationId}`);
+        else if (notification.rideId) navigate(`/rides/${notification.rideId}`);
         else if (notification.appointmentId) navigate(`/appointments/${notification.appointmentId}`);
       }}
     >

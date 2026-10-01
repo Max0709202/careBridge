@@ -75,7 +75,9 @@ export class CareService {
         orderBy: { scheduledPickupAt: 'asc' },
       }),
       this.prisma.notification.findMany({
-        where: { userId },
+        // The family app's own. A person who also dispatches or drives has
+        // notifications meant for those apps, and they do not belong here.
+        where: { userId, appTarget: 'family' },
         orderBy: { createdAt: 'desc' },
         take: 200,
       }),

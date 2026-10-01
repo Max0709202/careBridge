@@ -6,9 +6,12 @@ import {
   type OnModuleInit,
 } from '@nestjs/common';
 
+import type { AppTarget } from '@prisma/client';
+
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { MAIL, type MailPort } from '../../infrastructure/mail/mail.port';
-import { PUSH, type PushPort } from '../../infrastructure/push/push.port';
+import { PUSH, type PushPort, type PushResult } from '../../infrastructure/push/push.port';
+import { WEB_PUSH, type WebPushPort } from '../../infrastructure/push/web-push/web-push.port';
 import { QUEUE, QUEUES, type QueuePort } from '../../infrastructure/queue/queue.port';
 import { APP_CONFIG } from '../../common/config.token';
 import type { AppConfig } from '../../common/config';
@@ -79,6 +82,7 @@ export class NotificationDispatchService
     @Inject(QUEUE) private readonly queue: QueuePort,
     @Inject(MAIL) private readonly mail: MailPort,
     @Inject(PUSH) private readonly push: PushPort,
+    @Inject(WEB_PUSH) private readonly webPush: WebPushPort,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -162,6 +166,7 @@ export class NotificationDispatchService
     const notification = await this.prisma.notification.findUnique({
       where: { id: notificationId },
       include: { user: { select: { id: true, email: true } } },
+      // `appTarget` and `conversationId` come with the row itself.
     });
 
     if (!notification) {
@@ -202,6 +207,7 @@ export class NotificationDispatchService
             ? await this.sendEmail(notification.user.email, notification.title)
             : await this.sendPush(
                 notification.user.id,
+                notification.appTarget,
                 notification.title,
                 notification.body,
                 {
@@ -209,6 +215,9 @@ export class NotificationDispatchService
                   ...(notification.rideId ? { rideId: notification.rideId } : {}),
                   ...(notification.appointmentId
                     ? { appointmentId: notification.appointmentId }
+                    : {}),
+                  ...(notification.conversationId
+                    ? { conversationId: notification.conversationId }
                     : {}),
                 },
               );
@@ -236,14 +245,16 @@ export class NotificationDispatchService
   }
 
   /**
-   * Pushes to the family app's devices only.
+   * Pushes to the devices of the one app the notification is for.
    *
    * The driver app is a separate install (D4) with a separate token set, and a
    * family notification arriving on a driver's phone would be both confusing
-   * and a disclosure.
+   * and a disclosure. Messages are the first notifications addressed to the
+   * driver app and the console, which is why the target is on the row.
    */
   private async sendPush(
     userId: string,
+    appTarget: AppTarget,
     title: string,
     body: string,
     data: Record<string, string>,
@@ -253,9 +264,9 @@ export class NotificationDispatchService
         userId,
         revokedAt: null,
         invalidatedAt: null,
-        appTarget: 'family',
+        appTarget,
       },
-      select: { token: true },
+      select: { token: true, platform: true },
     });
 
     // No device is not a successful send. Recording it as `sent` would answer
@@ -266,12 +277,27 @@ export class NotificationDispatchService
       return { status: 'suppressed', failureReason: 'no registered device' };
     }
 
-    const result = await this.push.send({
-      tokens: devices.map((device) => device.token),
-      title,
-      body,
-      data,
-    });
+    // Browsers (Web Push) and phones (FCM) are reached differently, so the
+    // devices are split by platform and the results put back together.
+    const web = devices.filter((d) => d.platform === 'web').map((d) => d.token);
+    const native = devices.filter((d) => d.platform !== 'web').map((d) => d.token);
+    const message = { title, body, data };
+    const results: PushResult[] = await Promise.all([
+      native.length > 0 ? this.push.send({ ...message, tokens: native }) : { sent: 0, invalidTokens: [] },
+      web.length > 0 && this.webPush.publicKey
+        ? this.webPush.send({ ...message, tokens: web })
+        : { sent: 0, invalidTokens: [] },
+    ]);
+    const result: PushResult = {
+      sent: results.reduce((n, r) => n + r.sent, 0),
+      invalidTokens: results.flatMap((r) => r.invalidTokens),
+    };
+
+    // Only browsers registered, and web push is not configured: nothing could
+    // have been sent, and that is a setting, not a failure.
+    if (native.length === 0 && !this.webPush.publicKey) {
+      return { status: 'suppressed', failureReason: 'web push not configured' };
+    }
 
     if (result.invalidTokens.length > 0) {
       // Stop paying to push to apps that have been uninstalled.

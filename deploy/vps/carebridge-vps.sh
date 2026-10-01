@@ -207,6 +207,17 @@ MAIL_FROM="$from"
 
 PUSH_DRIVER=none
 
+# Relay calls: off until a Twilio account is supplied (ADR-0014). The webhook
+# base is the family origin, which already proxies /api to the API.
+TELEPHONY_DRIVER=$( [ -n "${TWILIO_ACCOUNT_SID:-}" ] && echo twilio || echo none )
+TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+TELEPHONY_RELAY_NUMBER=${TELEPHONY_RELAY_NUMBER:-+15550100000}
+TELEPHONY_WEBHOOK_BASE_URL=$(origin_family)/api/v1
+
+# Web Push for the browser apps, when keys are supplied.
+WEB_PUSH_VAPID_PUBLIC_KEY=${WEB_PUSH_VAPID_PUBLIC_KEY:-}
+WEB_PUSH_SUBJECT=mailto:no-reply@$MAIL_DOMAIN
+
 MAPS_DRIVER=osm
 MAPS_CONTACT=${MAPS_CONTACT:-no-reply@$MAIL_DOMAIN}
 
@@ -225,6 +236,8 @@ EOF
   cat >>"$CB_HOME/api.env" <<EOF
 JWT_SECRET=$JWT_SECRET
 MFA_SECRET_KEY=$MFA_SECRET_KEY
+TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+WEB_PUSH_VAPID_PRIVATE_KEY=${WEB_PUSH_VAPID_PRIVATE_KEY:-}
 EOF
 }
 

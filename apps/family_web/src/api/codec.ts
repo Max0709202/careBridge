@@ -296,6 +296,7 @@ function notificationFromJson(json: S['NotificationDto']): AppNotification {
     readAt: dateOrNull(json.readAt),
     rideId: json.rideId ?? null,
     appointmentId: json.appointmentId ?? null,
+    conversationId: json.conversationId ?? null,
   };
 }
 

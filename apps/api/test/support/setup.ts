@@ -17,6 +17,10 @@ process.env['DATABASE_URL'] ??=
 process.env['MAIL_DRIVER'] = 'log';
 process.env['PUSH_DRIVER'] = 'log';
 process.env['MAPS_DRIVER'] = 'deterministic';
+// Calls walk through their states on timers, quickly. calls.e2e-spec.ts swaps
+// in the Twilio adapter (with the network stubbed) for its webhook tests.
+process.env['TELEPHONY_DRIVER'] ??= 'log';
+process.env['TELEPHONY_LOG_STEP_MS'] ??= '25';
 
 // Redis is used when it is offered and skipped when it is not.
 //
@@ -53,6 +57,8 @@ process.env['LOGIN_MAX_ATTEMPTS'] ??= '10000';
 process.env['SIGN_IN_IP_MAX_ATTEMPTS'] ??= '10000';
 process.env['EMAIL_DISPATCH_MAX_ATTEMPTS'] ??= '10000';
 process.env['TOKEN_GUESS_MAX_ATTEMPTS'] ??= '10000';
+process.env['MESSAGE_SEND_MAX_PER_MINUTE'] ??= '10000';
+process.env['CALL_START_MAX_ATTEMPTS'] ??= '10000';
 
 // Short, so an expiry test does not have to wait.
 process.env['PASSWORD_RESET_TTL_MINUTES'] ??= '30';

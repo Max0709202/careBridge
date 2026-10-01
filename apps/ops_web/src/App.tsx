@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { useCallback, useEffect } from 'react';
+import { Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 
 import { LoadingBlock } from './components/ui';
 import { canDispatch } from './domain/models';
@@ -17,6 +17,9 @@ import { RosterScreen } from './screens/RosterScreen';
 import { SeatsScreen } from './screens/SeatsScreen';
 import { SignInScreen } from './screens/SignInScreen';
 import { useOrganizations, useSession, useStore } from './state/context';
+import { MessagingProvider } from './messaging/react';
+import type { MessagingStore } from './messaging/store';
+import { MessagesScreen } from './screens/messages/MessagesScreen';
 
 /**
  * Routes, and the redirects that matter — the same locations as
@@ -29,11 +32,14 @@ import { useOrganizations, useSession, useStore } from './state/context';
  * rendering, so a dispatcher never sits looking at a queue that is empty
  * because they are on the wrong screen.
  */
-export function App() {
+export function App({ messaging }: { messaging: MessagingStore }) {
   const { signedIn, organizationId } = useSession();
+  const navigate = useNavigate();
+  const openThread = useCallback((id: string) => navigate(`/messages/${id}`), [navigate]);
 
   return (
-    <Routes>
+    <MessagingProvider store={messaging} active={signedIn} openThread={openThread}>
+      <Routes>
       <Route
         path="/sign-in"
         element={signedIn ? <Navigate to="/queue" replace /> : <SignInScreen />}
@@ -62,11 +68,14 @@ export function App() {
             <Route path="/fleet" element={<FleetScreen />} />
             <Route path="/seats" element={<SeatsScreen />} />
             <Route path="/billing" element={<BillingScreen />} />
+            <Route path="/messages" element={<MessagesScreen />} />
+            <Route path="/messages/:conversationId" element={<MessagesScreen />} />
           </Route>
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/queue" replace />} />
-    </Routes>
+      </Routes>
+    </MessagingProvider>
   );
 }
 

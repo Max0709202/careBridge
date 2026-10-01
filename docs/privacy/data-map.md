@@ -59,6 +59,8 @@ denylist.
 | Invitation token | SHA-256 digest |
 | TOTP secret | AES-256-GCM, key in Secrets Manager |
 | FCM device token | Plaintext (it is a routing address), never returned by the API |
+| Web Push subscription | Plaintext JSON (endpoint and the browser's public keys — a routing address), never returned by the API |
+| VAPID private key, Twilio auth token | Environment secrets only; never in the database |
 
 ### Audit — *sensitive, append-only, 7-year retention*
 
@@ -68,6 +70,31 @@ agent, and changed **field names**.
 **Never values.** Knowing that a phone number was edited is what an
 investigation needs; storing the old and new number would make the audit log a
 second copy of the data it exists to protect.
+
+### Messages — *highly sensitive*
+
+`messages.body` is free text one person wrote to another about a trip — and
+in this product a trip is a vulnerable person's movements. Treated like
+`mobilityNotes`: on the redaction denylist, never in a notification body, never
+in a push payload. Plain text only; there are no attachments to hold anything
+more ([ADR-0014](../adr/0014-messaging-and-relay-calls.md)).
+
+`senderLabel` is the name the sender was shown under when they wrote ("Sarah
+(daughter)", "Marcus T."), frozen at send time; account deletion overwrites it
+with "Former member" and keeps the words, because they are the other side's
+record too.
+
+Who can read a thread is derived on every request from the patient grant, the
+dispatching membership and the ride's current driver — there is no stored list
+of participants to fall out of date. Kept one year after the last message.
+
+### Relay calls — *operational*
+
+`call_sessions` records who rang whom (by **id**: a patient, user, driver or
+organisation), when, the outcome and the duration. **No phone number is stored
+on either side, and nothing is recorded** — numbers are resolved from the
+patient, user or organisation row at dial time and passed to the telephony
+provider for that call only. Kept one year.
 
 ### Billing — *sensitive*
 
@@ -106,6 +133,8 @@ data.
 | Stripe | For a family: name, email, amount. For an operator: company name, contact email, amount. **No health or ride detail in either case**, and no driver names | PCI SAQ-A via the SDK; deliberately excluded from PHI scope |
 | Google Maps | Address strings and coordinates | **No patient identity is ever sent** — the request carries an address and nothing else |
 | FCM | Device tokens, contentless payloads | The contentless policy limits exposure |
+| Browser push services (Google, Mozilla, Apple, Microsoft) | An encrypted, contentless payload per notification | RFC 8291 encryption — the push service cannot read it; the payload is contentless anyway |
+| Twilio (when `TELEPHONY_DRIVER=twilio`) | The two phone numbers of a relay call, at dial time; call metadata | No recording is ever requested; no name or ride detail is sent — the call carries numbers and nothing else. BAA required before pilot |
 | SES / SMTP | Email addresses, contentless bodies | BAA; contentless policy |
 
 Three emails are the bounded exception to "contentless": verification, password

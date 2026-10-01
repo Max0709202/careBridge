@@ -788,3 +788,143 @@ button.chip[aria-pressed='true'] { background: var(--secondary-container); color
 }
 
 .mb-md { margin-bottom: var(--space-md); }
+
+/* ─── messaging and calls (src/messaging, src/screens/messages) ───────────── */
+
+.count-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: var(--error);
+  color: var(--on-error);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.conversation-tile {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--outline-variant);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.conversation-tile:last-child { border-bottom: 0; }
+.conversation-preview { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 160px);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+.chat-ride {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--info-container);
+  color: var(--info);
+}
+.chat-messages {
+  flex: 1;
+  margin: 0;
+  padding: var(--space-md);
+  list-style: none;
+  overflow-y: auto;
+  max-height: calc(100dvh - 300px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.chat-day, .chat-system, .chat-empty, .chat-older {
+  align-self: center;
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--on-surface-variant);
+  font-size: 0.875rem;
+  text-align: center;
+}
+.chat-system { border-radius: var(--radius-control); background: var(--surface-high); }
+.chat-empty { margin: auto; max-width: 32ch; }
+.chat-message { display: flex; flex-direction: column; align-items: flex-start; max-width: 85%; }
+.chat-message.mine { align-self: flex-end; align-items: flex-end; }
+.chat-sender { margin: var(--space-sm) 0 2px; font-size: 0.875rem; font-weight: 600; color: var(--on-surface-variant); }
+.chat-bubble {
+  padding: 10px 14px;
+  border-radius: 18px 18px 18px 6px;
+  background: var(--surface-high);
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.chat-message.mine .chat-bubble { border-radius: 18px 18px 6px 18px; background: var(--primary); color: var(--on-primary); }
+.chat-message.pending .chat-bubble { opacity: 0.7; }
+.chat-message.failed .chat-bubble { outline: 2px solid var(--error); }
+.chat-meta { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 0.8125rem; color: var(--on-surface-variant); }
+.chat-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--min-target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--error);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chat-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-top: 1px solid var(--outline-variant);
+}
+.chat-composer textarea {
+  flex: 1;
+  min-height: 48px;
+  max-height: 160px;
+  padding: 12px var(--space-md);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-control);
+  background: var(--input-fill);
+  color: var(--on-surface);
+  font: inherit;
+  font-size: 1.0625rem;
+  resize: vertical;
+}
+.chat-closed { padding: var(--space-md); margin: 0; border-top: 1px solid var(--outline-variant); text-align: center; }
+
+.call-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--outline-variant);
+}
+.call-bar.compact { padding: 0; border-bottom: 0; }
+.call-bar p { flex-basis: 100%; margin: 0; }
+.call-bar.live { background: var(--positive-container); color: var(--positive); font-weight: 600; }
+
+.incoming-call {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--positive-container);
+  color: var(--positive);
+  font-size: 1.0625rem;
+}

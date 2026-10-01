@@ -14,3 +14,8 @@ export function formatCountdown(seconds: number): string {
   const s = Math.max(0, seconds);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
+
+/** "Wed 1 Oct" — a day in a conversation, in the device's locale. */
+export function formatDay(at: Date): string {
+  return at.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+}

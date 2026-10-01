@@ -23,6 +23,7 @@ import type { LocationAccess } from '../services/positionSource';
 import type { SharingState } from '../services/locationService';
 import { useDriver, usePageVisible, useSharing, useStore } from '../state/context';
 import { formatCountdown, formatTime } from './format';
+import { JobContact } from './messages/JobContact';
 
 /**
  * One ride, from the driver's seat — arranged around a single enormous button,
@@ -85,6 +86,7 @@ function JobBody({ job }: { job: Job }) {
           <p className="mt-xs">{job.notesForDriver}</p>
         </InfoCard>
       )}
+      <JobContact rideId={job.id} />
       <SharingCard />
     </div>
   );

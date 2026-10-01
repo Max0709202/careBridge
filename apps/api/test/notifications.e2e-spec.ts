@@ -151,8 +151,8 @@ describe('notifications', () => {
       configurable: boolean;
     }>;
 
-    // 15 kinds × 3 channels.
-    expect(rows).toHaveLength(45);
+    // 17 kinds × 3 channels.
+    expect(rows).toHaveLength(51);
     expect(
       rows.filter((r) => r.channel === 'inApp').every((r) => !r.configurable),
     ).toBe(true);

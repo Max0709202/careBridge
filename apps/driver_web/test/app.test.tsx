@@ -12,6 +12,7 @@ import { LocationService } from '../src/services/locationService';
 import type { LocationAccess, PositionSource } from '../src/services/positionSource';
 import { StoreProvider } from '../src/state/context';
 import { DriverStore } from '../src/state/driverStore';
+import { fakeMessaging } from './support/fakeMessaging';
 import { fakeServer, type Handler } from './support/fakeServer';
 import { documents, profile, ride } from './support/fixtures';
 
@@ -44,6 +45,8 @@ async function renderApp(
     'GET /driver/documents': () => ({ body: documents() }),
     'POST /auth/login': () => ({ body: { accessToken: 'a', refreshToken: 'r' } }),
     'POST /auth/logout': () => ({ status: 204 }),
+    'GET /conversations': () => ({ body: [] }),
+    'GET /calls/targets': () => ({ body: [] }),
     ...options.routes,
   });
   const tokens = new InMemoryTokenStore();
@@ -56,19 +59,20 @@ async function renderApp(
   });
   const store = new DriverStore(api, location);
   await store.restoreSession();
+  const messaging = fakeMessaging(api);
 
   render(
     <StoreProvider store={store}>
       <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <FeedbackProvider>
           <ConfirmProvider>
-            <App />
+            <App messaging={messaging.store} />
           </ConfirmProvider>
         </FeedbackProvider>
       </MemoryRouter>
     </StoreProvider>,
   );
-  return { ...server, store, tokens, setRides: (next: S['DriverRideDto'][]) => (rides = next) };
+  return { ...server, store, tokens, messaging, setRides: (next: S['DriverRideDto'][]) => (rides = next) };
 }
 
 afterEach(async () => {
@@ -214,5 +218,113 @@ describe('signing out', () => {
     });
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy();
     expect(tokens.read()).toBeNull();
+  });
+});
+
+// ─── messaging ──────────────────────────────────────────────────────────────
+
+function driverConversation(over: Record<string, unknown> = {}) {
+  return {
+    id: 'c-1',
+    kind: 'dispatchDriver',
+    organizationId: 'org-1',
+    organizationName: 'Parkside Transport',
+    patientId: null,
+    driverId: 'driver-1',
+    peerDriverId: null,
+    rideId: null,
+    title: 'Parkside Transport dispatch',
+    myRole: 'driver',
+    canPost: true,
+    ride: null,
+    lastMessage: null,
+    lastMessageAt: null,
+    unreadCount: 0,
+    ...over,
+  };
+}
+
+const emptyThread = () => ({ body: { messages: [], hasMore: false } });
+
+describe('messages', () => {
+  it('badges unread messages on today', async () => {
+    await renderApp('/today', {
+      routes: {
+        'GET /conversations': () => ({
+          body: [driverConversation({ lastMessageAt: '2026-10-01T09:00:00Z', unreadCount: 3 })],
+        }),
+      },
+    });
+    expect(await screen.findByRole('button', { name: 'Messages, 3 unread' })).toBeTruthy();
+  });
+
+  it('opens the thread with dispatch in one tap', async () => {
+    const { requests } = await renderApp('/messages', {
+      routes: {
+        'POST /conversations': () => ({ body: driverConversation() }),
+        'GET /conversations/:id/messages': emptyThread,
+      },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Dispatch' }));
+    expect(await screen.findByRole('heading', { name: 'Parkside Transport dispatch' })).toBeTruthy();
+    expect(requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body).toEqual({
+      kind: 'dispatchDriver',
+    });
+  });
+
+  it('lets a driver message a colleague on shift, and says who is off', async () => {
+    const { requests } = await renderApp('/messages', {
+      routes: {
+        'GET /organizations/:id/colleagues': () => ({
+          body: [
+            { driverId: 'driver-2', displayName: 'Priya S.', onShift: true },
+            { driverId: 'driver-3', displayName: 'Olu A.', onShift: false },
+          ],
+        }),
+        'POST /conversations': () => ({
+          body: driverConversation({ id: 'c-2', kind: 'driverDriver', peerDriverId: 'driver-2', title: 'Dev P. · Priya S.' }),
+        }),
+        'GET /conversations/:id/messages': emptyThread,
+      },
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'A colleague' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('button', { name: 'Olu A., off shift' }).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Priya S.' }));
+
+    await screen.findByRole('heading', { name: 'Dev P. · Priya S.' });
+    expect(requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body).toEqual({
+      kind: 'driverDriver',
+      peerDriverId: 'driver-2',
+    });
+  });
+
+  it('messages dispatch about the trip on screen', async () => {
+    const { requests } = await renderApp('/job/ride-1', {
+      rides: [ride({ status: 'driverEnRoute', availableTransitions: ['driverArrived'] })],
+      routes: {
+        'POST /conversations': () => ({
+          body: driverConversation({
+            rideId: 'ride-1',
+            ride: {
+              id: 'ride-1',
+              status: 'driverEnRoute',
+              direction: 'outbound',
+              scheduledPickupAt: '2026-10-01T09:30:00Z',
+              patientName: 'Margaret',
+            },
+          }),
+        }),
+        'GET /conversations/:id/messages': emptyThread,
+      },
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Message dispatch about this trip' }));
+    expect((await screen.findByRole('note')).textContent).toContain('Trip with Margaret');
+    expect(requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body).toEqual({
+      kind: 'dispatchDriver',
+      rideId: 'ride-1',
+    });
   });
 });

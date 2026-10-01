@@ -1,8 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { AppTarget, DevicePlatform } from '@prisma/client';
 
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { NotFoundError } from '../../common/errors';
+import {
+  WEB_PUSH,
+  type WebPushPort,
+} from '../../infrastructure/push/web-push/web-push.port';
 
 export interface DeviceSummary {
   id: string;
@@ -22,7 +26,15 @@ export interface DeviceSummary {
  */
 @Injectable()
 export class DevicesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(WEB_PUSH) private readonly webPush: WebPushPort,
+  ) {}
+
+  /** The key a browser subscribes with, or null where web push is not set up. */
+  webPushKey(): string | null {
+    return this.webPush.publicKey;
+  }
 
   async register(
     userId: string,

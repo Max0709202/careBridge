@@ -11,6 +11,7 @@ import { ConfirmProvider, FeedbackProvider } from '../src/components/feedback';
 import { CareStore } from '../src/state/careStore';
 import { ServicesProvider } from '../src/state/context';
 import { loadSnapshot, Seeded } from './support/fixture';
+import { fakeMessaging } from './support/fakeMessaging';
 import { fakeServer, type Handler } from './support/fakeServer';
 
 /** Signs in as a person would: the form starts empty. */
@@ -52,6 +53,8 @@ async function renderApp(
     'GET /care/state': () => ({ body: snapshot }),
     'POST /auth/login': () => ({ body: { accessToken: 'a', refreshToken: 'r', state: snapshot } }),
     'POST /auth/logout': () => ({ status: 204 }),
+    'GET /conversations': () => ({ body: [] }),
+    'GET /calls/targets': () => ({ body: [] }),
     ...options.routes,
   });
   const tokens = new InMemoryTokenStore();
@@ -61,20 +64,21 @@ async function renderApp(
   const tracking = new TrackingSocket(tokens, BASE, io.connect);
   const store = new CareStore(api);
   await store.restoreSession();
+  const messaging = fakeMessaging(api);
 
   render(
     <ServicesProvider services={{ store, api, tracking }}>
       <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <FeedbackProvider>
           <ConfirmProvider>
-            <App />
+            <App messaging={messaging.store} />
             <LocationProbe />
           </ConfirmProvider>
         </FeedbackProvider>
       </MemoryRouter>
     </ServicesProvider>,
   );
-  return { ...server, io, store, tokens };
+  return { ...server, io, store, tokens, messaging };
 }
 
 const location = () => screen.getByTestId('location').textContent;
@@ -275,3 +279,141 @@ describe('the family web app', () => {
   });
 });
 
+
+// ─── messaging and calls ────────────────────────────────────────────────────
+
+function familyConversation(over: Record<string, unknown> = {}) {
+  return {
+    id: 'c-1',
+    kind: 'dispatchFamily',
+    organizationId: 'org-1',
+    organizationName: 'Meridian Transit',
+    patientId: Seeded.eleanor,
+    driverId: null,
+    peerDriverId: null,
+    rideId: '00000000-0000-4000-8000-000000000062',
+    title: 'Meridian Transit dispatch',
+    myRole: 'family',
+    canPost: true,
+    ride: {
+      id: '00000000-0000-4000-8000-000000000062',
+      status: 'completed',
+      direction: 'outbound',
+      scheduledPickupAt: '2026-08-10T13:00:00Z',
+      patientName: 'Eleanor',
+    },
+    lastMessage: null,
+    lastMessageAt: null,
+    unreadCount: 0,
+    ...over,
+  };
+}
+
+describe('messaging dispatch and calling through the relay', () => {
+  it('opens the ride\'s own thread with dispatch from the ride', async () => {
+    const { requests } = await renderApp('/rides/00000000-0000-4000-8000-000000000062', {
+      routes: {
+        'POST /conversations': () => ({ body: familyConversation() }),
+        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Message dispatch' }));
+    expect(await screen.findByRole('heading', { name: 'Meridian Transit dispatch' })).toBeTruthy();
+    expect(screen.getByRole('note').textContent).toContain("Eleanor's ride");
+    expect(location()).toBe('/messages/c-1');
+    expect(requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body).toEqual({
+      kind: 'dispatchFamily',
+      rideId: '00000000-0000-4000-8000-000000000062',
+    });
+  });
+
+  it('calls the driver through the relay from the tracking screen, never showing a number', async () => {
+    const snapshot = loadSnapshot();
+    const finished = snapshot.rides.find((r) => r.id === '00000000-0000-4000-8000-000000000062')!;
+    const ride = snapshot.rides.find((r) => r.id === Seeded.outboundRide)!;
+    ride.status = 'driverEnRoute';
+    ride.driver = finished.driver;
+    const { requests } = await renderApp(`/rides/${Seeded.outboundRide}/track`, {
+      snapshot,
+      routes: {
+        'GET /calls/targets': () => ({
+          body: [
+            { kind: 'dispatch', id: 'org-1', label: 'Meridian Transit dispatch', available: true, unavailableReason: null },
+            { kind: 'driver', id: 'd-1', label: 'Marcus T.', available: true, unavailableReason: null },
+          ],
+        }),
+        'POST /calls': () => ({
+          status: 201,
+          body: {
+            id: 'call-1',
+            status: 'initiating',
+            calleeKind: 'driver',
+            calleeLabel: 'Marcus T.',
+            conversationId: null,
+            rideId: Seeded.outboundRide,
+            startedAt: '2026-08-12T12:00:00Z',
+            answeredAt: null,
+            endedAt: null,
+            durationSeconds: null,
+          },
+        }),
+      },
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Call Marcus T.' }));
+    expect(await screen.findByText(/Your phone is ringing/)).toBeTruthy();
+    expect(requests.find((r) => r.path === '/calls')?.body).toEqual({
+      rideId: Seeded.outboundRide,
+      callee: { kind: 'driver', id: 'd-1' },
+    });
+  });
+
+  it('lists conversations with dispatch in Updates, with unread counts', async () => {
+    await renderApp('/notifications', {
+      routes: {
+        'GET /conversations': () => ({
+          body: [familyConversation({ lastMessageAt: '2026-08-12T11:00:00Z', unreadCount: 2 })],
+        }),
+        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+      },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /2 unread\. Meridian Transit dispatch/ }));
+    expect(location()).toBe('/messages/c-1');
+  });
+
+  it('opens the thread a message notification is about', async () => {
+    const snapshot = loadSnapshot();
+    Object.assign(snapshot.notifications[0]!, {
+      kind: 'messageReceived',
+      title: 'New message',
+      body: 'Dispatch sent you a message. Open CareBridge to read it.',
+      conversationId: 'c-1',
+      rideId: '00000000-0000-4000-8000-000000000062',
+    });
+    await renderApp('/notifications', {
+      snapshot,
+      routes: {
+        'GET /conversations/:id': () => ({ body: familyConversation() }),
+        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /New message/ }));
+    expect(location()).toBe('/messages/c-1');
+  });
+
+  it('saves the number your phone rings on for relay calls', async () => {
+    const { requests } = await renderApp('/settings/calls', {
+      routes: {
+        'GET /calls/my-number': () => ({ body: { phone: null } }),
+        'PUT /calls/my-number': () => ({ body: { phone: '+16145550199' } }),
+      },
+    });
+    const field = await screen.findByLabelText('Your phone number');
+    await waitFor(() => expect((field as HTMLInputElement).disabled).toBe(false));
+    fireEvent.change(field, { target: { value: '(614) 555-0199' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save number' }));
+    await waitFor(() => expect((field as HTMLInputElement).value).toBe('+16145550199'));
+    expect(requests.find((r) => r.method === 'PUT')?.body).toEqual({ phone: '(614) 555-0199' });
+  });
+});

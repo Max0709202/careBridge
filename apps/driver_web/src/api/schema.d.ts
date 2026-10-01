@@ -407,6 +407,26 @@ export interface paths {
         patch: operations["Me_update"];
         trace?: never;
     };
+    "/me/devices/web-push-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The key a browser subscribes to push with
+         * @description Null where web push is not configured — the web apps then do not offer background notifications. Register the resulting subscription with POST /me/devices, `platform: web`, the subscription JSON as `token`.
+         */
+        get: operations["Me_webPushKey"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/devices": {
         parameters: {
             query?: never;
@@ -1600,6 +1620,192 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Threads the caller is in, newest first, with unread counts */
+        get: operations["Messaging_inbox"];
+        put?: never;
+        /**
+         * Find or open a thread
+         * @description Returns the existing thread for this subject if there is one. `organizationId`, `patientId` and `driverId` may be left out where a ride, or the caller being a driver, already says what they are. 409 when the colleague is off shift, or a finished trip's thread has closed.
+         */
+        post: operations["Messaging_open"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/unread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Totals for a badge */
+        get: operations["Messaging_unread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Messaging_conversation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversationId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A page of messages, oldest first */
+        get: operations["Messaging_messages"];
+        put?: never;
+        /**
+         * Send a message
+         * @description Safe to retry with the same `clientMessageId`: the stored message is returned rather than a second one posted.
+         */
+        post: operations["Messaging_send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversationId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark the thread read up to now */
+        post: operations["Messaging_markRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/colleagues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Drivers at the operator the caller can message, on shift first
+         * @description For a dispatcher at the operator or one of its approved drivers.
+         */
+        get: operations["Messaging_colleagues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calls/targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who the caller can ring from a conversation or a ride
+         * @description Never includes a number. `available` is false, with a reason to show, when a call cannot be placed right now.
+         */
+        get: operations["Calls_targets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Place a relay call
+         * @description Your own phone rings first, from the relay number; answer it and you are put through. Progress arrives as `call.updated` on the messaging socket.
+         */
+        post: operations["Calls_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calls/my-number": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The number your phone rings on when you place a call */
+        get: operations["Calls_myNumber"];
+        /** Set or clear it */
+        put: operations["Calls_setMyNumber"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calls/{callId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["Calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -2475,6 +2681,11 @@ export interface components {
             rideId: string | null;
             /** Format: uuid */
             appointmentId: string | null;
+            /**
+             * Format: uuid
+             * @description The thread a message or missed-call notification opens.
+             */
+            conversationId: string | null;
         };
         CareStateDto: {
             user: components["schemas"]["AppUserDto"] | null;
@@ -2499,6 +2710,10 @@ export interface components {
              * @description Persisted per account so a refresh or a new device lands the user back where they were. A selection whose grant has since been revoked is dropped on read rather than stored forever.
              */
             selectedPatientId?: string;
+        };
+        WebPushKeyDto: {
+            /** @description base64url VAPID public key. */
+            publicKey: string | null;
         };
         /** @enum {string} */
         DevicePlatform: "android" | "ios" | "web";
@@ -2674,7 +2889,7 @@ export interface components {
             capturedAt: string;
         };
         /** @enum {string} */
-        NotificationKind: "appointmentCreated" | "appointmentReminder" | "appointmentChanged" | "appointmentCanceled" | "rideRequested" | "driverAssigned" | "driverEnRoute" | "driverArrivingSoon" | "driverArrived" | "patientPickedUp" | "patientArrived" | "rideDelayed" | "rideCompleted" | "rideCanceled" | "accessGranted";
+        NotificationKind: "appointmentCreated" | "appointmentReminder" | "appointmentChanged" | "appointmentCanceled" | "rideRequested" | "driverAssigned" | "driverEnRoute" | "driverArrivingSoon" | "driverArrived" | "patientPickedUp" | "patientArrived" | "rideDelayed" | "rideCompleted" | "rideCanceled" | "accessGranted" | "messageReceived" | "callMissed";
         /** @enum {string} */
         NotificationChannel: "inApp" | "email" | "push";
         NotificationPreferenceDto: {
@@ -3210,6 +3425,165 @@ export interface components {
             outcome: "upheld" | "refunded" | "waived";
             /** @description Required. A decision with no reasoning is one nobody can defend when the same question is asked again. */
             note: string;
+        };
+        /** @enum {string} */
+        ConversationKind: "dispatchFamily" | "dispatchDriver" | "driverDriver" | "operatorDrivers";
+        /** @enum {string} */
+        ConversationRole: "dispatcher" | "family" | "driver";
+        ConversationRideDto: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["RideStatus"];
+            direction: string;
+            /** Format: date-time */
+            scheduledPickupAt: string;
+            /** @description The passenger's preferred name. Everyone who can read the thread can already see it on the ride. */
+            patientName: string;
+        };
+        /** @enum {string} */
+        MessageSenderRole: "dispatcher" | "family" | "driver" | "system";
+        MessageDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            conversationId: string;
+            senderRole: components["schemas"]["MessageSenderRole"];
+            /** @description Who wrote it, as they were labelled when they wrote it — "Dana · Dispatch", "Marcus T.", "Sarah (daughter)". "Former member" after an account is deleted. */
+            senderLabel: string;
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** @description Echoed back so a client can reconcile its optimistic copy with the stored one. */
+            clientMessageId: string;
+            /** @description Written by the caller. */
+            mine: boolean;
+        };
+        ConversationDto: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ConversationKind"];
+            /** Format: uuid */
+            organizationId: string;
+            organizationName: string;
+            /** Format: uuid */
+            patientId: string | null;
+            /** Format: uuid */
+            driverId: string | null;
+            /** Format: uuid */
+            peerDriverId: string | null;
+            /** Format: uuid */
+            rideId: string | null;
+            /** @description The other side, from the caller's point of view — "Meridian Transit dispatch" to a family, "Eleanor's family" to a dispatcher. */
+            title: string;
+            myRole: components["schemas"]["ConversationRole"];
+            /** @description False for dispatch in a driver-to-driver thread, and for the family and driver once a finished ride's thread has closed. */
+            canPost: boolean;
+            ride: components["schemas"]["ConversationRideDto"] | null;
+            lastMessage: components["schemas"]["MessageDto"] | null;
+            /** Format: date-time */
+            lastMessageAt: string | null;
+            unreadCount: number;
+        };
+        UnreadSummaryDto: {
+            unreadConversations: number;
+            unreadMessages: number;
+        };
+        OpenConversationDto: {
+            kind: components["schemas"]["ConversationKind"];
+            /** Format: uuid */
+            organizationId?: string;
+            /** Format: uuid */
+            patientId?: string;
+            /** Format: uuid */
+            driverId?: string;
+            /**
+             * Format: uuid
+             * @description `driverDriver`: the colleague. The caller is the other side.
+             */
+            peerDriverId?: string;
+            /**
+             * Format: uuid
+             * @description Tie the thread to one trip. `dispatchFamily` and `dispatchDriver` only.
+             */
+            rideId?: string;
+        };
+        MessagePageDto: {
+            /** @description Oldest first. */
+            messages: components["schemas"]["MessageDto"][];
+            /** @description Whether there are older messages. Ask again with `before` set to the oldest `createdAt`. */
+            hasMore: boolean;
+        };
+        SendMessageDto: {
+            body: string;
+            /**
+             * Format: uuid
+             * @description Generated by the client once per message and reused on every retry of it. A resend with the same id returns the message already stored.
+             */
+            clientMessageId: string;
+        };
+        ColleagueDto: {
+            /** Format: uuid */
+            driverId: string;
+            displayName: string;
+            onShift: boolean;
+        };
+        /** @enum {string} */
+        CallPartyKind: "patient" | "familyMember" | "driver" | "dispatch";
+        CallTargetDto: {
+            kind: components["schemas"]["CallPartyKind"];
+            /**
+             * Format: uuid
+             * @description Patient, user, driver or organisation id, as `kind` says.
+             */
+            id: string;
+            /** @description "Eleanor (patient)", "Sarah (daughter)", "Meridian Transit dispatch". */
+            label: string;
+            available: boolean;
+            /** @description Why not, in words to show: no number on file, calling not set up. */
+            unavailableReason: string | null;
+        };
+        CallCalleeDto: {
+            kind: components["schemas"]["CallPartyKind"];
+            /**
+             * Format: uuid
+             * @description From the call target.
+             */
+            id: string;
+        };
+        StartCallDto: {
+            /** Format: uuid */
+            conversationId?: string;
+            /** Format: uuid */
+            rideId?: string;
+            callee: components["schemas"]["CallCalleeDto"];
+        };
+        /** @enum {string} */
+        CallStatus: "initiating" | "ringingCaller" | "ringingCallee" | "inProgress" | "completed" | "noAnswer" | "busy" | "failed" | "canceled";
+        CallSessionDto: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["CallStatus"];
+            calleeKind: components["schemas"]["CallPartyKind"];
+            calleeLabel: string;
+            /** Format: uuid */
+            conversationId: string | null;
+            /** Format: uuid */
+            rideId: string | null;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            answeredAt: string | null;
+            /** Format: date-time */
+            endedAt: string | null;
+            durationSeconds: number | null;
+        };
+        MyNumberDto: {
+            /** @description E.164, or null if none is set. */
+            phone: string | null;
+        };
+        SetMyNumberDto: {
+            /** @description Written any reasonable way; stored as E.164. An empty string removes it. */
+            phone: string;
         };
         RegisterDto: {
             /** @example Ada Okonkwo */
@@ -3833,6 +4207,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CareStateDto"];
+                };
+            };
+        };
+    };
+    Me_webPushKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebPushKeyDto"];
                 };
             };
         };
@@ -5513,6 +5906,302 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookingDto"];
+                };
+            };
+        };
+    };
+    Messaging_inbox: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDto"][];
+                };
+            };
+        };
+    };
+    Messaging_open: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenConversationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDto"];
+                };
+            };
+        };
+    };
+    Messaging_unread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadSummaryDto"];
+                };
+            };
+        };
+    };
+    Messaging_conversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDto"];
+                };
+            };
+        };
+    };
+    Messaging_messages: {
+        parameters: {
+            query?: {
+                before?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessagePageDto"];
+                };
+            };
+        };
+    };
+    Messaging_send: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageDto"];
+                };
+            };
+            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Messaging_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Messaging_colleagues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ColleagueDto"][];
+                };
+            };
+        };
+    };
+    Calls_targets: {
+        parameters: {
+            query?: {
+                conversationId?: string;
+                rideId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallTargetDto"][];
+                };
+            };
+        };
+    };
+    Calls_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartCallDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallSessionDto"];
+                };
+            };
+            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Calls_myNumber: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyNumberDto"];
+                };
+            };
+        };
+    };
+    Calls_setMyNumber: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetMyNumberDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyNumberDto"];
+                };
+            };
+        };
+    };
+    Calls_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                callId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallSessionDto"];
                 };
             };
         };

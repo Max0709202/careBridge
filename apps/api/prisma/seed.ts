@@ -13,6 +13,7 @@
 import { PrismaClient, type Prisma } from '@prisma/client';
 import * as argon2 from 'argon2';
 
+import { conversationSubjectKey } from '../src/domain/conversation-access';
 import { distanceMiles, estimateDriveMinutes } from '../src/domain/geo';
 import { Money } from '../src/domain/money';
 import { estimateFare, settleFare } from '../src/domain/pricing';
@@ -48,6 +49,8 @@ const ID = {
   meridian: '00000000-0000-4000-8000-0000000000a1',
   dispatcher: '00000000-0000-4000-8000-0000000000a2',
   marcusAccount: '00000000-0000-4000-8000-0000000000a3',
+  familyThread: '00000000-0000-4000-8000-0000000000b1',
+  driverThread: '00000000-0000-4000-8000-0000000000b2',
   platformAdmin: '00000000-0000-4000-8000-0000000000a4',
 } as const;
 
@@ -101,6 +104,8 @@ async function main(): Promise<void> {
     northsideId: northside,
     userId: user.id,
   });
+
+  await seedConversations({ now, organizationId: operator.id, eleanorId: eleanor, userId: user.id });
 
   await seedPlatformAdmin();
   await seedFeatureFlags();
@@ -286,7 +291,9 @@ async function seedOperator(): Promise<{ id: string }> {
       name: 'Meridian Transit Partners',
       slug: 'meridian-transit',
       contactEmail: DISPATCHER_EMAIL,
-      phone: '+1-555-0142',
+      // The 555-01xx range is reserved for fiction, and dialable in form —
+      // which the relay-call demo needs (ADR-0014).
+      phone: '+1 614 555 0142',
       timeZone: 'America/New_York',
     },
   });
@@ -306,7 +313,7 @@ async function seedOperator(): Promise<{ id: string }> {
       email: DISPATCHER_EMAIL,
       passwordHash,
       fullName: 'Dana Reyes',
-      phone: '+1-555-0143',
+      phone: '+1 614 555 0143',
       emailVerifiedAt: new Date(),
       timeZone: 'America/New_York',
     },
@@ -338,7 +345,7 @@ async function seedOperator(): Promise<{ id: string }> {
       email: DRIVER_EMAIL,
       passwordHash,
       fullName: 'Marcus Tavares',
-      phone: '+1-555-0166',
+      phone: '+1 614 555 0166',
       emailVerifiedAt: new Date(),
       timeZone: 'America/New_York',
     },
@@ -983,6 +990,82 @@ async function upsertPatient(input: {
           ],
           grantedAt: input.grantedAt,
         },
+      },
+    },
+  });
+}
+
+/**
+ * Two conversations, so every surface opens with something in it: dispatch
+ * and Eleanor's family, and dispatch and Marcus. Written directly, like the
+ * rest of the seed; the subject keys come from the same domain function the
+ * API uses, so opening either thread from an app finds these rows.
+ */
+async function seedConversations(input: {
+  now: Date;
+  organizationId: string;
+  eleanorId: string;
+  userId: string;
+}): Promise<void> {
+  if (await prisma.conversation.findUnique({ where: { id: ID.familyThread } })) return;
+
+  const minutesAgo = (m: number) => new Date(input.now.getTime() - m * 60_000);
+  const subject = {
+    organizationId: input.organizationId,
+    patientId: null,
+    driverId: null,
+    peerDriverId: null,
+    rideId: null,
+  };
+
+  const family = { ...subject, kind: 'dispatchFamily' as const, patientId: input.eleanorId };
+  await prisma.conversation.create({
+    data: {
+      id: ID.familyThread,
+      ...family,
+      subjectKey: conversationSubjectKey(family),
+      lastMessageAt: minutesAgo(30),
+      messages: {
+        create: [
+          {
+            senderUserId: ID.dispatcher,
+            senderRole: 'dispatcher',
+            senderLabel: 'Dana · Dispatch',
+            body: "Hi Sarah — we'll have a wheelchair-accessible van for Eleanor's cardiology visit on Thursday. Anything the driver should know?",
+            clientMessageId: '00000000-0000-4000-8000-0000000000c1',
+            createdAt: minutesAgo(45),
+          },
+          {
+            senderUserId: input.userId,
+            senderRole: 'family',
+            senderLabel: 'Sarah (daughter)',
+            body: 'Thank you! The side gate sticks — please use the front door. She will be ready by the window.',
+            clientMessageId: '00000000-0000-4000-8000-0000000000c2',
+            createdAt: minutesAgo(30),
+          },
+        ],
+      },
+    },
+  });
+
+  const driver = { ...subject, kind: 'dispatchDriver' as const, driverId: ID.marcus };
+  await prisma.conversation.create({
+    data: {
+      id: ID.driverThread,
+      ...driver,
+      subjectKey: conversationSubjectKey(driver),
+      lastMessageAt: minutesAgo(10),
+      messages: {
+        create: [
+          {
+            senderUserId: ID.dispatcher,
+            senderRole: 'dispatcher',
+            senderLabel: 'Dana · Dispatch',
+            body: 'Morning Marcus — road works on High Street until noon, allow ten extra minutes.',
+            clientMessageId: '00000000-0000-4000-8000-0000000000c3',
+            createdAt: minutesAgo(10),
+          },
+        ],
       },
     },
   });

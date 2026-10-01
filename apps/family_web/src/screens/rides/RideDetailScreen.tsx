@@ -38,6 +38,7 @@ import { canView, patientById, rideById, rideIsActive, rideIsTrackable } from '.
 import { useCare, useNow, useStore } from '../../state/context';
 import { DemoControls } from './DemoControls';
 import { PriceLine } from './rideParts';
+import { TalkToDispatch } from '../messages/TalkToDispatch';
 import { RideTimeline } from './RideTimeline';
 
 export function RideDetailScreen() {
@@ -127,6 +128,9 @@ export function RideDetailScreen() {
             </div>
           </AppCard>
         )}
+
+        {/* Only once an operator is carrying the ride: before that there is no dispatch desk to reach. */}
+        {ride.driver && <TalkToDispatch rideId={ride.id} />}
 
         <div className="mt-lg">
           <SectionHeader
