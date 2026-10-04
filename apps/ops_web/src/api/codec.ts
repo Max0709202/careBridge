@@ -60,6 +60,8 @@ type S = components['schemas'];
 export type DriverCompliance = S['DriverComplianceDto'];
 export type DriverDocument = S['DriverDocumentDto'];
 export type DocumentViewUrl = S['DocumentViewUrlDto'];
+/** An account the operator can put on its roster, shown so they can check who it is. */
+export type DriverAccountMatch = S['DriverAccountMatchDto'];
 
 const date = (value: string) => new Date(value);
 const maybeDate = (value: string | null | undefined) => (value ? new Date(value) : null);

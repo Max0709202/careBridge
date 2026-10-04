@@ -282,6 +282,50 @@ describe('the roster', () => {
     await waitFor(() => expect(requests.find((r) => r.method === 'PUT')?.body).toEqual({ onShift: false }));
   });
 
+  it('adds an existing account by its exact address, as pending approval', async () => {
+    const match = { userId: 'user-9', fullName: 'Kenji Sato', email: 'kenji@example.com', suggestedDisplayName: 'Kenji S.' };
+    const { requests } = await renderApp('/roster', {
+      routes: {
+        'POST /organizations/:id/drivers/account-lookup': (r) =>
+          (r.body as { email: string }).email === 'kenji@example.com'
+            ? { body: match }
+            : { status: 400, body: { error: { code: 'validation', message: 'No account at that address can be added.', field: 'email' } } },
+        'POST /organizations/:id/drivers': () => ({ body: driver({ id: 'd-9', displayName: 'Kenji S.', status: 'pendingApproval' }) }),
+      },
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add driver' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add a driver' });
+
+    // Nobody it can add is said under the field, with the server's words.
+    fireEvent.change(within(dialog).getByLabelText('Email address'), { target: { value: 'nobody@example.com' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Find account' }));
+    expect(await within(dialog).findByText('No account at that address can be added.')).toBeTruthy();
+
+    fireEvent.change(within(dialog).getByLabelText('Email address'), { target: { value: 'kenji@example.com' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Find account' }));
+    expect(await within(dialog).findByText('Kenji Sato')).toBeTruthy();
+    expect((within(dialog).getByLabelText('Name on the roster') as HTMLInputElement).value).toBe('Kenji S.');
+
+    // A vehicle is required before it will go.
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add driver' }));
+    expect(await within(dialog).findByText('Choose the vehicle they will drive')).toBeTruthy();
+
+    fireEvent.change(within(dialog).getByLabelText('Vehicle'), { target: { value: driver().vehicle.id } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add driver' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add a driver' })).toBeNull());
+
+    const created = requests.find((r) => r.method === 'POST' && r.path.endsWith('/drivers'));
+    expect(created?.body).toEqual({ displayName: 'Kenji S.', vehicleId: driver().vehicle.id, userId: 'user-9' });
+    expect(created?.headers['idempotency-key']).toBeTruthy();
+  });
+
+  it('only owners and admins are offered Add driver', async () => {
+    await renderApp('/roster', { routes: { 'GET /organizations': () => ({ body: [organization({ role: 'dispatcher' })] }) } });
+    await screen.findByRole('switch', { name: 'On shift' });
+    expect(screen.queryByRole('button', { name: 'Add driver' })).toBeNull();
+  });
+
   it('suspending asks why, and will not go without an answer', async () => {
     const { requests } = await renderApp('/roster', {
       routes: { 'POST /organizations/:id/drivers/:d/status': () => ({ body: driver({ status: 'suspended' }) }) },

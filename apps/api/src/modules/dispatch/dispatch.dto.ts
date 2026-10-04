@@ -29,6 +29,24 @@ export class VehicleDto {
   @ApiProperty({ type: Boolean }) isWheelchairAccessible!: boolean;
 }
 
+/**
+ * An account an operator may put on its roster. Returned only for an exact,
+ * verified address that is not already somebody's driver, so the console can
+ * show the operator who they are about to add before they add them.
+ */
+export class DriverAccountMatchDto {
+  @ApiProperty({ type: String, format: 'uuid' }) userId!: string;
+  @ApiProperty({ type: String }) fullName!: string;
+  @ApiProperty({ type: String, format: 'email' }) email!: string;
+
+  @ApiProperty({
+    type: String,
+    description:
+      'First name and last initial, for the roster. The operator may change it.',
+  })
+  suggestedDisplayName!: string;
+}
+
 export class DriverDto {
   @ApiProperty({ type: String, format: 'uuid' }) id!: string;
 

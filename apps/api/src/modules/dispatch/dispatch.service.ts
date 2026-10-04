@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { DocumentsService } from './documents.service';
-import type { DocumentViewUrlDto, DriverComplianceDto } from './dispatch.dto';
+import type {
+  DocumentViewUrlDto,
+  DriverAccountMatchDto,
+  DriverComplianceDto,
+} from './dispatch.dto';
 import { BillingService } from '../billing/billing.service';
 import { OrganizationsService } from '../organizations/organizations.service';
 import { RidesService } from '../care/rides.service';
@@ -36,6 +40,7 @@ import type {
   AssignRideDto,
   CreateDriverDto,
   CreateVehicleDto,
+  LookupDriverAccountDto,
 } from './dto/dispatch.request.dto';
 
 type Tx = Prisma.TransactionClient;
@@ -172,10 +177,56 @@ export class DispatchService {
   }
 
   /**
+   * Finds the account somebody signed up with, so an operator can put them on
+   * the roster directly instead of waiting for them to claim a place.
+   *
+   * Exact address only, never a search: every account is in one table, and an
+   * operator browsing it would be browsing the families too. Every way of not
+   * being eligible — no account, unverified, already a driver, leaving — gets
+   * the same answer, so the lookup cannot say where somebody already drives.
+   */
+  async lookupDriverAccount(
+    userId: string,
+    organizationId: string,
+    dto: LookupDriverAccountDto,
+    ctx: RequestContext,
+  ): Promise<DriverAccountMatchDto> {
+    await this.organizations.requireMembership(userId, organizationId, ADMIN_ROLES);
+
+    const account = await eligibleDriverAccount(this.prisma, {
+      email: dto.email.trim().toLowerCase(),
+    });
+
+    await this.audit.record({
+      actorUserId: userId,
+      action: 'dispatch.driver_account_lookup',
+      entityType: 'Organization',
+      entityId: organizationId,
+      correlationId: ctx.correlationId,
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+      changedFields: [account ? `found:${account.id}` : 'not_found'],
+    });
+
+    if (!account) throw new ValidationError(NO_ELIGIBLE_ACCOUNT, 'email');
+
+    return {
+      userId: account.id,
+      fullName: account.fullName,
+      email: account.email,
+      suggestedDisplayName: rosterName(account.fullName),
+    };
+  }
+
+  /**
    * Adds a driver as `invited`, never as approved.
    *
    * The seat only moves at approval, so an operator can build a roster without
    * being billed for people who have not yet handed in a licence.
+   *
+   * With `userId` the driver is an existing account, linked here rather than
+   * claimed later, and starts as `pendingApproval`: the operator has already
+   * said who this is. Approval still checks their paperwork.
    */
   async addDriver(
     userId: string,
@@ -193,20 +244,48 @@ export class DispatchService {
         throw new AuthorizationError();
       }
 
-      const created = await tx.driver.create({
-        data: {
-          organizationId,
-          displayName: dto.displayName.trim(),
-          vehicleId: dto.vehicleId,
-          yearsDriving: dto.yearsDriving ?? 1,
-          status: 'invited',
-          // Lower-cased to match how accounts store theirs. A claim compares
-          // the two literally, and a capital letter typed by a dispatcher
-          // would otherwise mean a driver whose app never finds them.
-          invitedEmail: dto.email?.trim().toLowerCase() ?? null,
-        },
-        include: DRIVER_INCLUDE,
-      });
+      // Re-checked inside the transaction: the lookup the console made a
+      // minute ago is advice, and the person may have become somebody else's
+      // driver, or asked to leave, since.
+      const account = dto.userId
+        ? await eligibleDriverAccount(tx, { id: dto.userId })
+        : null;
+      if (dto.userId && !account)
+        throw new ValidationError(NO_ELIGIBLE_ACCOUNT, 'userId');
+
+      const created = await tx.driver
+        .create({
+          data: {
+            organizationId,
+            displayName: dto.displayName.trim(),
+            vehicleId: dto.vehicleId,
+            yearsDriving: dto.yearsDriving ?? 1,
+            ...(account
+              ? {
+                  status: 'pendingApproval',
+                  userId: account.id,
+                  accountLinkedAt: new Date(),
+                  invitedEmail: account.email,
+                }
+              : {
+                  status: 'invited',
+                  // Lower-cased to match how accounts store theirs. A claim
+                  // compares the two literally, and a capital letter typed by
+                  // a dispatcher would otherwise mean a driver whose app never
+                  // finds them.
+                  invitedEmail: dto.email?.trim().toLowerCase() ?? null,
+                }),
+          },
+          include: DRIVER_INCLUDE,
+        })
+        .catch((error: unknown) => {
+          // Two operators adding the same person at once: the unique userId
+          // lets exactly one through.
+          if (isUniqueViolation(error)) {
+            throw new ValidationError(NO_ELIGIBLE_ACCOUNT, 'userId');
+          }
+          throw error;
+        });
 
       await this.audit.record(
         {
@@ -217,6 +296,7 @@ export class DispatchService {
           correlationId: ctx.correlationId,
           ip: ctx.ip,
           userAgent: ctx.userAgent,
+          ...(account ? { changedFields: ['userId', 'accountLinkedAt'] } : {}),
         },
         tx,
       );
@@ -728,6 +808,39 @@ function toVehicleDto(row: {
     licensePlate: row.licensePlate,
     isWheelchairAccessible: row.isWheelchairAccessible,
   };
+}
+
+const NO_ELIGIBLE_ACCOUNT =
+  'No account at that address can be added. They need to sign up in the CareBridge app and verify their email first, and cannot already be a driver.';
+
+/** Verified, staying, and not already driving for anybody. */
+function eligibleDriverAccount(
+  db: Tx | PrismaService,
+  where: { id: string } | { email: string },
+) {
+  return db.user.findFirst({
+    where: {
+      ...where,
+      emailVerifiedAt: { not: null },
+      deletionRequestedAt: null,
+      driverProfile: null,
+    },
+    select: { id: true, email: true, fullName: true },
+  });
+}
+
+/** "Marcus Thompson" → "Marcus T.". The roster shows no more than that. */
+function rosterName(fullName: string): string {
+  const [first, ...rest] = fullName.trim().split(/\s+/);
+  const last = rest.at(-1);
+  if (!first) return '';
+  return last ? `${first} ${last.charAt(0).toUpperCase()}.` : first;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
+  );
 }
 
 function toDriverDto(

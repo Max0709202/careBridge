@@ -10,6 +10,7 @@ import {
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
+  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
 
@@ -210,6 +211,26 @@ export function TextArea({
         {...input}
       />
       <FieldFoot id={`${id}-desc`} helper={helper} error={error} counter={counter} length={length} />
+    </div>
+  );
+}
+
+export function SelectField({
+  label,
+  helper,
+  error,
+  className,
+  children,
+  ...select
+}: Omit<FieldProps, 'prefix' | 'counter'> & SelectHTMLAttributes<HTMLSelectElement>) {
+  const id = useId();
+  return (
+    <div className={cx('field', error && 'invalid', className)}>
+      <label htmlFor={id}>{label}</label>
+      <select id={id} aria-invalid={!!error} aria-describedby={`${id}-desc`} {...select}>
+        {children}
+      </select>
+      <FieldFoot id={`${id}-desc`} helper={helper} error={error} length={0} />
     </div>
   );
 }

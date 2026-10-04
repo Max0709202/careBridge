@@ -155,6 +155,11 @@ const schema = z.object({
   MESSAGE_SEND_MAX_PER_MINUTE: z.coerce.number().int().positive().default(30),
   CALL_START_MAX_ATTEMPTS: z.coerce.number().int().positive().default(10),
   CALL_START_WINDOW_MINUTES: z.coerce.number().int().positive().default(10),
+  // An operator looking up an account to put on its roster. Each answer says
+  // whether an address has a verified account, so this is the line between
+  // onboarding a few drivers and walking a list of addresses.
+  ACCOUNT_LOOKUP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(30),
+  ACCOUNT_LOOKUP_WINDOW_MINUTES: z.coerce.number().int().positive().default(60),
 
   // `silent` is a real pino level and the right one for a test run: the suite
   // asserts on behaviour, and a thousand log lines between two failures is how

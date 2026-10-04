@@ -76,6 +76,27 @@ export class CreateDriverDto {
   @IsEmail()
   @MaxLength(254)
   email?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      "An existing account to drive as, from `POST drivers/account-lookup`. The account is linked straight away and the driver starts as `pendingApproval` rather than `invited`; approval still needs their paperwork. When set, `email` is ignored and the account's own address is recorded.",
+  })
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
+}
+
+export class LookupDriverAccountDto {
+  @ApiProperty({
+    format: 'email',
+    maxLength: 254,
+    description:
+      'The full address the person signed up with. There is no partial match.',
+  })
+  @IsEmail()
+  @MaxLength(254)
+  email!: string;
 }
 
 export class SetDriverStatusDto {

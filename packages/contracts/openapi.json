@@ -2070,7 +2070,7 @@
         ]
       },
       "post": {
-        "description": "Created as `invited`. The billable seat moves at approval, so a roster can be built without being charged for people who have not handed in a licence.",
+        "description": "Created as `invited`, or as `pendingApproval` with `userId` when an existing account (from `account-lookup`) is linked directly. The billable seat moves at approval, so a roster can be built without being charged for people who have not handed in a licence.",
         "operationId": "Dispatch_addDriver",
         "parameters": [
           {
@@ -2119,6 +2119,56 @@
           }
         ],
         "summary": "Add a driver",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/drivers/account-lookup": {
+      "post": {
+        "description": "Exact, verified address only — there is no browsing or partial match, because every account, families included, is in the one table. Anything that cannot be added (no account, unverified, already a driver, deletion requested) is the same 400, so the answer never says where somebody already drives. Owners and admins only.",
+        "operationId": "Dispatch_lookupDriverAccount",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupDriverAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverAccountMatchDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account."
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Find an account to add as a driver",
         "tags": [
           "dispatch"
         ]
@@ -7834,11 +7884,56 @@
             "format": "email",
             "maxLength": 254,
             "description": "The address this driver will sign into the driver app with. Recorded, not invited: the link is only made once an account exists at that address **and has verified it**, so writing it here grants nothing on its own."
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "An existing account to drive as, from `POST drivers/account-lookup`. The account is linked straight away and the driver starts as `pendingApproval` rather than `invited`; approval still needs their paperwork. When set, `email` is ignored and the account's own address is recorded."
           }
         },
         "required": [
           "displayName",
           "vehicleId"
+        ]
+      },
+      "LookupDriverAccountDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "description": "The full address the person signed up with. There is no partial match."
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "DriverAccountMatchDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "suggestedDisplayName": {
+            "type": "string",
+            "description": "First name and last initial, for the roster. The operator may change it."
+          }
+        },
+        "required": [
+          "userId",
+          "fullName",
+          "email",
+          "suggestedDisplayName"
         ]
       },
       "SetDriverStatusDto": {

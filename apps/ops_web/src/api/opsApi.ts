@@ -29,6 +29,7 @@ import {
   statsFromWire,
   vehicleFromWire,
   type DocumentViewUrl,
+  type DriverAccountMatch,
   type DriverCompliance,
 } from './codec';
 import { Failure } from './failures';
@@ -143,6 +144,44 @@ export class OpsApi extends ApiTransport {
     return driverFromWire(
       await this.send<S['DriverDto']>('PUT', this.org(input.organizationId, `/drivers/${seg(input.driverId)}/shift`), {
         body: { onShift: input.onShift },
+      }),
+    );
+  }
+
+  /**
+   * The account somebody signed up with, by its exact address. Anything that
+   * cannot be added — no account, unverified, already a driver — is one
+   * validation failure, deliberately: the server will not say which.
+   */
+  lookupDriverAccount(input: { organizationId: string; email: string }): Promise<DriverAccountMatch> {
+    return this.send<DriverAccountMatch>('POST', this.org(input.organizationId, '/drivers/account-lookup'), {
+      body: { email: input.email.trim() },
+    });
+  }
+
+  /**
+   * Puts a driver on the roster. With `userId` (from `lookupDriverAccount`)
+   * the account is linked at once and the driver starts pending approval;
+   * with only `email`, they claim the place when they first open the app.
+   */
+  async addDriver(input: {
+    organizationId: string;
+    displayName: string;
+    vehicleId: string;
+    yearsDriving?: number;
+    userId?: string;
+    email?: string;
+  }): Promise<Driver | null> {
+    return driverFromWire(
+      await this.send<S['DriverDto']>('POST', this.org(input.organizationId, '/drivers'), {
+        idempotencyKey: newId(),
+        body: {
+          displayName: input.displayName.trim(),
+          vehicleId: input.vehicleId,
+          ...(input.yearsDriving !== undefined ? { yearsDriving: input.yearsDriving } : {}),
+          ...(input.userId ? { userId: input.userId } : {}),
+          ...(input.email ? { email: input.email.trim() } : {}),
+        },
       }),
     );
   }

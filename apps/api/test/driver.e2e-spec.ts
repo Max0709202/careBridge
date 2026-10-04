@@ -321,6 +321,129 @@ describe('the driver app', () => {
     });
   });
 
+  describe('adding an existing account', () => {
+    // The other way onto a roster: the operator finds somebody who already
+    // signed up and links them on the spot, rather than recording an address
+    // for them to claim later. Same eligibility rules as a claim — verified,
+    // and nobody else's driver — and the same paperwork before approval.
+
+    function lookUp(token: string, organizationId: string, email: string) {
+      return authed(harness, token)
+        .post(`/api/v1/organizations/${organizationId}/drivers/account-lookup`)
+        .send({ email });
+    }
+
+    it('finds the account by its exact address and links it as pending approval', async () => {
+      const { owner, organizationId } = await operator();
+      const vehicleId = await addVehicle(owner.accessToken, organizationId);
+      const person = await registerUser(harness, { fullName: 'Kenji Sato Watanabe' });
+      await verifyEmail(harness, person.userId);
+
+      const found = await lookUp(
+        owner.accessToken,
+        organizationId,
+        person.email.toUpperCase(),
+      ).expect(200);
+      const match = found.body as {
+        userId: string;
+        fullName: string;
+        email: string;
+        suggestedDisplayName: string;
+      };
+      expect(match).toEqual({
+        userId: person.userId,
+        fullName: 'Kenji Sato Watanabe',
+        email: person.email,
+        suggestedDisplayName: 'Kenji W.',
+      });
+
+      const created = await authed(harness, owner.accessToken)
+        .post(`/api/v1/organizations/${organizationId}/drivers`)
+        .send({
+          displayName: match.suggestedDisplayName,
+          vehicleId,
+          userId: match.userId,
+        })
+        .expect(201);
+      const driver = created.body as {
+        id: string;
+        status: string;
+        hasAppAccount: boolean;
+        invitedEmail: string;
+      };
+      expect(driver.status).toBe('pendingApproval');
+      expect(driver.hasAppAccount).toBe(true);
+      expect(driver.invitedEmail).toBe(person.email);
+
+      const me = await authed(harness, person.accessToken)
+        .get('/api/v1/driver/me')
+        .expect(200);
+      expect(me.body as { driverId: string; canWork: boolean }).toMatchObject({
+        driverId: driver.id,
+        canWork: false,
+      });
+    });
+
+    it('still needs paperwork before approval', async () => {
+      const { owner, organizationId } = await operator();
+      const vehicleId = await addVehicle(owner.accessToken, organizationId);
+      const person = await registerUser(harness);
+      await verifyEmail(harness, person.userId);
+
+      const created = await authed(harness, owner.accessToken)
+        .post(`/api/v1/organizations/${organizationId}/drivers`)
+        .send({ displayName: 'Ada O.', vehicleId, userId: person.userId })
+        .expect(201);
+
+      await authed(harness, owner.accessToken)
+        .post(
+          `/api/v1/organizations/${organizationId}/drivers/${(created.body as { id: string }).id}/status`,
+        )
+        .send({ to: 'approved' })
+        .expect(400);
+    });
+
+    it('gives one answer for every account it will not add', async () => {
+      // Unknown, unverified and already-a-driver must be indistinguishable:
+      // telling them apart would tell an operator where somebody else works.
+      const { owner, organizationId } = await operator();
+      const unverified = await registerUser(harness);
+      const { email: alreadyDriving, account } = await rosteredDriver();
+      await authed(harness, account.accessToken).get('/api/v1/driver/me').expect(200);
+
+      const answers = await Promise.all(
+        [uniqueEmail('nobody'), unverified.email, alreadyDriving].map((email) =>
+          lookUp(owner.accessToken, organizationId, email).expect(400),
+        ),
+      );
+      const errors = answers.map((response) => errorOf(response));
+      expect(new Set(errors.map((e) => `${e.code}|${e.message}|${e.field}`)).size).toBe(
+        1,
+      );
+    });
+
+    it('refuses to link an account that is already somebody’s driver', async () => {
+      const { account } = await rosteredDriver();
+      await authed(harness, account.accessToken).get('/api/v1/driver/me').expect(200);
+
+      const { owner, organizationId } = await operator();
+      const vehicleId = await addVehicle(owner.accessToken, organizationId);
+
+      await authed(harness, owner.accessToken)
+        .post(`/api/v1/organizations/${organizationId}/drivers`)
+        .send({ displayName: 'Marcus T.', vehicleId, userId: account.userId })
+        .expect(400);
+    });
+
+    it('is not available to somebody outside the operator', async () => {
+      const { organizationId } = await operator();
+      const outsider = await registerUser(harness);
+      await verifyEmail(harness, outsider.userId);
+
+      await lookUp(outsider.accessToken, organizationId, outsider.email).expect(404);
+    });
+  });
+
   // ─── the shift ────────────────────────────────────────────────────────────
 
   describe('the shift', () => {

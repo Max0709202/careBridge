@@ -849,9 +849,29 @@ export interface paths {
         put?: never;
         /**
          * Add a driver
-         * @description Created as `invited`. The billable seat moves at approval, so a roster can be built without being charged for people who have not handed in a licence.
+         * @description Created as `invited`, or as `pendingApproval` with `userId` when an existing account (from `account-lookup`) is linked directly. The billable seat moves at approval, so a roster can be built without being charged for people who have not handed in a licence.
          */
         post: operations["Dispatch_addDriver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/drivers/account-lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find an account to add as a driver
+         * @description Exact, verified address only — there is no browsing or partial match, because every account, families included, is in the one table. Anything that cannot be added (no account, unverified, already a driver, deletion requested) is the same 400, so the answer never says where somebody already drives. Owners and admins only.
+         */
+        post: operations["Dispatch_lookupDriverAccount"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2930,6 +2950,27 @@ export interface components {
              * @description The address this driver will sign into the driver app with. Recorded, not invited: the link is only made once an account exists at that address **and has verified it**, so writing it here grants nothing on its own.
              */
             email?: string;
+            /**
+             * Format: uuid
+             * @description An existing account to drive as, from `POST drivers/account-lookup`. The account is linked straight away and the driver starts as `pendingApproval` rather than `invited`; approval still needs their paperwork. When set, `email` is ignored and the account's own address is recorded.
+             */
+            userId?: string;
+        };
+        LookupDriverAccountDto: {
+            /**
+             * Format: email
+             * @description The full address the person signed up with. There is no partial match.
+             */
+            email: string;
+        };
+        DriverAccountMatchDto: {
+            /** Format: uuid */
+            userId: string;
+            fullName: string;
+            /** Format: email */
+            email: string;
+            /** @description First name and last initial, for the roster. The operator may change it. */
+            suggestedDisplayName: string;
         };
         SetDriverStatusDto: {
             /** @description Drives the lifecycle state machine in src/domain/driver-status.ts. Crossing into or out of `approved` is what moves a billable seat. */
@@ -4930,6 +4971,38 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DriverDto"];
                 };
+            };
+        };
+    };
+    Dispatch_lookupDriverAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LookupDriverAccountDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverAccountMatchDto"];
+                };
+            };
+            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

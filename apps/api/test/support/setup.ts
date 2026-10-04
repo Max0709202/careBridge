@@ -59,6 +59,7 @@ process.env['EMAIL_DISPATCH_MAX_ATTEMPTS'] ??= '10000';
 process.env['TOKEN_GUESS_MAX_ATTEMPTS'] ??= '10000';
 process.env['MESSAGE_SEND_MAX_PER_MINUTE'] ??= '10000';
 process.env['CALL_START_MAX_ATTEMPTS'] ??= '10000';
+process.env['ACCOUNT_LOOKUP_MAX_ATTEMPTS'] ??= '10000';
 
 // Short, so an expiry test does not have to wait.
 process.env['PASSWORD_RESET_TTL_MINUTES'] ??= '30';

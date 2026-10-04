@@ -30,7 +30,8 @@ export type RateLimitPolicyName =
   | 'emailDispatch'
   | 'tokenGuess'
   | 'messageSend'
-  | 'callStart';
+  | 'callStart'
+  | 'accountLookup';
 
 /**
  * Policies for signed-in routes. Counted per user rather than per IP: the
@@ -39,6 +40,7 @@ export type RateLimitPolicyName =
 const PER_USER_POLICIES: ReadonlySet<RateLimitPolicyName> = new Set([
   'messageSend',
   'callStart',
+  'accountLookup',
 ]);
 
 const RATE_LIMIT_KEY = 'carebridge:rate-limit';
@@ -144,6 +146,11 @@ export class RateLimitGuard implements CanActivate {
         return {
           limit: this.config.CALL_START_MAX_ATTEMPTS,
           windowMs: minutes(this.config.CALL_START_WINDOW_MINUTES),
+        };
+      case 'accountLookup':
+        return {
+          limit: this.config.ACCOUNT_LOOKUP_MAX_ATTEMPTS,
+          windowMs: minutes(this.config.ACCOUNT_LOOKUP_WINDOW_MINUTES),
         };
     }
   }

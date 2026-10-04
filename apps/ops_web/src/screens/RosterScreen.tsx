@@ -1,7 +1,10 @@
-import { FolderOpen, MessageSquare, Users } from 'lucide-react';
-import { useState } from 'react';
+import { FolderOpen, MessageSquare, Search, UserPlus, Users } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 
-import { Modal } from '../components/feedback';
+import type { DriverAccountMatch } from '../api/codec';
+import { Failure } from '../api/failures';
+import { Modal, useFeedback } from '../components/feedback';
 import { DriverStatusPill } from '../components/pills';
 import {
   Button,
@@ -11,9 +14,11 @@ import {
   LoadingBlock,
   RefreshButton,
   Screen,
+  SelectField,
   StaleBanner,
   Switch,
   TextArea,
+  TextField,
 } from '../components/ui';
 import { useRun } from '../components/useRun';
 import {
@@ -46,6 +51,7 @@ export function RosterScreen() {
   const administer = organization ? canAdminister(organization) : false;
   const drivers = useResource(keys.drivers(organizationId), (api) => api.drivers(organizationId));
   const [paperworkFor, setPaperworkFor] = useState<Driver | null>(null);
+  const [adding, setAdding] = useState(false);
 
   let body;
   if (drivers.value) {
@@ -76,8 +82,21 @@ export function RosterScreen() {
   }
 
   return (
-    <Screen title="Roster" actions={<RefreshButton onClick={drivers.reload} />}>
+    <Screen
+      title="Roster"
+      actions={
+        <>
+          <RefreshButton onClick={drivers.reload} />
+          {administer && (
+            <Button icon={UserPlus} onClick={() => setAdding(true)}>
+              Add driver
+            </Button>
+          )}
+        </>
+      }
+    >
       {body}
+      {adding && <AddDriverDialog organizationId={organizationId} onClose={() => setAdding(false)} />}
       {/*
         A sheet rather than a page: paperwork is reviewed *while* looking at
         the roster, and losing one's place in a list of forty drivers is how
@@ -183,6 +202,186 @@ function DriverRow(props: {
         />
       )}
     </Card>
+  );
+}
+
+/**
+ * Puts somebody who already has a CareBridge account on the roster.
+ *
+ * Two steps, and the first is an exact address rather than a search: every
+ * account — families included — is in one table, and an operator scrolling
+ * through it would be scrolling through them. The server answers one way for
+ * everybody it will not add, so neither can this dialog say why.
+ *
+ * The driver arrives as pending approval with their account already linked.
+ * Approval still waits for their paperwork, which they upload in the driver app.
+ */
+function AddDriverDialog(props: { organizationId: string; onClose: () => void }) {
+  const store = useStore();
+  const { showFailure } = useFeedback();
+  const { run, busy } = useRun();
+  const vehicles = useResource(keys.vehicles(props.organizationId), (api) => api.vehicles(props.organizationId));
+
+  const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [looking, setLooking] = useState(false);
+  const [match, setMatch] = useState<DriverAccountMatch | null>(null);
+
+  const [displayName, setDisplayName] = useState('');
+  const [vehicleId, setVehicleId] = useState('');
+  const [yearsDriving, setYearsDriving] = useState('');
+  const [errors, setErrors] = useState<{ displayName?: string; vehicleId?: string; yearsDriving?: string }>({});
+
+  async function lookUp(e: FormEvent) {
+    e.preventDefault();
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      setEmailError('Enter the full email address they signed up with.');
+      return;
+    }
+    setEmailError(null);
+    setLooking(true);
+    try {
+      const found = await store.guard(() =>
+        store.api.lookupDriverAccount({ organizationId: props.organizationId, email }),
+      );
+      setMatch(found);
+      setDisplayName(found.suggestedDisplayName);
+    } catch (error) {
+      // "Nobody we can add" belongs under the field, not in a toast that
+      // disappears before it is read. Everything else is a real failure.
+      if (error instanceof Failure && error.kind === 'validation') setEmailError(error.message);
+      else showFailure(error);
+    } finally {
+      setLooking(false);
+    }
+  }
+
+  async function add(e: FormEvent) {
+    e.preventDefault();
+    if (!match) return;
+    const years = yearsDriving.trim() === '' ? undefined : Number(yearsDriving);
+    const next: typeof errors = {};
+    if (displayName.trim() === '') next.displayName = 'Required';
+    if (vehicleId === '') next.vehicleId = 'Choose the vehicle they will drive';
+    if (years !== undefined && !(Number.isInteger(years) && years >= 0 && years <= 60)) {
+      next.yearsDriving = 'A whole number from 0 to 60';
+    }
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
+
+    const result = await run(() =>
+      store.guard(() =>
+        store.api.addDriver({
+          organizationId: props.organizationId,
+          displayName,
+          vehicleId,
+          yearsDriving: years,
+          userId: match.userId,
+        }),
+      ),
+    );
+    if (result.ok) {
+      store.invalidateOperational(props.organizationId);
+      props.onClose();
+    }
+  }
+
+  if (!match) {
+    return (
+      <Modal title="Add a driver" onClose={props.onClose}>
+        <form className="stack gap-sm" onSubmit={(e) => void lookUp(e)} noValidate>
+          <TextField
+            label="Email address"
+            type="email"
+            autoComplete="off"
+            value={email}
+            error={emailError}
+            helper="The address they signed up to CareBridge with, and have verified."
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailError(null);
+            }}
+          />
+          <div className="dialog-actions">
+            <Button variant="text" disabled={looking} onClick={props.onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" icon={Search} busy={looking}>
+              {looking ? 'Looking…' : 'Find account'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    );
+  }
+
+  const fleet = vehicles.value ?? [];
+  return (
+    <Modal title="Add a driver" onClose={props.onClose}>
+      <form className="stack gap-sm" onSubmit={(e) => void add(e)} noValidate>
+        <Card>
+          <div className="row">
+            <div className="grow">
+              <div className="t-body-lg">{match.fullName}</div>
+              <div className="t-small muted">{match.email}</div>
+            </div>
+            <Button variant="text" disabled={busy} onClick={() => setMatch(null)}>
+              Change
+            </Button>
+          </div>
+        </Card>
+        <TextField
+          label="Name on the roster"
+          helper="First name and last initial. Families see this at pickup."
+          counter={60}
+          value={displayName}
+          error={errors.displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+        />
+        {vehicles.value && fleet.length === 0 ? (
+          <div className="t-small error-text">
+            There are no vehicles yet. <Link to="/fleet">Add one on the Fleet screen</Link> first.
+          </div>
+        ) : (
+          <SelectField
+            label="Vehicle"
+            value={vehicleId}
+            error={errors.vehicleId}
+            disabled={!vehicles.value}
+            onChange={(e) => setVehicleId(e.target.value)}
+          >
+            <option value="">{vehicles.value ? 'Choose a vehicle' : 'Loading…'}</option>
+            {fleet.map((vehicle) => (
+              <option key={vehicle.id} value={vehicle.id}>
+                {vehicleLabel(vehicle)} · {vehicle.licensePlate}
+                {vehicle.isWheelchairAccessible ? ' · accessible' : ''}
+              </option>
+            ))}
+          </SelectField>
+        )}
+        <TextField
+          label="Years driving (optional)"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={60}
+          value={yearsDriving}
+          error={errors.yearsDriving}
+          onChange={(e) => setYearsDriving(e.target.value)}
+        />
+        <div className="t-small muted">
+          They join as pending approval. Once they have uploaded their paperwork in the driver app, approve them here.
+        </div>
+        <div className="dialog-actions">
+          <Button variant="text" disabled={busy} onClick={props.onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" busy={busy} disabled={fleet.length === 0}>
+            {busy ? 'Adding…' : 'Add driver'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 

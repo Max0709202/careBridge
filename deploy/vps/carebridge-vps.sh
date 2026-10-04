@@ -182,6 +182,9 @@ render_api_env() {
     from="CareBridge <no-reply@$MAIL_DOMAIN>"
   fi
   if [ -n "$STRIPE_SECRET_KEY" ]; then payments_driver=stripe unbilled=false; else payments_driver=local unbilled=true; fi
+  # Single-quoted below so a `$` in a provider password stays literal both when
+  # systemd reads api.env and when api_env_exec sources it under `set -u`.
+  case $mail_pass in *"'"*) die "MAIL_RELAY_PASSWORD cannot contain a single quote (')";; esac
 
   umask 077
   cat >"$CB_HOME/api.env" <<EOF
@@ -202,7 +205,7 @@ MAIL_DRIVER=smtp
 MAIL_SMTP_HOST=$mail_host
 MAIL_SMTP_PORT=$mail_port
 MAIL_SMTP_USER=$mail_user
-MAIL_SMTP_PASSWORD=$mail_pass
+MAIL_SMTP_PASSWORD='$mail_pass'
 MAIL_FROM="$from"
 
 PUSH_DRIVER=none

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -9,11 +18,13 @@ import {
 
 import { Ctx, CurrentUser, RequestContext } from '../../common/request-context';
 import { Idempotent } from '../../common/idempotency.interceptor';
+import { RateLimit } from '../../common/rate-limit.guard';
 import type { DriverStatus } from '../../domain/driver-status';
 import { DispatchService } from './dispatch.service';
 import {
   DispatchQueueDto,
   DocumentViewUrlDto,
+  DriverAccountMatchDto,
   DriverComplianceDto,
   DriverDto,
   VehicleDto,
@@ -22,6 +33,7 @@ import {
   AssignRideDto,
   CreateDriverDto,
   CreateVehicleDto,
+  LookupDriverAccountDto,
   ReviewDocumentDto,
   SetDriverStatusDto,
   SetShiftDto,
@@ -83,7 +95,7 @@ export class DispatchController {
   @ApiOperation({
     summary: 'Add a driver',
     description:
-      'Created as `invited`. The billable seat moves at approval, so a roster can be built without being charged for people who have not handed in a licence.',
+      'Created as `invited`, or as `pendingApproval` with `userId` when an existing account (from `account-lookup`) is linked directly. The billable seat moves at approval, so a roster can be built without being charged for people who have not handed in a licence.',
   })
   @ApiCreatedResponse({ type: DriverDto })
   addDriver(
@@ -93,6 +105,24 @@ export class DispatchController {
     @Ctx() ctx: RequestContext,
   ): Promise<DriverDto> {
     return this.dispatch.addDriver(userId, organizationId, body, ctx);
+  }
+
+  @Post('drivers/account-lookup')
+  @HttpCode(200)
+  @RateLimit('accountLookup')
+  @ApiOperation({
+    summary: 'Find an account to add as a driver',
+    description:
+      'Exact, verified address only — there is no browsing or partial match, because every account, families included, is in the one table. Anything that cannot be added (no account, unverified, already a driver, deletion requested) is the same 400, so the answer never says where somebody already drives. Owners and admins only.',
+  })
+  @ApiOkResponse({ type: DriverAccountMatchDto })
+  lookupDriverAccount(
+    @CurrentUser() userId: string,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+    @Body() body: LookupDriverAccountDto,
+    @Ctx() ctx: RequestContext,
+  ): Promise<DriverAccountMatchDto> {
+    return this.dispatch.lookupDriverAccount(userId, organizationId, body, ctx);
   }
 
   @Post('drivers/:driverId/status')

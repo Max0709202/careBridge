@@ -527,6 +527,7 @@ p {
 .field-box { display: flex; align-items: center; }
 .field-prefix { padding-right: var(--space-xs); color: var(--on-surface-variant); }
 .field input:not([type='range']),
+.field select,
 .field textarea {
   width: 100%;
   min-height: var(--min-target);
@@ -540,6 +541,7 @@ p {
 }
 .field input[type='range'] { width: 100%; min-height: var(--min-target); accent-color: var(--primary); }
 .field.invalid input,
+.field.invalid select,
 .field.invalid textarea { border-color: var(--error); border-width: 2px; }
 .field-foot { display: flex; gap: var(--space-sm); min-height: 1.1em; }
 .field-error { color: var(--error); font-size: 0.78rem; }
