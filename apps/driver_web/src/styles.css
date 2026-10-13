@@ -487,7 +487,9 @@ ul.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction
 .chat {
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - 140px);
+  /* Fill the viewport below the top bar so the composer stays on screen. */
+  height: calc(100dvh - 64px - 2 * var(--space-md) - env(safe-area-inset-top));
+  min-height: 360px;
   border-radius: var(--radius-card);
   background: var(--surface-highest);
   overflow: hidden;
@@ -501,12 +503,12 @@ ul.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction
   color: var(--on-tertiary-container);
 }
 .chat-messages {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   margin: 0;
   padding: var(--space-md);
   list-style: none;
   overflow-y: auto;
-  max-height: calc(100dvh - 280px);
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -549,10 +551,19 @@ ul.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction
   font-weight: 600;
   cursor: pointer;
 }
-.chat-composer { display: flex; align-items: flex-end; gap: var(--space-sm); padding: var(--space-sm) var(--space-md); }
+.chat-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md) calc(var(--space-sm) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--outline-variant);
+  background: var(--surface);
+}
 .chat-composer textarea {
-  flex: 1;
-  min-height: 52px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--primary-action);
+  margin: 0;
   max-height: 160px;
   padding: 14px var(--space-md);
   border: 1px solid var(--outline);
@@ -561,8 +572,11 @@ ul.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction
   color: var(--on-surface);
   font: inherit;
   font-size: 1.0625rem;
-  resize: vertical;
+  line-height: 1.4;
+  resize: none;
 }
+/* `.btn` is full-width by default; here it must sit beside the textarea. */
+.chat-composer .btn { flex: 0 0 auto; width: auto; padding: 0 var(--space-md); }
 .chat-closed { padding: var(--space-md); margin: 0; text-align: center; }
 
 .call-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); padding: var(--space-sm) var(--space-md); }

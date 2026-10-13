@@ -361,6 +361,8 @@ caddy_site_body() { # app, geolocation policy
 EOF
 }
 
+printf '\nimport %s/sites/*.caddy\n' "$CB_HOME"
+
 render_caddy() {
   local global
   if [ "$HTTPS" = on ]; then
@@ -390,6 +392,8 @@ render_caddy() {
       printf 'http://:%s {\n' "$PORT_OPS"; caddy_site_body ops '()'; printf '}\n\n'
       printf 'http://:%s {\n' "$PORT_DRIVER"; caddy_site_body driver '(self)'; printf '}\n'
     fi
+    # Other sites on this host keep their own config here, so a re-render leaves them alone.
+    printf '\nimport %s/sites/*.caddy\n' "$CB_HOME"
   } >"$CB_HOME/Caddyfile"
   "$BIN/caddy" fmt --overwrite "$CB_HOME/Caddyfile" >/dev/null 2>&1 || true
   "$BIN/caddy" validate --config "$CB_HOME/Caddyfile" --adapter caddyfile >/dev/null 2>&1 \
