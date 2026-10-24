@@ -4,7 +4,7 @@
  */
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { OpsApi } from '../src/api/opsApi';
 import { InMemoryTokenStore } from '../src/api/tokens';
@@ -21,6 +21,8 @@ import {
   driver,
   flag,
   invoice,
+  liveBoard,
+  liveRide,
   organization,
   plan,
   queue,
@@ -31,6 +33,21 @@ import {
 } from './support/fixtures';
 
 const BASE = 'http://localhost/api/v1';
+
+// Leaflet needs a real layout engine. The map is stood in for by a list of what
+// it was asked to draw, and a button that plays the part of a click on it.
+vi.mock('../src/components/LiveMap', () => ({
+  LiveMap: (props: import('../src/components/LiveMap').LiveMapProps) => (
+    <div aria-label="Live map">
+      <span>area: {props.area ? props.area.kind : 'none'}</span>
+      {props.onPickPoint && (
+        <button type="button" onClick={() => props.onPickPoint?.({ latitude: 40.7, longitude: -73.9 })}>
+          Click the map
+        </button>
+      )}
+    </div>
+  ),
+}));
 
 async function renderApp(
   path: string,
@@ -805,5 +822,94 @@ describe('messages', () => {
       });
     });
     expect((await screen.findByRole('alert')).textContent).toContain('Marcus T. is calling your phone now');
+  });
+});
+
+describe('the live map', () => {
+  it('lists the cars under way, and says when a position is too old to show', async () => {
+    await renderApp('/map', {
+      routes: {
+        'GET /organizations/:id/dispatch/live': () => ({
+          body: liveBoard({
+            rides: [
+              liveRide(),
+              liveRide({
+                rideId: 'ride-2',
+                driverName: 'Ana P.',
+                position: {
+                  latitude: 40.6,
+                  longitude: -73.9,
+                  accuracyMeters: 8,
+                  capturedAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+                },
+              }),
+            ],
+          }),
+        }),
+      },
+    });
+
+    expect(await screen.findByText('2 rides under way')).toBeTruthy();
+    expect(screen.getByText('Live')).toBeTruthy();
+    expect(screen.getByLabelText('Arriving in about 7 minutes')).toBeTruthy();
+    // No ETA next to a car nobody has heard from.
+    expect(screen.getByText('Lost contact — position not shown')).toBeTruthy();
+    expect(screen.getAllByText(/~\d+ min/)).toHaveLength(1);
+  });
+
+  it('lets an admin place a radius on the map and save it', async () => {
+    const { requests } = await renderApp('/map', {
+      routes: {
+        'GET /organizations/:id/dispatch/live': () => ({ body: liveBoard({ rides: [] }) }),
+        'PUT /organizations/:id/service-area': (request) => ({
+          body: { organizationId: 'org-1', serviceArea: { ...(request.body as object), points: null }, updatedAt: null },
+        }),
+      },
+    });
+
+    expect(await screen.findByText(/Not set/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Set area' }));
+    // Nothing to save until a centre is chosen.
+    expect((screen.getByRole('button', { name: 'Save area' }) as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Click the map' }));
+    fireEvent.change(screen.getByLabelText('Radius (miles)'), { target: { value: '12' } });
+    expect(screen.getByText('area: radius')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Save area' }));
+
+    await waitFor(() =>
+      expect(requests.find((r) => r.method === 'PUT')?.body).toEqual({
+        kind: 'radius',
+        center: { latitude: 40.7, longitude: -73.9 },
+        radiusMiles: 12,
+      }),
+    );
+  });
+
+  it('does not offer a dispatcher the controls to change the area', async () => {
+    await renderApp('/map', {
+      routes: {
+        'GET /organizations': () => ({ body: [organization({ role: 'dispatcher' })] }),
+        'GET /organizations/:id/dispatch/live': () => ({ body: liveBoard({ rides: [] }) }),
+      },
+    });
+    expect(await screen.findByText('Owners and admins can change it.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Set area' })).toBeNull();
+  });
+
+  it('flags a queued pickup outside the area, and only a definite one', async () => {
+    await renderApp('/queue', {
+      routes: {
+        'GET /organizations/:id/dispatch/queue': () => ({
+          body: queue([
+            queueItem({ rideId: 'out', pickupInServiceArea: false }),
+            queueItem({ rideId: 'in', pickupInServiceArea: true }),
+            queueItem({ rideId: 'unknown', pickupInServiceArea: null }),
+          ]),
+        }),
+      },
+    });
+    await screen.findAllByText('Margaret H.');
+    expect(screen.getAllByLabelText('Pickup is outside your service area')).toHaveLength(1);
   });
 });

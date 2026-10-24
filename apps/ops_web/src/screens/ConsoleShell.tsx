@@ -4,6 +4,7 @@ import {
   CreditCard,
   ListChecks,
   LogOut,
+  Map as MapIcon,
   MessageSquare,
   ReceiptText,
   ShieldCheck,
@@ -28,6 +29,7 @@ export interface Destination {
 
 const destinations: Destination[] = [
   { path: '/queue', icon: ListChecks, label: 'Queue' },
+  { path: '/map', icon: MapIcon, label: 'Live map' },
   { path: '/messages', icon: MessageSquare, label: 'Messages' },
   { path: '/roster', icon: Users, label: 'Roster' },
   { path: '/fleet', icon: Car, label: 'Fleet' },

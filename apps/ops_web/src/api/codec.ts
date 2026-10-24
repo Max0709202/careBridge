@@ -52,6 +52,7 @@ import type {
   SeatSummary,
   Vehicle,
 } from '../domain/models';
+import type { Coordinates, LiveBoard, LivePosition, LiveRide, ServiceArea } from '../domain/liveMap';
 import type { components } from './schema';
 
 type S = components['schemas'];
@@ -135,6 +136,8 @@ export function queueItemFromWire(dto: S['DispatchQueueItemDto']): QueueItem | n
     wheelchairRequired: dto.wheelchairRequired,
     assistanceRequired: dto.assistanceRequired,
     urgency,
+    // Absent from an older server: unknown, never "inside".
+    pickupInServiceArea: dto.pickupInServiceArea ?? null,
     candidates: dto.candidates.map(candidateFromWire),
   };
 }
@@ -144,6 +147,55 @@ export const queueFromWire = (dto: S['DispatchQueueDto']): DispatchQueue => ({
   organizationId: dto.organizationId,
   items: dto.items.map(queueItemFromWire).filter((i): i is QueueItem => i !== null),
   availableDrivers: dto.availableDrivers,
+});
+
+// ─── the live map ───────────────────────────────────────────────────────────
+
+/**
+ * An area whose kind is unknown, or missing what its kind needs, is **dropped**
+ * — drawn as no area at all, not as a guess at one.
+ */
+export function serviceAreaFromWire(dto: S['ServiceAreaDto'] | null | undefined): ServiceArea | null {
+  if (!dto) return null;
+  if (dto.kind === 'radius' && dto.center && typeof dto.radiusMiles === 'number') {
+    return { kind: 'radius', center: coordinates(dto.center), radiusMiles: dto.radiusMiles };
+  }
+  if (dto.kind === 'polygon' && dto.points && dto.points.length >= 3) {
+    return { kind: 'polygon', points: dto.points.map(coordinates) };
+  }
+  return null;
+}
+
+const coordinates = (dto: S['CoordinatesDto']): Coordinates => ({
+  latitude: dto.latitude,
+  longitude: dto.longitude,
+});
+
+function livePositionFromWire(dto: S['LivePositionDto'] | null | undefined): LivePosition | null {
+  if (!dto) return null;
+  const capturedAt = date(dto.capturedAt);
+  if (Number.isNaN(capturedAt.getTime())) return null;
+  return { latitude: dto.latitude, longitude: dto.longitude, accuracyMeters: dto.accuracyMeters, capturedAt };
+}
+
+const liveRideFromWire = (dto: S['LiveRideDto']): LiveRide => ({
+  rideId: dto.rideId,
+  status: dto.status,
+  driverId: dto.driverId,
+  driverName: dto.driverName,
+  patientName: dto.patientName,
+  scheduledPickupAt: date(dto.scheduledPickupAt),
+  pickup: dto.pickup ? coordinates(dto.pickup) : null,
+  destination: dto.destination ? coordinates(dto.destination) : null,
+  position: livePositionFromWire(dto.position),
+  etaMinutes: dto.etaMinutes ?? null,
+  isDelayed: dto.isDelayed,
+});
+
+export const liveBoardFromWire = (dto: S['LiveBoardDto']): LiveBoard => ({
+  organizationId: dto.organizationId,
+  serviceArea: serviceAreaFromWire(dto.serviceArea),
+  rides: dto.rides.map(liveRideFromWire),
 });
 
 export const seatsFromWire = (dto: S['OrganizationSeatsDto']): SeatSummary => ({

@@ -323,10 +323,16 @@ EOF
 # Content-Security-Policy per app, from infrastructure/nginx: the family app
 # never asks for location; the driver app does, for itself only.
 CSP_BASE="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'"
+# The ops console's live map draws OpenStreetMap tiles, so that one site may
+# load images from the tile server. Nothing else is widened.
+MAP_TILES="https://tile.openstreetmap.org"
+IMG_BASE="img-src 'self' data: blob:"
+CSP_OPS="${CSP_BASE/"$IMG_BASE"/"$IMG_BASE $MAP_TILES"}"
 PERMS_BASE="accelerometer=(), camera=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
 
 caddy_site_body() { # app, geolocation policy
-  local app=$1 geo=$2 hsts=""
+  local app=$1 geo=$2 hsts="" csp=$CSP_BASE
+  [ "$app" = ops ] && csp=$CSP_OPS
   [ "$HTTPS" = on ] && hsts='Strict-Transport-Security "max-age=31536000; includeSubDomains"'
   cat <<EOF
 	encode zstd gzip
@@ -336,7 +342,7 @@ caddy_site_body() { # app, geolocation policy
 	handle {
 		root * $CB_HOME/www/$app
 		header {
-			Content-Security-Policy "$CSP_BASE"
+			Content-Security-Policy "$csp"
 			Permissions-Policy "$PERMS_BASE, geolocation=$geo, screen-wake-lock=(self)"
 			X-Frame-Options DENY
 			X-Content-Type-Options nosniff

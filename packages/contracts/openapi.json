@@ -2598,6 +2598,43 @@
         ]
       }
     },
+    "/organizations/{organizationId}/dispatch/live": {
+      "get": {
+        "description": "A snapshot with the service area and each car's last position, if it is recent enough to show. Live updates come from the tracking socket (`watch` each ride id).",
+        "operationId": "Dispatch_liveBoard",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveBoardDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Rides the operator's drivers are carrying now, for the live map",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
     "/organizations/{organizationId}/dispatch/rides/{rideId}/assign": {
       "post": {
         "description": "Eligibility is asserted, not advised — a wheelchair trip cannot be given to a saloon car, and a driver cannot be given a second passenger. A reassignment requires a reason and passes through `reassignmentRequired`, so the family timeline records that the first driver dropped it.",
@@ -8503,6 +8540,132 @@
           "organizationId",
           "items",
           "availableDrivers"
+        ]
+      },
+      "LivePositionDto": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "accuracyMeters": {
+            "type": "number"
+          },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the device took the reading — age is measured from this."
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude",
+          "accuracyMeters",
+          "capturedAt"
+        ]
+      },
+      "LiveRideDto": {
+        "type": "object",
+        "properties": {
+          "rideId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "driverId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "driverName": {
+            "type": "string"
+          },
+          "patientName": {
+            "type": "string"
+          },
+          "scheduledPickupAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pickup": {
+            "nullable": true,
+            "description": "Null when the address was never located.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CoordinatesDto"
+              }
+            ]
+          },
+          "destination": {
+            "nullable": true,
+            "description": "Null when the address was never located.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CoordinatesDto"
+              }
+            ]
+          },
+          "position": {
+            "nullable": true,
+            "description": "The car's last reported position. Null before the driver sets off, after tracking ends, or once the last report is older than the tracking cut-off — never a stale position presented as current. Live updates arrive on the tracking socket.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LivePositionDto"
+              }
+            ]
+          },
+          "etaMinutes": {
+            "type": "integer",
+            "nullable": true
+          },
+          "isDelayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "rideId",
+          "status",
+          "driverId",
+          "driverName",
+          "patientName",
+          "scheduledPickupAt",
+          "pickup",
+          "destination",
+          "position",
+          "etaMinutes",
+          "isDelayed"
+        ]
+      },
+      "LiveBoardDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceArea": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceAreaDto"
+              }
+            ]
+          },
+          "rides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LiveRideDto"
+            }
+          }
+        },
+        "required": [
+          "organizationId",
+          "serviceArea",
+          "rides"
         ]
       },
       "AssignRideDto": {

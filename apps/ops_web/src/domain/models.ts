@@ -75,6 +75,12 @@ export interface QueueItem {
   wheelchairRequired: boolean;
   assistanceRequired: boolean;
   urgency: DispatchUrgency;
+  /**
+   * Whether the pickup is inside the operator's service area. Null when no
+   * area is set or the address was never located — unknown, not inside.
+   * Advisory: the server does not refuse assignment on it.
+   */
+  pickupInServiceArea: boolean | null;
   candidates: Candidate[];
 }
 

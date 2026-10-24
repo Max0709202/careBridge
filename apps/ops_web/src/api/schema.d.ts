@@ -1023,6 +1023,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{organizationId}/dispatch/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rides the operator's drivers are carrying now, for the live map
+         * @description A snapshot with the service area and each car's last position, if it is recent enough to show. Live updates come from the tracking socket (`watch` each ride id).
+         */
+        get: operations["Dispatch_liveBoard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{organizationId}/dispatch/rides/{rideId}/assign": {
         parameters: {
             query?: never;
@@ -3118,6 +3138,41 @@ export interface components {
             items: components["schemas"]["DispatchQueueItemDto"][];
             /** @description Drivers on shift and free right now, across the whole roster. */
             availableDrivers: number;
+        };
+        LivePositionDto: {
+            latitude: number;
+            longitude: number;
+            accuracyMeters: number;
+            /**
+             * Format: date-time
+             * @description When the device took the reading — age is measured from this.
+             */
+            capturedAt: string;
+        };
+        LiveRideDto: {
+            /** Format: uuid */
+            rideId: string;
+            status: string;
+            /** Format: uuid */
+            driverId: string;
+            driverName: string;
+            patientName: string;
+            /** Format: date-time */
+            scheduledPickupAt: string;
+            /** @description Null when the address was never located. */
+            pickup: components["schemas"]["CoordinatesDto"] | null;
+            /** @description Null when the address was never located. */
+            destination: components["schemas"]["CoordinatesDto"] | null;
+            /** @description The car's last reported position. Null before the driver sets off, after tracking ends, or once the last report is older than the tracking cut-off — never a stale position presented as current. Live updates arrive on the tracking socket. */
+            position: components["schemas"]["LivePositionDto"] | null;
+            etaMinutes: number | null;
+            isDelayed: boolean;
+        };
+        LiveBoardDto: {
+            /** Format: uuid */
+            organizationId: string;
+            serviceArea: components["schemas"]["ServiceAreaDto"] | null;
+            rides: components["schemas"]["LiveRideDto"][];
         };
         AssignRideDto: {
             /** Format: uuid */
@@ -5274,6 +5329,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DispatchQueueDto"];
+                };
+            };
+        };
+    };
+    Dispatch_liveBoard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveBoardDto"];
                 };
             };
         };

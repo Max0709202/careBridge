@@ -851,3 +851,27 @@ p {
   color: var(--positive);
   border-bottom: 1px solid var(--outline-variant);
 }
+
+/* ─── live map ─────────────────────────────────────────────────────────────
+   Shapes are Leaflet SVG paths styled by class, so they follow the theme. */
+.live-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: var(--space-md); align-items: start; }
+.live-map-pane { position: sticky; top: var(--space-md); }
+.live-map { height: min(70vh, 640px); border-radius: var(--radius-card); border: 1px solid var(--outline-variant); overflow: hidden; z-index: 0; }
+.live-map.picking { cursor: crosshair; }
+.live-map.picking .leaflet-grab { cursor: crosshair; }
+.live-side { min-width: 0; }
+.card.selected { outline: 2px solid var(--primary); }
+.map-area { stroke: var(--primary); stroke-width: 2; stroke-dasharray: 6 4; fill: var(--primary); fill-opacity: 0.08; }
+.map-car { stroke: var(--surface); stroke-width: 2; fill-opacity: 1; }
+.map-car-fresh { fill: var(--primary); }
+.map-car-stale { fill: var(--imminent); fill-opacity: 0.6; stroke-dasharray: 3 2; }
+.map-car-selected { stroke: var(--on-surface); stroke-width: 3; }
+.map-stop { stroke: var(--surface); stroke-width: 2; fill-opacity: 1; }
+.map-stop-pickup { fill: var(--positive); }
+.map-stop-destination { fill: var(--on-surface-variant); }
+.map-guide { stroke: var(--on-surface-variant); stroke-width: 2; stroke-dasharray: 2 6; fill: none; }
+@media (max-width: 760px) {
+  .live-layout { grid-template-columns: minmax(0, 1fr); }
+  .live-map-pane { position: static; }
+  .live-map { height: 55vh; }
+}

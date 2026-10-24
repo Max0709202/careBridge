@@ -288,3 +288,60 @@ export class DocumentViewUrlDto {
 
   @ApiProperty({ type: 'integer' }) expiresInSeconds!: number;
 }
+
+export class LivePositionDto {
+  @ApiProperty({ type: Number }) latitude!: number;
+  @ApiProperty({ type: Number }) longitude!: number;
+  @ApiProperty({ type: Number }) accuracyMeters!: number;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    description: 'When the device took the reading — age is measured from this.',
+  })
+  capturedAt!: string;
+}
+
+/** A ride this operator is carrying right now, for the live map. */
+export class LiveRideDto {
+  @ApiProperty({ type: String, format: 'uuid' }) rideId!: string;
+  @ApiProperty({ type: String }) status!: string;
+  @ApiProperty({ type: String, format: 'uuid' }) driverId!: string;
+  @ApiProperty({ type: String }) driverName!: string;
+  @ApiProperty({ type: String }) patientName!: string;
+  @ApiProperty({ type: String, format: 'date-time' }) scheduledPickupAt!: string;
+
+  @ApiProperty({
+    type: () => CoordinatesDto,
+    nullable: true,
+    description: 'Null when the address was never located.',
+  })
+  pickup!: CoordinatesDto | null;
+
+  @ApiProperty({
+    type: () => CoordinatesDto,
+    nullable: true,
+    description: 'Null when the address was never located.',
+  })
+  destination!: CoordinatesDto | null;
+
+  @ApiProperty({
+    type: () => LivePositionDto,
+    nullable: true,
+    description:
+      "The car's last reported position. Null before the driver sets off, after tracking ends, or once the last report is older than the tracking cut-off — never a stale position presented as current. Live updates arrive on the tracking socket.",
+  })
+  position!: LivePositionDto | null;
+
+  @ApiProperty({ type: 'integer', nullable: true }) etaMinutes!: number | null;
+  @ApiProperty({ type: Boolean }) isDelayed!: boolean;
+}
+
+export class LiveBoardDto {
+  @ApiProperty({ type: String, format: 'uuid' }) organizationId!: string;
+
+  @ApiProperty({ type: () => ServiceAreaDto, nullable: true })
+  serviceArea!: ServiceAreaDto | null;
+
+  @ApiProperty({ type: () => [LiveRideDto] }) rides!: LiveRideDto[];
+}

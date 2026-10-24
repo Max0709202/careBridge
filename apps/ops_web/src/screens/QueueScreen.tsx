@@ -1,7 +1,7 @@
 import { ArrowLeftRight, Accessibility, CircleCheck, HandHelping, MessageSquare, PhoneCall } from 'lucide-react';
 import { useState } from 'react';
 
-import { UrgencyPill } from '../components/pills';
+import { OutsideAreaPill, UrgencyPill } from '../components/pills';
 import { Button, Card, EmptyState, LoadFailure, LoadingBlock, RefreshButton, Screen, StaleBanner } from '../components/ui';
 import { formatClock, plural } from '../core/format';
 import { reasonLabel, reasonRemedy, type IneligibilityReason } from '../domain/dispatch';
@@ -117,6 +117,8 @@ function QueueRow({ item, onAssign }: { item: QueueItem; onAssign: () => void })
       <div className="row">
         <UrgencyPill urgency={item.urgency} />
         <span className="t-title">{formatClock(item.scheduledPickupAt)}</span>
+        {/* Only a definite "outside": unknown (no area, or an unlocated address) is not flagged. */}
+        {item.pickupInServiceArea === false && <OutsideAreaPill />}
         <span className="grow" />
         {reassignment && (
           <span className="muted" title="The previous driver dropped this trip">

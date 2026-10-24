@@ -15,6 +15,7 @@ import {
   Clock,
   Hourglass,
   Mail,
+  MapPinOff,
   UserX,
   type LucideIcon,
 } from 'lucide-react';
@@ -75,4 +76,19 @@ export function SubscriptionPill({ status }: { status: SubscriptionStatus }) {
   const [tone, icon] = subscriptionLook[status];
   const label = subscriptionStatusLabel[status];
   return <Pill tone={tone} icon={icon} label={label} ariaLabel={`Subscription: ${label}`} />;
+}
+
+/**
+ * A pickup outside the operator's service area. Advisory — the trip can still
+ * be assigned — so a caution tone, not the overdue one.
+ */
+export function OutsideAreaPill() {
+  return (
+    <Pill
+      tone="imminent"
+      icon={MapPinOff}
+      label="Outside area"
+      ariaLabel="Pickup is outside your service area"
+    />
+  );
 }

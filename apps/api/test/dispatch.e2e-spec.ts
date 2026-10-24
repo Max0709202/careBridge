@@ -768,5 +768,123 @@ describe('dispatch', () => {
       expect(audit).toHaveLength(1);
       expect(audit[0]?.changedFields).toEqual(['driverId', 'status']);
     });
+
+    // ─── the live map ───────────────────────────────────────────────────────
+
+    describe('the live map', () => {
+      const liveUrl = (organizationId: string) =>
+        `/api/v1/organizations/${organizationId}/dispatch/live`;
+
+      async function assignedRide() {
+        const op = await readyOperator();
+        const { rideId } = await bookedRide();
+        await authed(harness, op.owner.accessToken)
+          .post(
+            `/api/v1/organizations/${op.organizationId}/dispatch/rides/${rideId}/assign`,
+          )
+          .send({ driverId: op.driverId })
+          .expect(201);
+        return { ...op, rideId };
+      }
+
+      type Board = {
+        serviceArea: { kind: string } | null;
+        rides: Array<{
+          rideId: string;
+          driverId: string;
+          status: string;
+          position: { latitude: number; capturedAt: string } | null;
+          etaMinutes: number | null;
+        }>;
+      };
+
+      it('lists the rides its drivers are carrying, with no position before they set off', async () => {
+        const { owner, organizationId, driverId, rideId } = await assignedRide();
+
+        const response = await authed(harness, owner.accessToken)
+          .get(liveUrl(organizationId))
+          .expect(200);
+        const board = response.body as Board;
+
+        expect(board.serviceArea).toBeNull();
+        expect(board.rides).toEqual([
+          expect.objectContaining({
+            rideId,
+            driverId,
+            status: 'assigned',
+            position: null,
+          }),
+        ]);
+      });
+
+      it('shows a recent position while the car is moving, and hides one that is too old', async () => {
+        const { owner, organizationId, rideId } = await assignedRide();
+        await harness.prisma.ride.update({
+          where: { id: rideId },
+          data: {
+            status: 'driverEnRoute',
+            lastLatitude: 37.77,
+            lastLongitude: -122.41,
+            lastAccuracyMeters: 8,
+            lastCapturedAt: new Date(Date.now() - 10_000),
+            etaMinutes: 7,
+          },
+        });
+
+        const fresh = (
+          await authed(harness, owner.accessToken)
+            .get(liveUrl(organizationId))
+            .expect(200)
+        ).body as Board;
+        expect(fresh.rides[0]?.position?.latitude).toBe(37.77);
+        expect(fresh.rides[0]?.etaMinutes).toBe(7);
+
+        await harness.prisma.ride.update({
+          where: { id: rideId },
+          data: { lastCapturedAt: new Date(Date.now() - 10 * 60_000) },
+        });
+        const old = (
+          await authed(harness, owner.accessToken)
+            .get(liveUrl(organizationId))
+            .expect(200)
+        ).body as Board;
+        expect(old.rides[0]?.position).toBeNull();
+      });
+
+      it('drops a ride the moment it finishes', async () => {
+        const { owner, organizationId, rideId } = await assignedRide();
+        await harness.prisma.ride.update({
+          where: { id: rideId },
+          data: { status: 'completed' },
+        });
+
+        const board = (
+          await authed(harness, owner.accessToken)
+            .get(liveUrl(organizationId))
+            .expect(200)
+        ).body as Board;
+        expect(board.rides).toEqual([]);
+      });
+
+      it("never shows another company's rides, and is invisible to outsiders", async () => {
+        const carrying = await assignedRide();
+        const other = await operator();
+
+        const board = (
+          await authed(harness, other.owner.accessToken)
+            .get(liveUrl(other.organizationId))
+            .expect(200)
+        ).body as Board;
+        expect(board.rides).toEqual([]);
+
+        await expectsIndistinguishableDenial({
+          token: other.owner.accessToken,
+          forbidden: (token) =>
+            authed(harness, token).get(liveUrl(carrying.organizationId)),
+          missing: (token) =>
+            authed(harness, token).get(liveUrl('00000000-0000-4000-8000-0000000000ff')),
+        });
+      });
+    });
   });
 });

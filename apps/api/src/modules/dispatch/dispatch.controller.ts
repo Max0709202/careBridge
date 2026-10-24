@@ -28,6 +28,7 @@ import {
   DriverAccountMatchDto,
   DriverComplianceDto,
   DriverDto,
+  LiveBoardDto,
   OrganizationServiceAreaDto,
   VehicleDto,
 } from './dispatch.dto';
@@ -290,6 +291,20 @@ export class DispatchController {
     @Param('organizationId', ParseUUIDPipe) organizationId: string,
   ): Promise<DispatchQueueDto> {
     return this.dispatch.queue(userId, organizationId);
+  }
+
+  @Get('dispatch/live')
+  @ApiOperation({
+    summary: "Rides the operator's drivers are carrying now, for the live map",
+    description:
+      "A snapshot with the service area and each car's last position, if it is recent enough to show. Live updates come from the tracking socket (`watch` each ride id).",
+  })
+  @ApiOkResponse({ type: LiveBoardDto })
+  liveBoard(
+    @CurrentUser() userId: string,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+  ): Promise<LiveBoardDto> {
+    return this.dispatch.liveBoard(userId, organizationId);
   }
 
   @Post('dispatch/rides/:rideId/assign')

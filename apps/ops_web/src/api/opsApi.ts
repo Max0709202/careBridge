@@ -13,6 +13,7 @@
 import type { AuditFilter, AuditPage, FeatureFlag, PlatformStats, RefundableInvoice } from '../domain/admin';
 import type { BillingAccount, BillingInterval, Invoice, OperatorPlan, PaymentMethod } from '../domain/billing';
 import type { DriverStatus } from '../domain/dispatch';
+import type { LiveBoard, ServiceArea } from '../domain/liveMap';
 import type { DispatchQueue, Driver, Organization, SeatSummary, Vehicle } from '../domain/models';
 import {
   accountFromWire,
@@ -20,12 +21,14 @@ import {
   driverFromWire,
   flagFromWire,
   invoiceFromWire,
+  liveBoardFromWire,
   organizationFromWire,
   paymentMethodFromWire,
   planFromWire,
   queueFromWire,
   refundableFromWire,
   seatsFromWire,
+  serviceAreaFromWire,
   statsFromWire,
   vehicleFromWire,
   type DocumentViewUrl,
@@ -117,6 +120,24 @@ export class OpsApi extends ApiTransport {
         },
       ),
     );
+  }
+
+  // ─── the live map ─────────────────────────────────────────────────────────
+
+  async liveBoard(organizationId: string): Promise<LiveBoard> {
+    return liveBoardFromWire(await this.send<S['LiveBoardDto']>('GET', this.org(organizationId, '/dispatch/live')));
+  }
+
+  /** Replaces the area. Owners and admins only; anyone else is refused by the server. */
+  async setServiceArea(organizationId: string, area: ServiceArea): Promise<ServiceArea | null> {
+    const json = await this.send<S['OrganizationServiceAreaDto']>('PUT', this.org(organizationId, '/service-area'), {
+      body: area,
+    });
+    return serviceAreaFromWire(json.serviceArea);
+  }
+
+  async clearServiceArea(organizationId: string): Promise<void> {
+    await this.send('DELETE', this.org(organizationId, '/service-area'));
   }
 
   // ─── roster and fleet ─────────────────────────────────────────────────────

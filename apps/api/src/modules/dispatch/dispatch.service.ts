@@ -8,6 +8,7 @@ import type {
   DocumentViewUrlDto,
   DriverAccountMatchDto,
   DriverComplianceDto,
+  LiveBoardDto,
   OrganizationServiceAreaDto,
 } from './dispatch.dto';
 import { BillingService } from '../billing/billing.service';
@@ -31,6 +32,8 @@ import {
   isAwaitingDispatch,
   type DriverCandidate,
 } from '../../domain/dispatch';
+import { allowsLocationSharing, isTerminalRideStatus } from '../../domain/ride-status';
+import { TrackingFreshness } from '../../domain/tracking';
 import {
   parseServiceArea,
   pickupCoverage,
@@ -711,6 +714,77 @@ export class DispatchService {
     };
   }
 
+  // ─── the live map ─────────────────────────────────────────────────────────
+
+  /**
+   * Rides this operator's drivers are carrying now, with where each car was
+   * last seen. A snapshot for the map to open on; the tracking socket moves
+   * the markers from there.
+   *
+   * Scoped by the *driver's* operator, the same rule `TrackingAuthorizer`
+   * uses to let a dispatcher watch a ride, so the map never lists a ride whose
+   * position the socket would then refuse.
+   */
+  async liveBoard(userId: string, organizationId: string): Promise<LiveBoardDto> {
+    await this.organizations.requireMembership(userId, organizationId, DISPATCH_ROLES);
+    const now = Date.now();
+
+    const [organization, rides] = await Promise.all([
+      this.findOrganization(organizationId),
+      this.prisma.ride.findMany({
+        where: {
+          driver: { organizationId },
+          status: {
+            notIn: ['requested', 'awaitingAssignment', 'reassignmentRequired'],
+          },
+        },
+        include: { patient: true, pickup: true, destination: true, driver: true },
+        orderBy: { scheduledPickupAt: 'asc' },
+        take: 200,
+      }),
+    ]);
+
+    return {
+      organizationId,
+      serviceArea: toServiceAreaDto(organization).serviceArea,
+      rides: rides
+        .filter((ride) => !isTerminalRideStatus(ride.status))
+        .flatMap((ride) => {
+          if (!ride.driver) return [];
+          const sharing = allowsLocationSharing(ride.status);
+          const fresh =
+            ride.lastCapturedAt != null &&
+            now - ride.lastCapturedAt.getTime() <= TrackingFreshness.lostMs;
+          return [
+            {
+              rideId: ride.id,
+              status: ride.status,
+              driverId: ride.driver.id,
+              driverName: ride.driver.displayName,
+              patientName: ride.patient.preferredName,
+              scheduledPickupAt: ride.scheduledPickupAt.toISOString(),
+              pickup: coordinatesOf(ride.pickup),
+              destination: coordinatesOf(ride.destination),
+              position:
+                sharing &&
+                fresh &&
+                ride.lastLatitude != null &&
+                ride.lastLongitude != null
+                  ? {
+                      latitude: ride.lastLatitude,
+                      longitude: ride.lastLongitude,
+                      accuracyMeters: ride.lastAccuracyMeters ?? 0,
+                      capturedAt: ride.lastCapturedAt!.toISOString(),
+                    }
+                  : null,
+              etaMinutes: sharing ? ride.etaMinutes : null,
+              isDelayed: ride.isDelayed,
+            },
+          ];
+        }),
+    };
+  }
+
   // ─── assignment ───────────────────────────────────────────────────────────
 
   /**
@@ -881,6 +955,15 @@ export class DispatchService {
     });
     return user?.fullName ?? 'Dispatch';
   }
+}
+
+function coordinatesOf(address: {
+  latitude: number | null;
+  longitude: number | null;
+}): { latitude: number; longitude: number } | null {
+  return address.latitude != null && address.longitude != null
+    ? { latitude: address.latitude, longitude: address.longitude }
+    : null;
 }
 
 /** The stored area, or null when none is set. Throws if the row is malformed. */

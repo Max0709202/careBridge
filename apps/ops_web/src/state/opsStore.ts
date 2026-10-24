@@ -40,6 +40,7 @@ export const keys = {
   flags: 'admin/flags',
   plans: 'billing/plans',
   queue: (org: string) => `org/${org}/queue`,
+  liveBoard: (org: string) => `org/${org}/live`,
   drivers: (org: string) => `org/${org}/drivers`,
   vehicles: (org: string) => `org/${org}/vehicles`,
   seats: (org: string) => `org/${org}/seats`,
@@ -258,3 +259,10 @@ function safeSessionStorage(): Storage | undefined {
  * room of six dispatchers is not a load test.
  */
 export const QUEUE_POLL_MS = 10_000;
+
+/**
+ * The live map's snapshot. Slower than the queue because the socket moves the
+ * cars in between; the poll is what adds and drops rides, and what keeps the
+ * map honest when the socket is down.
+ */
+export const LIVE_POLL_MS = 15_000;

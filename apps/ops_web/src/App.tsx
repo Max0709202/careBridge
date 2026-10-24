@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { lazy, Suspense, useCallback, useEffect } from 'react';
 import { Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 
 import { LoadingBlock } from './components/ui';
@@ -20,6 +20,10 @@ import { useOrganizations, useSession, useStore } from './state/context';
 import { MessagingProvider } from './messaging/react';
 import type { MessagingStore } from './messaging/store';
 import { MessagesScreen } from './screens/messages/MessagesScreen';
+
+// Loaded when first opened: the map library is most of its weight, and the
+// queue — the screen every dispatcher starts on — should not wait for it.
+const LiveMapScreen = lazy(() => import('./screens/LiveMapScreen').then((m) => ({ default: m.LiveMapScreen })));
 
 /**
  * Routes, and the redirects that matter — the same locations as
@@ -64,6 +68,14 @@ export function App({ messaging }: { messaging: MessagingStore }) {
         <Route element={<OperatorChosen />}>
           <Route element={<ConsoleShell />}>
             <Route path="/queue" element={<QueueScreen />} />
+            <Route
+              path="/map"
+              element={
+                <Suspense fallback={<LoadingBlock />}>
+                  <LiveMapScreen />
+                </Suspense>
+              }
+            />
             <Route path="/roster" element={<RosterScreen />} />
             <Route path="/fleet" element={<FleetScreen />} />
             <Route path="/seats" element={<SeatsScreen />} />

@@ -68,6 +68,28 @@ export const queue = (items: S['DispatchQueueItemDto'][] = [queueItem()], availa
   availableDrivers,
 });
 
+export const liveRide = (overrides: Partial<S['LiveRideDto']> = {}): S['LiveRideDto'] => ({
+  rideId: 'ride-1',
+  status: 'driverEnRoute',
+  driverId: 'driver-1',
+  driverName: 'Marcus T.',
+  patientName: 'Margaret H.',
+  scheduledPickupAt: '2026-06-15T14:00:00Z',
+  pickup: { latitude: 40.66, longitude: -73.96 },
+  destination: { latitude: 40.65, longitude: -73.94 },
+  position: { latitude: 40.67, longitude: -73.97, accuracyMeters: 8, capturedAt: new Date().toISOString() },
+  etaMinutes: 7,
+  isDelayed: false,
+  ...overrides,
+});
+
+export const liveBoard = (overrides: Partial<S['LiveBoardDto']> = {}): S['LiveBoardDto'] => ({
+  organizationId: 'org-1',
+  serviceArea: null,
+  rides: [liveRide()],
+  ...overrides,
+});
+
 export const quote = (overrides: Partial<S['SubscriptionQuoteDto']> = {}): S['SubscriptionQuoteDto'] => ({
   planCode: 'operator-standard',
   planVersion: '1',
