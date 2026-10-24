@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -27,6 +28,7 @@ import {
   DriverAccountMatchDto,
   DriverComplianceDto,
   DriverDto,
+  OrganizationServiceAreaDto,
   VehicleDto,
 } from './dispatch.dto';
 import {
@@ -36,6 +38,7 @@ import {
   LookupDriverAccountDto,
   ReviewDocumentDto,
   SetDriverStatusDto,
+  SetServiceAreaDto,
   SetShiftDto,
 } from './dto/dispatch.request.dto';
 
@@ -76,6 +79,48 @@ export class DispatchController {
     @Ctx() ctx: RequestContext,
   ): Promise<VehicleDto> {
     return this.dispatch.addVehicle(userId, organizationId, body, ctx);
+  }
+
+  // ─── service area ─────────────────────────────────────────────────────────
+
+  @Get('service-area')
+  @ApiOperation({ summary: 'Where the operator works' })
+  @ApiOkResponse({ type: OrganizationServiceAreaDto })
+  serviceArea(
+    @CurrentUser() userId: string,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+  ): Promise<OrganizationServiceAreaDto> {
+    return this.dispatch.serviceArea(userId, organizationId);
+  }
+
+  @Put('service-area')
+  @ApiOperation({
+    summary: 'Set where the operator works',
+    description:
+      'A radius round a point, or an outline drawn on the map. Replaces any previous area. The dispatch queue then flags pickups outside it; assignment is not refused. Owners and admins only.',
+  })
+  @ApiOkResponse({ type: OrganizationServiceAreaDto })
+  setServiceArea(
+    @CurrentUser() userId: string,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+    @Body() body: SetServiceAreaDto,
+    @Ctx() ctx: RequestContext,
+  ): Promise<OrganizationServiceAreaDto> {
+    return this.dispatch.setServiceArea(userId, organizationId, body, ctx);
+  }
+
+  @Delete('service-area')
+  @ApiOperation({
+    summary: 'Remove the service area',
+    description: 'Nothing is flagged afterwards. Owners and admins only.',
+  })
+  @ApiOkResponse({ type: OrganizationServiceAreaDto })
+  clearServiceArea(
+    @CurrentUser() userId: string,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+    @Ctx() ctx: RequestContext,
+  ): Promise<OrganizationServiceAreaDto> {
+    return this.dispatch.clearServiceArea(userId, organizationId, ctx);
   }
 
   // ─── roster ───────────────────────────────────────────────────────────────

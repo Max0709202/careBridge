@@ -837,6 +837,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{organizationId}/service-area": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where the operator works */
+        get: operations["Dispatch_serviceArea"];
+        /**
+         * Set where the operator works
+         * @description A radius round a point, or an outline drawn on the map. Replaces any previous area. The dispatch queue then flags pickups outside it; assignment is not refused. Owners and admins only.
+         */
+        put: operations["Dispatch_setServiceArea"];
+        post?: never;
+        /**
+         * Remove the service area
+         * @description Nothing is flagged afterwards. Owners and admins only.
+         */
+        delete: operations["Dispatch_clearServiceArea"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{organizationId}/drivers": {
         parameters: {
             query?: never;
@@ -2938,6 +2963,39 @@ export interface components {
             isWheelchairAccessible: boolean;
         };
         /** @enum {string} */
+        ServiceAreaKind: "radius" | "polygon";
+        CoordinatesDto: {
+            latitude: number;
+            longitude: number;
+        };
+        ServiceAreaDto: {
+            kind: components["schemas"]["ServiceAreaKind"];
+            center: components["schemas"]["CoordinatesDto"] | null;
+            radiusMiles: number | null;
+            points: components["schemas"]["CoordinatesDto"][] | null;
+        };
+        OrganizationServiceAreaDto: {
+            /** Format: uuid */
+            organizationId: string;
+            /** @description Null until the operator sets one; nothing is flagged until then. */
+            serviceArea: components["schemas"]["ServiceAreaDto"] | null;
+            /** Format: date-time */
+            updatedAt: string | null;
+        };
+        CoordinatesInput: {
+            latitude: number;
+            longitude: number;
+        };
+        SetServiceAreaDto: {
+            kind: components["schemas"]["ServiceAreaKind"];
+            /** @description Required for `radius`: the point the radius is measured from. */
+            center?: components["schemas"]["CoordinatesInput"];
+            /** @description Required for `radius`. Straight-line miles, not road miles. */
+            radiusMiles?: number;
+            /** @description Required for `polygon`: the outline, 3 to 500 points, not closed (the last point joins the first). */
+            points?: components["schemas"]["CoordinatesInput"][];
+        };
+        /** @enum {string} */
         DriverStatus: "invited" | "pendingApproval" | "approved" | "suspended" | "offboarded";
         CreateDriverDto: {
             /** @description First name and last initial. Never a full legal name. */
@@ -3050,6 +3108,8 @@ export interface components {
             assistanceRequired: boolean;
             /** @description "overdue" is its own band rather than the top of "imminent": a pickup time that has passed with nobody assigned is a failure already in progress — somebody is standing in a hallway waiting. */
             urgency: components["schemas"]["DispatchUrgency"];
+            /** @description Whether the pickup is inside this operator's service area. Null when the operator has not set an area or the pickup address could not be located — unknown, not inside. Advisory: assignment is not refused on it. */
+            pickupInServiceArea: boolean | null;
             candidates: components["schemas"]["DispatchCandidateDto"][];
         };
         DispatchQueueDto: {
@@ -4921,6 +4981,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VehicleDto"];
+                };
+            };
+        };
+    };
+    Dispatch_serviceArea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationServiceAreaDto"];
+                };
+            };
+        };
+    };
+    Dispatch_setServiceArea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetServiceAreaDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationServiceAreaDto"];
+                };
+            };
+        };
+    };
+    Dispatch_clearServiceArea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationServiceAreaDto"];
                 };
             };
         };

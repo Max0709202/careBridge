@@ -8,6 +8,7 @@ import type {
   DocumentViewUrlDto,
   DriverAccountMatchDto,
   DriverComplianceDto,
+  OrganizationServiceAreaDto,
 } from './dispatch.dto';
 import { BillingService } from '../billing/billing.service';
 import { OrganizationsService } from '../organizations/organizations.service';
@@ -30,6 +31,11 @@ import {
   isAwaitingDispatch,
   type DriverCandidate,
 } from '../../domain/dispatch';
+import {
+  parseServiceArea,
+  pickupCoverage,
+  type ServiceArea,
+} from '../../domain/service-area';
 import type {
   DispatchQueueDto,
   DispatchQueueItemDto,
@@ -41,6 +47,7 @@ import type {
   CreateDriverDto,
   CreateVehicleDto,
   LookupDriverAccountDto,
+  SetServiceAreaDto,
 } from './dto/dispatch.request.dto';
 
 type Tx = Prisma.TransactionClient;
@@ -159,6 +166,86 @@ export class DispatchService {
     });
 
     return toVehicleDto(vehicle);
+  }
+
+  // ─── service area ─────────────────────────────────────────────────────────
+
+  async serviceArea(
+    userId: string,
+    organizationId: string,
+  ): Promise<OrganizationServiceAreaDto> {
+    await this.organizations.requireMembership(userId, organizationId, DISPATCH_ROLES);
+    return toServiceAreaDto(await this.findOrganization(organizationId));
+  }
+
+  /**
+   * Sets or replaces the area. Changing it does not touch rides already
+   * assigned; it only changes what the queue flags from now on.
+   */
+  async setServiceArea(
+    userId: string,
+    organizationId: string,
+    dto: SetServiceAreaDto,
+    ctx: RequestContext,
+  ): Promise<OrganizationServiceAreaDto> {
+    await this.organizations.requireMembership(userId, organizationId, ADMIN_ROLES);
+    return this.writeServiceArea(userId, organizationId, parseServiceArea(dto), ctx);
+  }
+
+  async clearServiceArea(
+    userId: string,
+    organizationId: string,
+    ctx: RequestContext,
+  ): Promise<OrganizationServiceAreaDto> {
+    await this.organizations.requireMembership(userId, organizationId, ADMIN_ROLES);
+    return this.writeServiceArea(userId, organizationId, null, ctx);
+  }
+
+  private async writeServiceArea(
+    userId: string,
+    organizationId: string,
+    area: ServiceArea | null,
+    ctx: RequestContext,
+  ): Promise<OrganizationServiceAreaDto> {
+    const organization = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.organization.update({
+        where: { id: organizationId },
+        data: {
+          // A ServiceArea is plain JSON by construction; the cast only tells
+          // Prisma so, since interfaces carry no index signature.
+          serviceArea: area
+            ? (area as unknown as Prisma.InputJsonObject)
+            : Prisma.DbNull,
+          serviceAreaUpdatedAt: new Date(),
+        },
+      });
+
+      await this.audit.record(
+        {
+          actorUserId: userId,
+          action: area ? 'dispatch.service_area_set' : 'dispatch.service_area_cleared',
+          entityType: 'Organization',
+          entityId: organizationId,
+          correlationId: ctx.correlationId,
+          ip: ctx.ip,
+          userAgent: ctx.userAgent,
+          changedFields: ['serviceArea'],
+        },
+        tx,
+      );
+
+      return updated;
+    });
+
+    return toServiceAreaDto(organization);
+  }
+
+  private async findOrganization(organizationId: string) {
+    const organization = await this.prisma.organization.findFirst({
+      where: { id: organizationId, archivedAt: null },
+    });
+    if (!organization) throw new NotFoundError();
+    return organization;
   }
 
   // ─── the roster ───────────────────────────────────────────────────────────
@@ -563,7 +650,8 @@ export class DispatchService {
     await this.organizations.requireMembership(userId, organizationId, DISPATCH_ROLES);
     const now = new Date();
 
-    const [rides, drivers] = await Promise.all([
+    const [organization, rides, drivers] = await Promise.all([
+      this.findOrganization(organizationId),
       this.prisma.ride.findMany({
         where: {
           status: { in: ['requested', 'awaitingAssignment', 'reassignmentRequired'] },
@@ -590,6 +678,8 @@ export class DispatchService {
       now,
     );
 
+    const area = storedServiceArea(organization.serviceArea);
+
     const items: DispatchQueueItemDto[] = ordered.map((entry) => ({
       rideId: entry.rideId,
       status: entry.status,
@@ -600,6 +690,7 @@ export class DispatchService {
       wheelchairRequired: entry.row.wheelchairRequired,
       assistanceRequired: entry.row.assistanceRequired,
       urgency: entry.urgency,
+      pickupInServiceArea: pickupCoverage(area, entry.row.pickup),
       candidates: drivers.map((driver) => {
         const { eligible, reasons } = driverEligibility(driver, entry);
         return {
@@ -790,6 +881,29 @@ export class DispatchService {
     });
     return user?.fullName ?? 'Dispatch';
   }
+}
+
+/** The stored area, or null when none is set. Throws if the row is malformed. */
+function storedServiceArea(value: Prisma.JsonValue): ServiceArea | null {
+  return value == null ? null : parseServiceArea(value);
+}
+
+function toServiceAreaDto(row: {
+  id: string;
+  serviceArea: Prisma.JsonValue;
+  serviceAreaUpdatedAt: Date | null;
+}): OrganizationServiceAreaDto {
+  const area = storedServiceArea(row.serviceArea);
+  return {
+    organizationId: row.id,
+    serviceArea: area && {
+      kind: area.kind,
+      center: area.kind === 'radius' ? area.center : null,
+      radiusMiles: area.kind === 'radius' ? area.radiusMiles : null,
+      points: area.kind === 'polygon' ? area.points : null,
+    },
+    updatedAt: row.serviceAreaUpdatedAt?.toISOString() ?? null,
+  };
 }
 
 function toVehicleDto(row: {

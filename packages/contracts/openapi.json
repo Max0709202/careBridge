@@ -2031,6 +2031,122 @@
         ]
       }
     },
+    "/organizations/{organizationId}/service-area": {
+      "get": {
+        "operationId": "Dispatch_serviceArea",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationServiceAreaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Where the operator works",
+        "tags": [
+          "dispatch"
+        ]
+      },
+      "put": {
+        "description": "A radius round a point, or an outline drawn on the map. Replaces any previous area. The dispatch queue then flags pickups outside it; assignment is not refused. Owners and admins only.",
+        "operationId": "Dispatch_setServiceArea",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetServiceAreaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationServiceAreaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Set where the operator works",
+        "tags": [
+          "dispatch"
+        ]
+      },
+      "delete": {
+        "description": "Nothing is flagged afterwards. Owners and admins only.",
+        "operationId": "Dispatch_clearServiceArea",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationServiceAreaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Remove the service area",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
     "/organizations/{organizationId}/drivers": {
       "get": {
         "operationId": "Dispatch_drivers",
@@ -7852,6 +7968,147 @@
           "isWheelchairAccessible"
         ]
       },
+      "ServiceAreaKind": {
+        "type": "string",
+        "enum": [
+          "radius",
+          "polygon"
+        ]
+      },
+      "CoordinatesDto": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
+      },
+      "ServiceAreaDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceAreaKind"
+              }
+            ]
+          },
+          "center": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CoordinatesDto"
+              }
+            ]
+          },
+          "radiusMiles": {
+            "type": "number",
+            "nullable": true
+          },
+          "points": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoordinatesDto"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "center",
+          "radiusMiles",
+          "points"
+        ]
+      },
+      "OrganizationServiceAreaDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceArea": {
+            "nullable": true,
+            "description": "Null until the operator sets one; nothing is flagged until then.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceAreaDto"
+              }
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "organizationId",
+          "serviceArea",
+          "updatedAt"
+        ]
+      },
+      "CoordinatesInput": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
+      },
+      "SetServiceAreaDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceAreaKind"
+              }
+            ]
+          },
+          "center": {
+            "description": "Required for `radius`: the point the radius is measured from.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CoordinatesInput"
+              }
+            ]
+          },
+          "radiusMiles": {
+            "type": "number",
+            "maximum": 250,
+            "description": "Required for `radius`. Straight-line miles, not road miles."
+          },
+          "points": {
+            "description": "Required for `polygon`: the outline, 3 to 500 points, not closed (the last point joins the first).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoordinatesInput"
+            }
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
       "DriverStatus": {
         "type": "string",
         "enum": [
@@ -8198,6 +8455,11 @@
               }
             ]
           },
+          "pickupInServiceArea": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether the pickup is inside this operator's service area. Null when the operator has not set an area or the pickup address could not be located — unknown, not inside. Advisory: assignment is not refused on it."
+          },
           "candidates": {
             "type": "array",
             "items": {
@@ -8215,6 +8477,7 @@
           "wheelchairRequired",
           "assistanceRequired",
           "urgency",
+          "pickupInServiceArea",
           "candidates"
         ]
       },

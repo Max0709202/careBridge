@@ -382,6 +382,189 @@ describe('dispatch', () => {
     });
   });
 
+  // ─── service area ─────────────────────────────────────────────────────────
+
+  describe('the service area', () => {
+    const depot = { latitude: 37.7749, longitude: -122.4194 };
+
+    function areaUrl(organizationId: string) {
+      return `/api/v1/organizations/${organizationId}/service-area`;
+    }
+
+    /** Pins a ride's pickup to a point, standing in for a geocoder. */
+    async function pickupAt(
+      rideId: string,
+      point: { latitude: number; longitude: number } | null,
+    ) {
+      const ride = await harness.prisma.ride.findUniqueOrThrow({
+        where: { id: rideId },
+      });
+      await harness.prisma.address.update({
+        where: { id: ride.pickupAddressId },
+        data: {
+          latitude: point?.latitude ?? null,
+          longitude: point?.longitude ?? null,
+        },
+      });
+    }
+
+    it('is unset until an admin sets it', async () => {
+      const { owner, organizationId } = await operator();
+
+      const response = await authed(harness, owner.accessToken)
+        .get(areaUrl(organizationId))
+        .expect(200);
+
+      expect(response.body).toEqual({
+        organizationId,
+        serviceArea: null,
+        updatedAt: null,
+      });
+    });
+
+    it('stores a radius and a drawn outline, each replacing the last', async () => {
+      const { owner, organizationId } = await operator();
+
+      const radius = await authed(harness, owner.accessToken)
+        .put(areaUrl(organizationId))
+        .send({ kind: 'radius', center: depot, radiusMiles: 15 })
+        .expect(200);
+      expect(radius.body).toMatchObject({
+        serviceArea: { kind: 'radius', center: depot, radiusMiles: 15, points: null },
+      });
+
+      const points = [
+        { latitude: 37.8, longitude: -122.5 },
+        { latitude: 37.8, longitude: -122.35 },
+        { latitude: 37.7, longitude: -122.35 },
+        { latitude: 37.7, longitude: -122.5 },
+      ];
+      await authed(harness, owner.accessToken)
+        .put(areaUrl(organizationId))
+        .send({ kind: 'polygon', points })
+        .expect(200);
+
+      const read = await authed(harness, owner.accessToken)
+        .get(areaUrl(organizationId))
+        .expect(200);
+      expect(read.body).toMatchObject({
+        serviceArea: { kind: 'polygon', center: null, radiusMiles: null, points },
+      });
+    });
+
+    it('refuses an area missing what its kind needs, naming the field', async () => {
+      const { owner, organizationId } = await operator();
+
+      const response = await authed(harness, owner.accessToken)
+        .put(areaUrl(organizationId))
+        .send({ kind: 'radius', radiusMiles: 10 })
+        .expect(400);
+
+      expect(errorOf(response).field).toBe('center');
+    });
+
+    it('may be read by a dispatcher but changed only by owners and admins', async () => {
+      const { owner, outsider, organizationId } = await operator();
+      void owner;
+      await harness.prisma.organizationMembership.create({
+        data: { userId: outsider.userId, organizationId, role: 'dispatcher' },
+      });
+
+      await authed(harness, outsider.accessToken)
+        .get(areaUrl(organizationId))
+        .expect(200);
+      const denied = await authed(harness, outsider.accessToken)
+        .put(areaUrl(organizationId))
+        .send({ kind: 'radius', center: depot, radiusMiles: 15 });
+      // The same 404 every authorisation failure here answers with.
+      expect(denied.status).toBe(404);
+      const stored = await harness.prisma.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+      });
+      expect(stored.serviceArea).toBeNull();
+    });
+
+    it('is invisible to somebody outside the operator', async () => {
+      const { outsider, organizationId } = await operator();
+
+      await expectsIndistinguishableDenial({
+        token: outsider.accessToken,
+        forbidden: (token) => authed(harness, token).get(areaUrl(organizationId)),
+        missing: (token) =>
+          authed(harness, token).get(areaUrl('00000000-0000-4000-8000-0000000000ff')),
+      });
+    });
+
+    it('flags queue pickups outside it, and says unknown where it cannot tell', async () => {
+      const { owner, organizationId } = await operator();
+      const inside = await bookedRide();
+      const outside = await bookedRide();
+      const unlocated = await bookedRide();
+      await pickupAt(inside.rideId, { latitude: 37.7649, longitude: -122.3694 });
+      await pickupAt(outside.rideId, { latitude: 37.5485, longitude: -122.0589 });
+      await pickupAt(unlocated.rideId, null);
+
+      const coverage = async () => {
+        const response = await authed(harness, owner.accessToken)
+          .get(`/api/v1/organizations/${organizationId}/dispatch/queue`)
+          .expect(200);
+        const items = (
+          response.body as {
+            items: Array<{ rideId: string; pickupInServiceArea: boolean | null }>;
+          }
+        ).items;
+        return Object.fromEntries(items.map((i) => [i.rideId, i.pickupInServiceArea]));
+      };
+
+      // No area set: nothing is flagged.
+      expect(await coverage()).toEqual({
+        [inside.rideId]: null,
+        [outside.rideId]: null,
+        [unlocated.rideId]: null,
+      });
+
+      await authed(harness, owner.accessToken)
+        .put(areaUrl(organizationId))
+        .send({ kind: 'radius', center: depot, radiusMiles: 10 })
+        .expect(200);
+
+      expect(await coverage()).toEqual({
+        [inside.rideId]: true,
+        [outside.rideId]: false,
+        [unlocated.rideId]: null,
+      });
+
+      await authed(harness, owner.accessToken)
+        .delete(areaUrl(organizationId))
+        .expect(200);
+      expect((await coverage())[outside.rideId]).toBeNull();
+    });
+
+    it('writes an audit row for setting and clearing it', async () => {
+      const { owner, organizationId } = await operator();
+
+      await authed(harness, owner.accessToken)
+        .put(areaUrl(organizationId))
+        .send({ kind: 'radius', center: depot, radiusMiles: 10 })
+        .expect(200);
+      await authed(harness, owner.accessToken)
+        .delete(areaUrl(organizationId))
+        .expect(200);
+
+      const audit = await harness.prisma.auditLog.findMany({
+        where: {
+          entityId: organizationId,
+          action: { startsWith: 'dispatch.service_area' },
+        },
+        orderBy: { at: 'asc' },
+      });
+      expect(audit.map((row) => row.action)).toEqual([
+        'dispatch.service_area_set',
+        'dispatch.service_area_cleared',
+      ]);
+    });
+  });
+
   // ─── assignment ───────────────────────────────────────────────────────────
 
   describe('assignment', () => {

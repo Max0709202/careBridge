@@ -57,6 +57,7 @@ export const queueItem = (overrides: Partial<S['DispatchQueueItemDto']> = {}): S
   wheelchairRequired: false,
   assistanceRequired: false,
   urgency: 'soon',
+  pickupInServiceArea: null,
   candidates: [candidate()],
   ...overrides,
 });

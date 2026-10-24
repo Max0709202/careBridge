@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
   IsBoolean,
   IsEmail,
   IsIn,
@@ -8,14 +12,21 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsNumber,
   IsUUID,
   Max,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
 
 import { DRIVER_DOCUMENT_KINDS } from '../../../domain/driver-documents';
 import { DRIVER_STATUSES } from '../../../domain/driver-status';
+import {
+  MAX_POLYGON_POINTS,
+  MAX_SERVICE_RADIUS_MILES,
+  SERVICE_AREA_KINDS,
+} from '../../../domain/service-area';
 
 export class CreateVehicleDto {
   @ApiProperty({ maxLength: 40 })
@@ -181,4 +192,59 @@ export class ReviewDocumentDto {
   @IsString()
   @MaxLength(300)
   note?: string;
+}
+
+export class CoordinatesInput {
+  @ApiProperty({ minimum: -90, maximum: 90 })
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(-90)
+  @Max(90)
+  latitude!: number;
+
+  @ApiProperty({ minimum: -180, maximum: 180 })
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(-180)
+  @Max(180)
+  longitude!: number;
+}
+
+/**
+ * Field-level checks only. Which fields a kind needs, and whether an outline
+ * encloses anything, is `parseServiceArea` in src/domain/service-area.ts — the
+ * one place those rules live.
+ */
+export class SetServiceAreaDto {
+  @ApiProperty({ enum: SERVICE_AREA_KINDS, enumName: 'ServiceAreaKind' })
+  @IsIn(SERVICE_AREA_KINDS)
+  kind!: string;
+
+  @ApiPropertyOptional({
+    type: () => CoordinatesInput,
+    description: 'Required for `radius`: the point the radius is measured from.',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CoordinatesInput)
+  center?: CoordinatesInput;
+
+  @ApiPropertyOptional({
+    maximum: MAX_SERVICE_RADIUS_MILES,
+    description: 'Required for `radius`. Straight-line miles, not road miles.',
+  })
+  @IsOptional()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Max(MAX_SERVICE_RADIUS_MILES)
+  radiusMiles?: number;
+
+  @ApiPropertyOptional({
+    type: () => [CoordinatesInput],
+    description: `Required for \`polygon\`: the outline, 3 to ${MAX_POLYGON_POINTS} points, not closed (the last point joins the first).`,
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(3)
+  @ArrayMaxSize(MAX_POLYGON_POINTS)
+  @ValidateNested({ each: true })
+  @Type(() => CoordinatesInput)
+  points?: CoordinatesInput[];
 }

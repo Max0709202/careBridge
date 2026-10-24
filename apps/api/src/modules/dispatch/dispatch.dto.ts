@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { DRIVER_STATUSES } from '../../domain/driver-status';
+import { SERVICE_AREA_KINDS } from '../../domain/service-area';
 import {
   DRIVER_DOCUMENT_KINDS,
   DRIVER_DOCUMENT_STATUSES,
@@ -19,6 +20,43 @@ import {
  * belonging to nobody they are dispatching for — which is enforced by the
  * queue query rather than by the mapper.
  */
+
+export class CoordinatesDto {
+  @ApiProperty({ type: Number }) latitude!: number;
+  @ApiProperty({ type: Number }) longitude!: number;
+}
+
+/**
+ * Where the operator works. `center` and `radiusMiles` are set for a radius
+ * and `points` for an outline drawn on the map; the others are null.
+ */
+export class ServiceAreaDto {
+  @ApiProperty({ enum: SERVICE_AREA_KINDS, enumName: 'ServiceAreaKind' })
+  kind!: string;
+
+  @ApiProperty({ type: () => CoordinatesDto, nullable: true })
+  center!: CoordinatesDto | null;
+
+  @ApiProperty({ type: Number, nullable: true })
+  radiusMiles!: number | null;
+
+  @ApiProperty({ type: () => [CoordinatesDto], nullable: true })
+  points!: CoordinatesDto[] | null;
+}
+
+export class OrganizationServiceAreaDto {
+  @ApiProperty({ type: String, format: 'uuid' }) organizationId!: string;
+
+  @ApiProperty({
+    type: () => ServiceAreaDto,
+    nullable: true,
+    description: 'Null until the operator sets one; nothing is flagged until then.',
+  })
+  serviceArea!: ServiceAreaDto | null;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  updatedAt!: string | null;
+}
 
 export class VehicleDto {
   @ApiProperty({ type: String, format: 'uuid' }) id!: string;
@@ -131,6 +169,14 @@ export class DispatchQueueItemDto {
       '"overdue" is its own band rather than the top of "imminent": a pickup time that has passed with nobody assigned is a failure already in progress — somebody is standing in a hallway waiting.',
   })
   urgency!: string;
+
+  @ApiProperty({
+    type: Boolean,
+    nullable: true,
+    description:
+      "Whether the pickup is inside this operator's service area. Null when the operator has not set an area or the pickup address could not be located — unknown, not inside. Advisory: assignment is not refused on it.",
+  })
+  pickupInServiceArea!: boolean | null;
 
   @ApiProperty({ type: () => [DispatchCandidateDto] })
   candidates!: DispatchCandidateDto[];
