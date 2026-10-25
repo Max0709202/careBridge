@@ -71,6 +71,9 @@ export class DeterministicMapsAdapter implements MapsPort {
     return {
       distanceMiles: round(miles),
       durationMinutes: Math.max(1, Math.ceil((miles / AVERAGE_CITY_MPH) * 60)),
+      // No roads to follow, and a straight segment returned as a "route"
+      // would be drawn as one. Null, so the map draws its guide line instead.
+      path: null,
       source: 'deterministic',
     };
   }

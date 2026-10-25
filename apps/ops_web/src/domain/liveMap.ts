@@ -35,6 +35,16 @@ export interface LiveRide {
   position: LivePosition | null;
   etaMinutes: number | null;
   isDelayed: boolean;
+  /**
+   * The road the ETA was last computed along, to the stop the car is heading
+   * for now. Null means draw no route: the map falls back to a guide line.
+   */
+  route: LiveRoute | null;
+}
+
+export interface LiveRoute {
+  target: 'pickup' | 'destination';
+  path: Coordinates[];
 }
 
 export interface LiveBoard {

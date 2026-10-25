@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 
+import { decodePolyline, thinPath } from '../../../domain/polyline';
 import {
   MapsUnavailableError,
   type AddressInput,
@@ -116,7 +117,10 @@ export class OsmMapsAdapter implements MapsPort {
     // OSRM takes longitude first.
     const path = `/route/v1/driving/${from.longitude},${from.latitude};${to.longitude},${to.latitude}`;
     const url = new URL(path, this.options.routerUrl);
-    url.searchParams.set('overview', 'false');
+    // The simplified shape, as a polyline: enough to draw at city zoom, and
+    // a fraction of the full geometry's size.
+    url.searchParams.set('overview', 'simplified');
+    url.searchParams.set('geometries', 'polyline');
     url.searchParams.set('alternatives', 'false');
     url.searchParams.set('steps', 'false');
 
@@ -158,9 +162,15 @@ export class OsmMapsAdapter implements MapsPort {
     return {
       distanceMiles: first.distance / METRES_PER_MILE,
       durationMinutes: Math.max(1, Math.round(first.duration / 60)),
+      path: pathFrom(first.geometry),
       source: 'osm',
     };
   }
+}
+
+function pathFrom(encoded: string | undefined): Coordinates[] | null {
+  const decoded = encoded ? decodePolyline(encoded) : null;
+  return decoded ? thinPath(decoded) : null;
 }
 
 /**
@@ -187,5 +197,5 @@ interface NominatimResult {
 
 interface OsrmRouteResponse {
   code?: string;
-  routes?: Array<{ duration: number; distance: number }>;
+  routes?: Array<{ duration: number; distance: number; geometry?: string }>;
 }

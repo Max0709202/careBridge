@@ -123,11 +123,27 @@ export class EtaService {
 
     await this.writeRoute(input.rideId, {
       computedAt: now,
-      durationMinutes: fresh,
+      durationMinutes: fresh.durationMinutes,
       from: input.at,
       target,
+      path: fresh.path,
     });
-    return fresh;
+    return fresh.durationMinutes;
+  }
+
+  /**
+   * The road the car was last routed along, for the live map, or null.
+   *
+   * Read from the cache and never computed here: the route is refreshed by
+   * position reports, at the rate the ETA already pays for, and a map being
+   * open must not become a second reason to call the vendor.
+   */
+  async currentRoute(
+    rideId: string,
+  ): Promise<{ target: 'pickup' | 'destination'; path: Coordinates[] } | null> {
+    const cached = await this.readRoute(rideId);
+    if (!cached?.path) return null;
+    return { target: cached.target, path: cached.path };
   }
 
   /** Called when a ride ends, so a finished trip is not still cached. */
@@ -139,7 +155,10 @@ export class EtaService {
 
   // ─── the vendor, behind the breaker ───────────────────────────────────────
 
-  private async recompute(from: Coordinates, to: Coordinates): Promise<number | null> {
+  private async recompute(
+    from: Coordinates,
+    to: Coordinates,
+  ): Promise<{ durationMinutes: number; path: Coordinates[] | null } | null> {
     const gate = attempt(this.circuit, Date.now());
     this.circuit = gate.circuit;
     if (!gate.allowed) return null;
@@ -161,7 +180,7 @@ export class EtaService {
         return null;
       }
 
-      return route.durationMinutes;
+      return { durationMinutes: route.durationMinutes, path: route.path };
     } catch (error) {
       this.circuit = recordFailure(this.circuit, Date.now());
       if (this.circuit.state === 'open') {
@@ -298,8 +317,22 @@ function parseRoute(raw: string): CachedRoute | null {
       durationMinutes: parsed.durationMinutes,
       from: { latitude: parsed.from.latitude, longitude: parsed.from.longitude },
       target: parsed.target,
+      path: parsePath(parsed.path),
     };
   } catch {
     return null;
   }
+}
+
+/** A cached path, or null if it is missing or not the shape this code writes. */
+function parsePath(value: unknown): Coordinates[] | null {
+  if (!Array.isArray(value) || value.length < 2) return null;
+  const path: Coordinates[] = [];
+  for (const point of value as Array<Partial<Coordinates> | null>) {
+    if (typeof point?.latitude !== 'number' || typeof point.longitude !== 'number') {
+      return null;
+    }
+    path.push({ latitude: point.latitude, longitude: point.longitude });
+  }
+  return path;
 }

@@ -52,7 +52,7 @@ import type {
   SeatSummary,
   Vehicle,
 } from '../domain/models';
-import type { Coordinates, LiveBoard, LivePosition, LiveRide, ServiceArea } from '../domain/liveMap';
+import type { Coordinates, LiveBoard, LivePosition, LiveRide, LiveRoute, ServiceArea } from '../domain/liveMap';
 import type { components } from './schema';
 
 type S = components['schemas'];
@@ -190,7 +190,14 @@ const liveRideFromWire = (dto: S['LiveRideDto']): LiveRide => ({
   position: livePositionFromWire(dto.position),
   etaMinutes: dto.etaMinutes ?? null,
   isDelayed: dto.isDelayed,
+  route: liveRouteFromWire(dto.route),
 });
+
+/** A route with an unknown target, or too few points to be a road, is dropped. */
+function liveRouteFromWire(dto: S['LiveRouteDto'] | null | undefined): LiveRoute | null {
+  if (!dto || (dto.target !== 'pickup' && dto.target !== 'destination') || dto.path.length < 2) return null;
+  return { target: dto.target, path: dto.path.map(coordinates) };
+}
 
 export const liveBoardFromWire = (dto: S['LiveBoardDto']): LiveBoard => ({
   organizationId: dto.organizationId,

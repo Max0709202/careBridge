@@ -47,6 +47,13 @@ export interface RouteResult {
    */
   durationMinutes: number;
 
+  /**
+   * The road the route follows, for drawing on a map — or null when the
+   * adapter has no road to offer (the deterministic one) or the vendor's shape
+   * was unreadable. Null is drawn as a plain guide line, never as a route.
+   */
+  path: Coordinates[] | null;
+
   /** Which adapter produced this, recorded so a wrong ETA can be explained. */
   source: string;
 }

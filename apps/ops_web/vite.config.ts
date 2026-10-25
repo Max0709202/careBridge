@@ -15,7 +15,7 @@ export default defineConfig({
   server: {
     port: 5175,
     proxy: {
-      '/api': { target: apiTarget, changeOrigin: false },
+      '/api': { target: apiTarget, changeOrigin: false, ws: true },
     },
   },
   // `xfwd` so the API's rate limits see each visitor's address rather than
@@ -23,7 +23,7 @@ export default defineConfig({
   preview: {
     port: 4175,
     proxy: {
-      '/api': { target: apiTarget, changeOrigin: false, xfwd: true },
+      '/api': { target: apiTarget, changeOrigin: false, ws: true, xfwd: true },
     },
   },
   build: {

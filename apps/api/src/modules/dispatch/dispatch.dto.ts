@@ -335,6 +335,21 @@ export class LiveRideDto {
 
   @ApiProperty({ type: 'integer', nullable: true }) etaMinutes!: number | null;
   @ApiProperty({ type: Boolean }) isDelayed!: boolean;
+
+  @ApiProperty({
+    type: () => LiveRouteDto,
+    nullable: true,
+    description:
+      'The road the ETA was last computed along, from where the car was then to the stop it is heading for. Null when there is no live position, no countdown, or the routing provider offered no road — draw a plain guide line, never a guessed route.',
+  })
+  route!: LiveRouteDto | null;
+}
+
+export class LiveRouteDto {
+  @ApiProperty({ enum: ['pickup', 'destination'], enumName: 'RouteTarget' })
+  target!: 'pickup' | 'destination';
+
+  @ApiProperty({ type: () => [CoordinatesDto] }) path!: CoordinatesDto[];
 }
 
 export class LiveBoardDto {

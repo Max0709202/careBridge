@@ -373,4 +373,86 @@ describe('the arrival estimate', () => {
       expect(ride.lastLatitude).toBeCloseTo(40.651);
     });
   });
+
+  // ─── the route on the live map ────────────────────────────────────────────
+
+  describe('the route on the live map', () => {
+    const road = [
+      { latitude: 40.651, longitude: -73.958 },
+      { latitude: 40.653, longitude: -73.952 },
+      { latitude: 40.6558, longitude: -73.945 },
+    ];
+
+    /**
+     * A report about half a mile from the pickup, so the mocked six minutes
+     * passes the plausibility check rather than being discarded for the
+     * straight-line fallback.
+     */
+    async function reportNearPickup(token: string, rideId: string) {
+      const ride = await harness.prisma.ride.findUniqueOrThrow({
+        where: { id: rideId },
+        include: { pickup: true },
+      });
+      return report(token, rideId, {
+        latitude: ride.pickup.latitude! + 0.008,
+        longitude: ride.pickup.longitude!,
+      }).expect(201);
+    }
+
+    async function board(owner: TestUser, organizationId: string) {
+      const response = await authed(harness, owner.accessToken)
+        .get(`/api/v1/organizations/${organizationId}/dispatch/live`)
+        .expect(200);
+      return (response.body as { rides: Array<{ route: unknown }> }).rides[0];
+    }
+
+    it('draws the road the ETA was computed along, without routing again', async () => {
+      const { driver, owner, organizationId, rideId } = await drivingRide();
+      const route = spyOnRouting().mockResolvedValue({
+        distanceMiles: 1.2,
+        durationMinutes: 6,
+        path: road,
+        source: 'test',
+      });
+
+      await reportNearPickup(driver.accessToken, rideId);
+      expect(await board(owner, organizationId)).toMatchObject({
+        route: { target: 'pickup', path: road },
+      });
+      // Opening the map is not a reason to call the vendor.
+      expect(route).toHaveBeenCalledTimes(1);
+    });
+
+    it('draws nothing when the provider offered no road', async () => {
+      const { driver, owner, organizationId, rideId } = await drivingRide();
+      spyOnRouting().mockResolvedValue({
+        distanceMiles: 1.2,
+        durationMinutes: 6,
+        path: null,
+        source: 'test',
+      });
+
+      await reportNearPickup(driver.accessToken, rideId);
+      expect((await board(owner, organizationId))?.route).toBeNull();
+    });
+
+    it('drops the route to the pickup once the passenger is on board', async () => {
+      const { driver, owner, organizationId, rideId } = await drivingRide();
+      spyOnRouting().mockResolvedValue({
+        distanceMiles: 1.2,
+        durationMinutes: 6,
+        path: road,
+        source: 'test',
+      });
+      await reportNearPickup(driver.accessToken, rideId);
+
+      // Straight to onboard in the database: the cached route still points
+      // at the pickup, and must not be drawn as where the car is going.
+      await harness.prisma.ride.update({
+        where: { id: rideId },
+        data: { status: 'passengerOnboard' },
+      });
+      expect((await board(owner, organizationId))?.route).toBeNull();
+    });
+  });
 });

@@ -8567,6 +8567,35 @@
           "capturedAt"
         ]
       },
+      "RouteTarget": {
+        "type": "string",
+        "enum": [
+          "pickup",
+          "destination"
+        ]
+      },
+      "LiveRouteDto": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RouteTarget"
+              }
+            ]
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoordinatesDto"
+            }
+          }
+        },
+        "required": [
+          "target",
+          "path"
+        ]
+      },
       "LiveRideDto": {
         "type": "object",
         "properties": {
@@ -8624,6 +8653,15 @@
           },
           "isDelayed": {
             "type": "boolean"
+          },
+          "route": {
+            "nullable": true,
+            "description": "The road the ETA was last computed along, from where the car was then to the stop it is heading for. Null when there is no live position, no countdown, or the routing provider offered no road — draw a plain guide line, never a guessed route.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LiveRouteDto"
+              }
+            ]
           }
         },
         "required": [
@@ -8637,7 +8675,8 @@
           "destination",
           "position",
           "etaMinutes",
-          "isDelayed"
+          "isDelayed",
+          "route"
         ]
       },
       "LiveBoardDto": {

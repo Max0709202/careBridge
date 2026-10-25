@@ -92,12 +92,18 @@ export function LiveMap(props: LiveMapProps) {
       if (selected) {
         if (ride.pickup) stop(ride.pickup, 'map-stop map-stop-pickup', `Pickup — ${ride.patientName}`).addTo(layer);
         if (ride.destination) stop(ride.destination, 'map-stop map-stop-destination', 'Destination').addTo(layer);
-        if (ride.position && ride.pickup && freshnessOf(ride.position, props.now) !== 'lost') {
-          // A straight guide line, not a route: the road route arrives with the
-          // routing provider, and a line that looked like one would be a claim.
-          L.polyline([latLng(ride.position), latLng(ride.pickup)], { className: 'map-guide', interactive: false }).addTo(
-            layer,
-          );
+        const heading = freshnessOf(ride.position, props.now) !== 'lost' ? ride.position : null;
+        if (heading && ride.route) {
+          // The road the arrival time was computed along. It starts where the
+          // car was then, so the car is joined to it rather than assumed on it.
+          L.polyline(ride.route.path.map(latLng), { className: 'map-route', interactive: false }).addTo(layer);
+        } else if (heading) {
+          // No road from the routing provider: a straight guide line, styled
+          // so it cannot be mistaken for one.
+          const stopAhead = isOnboard(ride.status) ? ride.destination : ride.pickup;
+          if (stopAhead) {
+            L.polyline([latLng(heading), latLng(stopAhead)], { className: 'map-guide', interactive: false }).addTo(layer);
+          }
         }
       }
 
@@ -142,6 +148,11 @@ export function LiveMap(props: LiveMapProps) {
       aria-label="Live map"
     />
   );
+}
+
+/** The car has the passenger: the stop ahead is the destination. */
+function isOnboard(status: string): boolean {
+  return status === 'passengerOnboard' || status === 'inProgress' || status === 'arrivedAtDestination';
 }
 
 function stop(point: Coordinates, className: string, label: string): L.CircleMarker {

@@ -30,6 +30,7 @@ const ride = (overrides: Partial<LiveRide> = {}): LiveRide => ({
   position: null,
   etaMinutes: null,
   isDelayed: false,
+  route: null,
   ...overrides,
 });
 
@@ -83,11 +84,40 @@ describe('the wire', () => {
           position: { latitude: 3, longitude: 4, accuracyMeters: 5, capturedAt: ago(1_000).toISOString() },
           etaMinutes: 6,
           isDelayed: false,
+          route: { target: 'pickup', path: [{ latitude: 3, longitude: 4 }, { latitude: 1, longitude: 2 }] },
         },
       ],
     });
     expect(board.rides[0]?.position?.capturedAt).toEqual(ago(1_000));
     expect(board.rides[0]?.destination).toBeNull();
+    expect(board.rides[0]?.route?.path).toHaveLength(2);
+  });
+
+  it('drops a route that is not a road', () => {
+    const wire = (route: unknown) =>
+      liveBoardFromWire({
+        organizationId: 'org-1',
+        serviceArea: null,
+        rides: [
+          {
+            rideId: 'ride-1',
+            status: 'driverEnRoute',
+            driverId: 'd',
+            driverName: 'M',
+            patientName: 'P',
+            scheduledPickupAt: now.toISOString(),
+            pickup: null,
+            destination: null,
+            position: null,
+            etaMinutes: null,
+            isDelayed: false,
+            route: route as never,
+          },
+        ],
+      }).rides[0]?.route;
+    expect(wire(null)).toBeNull();
+    expect(wire({ target: 'pickup', path: [{ latitude: 1, longitude: 2 }] })).toBeNull();
+    expect(wire({ target: 'home', path: [{ latitude: 1, longitude: 2 }, { latitude: 3, longitude: 4 }] })).toBeNull();
   });
 
   it('treats a queue item with no area answer as unknown, not inside', () => {

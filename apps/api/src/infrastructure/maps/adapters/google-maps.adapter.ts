@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 
+import { decodePolyline, thinPath } from '../../../domain/polyline';
 import {
   MapsUnavailableError,
   type AddressInput,
@@ -110,7 +111,10 @@ export class GoogleMapsAdapter implements MapsPort {
           headers: {
             'content-type': 'application/json',
             'X-Goog-Api-Key': this.apiKey,
-            'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters',
+            // The polyline is in the same answer at no extra charge, so the
+            // map's route costs no call the ETA was not already making.
+            'X-Goog-FieldMask':
+              'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline',
           },
           body: JSON.stringify({
             origin: { location: { latLng: latLng(from) } },
@@ -161,9 +165,15 @@ export class GoogleMapsAdapter implements MapsPort {
     return {
       distanceMiles: first.distanceMeters / METRES_PER_MILE,
       durationMinutes: Math.max(1, Math.round(seconds / 60)),
+      path: pathFrom(first.polyline?.encodedPolyline),
       source: 'google',
     };
   }
+}
+
+function pathFrom(encoded: string | undefined): Coordinates[] | null {
+  const decoded = encoded ? decodePolyline(encoded) : null;
+  return decoded ? thinPath(decoded) : null;
 }
 
 function latLng(point: Coordinates): { latitude: number; longitude: number } {
@@ -203,6 +213,7 @@ interface GoogleRoutesResponse {
     /** Google returns a protobuf duration as a string: "612s". */
     duration?: string;
     distanceMeters?: number;
+    polyline?: { encodedPolyline?: string };
   }>;
 }
 

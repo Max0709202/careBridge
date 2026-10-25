@@ -32,8 +32,14 @@ import {
   isAwaitingDispatch,
   type DriverCandidate,
 } from '../../domain/dispatch';
-import { allowsLocationSharing, isTerminalRideStatus } from '../../domain/ride-status';
+import {
+  allowsLocationSharing,
+  isTerminalRideStatus,
+  RIDE_STATUSES,
+} from '../../domain/ride-status';
 import { TrackingFreshness } from '../../domain/tracking';
+import { etaTargetFor } from '../../domain/eta';
+import { EtaService } from '../tracking/eta.service';
 import {
   parseServiceArea,
   pickupCoverage,
@@ -59,6 +65,15 @@ const DRIVER_INCLUDE = { vehicle: true } satisfies Prisma.DriverInclude;
 
 /** Roles that may change what the company is, as opposed to run its day. */
 const ADMIN_ROLES = ['owner', 'admin'] as const;
+/**
+ * A ride with a driver and not yet finished: what the live map shows. Derived
+ * from the state machine's own lists so a new status cannot be forgotten here.
+ */
+const UNDER_WAY = RIDE_STATUSES.filter(
+  (status) =>
+    status !== 'draft' && !isAwaitingDispatch(status) && !isTerminalRideStatus(status),
+);
+
 /** Roles that run the day. */
 const DISPATCH_ROLES = ['owner', 'admin', 'dispatcher'] as const;
 
@@ -91,6 +106,7 @@ export class DispatchService {
     private readonly rides: RidesService,
     private readonly audit: AuditService,
     private readonly documents: DocumentsService,
+    private readonly eta: EtaService,
   ) {}
 
   // ─── may this operator work at all ────────────────────────────────────────
@@ -734,9 +750,9 @@ export class DispatchService {
       this.prisma.ride.findMany({
         where: {
           driver: { organizationId },
-          status: {
-            notIn: ['requested', 'awaitingAssignment', 'reassignmentRequired'],
-          },
+          // In the query, not filtered afterwards: finished rides would
+          // otherwise fill the `take` and push the live ones off the map.
+          status: { in: [...UNDER_WAY] },
         },
         include: { patient: true, pickup: true, destination: true, driver: true },
         orderBy: { scheduledPickupAt: 'asc' },
@@ -744,44 +760,51 @@ export class DispatchService {
       }),
     ]);
 
+    const entries = await Promise.all(
+      rides.map(async (ride) => {
+        if (!ride.driver) return null;
+        const sharing = allowsLocationSharing(ride.status);
+        const fresh =
+          ride.lastCapturedAt != null &&
+          now - ride.lastCapturedAt.getTime() <= TrackingFreshness.lostMs;
+        const position =
+          sharing && fresh && ride.lastLatitude != null && ride.lastLongitude != null
+            ? {
+                latitude: ride.lastLatitude,
+                longitude: ride.lastLongitude,
+                accuracyMeters: ride.lastAccuracyMeters ?? 0,
+                capturedAt: ride.lastCapturedAt!.toISOString(),
+              }
+            : null;
+
+        // Only a route to the stop the car is heading for *now*. A cached
+        // route to the pickup, read after the passenger got in, would draw
+        // the car going back for them.
+        const target = etaTargetFor(ride.status);
+        const cached = position && target ? await this.eta.currentRoute(ride.id) : null;
+        const route = cached && cached.target === target ? cached : null;
+
+        return {
+          rideId: ride.id,
+          status: ride.status,
+          driverId: ride.driver.id,
+          driverName: ride.driver.displayName,
+          patientName: ride.patient.preferredName,
+          scheduledPickupAt: ride.scheduledPickupAt.toISOString(),
+          pickup: coordinatesOf(ride.pickup),
+          destination: coordinatesOf(ride.destination),
+          position,
+          etaMinutes: sharing ? ride.etaMinutes : null,
+          isDelayed: ride.isDelayed,
+          route,
+        };
+      }),
+    );
+
     return {
       organizationId,
       serviceArea: toServiceAreaDto(organization).serviceArea,
-      rides: rides
-        .filter((ride) => !isTerminalRideStatus(ride.status))
-        .flatMap((ride) => {
-          if (!ride.driver) return [];
-          const sharing = allowsLocationSharing(ride.status);
-          const fresh =
-            ride.lastCapturedAt != null &&
-            now - ride.lastCapturedAt.getTime() <= TrackingFreshness.lostMs;
-          return [
-            {
-              rideId: ride.id,
-              status: ride.status,
-              driverId: ride.driver.id,
-              driverName: ride.driver.displayName,
-              patientName: ride.patient.preferredName,
-              scheduledPickupAt: ride.scheduledPickupAt.toISOString(),
-              pickup: coordinatesOf(ride.pickup),
-              destination: coordinatesOf(ride.destination),
-              position:
-                sharing &&
-                fresh &&
-                ride.lastLatitude != null &&
-                ride.lastLongitude != null
-                  ? {
-                      latitude: ride.lastLatitude,
-                      longitude: ride.lastLongitude,
-                      accuracyMeters: ride.lastAccuracyMeters ?? 0,
-                      capturedAt: ride.lastCapturedAt!.toISOString(),
-                    }
-                  : null,
-              etaMinutes: sharing ? ride.etaMinutes : null,
-              isDelayed: ride.isDelayed,
-            },
-          ];
-        }),
+      rides: entries.filter((entry) => entry !== null),
     };
   }
 

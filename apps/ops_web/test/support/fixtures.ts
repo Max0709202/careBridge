@@ -80,6 +80,7 @@ export const liveRide = (overrides: Partial<S['LiveRideDto']> = {}): S['LiveRide
   position: { latitude: 40.67, longitude: -73.97, accuracyMeters: 8, capturedAt: new Date().toISOString() },
   etaMinutes: 7,
   isDelayed: false,
+  route: null,
   ...overrides,
 });
 

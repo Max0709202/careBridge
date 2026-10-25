@@ -27,8 +27,11 @@ export type TrackingUpdate =
 
 type Listener = (update: TrackingUpdate) => void;
 
+const RECONNECT_AFTER_MS = 5_000;
+
 export class TrackingSocket {
   private socket: Socket | null = null;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly listeners = new Map<string, Set<Listener>>();
   private readonly origin: string;
 
@@ -68,6 +71,8 @@ export class TrackingSocket {
 
   dispose(): void {
     this.listeners.clear();
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
     this.socket?.disconnect();
     this.socket = null;
   }
@@ -82,7 +87,9 @@ export class TrackingSocket {
     const socket = this.connect(`${this.origin}/tracking`, {
       path: '/api/v1/socket.io',
       transports: ['websocket'],
-      auth: { token: stored.accessToken },
+      // A function, so every (re)connect presents the token as it is now
+      // rather than the one the page started with.
+      auth: (supply: (data: object) => void) => supply({ token: this.tokens.read()?.accessToken ?? '' }),
       forceNew: true,
     });
 
@@ -95,6 +102,19 @@ export class TrackingSocket {
     // subscription the caller has since lost the right to.
     socket.on('connect', () => {
       for (const rideId of this.listeners.keys()) this.subscribe(rideId);
+    });
+
+    // The server ending the connection (an expired token, most often) is not
+    // retried by Socket.IO itself. Start again after a pause; by then the
+    // polled snapshot has made the HTTP client refresh the token.
+    socket.on('disconnect', (reason: string) => {
+      if (reason !== 'io server disconnect' || this.socket !== socket) return;
+      this.socket = null;
+      if (this.retryTimer) clearTimeout(this.retryTimer);
+      this.retryTimer = setTimeout(() => {
+        this.retryTimer = null;
+        if (this.listeners.size > 0) this.ensureConnected();
+      }, RECONNECT_AFTER_MS);
     });
 
     this.socket = socket;

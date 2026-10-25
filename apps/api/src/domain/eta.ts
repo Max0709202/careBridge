@@ -59,6 +59,11 @@ export interface CachedRoute {
   durationMinutes: number;
   from: Coordinates;
   target: 'pickup' | 'destination';
+  /**
+   * The road from `from` to the target, for the map. Null when the vendor
+   * offered none; absent on entries written before routes were kept.
+   */
+  path?: Coordinates[] | null;
 }
 
 export interface EtaDecision {

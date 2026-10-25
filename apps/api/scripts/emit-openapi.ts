@@ -25,13 +25,19 @@ async function main(): Promise<void> {
   // A fixed environment, so the emitted document does not depend on whatever
   // happens to be in the developer's .env. Two runs on two machines must
   // produce byte-identical output, or the drift check in CI is worthless.
-  const config = loadConfig({
+  const env = {
     NODE_ENV: 'development',
     DATABASE_URL: 'postgresql://contract:contract@127.0.0.1:5432/contract',
     JWT_SECRET: 'contract-generation-only-not-a-real-secret',
     PORT: '3000',
     SERVICE_VERSION: process.env['SERVICE_VERSION'] ?? '0.2.0',
-  });
+  };
+  const config = loadConfig(env);
+
+  // The application's own ConfigModule reads `process.env`, not the object
+  // above, so the same values go there too — otherwise creating the app fails
+  // on any machine without a .env, which is every CI runner.
+  Object.assign(process.env, env);
 
   const app = await NestFactory.create(AppModule, { logger: false });
   const document = buildOpenApiDocument(app, config);

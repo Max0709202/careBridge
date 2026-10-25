@@ -3149,6 +3149,12 @@ export interface components {
              */
             capturedAt: string;
         };
+        /** @enum {string} */
+        RouteTarget: "pickup" | "destination";
+        LiveRouteDto: {
+            target: components["schemas"]["RouteTarget"];
+            path: components["schemas"]["CoordinatesDto"][];
+        };
         LiveRideDto: {
             /** Format: uuid */
             rideId: string;
@@ -3167,6 +3173,8 @@ export interface components {
             position: components["schemas"]["LivePositionDto"] | null;
             etaMinutes: number | null;
             isDelayed: boolean;
+            /** @description The road the ETA was last computed along, from where the car was then to the stop it is heading for. Null when there is no live position, no countdown, or the routing provider offered no road — draw a plain guide line, never a guessed route. */
+            route: components["schemas"]["LiveRouteDto"] | null;
         };
         LiveBoardDto: {
             /** Format: uuid */

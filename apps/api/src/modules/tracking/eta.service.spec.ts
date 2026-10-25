@@ -29,6 +29,7 @@ class FakeMaps implements MapsPort {
 
   calls = 0;
   minutes = 9;
+  path: Coordinates[] | null = [house, clinic];
   behaviour: 'ok' | 'unavailable' | 'noRoute' = 'ok';
 
   async geocode(): Promise<GeocodeResult | null> {
@@ -41,7 +42,12 @@ class FakeMaps implements MapsPort {
       throw new MapsUnavailableError('test');
     }
     if (this.behaviour === 'noRoute') return null;
-    return { distanceMiles: 2.4, durationMinutes: this.minutes, source: 'fake' };
+    return {
+      distanceMiles: 2.4,
+      durationMinutes: this.minutes,
+      path: this.path,
+      source: 'fake',
+    };
   }
 }
 
@@ -321,5 +327,42 @@ describe('the cache itself', () => {
   it('forgetting is safe for a ride nobody has routed', async () => {
     const { service } = build({ redis: false });
     await expect(service.forget('ride-unknown')).resolves.toBeUndefined();
+  });
+});
+
+describe('the route for the map', () => {
+  it('keeps the road the ETA was computed along, without asking again', async () => {
+    const { service, maps } = build();
+    await service.estimate(input());
+
+    expect(await service.currentRoute('ride-1')).toEqual({
+      target: 'pickup',
+      path: [house, clinic],
+    });
+    expect(maps.calls).toBe(1);
+  });
+
+  it('has nothing to draw when the vendor offered no road', async () => {
+    const { service, maps } = build({ redis: false });
+    maps.path = null;
+    await service.estimate(input());
+
+    expect(await service.currentRoute('ride-1')).toBeNull();
+  });
+
+  it('has nothing to draw for a ride never routed, or one cached before paths were kept', async () => {
+    const { service, redis } = build();
+    expect(await service.currentRoute('ride-1')).toBeNull();
+
+    redis!.store.set(
+      'eta:route:ride-1',
+      JSON.stringify({
+        computedAt: T0.getTime(),
+        durationMinutes: 9,
+        from: house,
+        target: 'pickup',
+      }),
+    );
+    expect(await service.currentRoute('ride-1')).toBeNull();
   });
 });

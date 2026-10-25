@@ -869,6 +869,7 @@ p {
 .map-stop { stroke: var(--surface); stroke-width: 2; fill-opacity: 1; }
 .map-stop-pickup { fill: var(--positive); }
 .map-stop-destination { fill: var(--on-surface-variant); }
+.map-route { stroke: var(--primary); stroke-width: 5; stroke-opacity: 0.75; stroke-linecap: round; stroke-linejoin: round; fill: none; }
 .map-guide { stroke: var(--on-surface-variant); stroke-width: 2; stroke-dasharray: 2 6; fill: none; }
 @media (max-width: 760px) {
   .live-layout { grid-template-columns: minmax(0, 1fr); }
