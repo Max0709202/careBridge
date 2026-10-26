@@ -63,6 +63,9 @@ export function LiveMap(props: LiveMapProps) {
       onPick.current?.({ latitude: event.latlng.lat, longitude: event.latlng.lng });
     });
     map.current = created;
+    // A new map has not been fitted, even if an earlier one was: StrictMode
+    // mounts this twice in development, and refs outlive the first.
+    fitted.current = false;
     return () => {
       created.remove();
       map.current = null;
@@ -140,13 +143,13 @@ export function LiveMap(props: LiveMapProps) {
     current.fitBounds(L.latLngBounds(points), { padding: [24, 24], maxZoom: 14 });
   }, [props.area, props.rides]);
 
+  // Two elements on purpose. Leaflet adds its own classes to the node it is
+  // given, and React replaces the whole class list whenever `className`
+  // changes — so the node React styles is never the one Leaflet owns.
   return (
-    <div
-      ref={element}
-      className={`live-map${props.onPickPoint ? ' picking' : ''}`}
-      role="region"
-      aria-label="Live map"
-    />
+    <div className={`live-map${props.onPickPoint ? ' picking' : ''}`} role="region" aria-label="Live map">
+      <div ref={element} className="live-map-canvas" />
+    </div>
   );
 }
 

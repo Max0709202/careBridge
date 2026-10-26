@@ -857,6 +857,7 @@ p {
 .live-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: var(--space-md); align-items: start; }
 .live-map-pane { position: sticky; top: var(--space-md); }
 .live-map { height: min(70vh, 640px); border-radius: var(--radius-card); border: 1px solid var(--outline-variant); overflow: hidden; z-index: 0; }
+.live-map-canvas { width: 100%; height: 100%; }
 .live-map.picking { cursor: crosshair; }
 .live-map.picking .leaflet-grab { cursor: crosshair; }
 .live-side { min-width: 0; }
