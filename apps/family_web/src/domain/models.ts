@@ -266,6 +266,11 @@ export interface Ride {
   history: StatusChange[];
   lastKnownPosition: TrackingPoint | null;
   etaMinutes: number | null;
+  /**
+   * The road to the stop the car is heading for, while it is being tracked.
+   * Null means draw no route — the map shows a guide line instead.
+   */
+  route: Coordinates[] | null;
   createdAt: Date | null;
   /** Whether the server's preview runner is driving this ride. */
   simulationActive: boolean;

@@ -323,16 +323,17 @@ EOF
 # Content-Security-Policy per app, from infrastructure/nginx: the family app
 # never asks for location; the driver app does, for itself only.
 CSP_BASE="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'"
-# The ops console's live map draws OpenStreetMap tiles, so that one site may
-# load images from the tile server. Nothing else is widened.
+# The ops console's live map and the family app's trip map draw
+# OpenStreetMap tiles, so those two sites may load images from the tile
+# server. The driver app has no map, and nothing else is widened.
 MAP_TILES="https://tile.openstreetmap.org"
 IMG_BASE="img-src 'self' data: blob:"
-CSP_OPS="${CSP_BASE/"$IMG_BASE"/"$IMG_BASE $MAP_TILES"}"
+CSP_MAPS="${CSP_BASE/"$IMG_BASE"/"$IMG_BASE $MAP_TILES"}"
 PERMS_BASE="accelerometer=(), camera=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
 
 caddy_site_body() { # app, geolocation policy
   local app=$1 geo=$2 hsts="" csp=$CSP_BASE
-  [ "$app" = ops ] && csp=$CSP_OPS
+  case $app in ops | family) csp=$CSP_MAPS ;; esac
   [ "$HTTPS" = on ] && hsts='Strict-Transport-Security "max-age=31536000; includeSubDomains"'
   cat <<EOF
 	encode zstd gzip
@@ -387,7 +388,7 @@ render_caddy() {
     if [ "$HTTPS" = on ]; then
       printf '%s {\n' "$DOMAIN_FAMILY"; caddy_site_body family '()'; printf '}\n\n'
       printf '%s {\n' "$DOMAIN_OPS"; caddy_site_body ops '()'; printf '}\n\n'
-      printf '%s {\n' "$DOMAIN_DRIVER"; caddy_site_body driver '(self)'; printf '}\n\n'
+      printf '%s {\n' "$DOMAIN_DRIVER"; caddy_site_body driver '(self)'; printf '}\n\n' 
       # One origin per app: the old address-and-port links keep working, but
       # land on HTTPS, so a session is never split across two origins.
       printf 'http://:%s {\n\tredir https://%s{uri} permanent\n}\n' "$PORT_FAMILY" "$DOMAIN_FAMILY"

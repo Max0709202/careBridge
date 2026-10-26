@@ -5,6 +5,7 @@ import {
   networkFailure,
 } from './failures';
 import type { AuthTokens, TokenStore } from './tokens';
+import { observeServerDate } from '../core/serverClock';
 
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -120,13 +121,16 @@ export class ApiTransport {
     }
 
     try {
-      return await this.fetchImpl(`${this.baseUrl.toString()}${path}`, {
+      const sentAt = Date.now();
+      const response = await this.fetchImpl(`${this.baseUrl.toString()}${path}`, {
         method,
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
         // Tokens travel in the Authorization header, never in cookies.
         credentials: 'omit',
       });
+      observeServerDate(response.headers.get('date'), sentAt, Date.now());
+      return response;
     } catch {
       // The message a user sees never carries a URL, a host or a stack frame.
       throw networkFailure();

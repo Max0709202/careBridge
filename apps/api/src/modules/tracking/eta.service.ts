@@ -146,6 +146,21 @@ export class EtaService {
     return { target: cached.target, path: cached.path };
   }
 
+  /**
+   * The route to draw for a ride in this status: only one leading to the stop
+   * the car is heading for *now*. A cached route to the pickup, read after
+   * the passenger got in, would show the car going back for them.
+   */
+  async routeFor(
+    rideId: string,
+    status: RideStatus,
+  ): Promise<{ target: 'pickup' | 'destination'; path: Coordinates[] } | null> {
+    const target = etaTargetFor(status);
+    if (!target) return null;
+    const route = await this.currentRoute(rideId);
+    return route && route.target === target ? route : null;
+  }
+
   /** Called when a ride ends, so a finished trip is not still cached. */
   async forget(rideId: string): Promise<void> {
     this.local.delete(rideId);

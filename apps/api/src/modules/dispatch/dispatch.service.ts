@@ -38,7 +38,6 @@ import {
   RIDE_STATUSES,
 } from '../../domain/ride-status';
 import { TrackingFreshness } from '../../domain/tracking';
-import { etaTargetFor } from '../../domain/eta';
 import { EtaService } from '../tracking/eta.service';
 import {
   parseServiceArea,
@@ -777,12 +776,7 @@ export class DispatchService {
               }
             : null;
 
-        // Only a route to the stop the car is heading for *now*. A cached
-        // route to the pickup, read after the passenger got in, would draw
-        // the car going back for them.
-        const target = etaTargetFor(ride.status);
-        const cached = position && target ? await this.eta.currentRoute(ride.id) : null;
-        const route = cached && cached.target === target ? cached : null;
+        const route = position ? await this.eta.routeFor(ride.id, ride.status) : null;
 
         return {
           rideId: ride.id,

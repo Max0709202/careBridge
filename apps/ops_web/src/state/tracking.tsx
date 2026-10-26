@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import type { TrackingSocket } from '../api/trackingSocket';
+import { serverNow } from '../core/serverClock';
 import { withPosition, type LiveBoard, type LiveRide } from '../domain/liveMap';
 
 /**
@@ -55,11 +56,15 @@ export function useLiveRides(board: LiveBoard | null): LiveRide[] {
   );
 }
 
-/** The current time, re-read on an interval, so ages on screen keep counting between updates. */
+/**
+ * The current time by the server's clock, re-read on an interval, so ages on
+ * screen keep counting between updates and a wrong device clock cannot make a
+ * live car look lost. See core/serverClock.ts.
+ */
 export function useNow(everyMs = 5_000): Date {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState(() => serverNow());
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), everyMs);
+    const timer = setInterval(() => setNow(serverNow()), everyMs);
     return () => clearInterval(timer);
   }, [everyMs]);
   return now;

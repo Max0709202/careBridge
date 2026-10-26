@@ -238,6 +238,8 @@ export function toRideDto(ride: RideWithRelations): RideDto {
           }
         : null,
     etaMinutes: ride.etaMinutes,
+    // Filled by CareService from the route cache; the mapper is synchronous.
+    route: null,
     createdAt: iso(ride.createdAt)!,
     simulationActive: ride.simulationActive,
   };

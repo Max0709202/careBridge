@@ -2693,6 +2693,16 @@ export interface components {
              */
             capturedAt: string;
         };
+        /** @enum {string} */
+        RouteTarget: "pickup" | "destination";
+        CoordinatesDto: {
+            latitude: number;
+            longitude: number;
+        };
+        LiveRouteDto: {
+            target: components["schemas"]["RouteTarget"];
+            path: components["schemas"]["CoordinatesDto"][];
+        };
         RideDto: {
             /** Format: uuid */
             id: string;
@@ -2726,6 +2736,8 @@ export interface components {
             lastKnownPosition: components["schemas"]["TrackingPointDto"] | null;
             /** @description Minutes until the driver reaches the stop in question — the pickup while they are on the way, the destination once the passenger is aboard. Computed server-side from the reported position; there is deliberately no field on the position report for a device to set it. Null while the car is standing at a kerb, and null when the address never geocoded. */
             etaMinutes: number | null;
+            /** @description The road the arrival estimate was computed along, to the stop the car is heading for now. Only while location is shared and the last position is recent; null otherwise, and null when the routing provider offered no road. Never computed for this response — read from the route the ETA already paid for. */
+            route: components["schemas"]["LiveRouteDto"] | null;
             /** Format: date-time */
             createdAt: string;
             /** @description Whether the preview trip runner is currently driving this ride. Removed when the driver app lands. */
@@ -2984,10 +2996,6 @@ export interface components {
         };
         /** @enum {string} */
         ServiceAreaKind: "radius" | "polygon";
-        CoordinatesDto: {
-            latitude: number;
-            longitude: number;
-        };
         ServiceAreaDto: {
             kind: components["schemas"]["ServiceAreaKind"];
             center: components["schemas"]["CoordinatesDto"] | null;
@@ -3148,12 +3156,6 @@ export interface components {
              * @description When the device took the reading — age is measured from this.
              */
             capturedAt: string;
-        };
-        /** @enum {string} */
-        RouteTarget: "pickup" | "destination";
-        LiveRouteDto: {
-            target: components["schemas"]["RouteTarget"];
-            path: components["schemas"]["CoordinatesDto"][];
         };
         LiveRideDto: {
             /** Format: uuid */

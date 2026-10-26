@@ -1,4 +1,5 @@
 /** Domain types. A port of lib/domain/models.dart. */
+import { toServerTime } from '../core/serverClock';
 import { sharesLocation } from './driverAuthority';
 import type { RideStatus } from './rideStatus';
 
@@ -27,7 +28,8 @@ export function fixToJson(fix: Fix) {
     latitude: fix.latitude,
     longitude: fix.longitude,
     accuracyMeters: fix.accuracyMeters,
-    capturedAt: fix.capturedAt.toISOString(),
+    // Restated on the server's clock, which is what judges it.
+    capturedAt: toServerTime(fix.capturedAt).toISOString(),
   };
 }
 

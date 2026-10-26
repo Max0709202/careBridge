@@ -7,12 +7,24 @@ import type { components } from '../src/api/schema';
 import { InMemoryTokenStore } from '../src/api/tokens';
 import { TrackingSocket } from '../src/api/trackingSocket';
 import { App } from '../src/App';
+import { resetServerClock } from '../src/core/serverClock';
 import { ConfirmProvider, FeedbackProvider } from '../src/components/feedback';
 import { CareStore } from '../src/state/careStore';
 import { ServicesProvider } from '../src/state/context';
 import { loadSnapshot, Seeded } from './support/fixture';
 import { fakeMessaging } from './support/fakeMessaging';
 import { fakeServer, type Handler } from './support/fakeServer';
+
+// Leaflet needs a real layout engine. The street map is stood in for by a
+// summary of what it was asked to draw.
+vi.mock('../src/screens/rides/StreetMap', () => ({
+  default: (props: import('../src/screens/rides/StreetMap').StreetMapProps) => (
+    <div role="region" aria-label="Street map">
+      {props.driver ? (props.isStale ? 'car (stale)' : 'car') : 'no car'} ·{' '}
+      {props.route ? `road of ${props.route.length} points` : 'guide line'}
+    </div>
+  ),
+}));
 
 /** Signs in as a person would: the form starts empty. */
 function submitSignIn(email = 'ada@example.com', password = 'a-real-password') {
@@ -91,6 +103,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  resetServerClock();
 });
 
 describe('the family web app', () => {
@@ -239,6 +252,88 @@ describe('the family web app', () => {
     );
     await screen.findByText('Position updated just now.');
     expect(screen.getByText('Driver is about 4 minutes away')).toBeTruthy();
+  });
+
+  it('draws the road the car is following on the street map', async () => {
+    const snapshot = loadSnapshot();
+    const ride = snapshot.rides.find((r) => r.id === Seeded.outboundRide)!;
+    ride.status = 'driverEnRoute';
+    ride.lastKnownPosition = {
+      latitude: 39.96,
+      longitude: -83.0,
+      accuracyMeters: 10,
+      capturedAt: new Date(Date.now() - 5_000).toISOString(),
+    };
+    ride.route = {
+      target: 'pickup',
+      path: [
+        { latitude: 39.96, longitude: -83.0 },
+        { latitude: 39.965, longitude: -82.99 },
+        { latitude: 39.97, longitude: -82.98 },
+      ],
+    };
+    await renderApp(`/rides/${Seeded.outboundRide}/track`, { snapshot });
+    expect((await screen.findByRole('region', { name: 'Street map' })).textContent).toBe('car · road of 3 points');
+  });
+
+  it('ages a position by the server clock, so a computer an hour fast does not show the car as lost', async () => {
+    // This device's clock is an hour ahead of the server's. The reading is
+    // five seconds old by the server — the clock that judged it.
+    const serverNowMs = Date.now() - 3_600_000;
+    const snapshot = loadSnapshot();
+    const ride = snapshot.rides.find((r) => r.id === Seeded.outboundRide)!;
+    ride.status = 'driverEnRoute';
+    ride.lastKnownPosition = {
+      latitude: 39.96,
+      longitude: -83.0,
+      accuracyMeters: 10,
+      capturedAt: new Date(serverNowMs - 5_000).toISOString(),
+    };
+    await renderApp(`/rides/${Seeded.outboundRide}/track`, {
+      snapshot,
+      routes: {
+        'GET /care/state': () => ({ body: snapshot, headers: { date: new Date(serverNowMs).toUTCString() } }),
+      },
+    });
+
+    expect(await screen.findByText(/Position updated (just now|\d+ seconds ago)\./)).toBeTruthy();
+    expect(screen.queryByText(/lost contact/)).toBeNull();
+  });
+
+  it('keeps a backup poll running only while the trip is on screen', async () => {
+    const released = vi.fn();
+    const watch = vi.spyOn(CareStore.prototype, 'watchLiveTrip').mockReturnValue(released);
+    const snapshot = loadSnapshot();
+    snapshot.rides.find((r) => r.id === Seeded.outboundRide)!.status = 'driverEnRoute';
+    await renderApp(`/rides/${Seeded.outboundRide}/track`, { snapshot });
+    await screen.findByRole('region', { name: 'Street map' });
+
+    expect(watch).toHaveBeenCalled();
+    expect(released).not.toHaveBeenCalled();
+    cleanup();
+    expect(released).toHaveBeenCalled();
+    watch.mockRestore();
+  });
+
+  it('shows neither car nor road once contact is lost', async () => {
+    const snapshot = loadSnapshot();
+    const ride = snapshot.rides.find((r) => r.id === Seeded.outboundRide)!;
+    ride.status = 'driverEnRoute';
+    ride.lastKnownPosition = {
+      latitude: 39.96,
+      longitude: -83.0,
+      accuracyMeters: 10,
+      capturedAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+    };
+    ride.route = {
+      target: 'pickup',
+      path: [
+        { latitude: 39.96, longitude: -83.0 },
+        { latitude: 39.97, longitude: -82.98 },
+      ],
+    };
+    await renderApp(`/rides/${Seeded.outboundRide}/track`, { snapshot });
+    expect((await screen.findByRole('region', { name: 'Street map' })).textContent).toBe('no car · guide line');
   });
 
   it('stops presenting a position once the ride has ended', async () => {

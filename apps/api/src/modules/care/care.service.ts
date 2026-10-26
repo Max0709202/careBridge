@@ -6,7 +6,10 @@ import { AuthorizationError, NotFoundError } from '../../common/errors';
 import { Money } from '../../domain/money';
 import type { FamilyPermission } from '../../domain/permissions';
 import type { PricingRule } from '../../domain/pricing';
-import type { CareStateDto } from './care.dto';
+import { allowsLocationSharing, type RideStatus } from '../../domain/ride-status';
+import { TrackingFreshness } from '../../domain/tracking';
+import { EtaService } from '../tracking/eta.service';
+import type { CareStateDto, RideDto } from './care.dto';
 import {
   APPOINTMENT_INCLUDE,
   CLINIC_INCLUDE,
@@ -25,7 +28,10 @@ type Db = PrismaService | Prisma.TransactionClient;
 
 @Injectable()
 export class CareService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eta: EtaService,
+  ) {}
 
   /**
    * Everything one signed-in user may see, as one value.
@@ -101,11 +107,34 @@ export class CareService {
       access,
       clinics: clinics.map(toClinicDto),
       appointments: appointments.map(toAppointmentDto),
-      rides: rides.map(toRideDto),
+      rides: await this.withRoutes(rides.map(toRideDto), rides),
       notifications: notifications.map(toNotificationDto),
       selectedPatientId,
       simplifiedMode: user.simplifiedMode,
     };
+  }
+
+  /**
+   * Adds the road to the rides being tracked right now, so the family's map
+   * can draw it. Only while location is shared and the last position is
+   * recent — the same window in which the position itself is shown.
+   */
+  private async withRoutes(
+    dtos: RideDto[],
+    rows: Array<{ id: string; status: RideStatus; lastCapturedAt: Date | null }>,
+  ): Promise<RideDto[]> {
+    const now = Date.now();
+    return Promise.all(
+      dtos.map(async (dto, index) => {
+        const row = rows[index]!;
+        const live =
+          allowsLocationSharing(row.status) &&
+          row.lastCapturedAt != null &&
+          now - row.lastCapturedAt.getTime() <= TrackingFreshness.lostMs;
+        if (!live) return dto;
+        return { ...dto, route: await this.eta.routeFor(row.id, row.status) };
+      }),
+    );
   }
 
   // ─── authorisation policy ─────────────────────────────────────────────────

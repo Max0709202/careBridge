@@ -11,6 +11,7 @@ import type { CareApi } from '../api/careApi';
 import type { TrackingSocket, TrackingUpdate } from '../api/trackingSocket';
 import type { CareState } from './careState';
 import type { CareStore } from './careStore';
+import { serverNow } from '../core/serverClock';
 
 interface Services {
   store: CareStore;
@@ -45,13 +46,15 @@ export function useCare(): CareState {
  * timer. Mirrors `tickerProvider`.
  */
 export function useNow(live = false): Date {
-  const [now, setNow] = useState(() => new Date());
+  // The server's clock, not this device's: a reading's age is measured against
+  // the clock that judged it. See core/serverClock.ts.
+  const [now, setNow] = useState(() => serverNow());
   useEffect(() => {
     if (!live) return;
-    const timer = setInterval(() => setNow(new Date()), 1_000);
+    const timer = setInterval(() => setNow(serverNow()), 1_000);
     return () => clearInterval(timer);
   }, [live]);
-  return live ? now : new Date();
+  return live ? now : serverNow();
 }
 
 /**

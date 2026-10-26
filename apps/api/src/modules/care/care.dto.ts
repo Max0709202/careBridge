@@ -30,6 +30,8 @@
 
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
 
+import { LiveRouteDto } from '../dispatch/dispatch.dto';
+
 export class AddressDto {
   @ApiProperty({ type: String }) label!: string;
   @ApiProperty({ type: String }) line1!: string;
@@ -312,6 +314,14 @@ export class RideDto {
       'Minutes until the driver reaches the stop in question — the pickup while they are on the way, the destination once the passenger is aboard. Computed server-side from the reported position; there is deliberately no field on the position report for a device to set it. Null while the car is standing at a kerb, and null when the address never geocoded.',
   })
   etaMinutes!: number | null;
+
+  @ApiProperty({
+    type: () => LiveRouteDto,
+    nullable: true,
+    description:
+      'The road the arrival estimate was computed along, to the stop the car is heading for now. Only while location is shared and the last position is recent; null otherwise, and null when the routing provider offered no road. Never computed for this response — read from the route the ETA already paid for.',
+  })
+  route!: LiveRouteDto | null;
 
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
 

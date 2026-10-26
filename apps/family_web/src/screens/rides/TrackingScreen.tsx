@@ -13,6 +13,7 @@ import {
   TriangleAlert,
   WifiOff,
 } from 'lucide-react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useConfirm, useFeedback } from '../../components/feedback';
@@ -51,8 +52,10 @@ import { canView, patientById, rideById } from '../../state/careState';
 import { useCare, useLiveTracking, useNow, useStore } from '../../state/context';
 import { DemoControls } from './DemoControls';
 import { RideTimeline } from './RideTimeline';
-import { RouteMap } from './RouteMap';
 import { CallBar } from '../messages/ChatThread';
+
+// Loaded with this screen only: the map library is most of its weight.
+const StreetMap = lazy(() => import('./StreetMap'));
 
 /**
  * Live tracking. The screen answers one question — *is the person I love all
@@ -80,7 +83,11 @@ export function TrackingScreen() {
   // subscription is even asked for, and the server re-checks it regardless.
   const ride = rideById(state, id);
   const allowed = ride !== null && canView(state, ride.patientId);
-  const live = useLiveTracking(ride && allowed && rideAllowsLocationSharing(ride.status) ? id : null);
+  const tracking = ride !== null && allowed && rideAllowsLocationSharing(ride.status);
+  const live = useLiveTracking(tracking ? id : null);
+  // The socket pushes positions; this re-reads the snapshot as a backup, so a
+  // dropped connection costs fifteen seconds rather than the rest of the trip.
+  useEffect(() => (tracking ? store.watchLiveTrip() : undefined), [store, tracking]);
 
   if (!ride || !allowed) return <NotAvailable />;
 
@@ -126,13 +133,16 @@ export function TrackingScreen() {
     >
       <div className="stack">
         {ride.pickup.coordinates && ride.destination.coordinates ? (
-          <RouteMap
-            pickup={ride.pickup.coordinates}
-            destination={ride.destination.coordinates}
-            driver={lost ? null : (position?.coordinates ?? null)}
-            isStale={stale}
-            passengerOnboard={ridePassengerIsOnboard(ride.status)}
-          />
+          <Suspense fallback={<div className="street-map" aria-hidden />}>
+            <StreetMap
+              pickup={ride.pickup.coordinates}
+              destination={ride.destination.coordinates}
+              driver={lost ? null : (position?.coordinates ?? null)}
+              isStale={stale}
+              passengerOnboard={ridePassengerIsOnboard(ride.status)}
+              route={lost ? null : ride.route}
+            />
+          </Suspense>
         ) : (
           <AppCard>
             <p className="t-body muted">

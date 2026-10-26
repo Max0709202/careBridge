@@ -16,6 +16,7 @@ import {
   type AppNotification,
   type AppUser,
   type Appointment,
+  type Coordinates,
   type Clinic,
   type Driver,
   type EmergencyContact,
@@ -232,9 +233,16 @@ function rideFromJson(json: S['RideDto']): Ride {
     history: (json.history ?? []).map(statusChangeFromJson),
     lastKnownPosition: json.lastKnownPosition ? trackingPointFromJson(json.lastKnownPosition) : null,
     etaMinutes: json.etaMinutes ?? null,
+    route: routeFromJson(json.route),
     createdAt: dateOrNull(json.createdAt),
     simulationActive: json.simulationActive === true,
   };
+}
+
+/** Fewer than two points is not a road; absent from an older server. */
+function routeFromJson(json: S['LiveRouteDto'] | null | undefined): Coordinates[] | null {
+  if (!json || json.path.length < 2) return null;
+  return json.path.map((p) => ({ latitude: p.latitude, longitude: p.longitude }));
 }
 
 function driverFromJson(json: S['DriverDto']): Driver {

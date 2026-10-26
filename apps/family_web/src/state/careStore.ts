@@ -26,11 +26,21 @@ type Listener = () => void;
  */
 const POLL_MS = 4_000;
 
+/**
+ * While a family is watching a real trip. The position arrives by push; this
+ * is the backup for when the socket has dropped — a phone moving from Wi-Fi to
+ * mobile data — so the screen catches up rather than freezing on the last
+ * reading and calling it lost. The same interval as the ops console's map.
+ */
+const LIVE_POLL_MS = 15_000;
+
 export class CareStore {
   private state: CareState = emptyCareState;
   private previews: Set<string> = new Set();
   private readonly listeners = new Set<Listener>();
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private pollEveryMs: number | null = null;
+  private liveWatchers = 0;
 
   constructor(readonly api: CareApi) {}
 
@@ -267,15 +277,35 @@ export class CareStore {
    * Polls only while the server is running a trip. A permanent poll would keep
    * a device awake and a database busy for the 99% of the time nothing moves.
    */
+  /**
+   * Polls as a backup while a screen shows a live trip, until the returned
+   * function is called. Counted, so two screens watching do not stop each
+   * other's poll.
+   */
+  watchLiveTrip(): () => void {
+    this.liveWatchers += 1;
+    this.syncPolling();
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.liveWatchers -= 1;
+      this.syncPolling();
+    };
+  }
+
   private syncPolling(): void {
-    if (this.previews.size === 0) {
-      this.stopPolling();
-      return;
-    }
-    this.pollTimer ??= setInterval(() => void this.poll(), POLL_MS);
+    const every = this.previews.size > 0 ? POLL_MS : this.liveWatchers > 0 ? LIVE_POLL_MS : null;
+    if (every === this.pollEveryMs) return;
+    this.stopPolling();
+    if (every === null) return;
+    this.pollTimer = setInterval(() => void this.poll(), every);
+    this.pollEveryMs = every;
   }
 
   private async poll(): Promise<void> {
+    // A hidden tab has nobody looking at the car; it catches up when shown.
+    if (this.previews.size === 0 && document.visibilityState === 'hidden') return;
     try {
       this.apply(await this.api.state());
     } catch {
@@ -287,5 +317,6 @@ export class CareStore {
   private stopPolling(): void {
     if (this.pollTimer !== null) clearInterval(this.pollTimer);
     this.pollTimer = null;
+    this.pollEveryMs = null;
   }
 }

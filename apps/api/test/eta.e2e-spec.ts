@@ -454,5 +454,34 @@ describe('the arrival estimate', () => {
       });
       expect((await board(owner, organizationId))?.route).toBeNull();
     });
+
+    it("reaches the family's snapshot too, and leaves it once the position is too old", async () => {
+      const { family, driver, rideId } = await drivingRide();
+      spyOnRouting().mockResolvedValue({
+        distanceMiles: 1.2,
+        durationMinutes: 6,
+        path: road,
+        source: 'test',
+      });
+      await reportNearPickup(driver.accessToken, rideId);
+
+      const routeSeenByFamily = async () => {
+        const response = await authed(harness, family.accessToken)
+          .get('/api/v1/care/state')
+          .expect(200);
+        const rides = (
+          response.body as { rides: Array<{ id: string; route: unknown }> }
+        ).rides;
+        return rides.find((r) => r.id === rideId)?.route;
+      };
+
+      expect(await routeSeenByFamily()).toEqual({ target: 'pickup', path: road });
+
+      await harness.prisma.ride.update({
+        where: { id: rideId },
+        data: { lastCapturedAt: new Date(Date.now() - 10 * 60_000) },
+      });
+      expect(await routeSeenByFamily()).toBeNull();
+    });
   });
 });
