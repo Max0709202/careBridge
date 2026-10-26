@@ -2624,37 +2624,22 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
-        VehicleDto: {
-            /** Format: uuid */
-            id: string;
+        RideVehicleDto: {
             make: string;
             model: string;
             color: string;
             licensePlate: string;
             isWheelchairAccessible: boolean;
         };
-        DriverDto: {
+        RideDriverDto: {
             /** Format: uuid */
             id: string;
             /** @description First name and last initial only. The family needs to recognise the person at the kerb, not to be able to look them up. */
             displayName: string;
-            status: components["schemas"]["DriverStatus"];
-            /** @description Working right now. Separate from status, which is whether the company has said this person may carry a passenger at all. */
-            onShift: boolean;
-            /** Format: float */
+            /** Format: double */
             rating: number;
             yearsDriving: number;
-            vehicle: components["schemas"]["VehicleDto"];
-            /** Format: date-time */
-            approvedAt: string | null;
-            suspensionReason: string | null;
-            /** @description Whether this driver counts towards the operator’s per-driver subscription. True for approved drivers and nobody else. */
-            occupiesSeat: boolean;
-            activeRideCount: number;
-            /** @description The address this driver will sign into the driver app with, as recorded by the operator. */
-            invitedEmail: string | null;
-            /** @description Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for. */
-            hasAppAccount: boolean;
+            vehicle: components["schemas"]["RideVehicleDto"];
         };
         SurchargeDto: {
             label: string;
@@ -2725,7 +2710,7 @@ export interface components {
             wheelchairRequired: boolean;
             assistanceRequired: boolean;
             notesForDriver: string | null;
-            driver: components["schemas"]["DriverDto"] | null;
+            driver: components["schemas"]["RideDriverDto"] | null;
             estimate: components["schemas"]["PriceEstimateDto"];
             /** @description A flag rather than a status, so a delay can be raised and cleared without losing the state the ride must return to. */
             isDelayed: boolean;
@@ -2987,6 +2972,15 @@ export interface components {
             /** @description The single-use token from the invitation link. */
             token: string;
         };
+        VehicleDto: {
+            /** Format: uuid */
+            id: string;
+            make: string;
+            model: string;
+            color: string;
+            licensePlate: string;
+            isWheelchairAccessible: boolean;
+        };
         CreateVehicleDto: {
             make: string;
             model: string;
@@ -3025,6 +3019,29 @@ export interface components {
         };
         /** @enum {string} */
         DriverStatus: "invited" | "pendingApproval" | "approved" | "suspended" | "offboarded";
+        DriverDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description First name and last initial only. The family needs to recognise the person at the kerb, not to be able to look them up. */
+            displayName: string;
+            status: components["schemas"]["DriverStatus"];
+            /** @description Working right now. Separate from status, which is whether the company has said this person may carry a passenger at all. */
+            onShift: boolean;
+            /** Format: float */
+            rating: number;
+            yearsDriving: number;
+            vehicle: components["schemas"]["VehicleDto"];
+            /** Format: date-time */
+            approvedAt: string | null;
+            suspensionReason: string | null;
+            /** @description Whether this driver counts towards the operator’s per-driver subscription. True for approved drivers and nobody else. */
+            occupiesSeat: boolean;
+            activeRideCount: number;
+            /** @description The address this driver will sign into the driver app with, as recorded by the operator. */
+            invitedEmail: string | null;
+            /** @description Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for. */
+            hasAppAccount: boolean;
+        };
         CreateDriverDto: {
             /** @description First name and last initial. Never a full legal name. */
             displayName: string;

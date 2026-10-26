@@ -110,12 +110,21 @@ export const rideIsActive = (r: Ride) => !rideIsTerminal(r.status);
 export const rideIsTrackable = (r: Ride) => rideAllowsLocationSharing(r.status);
 
 /**
- * The one ride that deserves the top of the dashboard: in progress if there is
- * one, otherwise the next one requested.
+ * The rides that deserve the top of the dashboard: every one being tracked
+ * right now, earliest pickup first — two can overlap, and the one a family is
+ * not shown is the one they cannot follow — or, when none is moving, the next
+ * one requested.
  */
-export function activeRideFor(s: CareState, patientId: string): Ride | null {
+export function activeRidesFor(s: CareState, patientId: string): Ride[] {
   const candidates = ridesFor(s, patientId).filter(rideIsActive);
-  return candidates.find((r) => rideAllowsLocationSharing(r.status)) ?? candidates[0] ?? null;
+  const moving = candidates.filter((r) => rideAllowsLocationSharing(r.status));
+  if (moving.length > 0) return moving;
+  return candidates.slice(0, 1);
+}
+
+/** The first of `activeRidesFor`, for places with room for one. */
+export function activeRideFor(s: CareState, patientId: string): Ride | null {
+  return activeRidesFor(s, patientId)[0] ?? null;
 }
 
 export const unreadNotificationCount = (s: CareState) =>

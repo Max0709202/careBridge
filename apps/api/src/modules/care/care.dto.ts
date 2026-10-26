@@ -184,7 +184,12 @@ export class AppointmentDto {
   @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
 }
 
-export class VehicleDto {
+/**
+ * Named apart from dispatch's `VehicleDto` on purpose: OpenAPI keeps one
+ * schema per name, and the two describe different things — what a family is
+ * told to look for, and an operator's fleet record.
+ */
+export class RideVehicleDto {
   @ApiProperty({ type: String }) make!: string;
   @ApiProperty({ type: String }) model!: string;
   @ApiProperty({ type: String }) color!: string;
@@ -192,7 +197,12 @@ export class VehicleDto {
   @ApiProperty({ type: Boolean }) isWheelchairAccessible!: boolean;
 }
 
-export class DriverDto {
+/**
+ * The driver as a family sees them. Named apart from dispatch's `DriverDto`
+ * for the same reason as `RideVehicleDto`: one name had been resolving to the
+ * operator's roster shape in the generated clients.
+ */
+export class RideDriverDto {
   @ApiProperty({ type: String, format: 'uuid' }) id!: string;
 
   @ApiProperty({
@@ -204,7 +214,7 @@ export class DriverDto {
 
   @ApiProperty({ type: Number, format: 'double' }) rating!: number;
   @ApiProperty({ type: 'integer' }) yearsDriving!: number;
-  @ApiProperty({ type: () => VehicleDto }) vehicle!: VehicleDto;
+  @ApiProperty({ type: () => RideVehicleDto }) vehicle!: RideVehicleDto;
 }
 
 export class SurchargeDto {
@@ -284,8 +294,8 @@ export class RideDto {
   @ApiProperty({ type: String, nullable: true })
   notesForDriver!: string | null;
 
-  @ApiProperty({ type: () => DriverDto, nullable: true })
-  driver!: DriverDto | null;
+  @ApiProperty({ type: () => RideDriverDto, nullable: true })
+  driver!: RideDriverDto | null;
 
   @ApiProperty({ type: () => PriceEstimateDto }) estimate!: PriceEstimateDto;
 

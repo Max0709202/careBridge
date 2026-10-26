@@ -4,6 +4,7 @@ import { careStateFromJson, invoiceFromJson, subscriptionFromJson } from '../src
 import type { components } from '../src/api/schema';
 import {
   activeRideFor,
+  activeRidesFor,
   can,
   canView,
   nextAppointmentFor,
@@ -58,6 +59,8 @@ describe('care state snapshot', () => {
     const now = new Date('2026-08-12T12:00:00Z');
     expect(nextAppointmentFor(state, Seeded.eleanor, now)?.id).toBe(Seeded.nextAppointment);
     expect(activeRideFor(state, Seeded.eleanor)?.status).toBe('awaitingAssignment');
+    // Nothing moving: only the next ride requested, not every pending one.
+    expect(activeRidesFor(state, Seeded.eleanor)).toHaveLength(1);
     expect(unreadNotificationCount(state)).toBe(0);
   });
 

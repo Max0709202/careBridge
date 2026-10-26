@@ -245,7 +245,7 @@ function routeFromJson(json: S['LiveRouteDto'] | null | undefined): Coordinates[
   return json.path.map((p) => ({ latitude: p.latitude, longitude: p.longitude }));
 }
 
-function driverFromJson(json: S['DriverDto']): Driver {
+function driverFromJson(json: S['RideDriverDto']): Driver {
   return {
     id: json.id,
     displayName: json.displayName,

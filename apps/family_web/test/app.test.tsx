@@ -119,6 +119,34 @@ describe('the family web app', () => {
     expect(screen.getByText(/in an emergency, call 911/)).toBeTruthy();
   });
 
+  it('lists every ride in progress, each with its own way to follow it', async () => {
+    const snapshot = loadSnapshot();
+    const first = snapshot.rides.find((r) => r.id === Seeded.outboundRide)!;
+    const driver = (id: string, displayName: string) => ({
+      id,
+      displayName,
+      rating: 4.9,
+      yearsDriving: 6,
+      vehicle: { make: 'Toyota', model: 'Sienna', color: 'Silver', licensePlate: 'ABC 123', isWheelchairAccessible: false },
+    });
+    first.status = 'driverEnRoute';
+    first.driver = driver('driver-1', 'Marcus T.');
+    const second = {
+      ...structuredClone(first),
+      id: '00000000-0000-4000-8000-0000000000aa',
+      status: 'passengerOnboard',
+      driver: driver('driver-2', 'Priya N.'),
+    };
+    snapshot.rides.push(second);
+    await renderApp('/', { snapshot });
+
+    const marcus = screen.getByLabelText('Current ride for Eleanor with Marcus T.');
+    const priya = screen.getByLabelText('Current ride for Eleanor with Priya N.');
+    expect(within(marcus).getByRole('button', { name: 'Follow the trip' })).toBeTruthy();
+    fireEvent.click(within(priya).getByRole('button', { name: 'Follow the trip' }));
+    expect(await screen.findByRole('region', { name: 'Street map' })).toBeTruthy();
+  });
+
   it('keeps a signed-out visitor’s invitation link through sign-in, then accepts it', async () => {
     const { requests } = await renderApp('/accept-invitation?token=inv-123', {
       signedIn: false,

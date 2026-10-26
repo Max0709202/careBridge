@@ -44,7 +44,7 @@ import {
 } from '../../domain/models';
 import { ridePassengerIsOnboard, rideIsTerminal } from '../../domain/statuses';
 import {
-  activeRideFor,
+  activeRidesFor,
   can,
   clinicById,
   nextAppointmentFor,
@@ -87,7 +87,7 @@ export function DashboardScreen() {
     );
   }
 
-  const activeRide = activeRideFor(state, patient.id);
+  const activeRides = activeRidesFor(state, patient.id);
   const nextAppointment = nextAppointmentFor(state, patient.id, now);
 
   return (
@@ -103,11 +103,11 @@ export function DashboardScreen() {
       <div className="stack">
         <VerificationBanner />
         <PatientSwitcher />
-        {activeRide && (
-          <div className="mt-lg">
-            <ActiveRideCard ride={activeRide} patient={patient} />
+        {activeRides.map((ride) => (
+          <div className="mt-lg" key={ride.id}>
+            <ActiveRideCard ride={ride} patient={patient} />
           </div>
-        )}
+        ))}
         <div className="mt-lg">
           <NextAppointmentSection appointment={nextAppointment} state={state} now={now} />
         </div>
@@ -144,7 +144,12 @@ function ActiveRideCard({ ride, patient }: { ride: Ride; patient: Patient }) {
   const visual = rideStatusVisual[ride.status];
 
   return (
-    <AppCard border={ride.isDelayed ? 'caution' : visual.ink} ariaLabel={`Current ride for ${patient.preferredName}.`}>
+    <AppCard
+      border={ride.isDelayed ? 'caution' : visual.ink}
+      // Names the driver, so two cards for one person can be told apart by ear.
+      // No closing full stop: a driver's name already ends in one ("Marcus T.").
+      ariaLabel={`Current ride for ${patient.preferredName}${ride.driver ? ` with ${ride.driver.displayName}` : ''}`}
+    >
       <div className="row">
         <h2 className="t-title grow">{rideDirectionLabel[ride.direction]}</h2>
         <RideStatusPill status={ride.status} />

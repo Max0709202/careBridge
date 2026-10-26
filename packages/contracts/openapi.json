@@ -6795,13 +6795,9 @@
           "createdAt"
         ]
       },
-      "VehicleDto": {
+      "RideVehicleDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
           "make": {
             "type": "string"
           },
@@ -6819,7 +6815,6 @@
           }
         },
         "required": [
-          "id",
           "make",
           "model",
           "color",
@@ -6827,7 +6822,7 @@
           "isWheelchairAccessible"
         ]
       },
-      "DriverDto": {
+      "RideDriverDto": {
         "type": "object",
         "properties": {
           "id": {
@@ -6838,67 +6833,23 @@
             "type": "string",
             "description": "First name and last initial only. The family needs to recognise the person at the kerb, not to be able to look them up."
           },
-          "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DriverStatus"
-              }
-            ]
-          },
-          "onShift": {
-            "type": "boolean",
-            "description": "Working right now. Separate from status, which is whether the company has said this person may carry a passenger at all."
-          },
           "rating": {
             "type": "number",
-            "format": "float"
+            "format": "double"
           },
           "yearsDriving": {
             "type": "integer"
           },
           "vehicle": {
-            "$ref": "#/components/schemas/VehicleDto"
-          },
-          "approvedAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "suspensionReason": {
-            "type": "string",
-            "nullable": true
-          },
-          "occupiesSeat": {
-            "type": "boolean",
-            "description": "Whether this driver counts towards the operator’s per-driver subscription. True for approved drivers and nobody else."
-          },
-          "activeRideCount": {
-            "type": "integer"
-          },
-          "invitedEmail": {
-            "type": "string",
-            "nullable": true,
-            "description": "The address this driver will sign into the driver app with, as recorded by the operator."
-          },
-          "hasAppAccount": {
-            "type": "boolean",
-            "description": "Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for."
+            "$ref": "#/components/schemas/RideVehicleDto"
           }
         },
         "required": [
           "id",
           "displayName",
-          "status",
-          "onShift",
           "rating",
           "yearsDriving",
-          "vehicle",
-          "approvedAt",
-          "suspensionReason",
-          "occupiesSeat",
-          "activeRideCount",
-          "invitedEmail",
-          "hasAppAccount"
+          "vehicle"
         ]
       },
       "SurchargeDto": {
@@ -7116,7 +7067,7 @@
             "nullable": true,
             "allOf": [
               {
-                "$ref": "#/components/schemas/DriverDto"
+                "$ref": "#/components/schemas/RideDriverDto"
               }
             ]
           },
@@ -8028,6 +7979,38 @@
           "token"
         ]
       },
+      "VehicleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "make": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "licensePlate": {
+            "type": "string"
+          },
+          "isWheelchairAccessible": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "make",
+          "model",
+          "color",
+          "licensePlate",
+          "isWheelchairAccessible"
+        ]
+      },
       "CreateVehicleDto": {
         "type": "object",
         "properties": {
@@ -8193,6 +8176,80 @@
           "approved",
           "suspended",
           "offboarded"
+        ]
+      },
+      "DriverDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "First name and last initial only. The family needs to recognise the person at the kerb, not to be able to look them up."
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DriverStatus"
+              }
+            ]
+          },
+          "onShift": {
+            "type": "boolean",
+            "description": "Working right now. Separate from status, which is whether the company has said this person may carry a passenger at all."
+          },
+          "rating": {
+            "type": "number",
+            "format": "float"
+          },
+          "yearsDriving": {
+            "type": "integer"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/VehicleDto"
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "suspensionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "occupiesSeat": {
+            "type": "boolean",
+            "description": "Whether this driver counts towards the operator’s per-driver subscription. True for approved drivers and nobody else."
+          },
+          "activeRideCount": {
+            "type": "integer"
+          },
+          "invitedEmail": {
+            "type": "string",
+            "nullable": true,
+            "description": "The address this driver will sign into the driver app with, as recorded by the operator."
+          },
+          "hasAppAccount": {
+            "type": "boolean",
+            "description": "Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for."
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "status",
+          "onShift",
+          "rating",
+          "yearsDriving",
+          "vehicle",
+          "approvedAt",
+          "suspensionReason",
+          "occupiesSeat",
+          "activeRideCount",
+          "invitedEmail",
+          "hasAppAccount"
         ]
       },
       "CreateDriverDto": {
