@@ -28,6 +28,11 @@ export class FakeMessagingSocket implements MessagingEvents {
 
 export function fakeMessaging(transport: ApiTransport) {
   const socket = new FakeMessagingSocket();
-  const store = new MessagingStore(new MessagingClient(transport), socket, new Attention(), transport.tokens);
+  const store = new MessagingStore(
+    new MessagingClient(transport),
+    socket,
+    new Attention(),
+    transport.tokens,
+  );
   return { store, socket };
 }

@@ -21,7 +21,9 @@ import { NoWebPushAdapter, VapidWebPushAdapter } from './web-push/web-push.adapt
         if (config.PUSH_DRIVER === 'fcm' && config.FCM_SERVICE_ACCOUNT_JSON) {
           return new FcmPushAdapter(config.FCM_SERVICE_ACCOUNT_JSON);
         }
-        return config.PUSH_DRIVER === 'none' ? new NoDevicePushAdapter() : new LogPushAdapter();
+        return config.PUSH_DRIVER === 'none'
+          ? new NoDevicePushAdapter()
+          : new LogPushAdapter();
       },
     },
     {

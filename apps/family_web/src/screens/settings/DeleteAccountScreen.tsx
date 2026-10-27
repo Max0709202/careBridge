@@ -14,7 +14,14 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import type { DeletionStatus } from '../../api/careApi';
 import { useConfirm, useFeedback } from '../../components/feedback';
-import { AppCard, Button, EmptyState, Page, SectionHeader, Spinner } from '../../components/ui';
+import {
+  AppCard,
+  Button,
+  EmptyState,
+  Page,
+  SectionHeader,
+  Spinner,
+} from '../../components/ui';
 import { formatLongDate } from '../../core/formatting';
 import { useApi, useStore } from '../../state/context';
 
@@ -121,8 +128,9 @@ export function DeleteAccountScreen() {
             <SectionHeader title="Your data" />
             <AppCard>
               <p className="t-body muted">
-                This is everything we hold about the account, as it was when you asked. Take it now if
-                you want it — signing back in to fetch it would cancel the deletion.
+                This is everything we hold about the account, as it was when you asked.
+                Take it now if you want it — signing back in to fetch it would cancel
+                the deletion.
               </p>
               <div className="wrap mt-md">
                 <Button variant="tonal" icon={Copy} onClick={copyExport}>
@@ -156,7 +164,11 @@ export function DeleteAccountScreen() {
           icon={CloudOff}
           title="Could not load your account"
           message="Check your connection and try again."
-          action={<Button variant="outlined" onClick={load}>Retry</Button>}
+          action={
+            <Button variant="outlined" onClick={load}>
+              Retry
+            </Button>
+          }
         />
       </AppCard>
     );
@@ -174,11 +186,12 @@ export function DeleteAccountScreen() {
         <AppCard>
           <Bullet icon={LogOut}>Every device is signed out straight away.</Bullet>
           <Bullet icon={Clock}>
-            The account is deleted {status.graceDays} days from now. Signing in again before then
-            cancels it — that is all it takes.
+            The account is deleted {status.graceDays} days from now. Signing in again
+            before then cancels it — that is all it takes.
           </Bullet>
           <Bullet icon={UserX}>
-            Your name, address, phone number, sign-in details and notification history are removed.
+            Your name, address, phone number, sign-in details and notification history
+            are removed.
           </Bullet>
           <Bullet icon={Download}>
             You get a copy of everything we hold, on this screen, before you go.
@@ -189,7 +202,9 @@ export function DeleteAccountScreen() {
           <SectionHeader title="What is kept" />
           <AppCard>
             <p className="t-body muted pre">
-              {'Invoices, payments and the log of actions taken on the account are kept for as long as financial and audit rules require — with nothing left on them that identifies you.\n\nWe would rather tell you that now than have you find an invoice with your name on it later.'}
+              {
+                'Invoices, payments and the log of actions taken on the account are kept for as long as financial and audit rules require — with nothing left on them that identifies you.\n\nWe would rather tell you that now than have you find an invoice with your name on it later.'
+              }
             </p>
           </AppCard>
         </div>
@@ -201,7 +216,11 @@ export function DeleteAccountScreen() {
               {status.blockerMessages.map((message) => (
                 <AppCard key={message}>
                   <div className="row start tight">
-                    <CirclePause className="error-text" aria-hidden style={{ flex: '0 0 auto' }} />
+                    <CirclePause
+                      className="error-text"
+                      aria-hidden
+                      style={{ flex: '0 0 auto' }}
+                    />
                     <p className="t-body grow">{message}</p>
                   </div>
                 </AppCard>
@@ -212,11 +231,19 @@ export function DeleteAccountScreen() {
 
         {/* Refusals are decided on the server; disabling here only keeps the
             person from tapping into an error they can already read above. */}
-        <Button variant="danger" icon={Trash2} block className="mt-lg" disabled={busy || blocked} onClick={remove}>
+        <Button
+          variant="danger"
+          icon={Trash2}
+          block
+          className="mt-lg"
+          disabled={busy || blocked}
+          onClick={remove}
+        >
           {busy ? 'Deleting…' : 'Delete my account'}
         </Button>
         <p className="t-small muted center mt-sm">
-          You can also do this from <a href="/delete-account">our website</a> without signing in.
+          You can also do this from <a href="/delete-account">our website</a> without
+          signing in.
         </p>
       </div>
     );
@@ -232,9 +259,13 @@ export function DeleteAccountScreen() {
 function Bullet({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
     <div className="row start tight" style={{ paddingBottom: 'var(--space-sm)' }}>
-      <Icon size={20} className="muted" aria-hidden style={{ flex: '0 0 auto', marginTop: 2 }} />
+      <Icon
+        size={20}
+        className="muted"
+        aria-hidden
+        style={{ flex: '0 0 auto', marginTop: 2 }}
+      />
       <p className="t-body grow">{children}</p>
     </div>
   );
 }
-

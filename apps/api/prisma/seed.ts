@@ -85,7 +85,9 @@ async function main(): Promise<void> {
   // one somebody created.
   if (process.argv.includes('--reference-only')) {
     await seedFeatureFlags();
-    console.log('Seeded reference data only: pricing rule, plan catalogue, feature flags.');
+    console.log(
+      'Seeded reference data only: pricing rule, plan catalogue, feature flags.',
+    );
     return;
   }
 
@@ -105,7 +107,12 @@ async function main(): Promise<void> {
     userId: user.id,
   });
 
-  await seedConversations({ now, organizationId: operator.id, eleanorId: eleanor, userId: user.id });
+  await seedConversations({
+    now,
+    organizationId: operator.id,
+    eleanorId: eleanor,
+    userId: user.id,
+  });
 
   await seedPlatformAdmin();
   await seedFeatureFlags();
@@ -1018,7 +1025,11 @@ async function seedConversations(input: {
     rideId: null,
   };
 
-  const family = { ...subject, kind: 'dispatchFamily' as const, patientId: input.eleanorId };
+  const family = {
+    ...subject,
+    kind: 'dispatchFamily' as const,
+    patientId: input.eleanorId,
+  };
   await prisma.conversation.create({
     data: {
       id: ID.familyThread,

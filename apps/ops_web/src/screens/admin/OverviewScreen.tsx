@@ -25,7 +25,12 @@ import {
   StaleBanner,
 } from '../../components/ui';
 import { formatCents } from '../../core/money';
-import { completionRate, needsAttention, netRevenueCentsLast30Days, type PlatformStats } from '../../domain/admin';
+import {
+  completionRate,
+  needsAttention,
+  netRevenueCentsLast30Days,
+  type PlatformStats,
+} from '../../domain/admin';
 import { useResource } from '../../state/context';
 import { keys } from '../../state/opsStore';
 
@@ -45,7 +50,9 @@ export function OverviewScreen() {
   if (stats.value) {
     body = (
       <>
-        {stats.error ? <StaleBanner error={stats.error} onRetry={stats.reload} /> : null}
+        {stats.error ? (
+          <StaleBanner error={stats.error} onRetry={stats.reload} />
+        ) : null}
         <OverviewBody stats={stats.value} />
       </>
     );
@@ -80,14 +87,22 @@ function OverviewBody({ stats }: { stats: PlatformStats }) {
 
       <SectionHeader title="Right now" />
       <Tiles>
-        <StatTile icon={CarTaxiFront} label="Trips in flight" value={stats.activeRidesNow} />
+        <StatTile
+          icon={CarTaxiFront}
+          label="Trips in flight"
+          value={stats.activeRidesNow}
+        />
         <StatTile icon={Users} label="Drivers approved" value={stats.driversApproved} />
       </Tiles>
 
       <SectionHeader title="The last seven days" />
       <Tiles>
         <StatTile icon={Route} label="Trips booked" value={stats.ridesLast7Days} />
-        <StatTile icon={CircleCheck} label="Completed" value={stats.ridesCompletedLast7Days} />
+        <StatTile
+          icon={CircleCheck}
+          label="Completed"
+          value={stats.ridesCompletedLast7Days}
+        />
         {/* Beside completions rather than buried: a no-show is somebody who waited and was not collected. */}
         <StatTile
           icon={UserX}
@@ -95,7 +110,11 @@ function OverviewBody({ stats }: { stats: PlatformStats }) {
           value={stats.ridesNoShowLast7Days}
           emphasis={stats.ridesNoShowLast7Days > 0}
         />
-        <StatTile icon={CircleX} label="Cancelled" value={stats.ridesCancelledLast7Days} />
+        <StatTile
+          icon={CircleX}
+          label="Cancelled"
+          value={stats.ridesCancelledLast7Days}
+        />
       </Tiles>
       {/* "0%" and "no trips yet" are different facts. */}
       <p className="t-small muted mt-sm">
@@ -107,18 +126,34 @@ function OverviewBody({ stats }: { stats: PlatformStats }) {
       <SectionHeader title="Who is paying" />
       <Tiles>
         <StatTile icon={Home} label="Households" value={stats.familiesSubscribed} />
-        <StatTile icon={Building2} label="Operators" value={stats.operatorsSubscribed} />
+        <StatTile
+          icon={Building2}
+          label="Operators"
+          value={stats.operatorsSubscribed}
+        />
       </Tiles>
 
       <SectionHeader title="Money, last thirty days" />
       <Tiles>
-        <StatTile icon={HandCoins} label="Collected" value={formatCents(stats.revenueCentsLast30Days)} />
-        <StatTile icon={Undo2} label="Refunded" value={formatCents(stats.refundedCentsLast30Days)} />
-        <StatTile icon={Landmark} label="Kept" value={formatCents(netRevenueCentsLast30Days(stats))} />
+        <StatTile
+          icon={HandCoins}
+          label="Collected"
+          value={formatCents(stats.revenueCentsLast30Days)}
+        />
+        <StatTile
+          icon={Undo2}
+          label="Refunded"
+          value={formatCents(stats.refundedCentsLast30Days)}
+        />
+        <StatTile
+          icon={Landmark}
+          label="Kept"
+          value={formatCents(netRevenueCentsLast30Days(stats))}
+        />
       </Tiles>
       <p className="t-small muted mt-sm">
-        Collected is money that settled; refunded is money sent back over the same window, which may credit an invoice
-        from before it.
+        Collected is money that settled; refunded is money sent back over the same
+        window, which may credit an invoice from before it.
       </p>
     </>
   );
@@ -182,12 +217,21 @@ function Tiles({ children }: { children: ReactNode }) {
 }
 
 /** Attention is drawn with the icon colour **and** the figure's weight, never colour alone. */
-function StatTile(props: { icon: LucideIcon; label: string; value: number | string; emphasis?: boolean }) {
+function StatTile(props: {
+  icon: LucideIcon;
+  label: string;
+  value: number | string;
+  emphasis?: boolean;
+}) {
   const Icon = props.icon;
   return (
     <Card className="tile" label={`${props.label}: ${props.value}`}>
       <div className="row gap-xs t-small muted">
-        <Icon size={16} className={props.emphasis ? 'ink-overdue' : undefined} aria-hidden />
+        <Icon
+          size={16}
+          className={props.emphasis ? 'ink-overdue' : undefined}
+          aria-hidden
+        />
         {props.label}
       </div>
       <div className={`tile-value${props.emphasis ? ' bold' : ''}`}>{props.value}</div>

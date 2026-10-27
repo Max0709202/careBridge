@@ -1,7 +1,18 @@
-import { CircleCheck, CloudOff, CreditCard, RefreshCw, WalletCards } from 'lucide-react';
+import {
+  CircleCheck,
+  CloudOff,
+  CreditCard,
+  RefreshCw,
+  WalletCards,
+} from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
-import { invoiceFromJson, paymentMethodFromJson, planFromJson, subscriptionFromJson } from '../../api/codec';
+import {
+  invoiceFromJson,
+  paymentMethodFromJson,
+  planFromJson,
+  subscriptionFromJson,
+} from '../../api/codec';
 import { Modal } from '../../components/feedback';
 import { useRun } from '../../components/useRun';
 import {
@@ -59,7 +70,9 @@ export function PlanScreen() {
   const { run, busy } = useRun();
   const [data, setData] = useState<Loaded | null>(null);
   const [error, setError] = useState<unknown>(null);
-  const [dialog, setDialog] = useState<'addCard' | 'removeCard' | 'cancelPlan' | null>(null);
+  const [dialog, setDialog] = useState<'addCard' | 'removeCard' | 'cancelPlan' | null>(
+    null,
+  );
 
   const load = useCallback(async () => {
     setError(null);
@@ -100,7 +113,11 @@ export function PlanScreen() {
           icon={CloudOff}
           title="Could not load your plan"
           message="Check your connection and try again."
-          action={<Button variant="outlined" onClick={load}>Retry</Button>}
+          action={
+            <Button variant="outlined" onClick={load}>
+              Retry
+            </Button>
+          }
         />
       </AppCard>
     );
@@ -120,7 +137,11 @@ export function PlanScreen() {
           </AppCard>
         ) : (
           <>
-            <CurrentPlan subscription={subscription} busy={busy} onCancel={() => setDialog('cancelPlan')} />
+            <CurrentPlan
+              subscription={subscription}
+              busy={busy}
+              onCancel={() => setDialog('cancelPlan')}
+            />
             <SwitchInterval
               subscription={subscription}
               plans={plans}
@@ -173,9 +194,10 @@ export function PlanScreen() {
         <AppCard className="mt-md">
           <p className="t-title-sm">What the fare covers</p>
           <p className="t-body muted mt-xs">
-            Your plan pays for the coordination — booking, tracking, reminders and the care circle.
-            Each trip is charged separately, and that fare goes to the transport company that drives
-            it. They pay us for the drivers they run, so we do not also take a cut of what you pay them.
+            Your plan pays for the coordination — booking, tracking, reminders and the
+            care circle. Each trip is charged separately, and that fare goes to the
+            transport company that drives it. They pay us for the drivers they run, so
+            we do not also take a cut of what you pay them.
           </p>
         </AppCard>
       </div>
@@ -183,7 +205,11 @@ export function PlanScreen() {
   }
 
   return (
-    <Page title="Your plan" back actions={<IconButton icon={RefreshCw} label="Refresh" onClick={load} />}>
+    <Page
+      title="Your plan"
+      back
+      actions={<IconButton icon={RefreshCw} label="Refresh" onClick={load} />}
+    >
       {body}
 
       {dialog === 'addCard' && (
@@ -221,8 +247,8 @@ export function PlanScreen() {
       {dialog === 'cancelPlan' && (
         <Modal title="Cancel your plan?" onClose={() => setDialog(null)}>
           <p className="t-body-lg">
-            Everything keeps working until the end of the period you have already paid for. Trips you
-            have already booked are unaffected.
+            Everything keeps working until the end of the period you have already paid
+            for. Trips you have already booked are unaffected.
           </p>
           <div className="dialog-actions">
             <Button variant="text" onClick={() => setDialog(null)}>
@@ -243,7 +269,15 @@ export function PlanScreen() {
   );
 }
 
-function CurrentPlan({ subscription, busy, onCancel }: { subscription: Subscription; busy: boolean; onCancel: () => void }) {
+function CurrentPlan({
+  subscription,
+  busy,
+  onCancel,
+}: {
+  subscription: Subscription;
+  busy: boolean;
+  onCancel: () => void;
+}) {
   const renewalLabel =
     subscription.status === 'trialing'
       ? 'Trial ends'
@@ -255,12 +289,19 @@ function CurrentPlan({ subscription, busy, onCancel }: { subscription: Subscript
     <AppCard>
       <p className="t-title">{subscriptionSummary(subscription)}</p>
       <p className="t-body-lg mt-xs">
-        {formatMoney(subscription.renewalTotalCents)} {intervalCadence[subscription.interval]}
+        {formatMoney(subscription.renewalTotalCents)}{' '}
+        {intervalCadence[subscription.interval]}
       </p>
       <div className="mt-sm">
-        <InfoRow label={renewalLabel} value={formatDay(subscription.trialEndsAt ?? subscription.currentPeriodEnd)} />
+        <InfoRow
+          label={renewalLabel}
+          value={formatDay(subscription.trialEndsAt ?? subscription.currentPeriodEnd)}
+        />
         {subscription.carriedCreditCents > 0 && (
-          <InfoRow label="Credit carried forward" value={formatMoney(subscription.carriedCreditCents)} />
+          <InfoRow
+            label="Credit carried forward"
+            value={formatMoney(subscription.carriedCreditCents)}
+          />
         )}
       </div>
       {subscriptionNeedsAttention(subscription) && (
@@ -280,7 +321,12 @@ function CurrentPlan({ subscription, busy, onCancel }: { subscription: Subscript
         </div>
       ))}
       {subscription.status !== 'pendingCancellation' && (
-        <Button variant="text" className="align-start mt-sm" disabled={busy} onClick={onCancel}>
+        <Button
+          variant="text"
+          className="align-start mt-sm"
+          disabled={busy}
+          onClick={onCancel}
+        >
           Cancel plan
         </Button>
       )}
@@ -295,16 +341,24 @@ function SwitchInterval(props: {
   onSwitch: (interval: 'monthly' | 'annual') => void;
 }) {
   const other = props.subscription.interval === 'monthly' ? 'annual' : 'monthly';
-  const target = props.plans.find((p) => p.code === props.subscription.planCode && p.interval === other);
+  const target = props.plans.find(
+    (p) => p.code === props.subscription.planCode && p.interval === other,
+  );
   if (!target) return null;
 
   return (
     <AppCard className="mt-md">
       <p className="t-title-sm">Billed {intervalLabel[other].toLowerCase()}</p>
       <p className="t-body muted mt-xs">
-        The unused part of the period you have paid for is credited, and a new one starts today.
+        The unused part of the period you have paid for is credited, and a new one
+        starts today.
       </p>
-      <Button variant="outlined" className="mt-sm" disabled={props.busy} onClick={() => props.onSwitch(other)}>
+      <Button
+        variant="outlined"
+        className="mt-sm"
+        disabled={props.busy}
+        onClick={() => props.onSwitch(other)}
+      >
         Switch to {formatMoney(periodPriceCents(target))} {intervalCadence[other]}
       </Button>
     </AppCard>
@@ -328,7 +382,9 @@ function PaymentMethodCard(props: {
     <AppCard>
       <p className="t-title">Payment method</p>
       {card === null ? (
-        <p className="t-body mt-xs">No card on file. Add one so your plan renews without interruption.</p>
+        <p className="t-body mt-xs">
+          No card on file. Add one so your plan renews without interruption.
+        </p>
       ) : (
         <>
           <div className="row tight mt-xs">
@@ -337,7 +393,9 @@ function PaymentMethodCard(props: {
           </div>
           {(cardHasExpired(card, now) || cardExpiresSoon(card, now)) && (
             <p className="t-small error-text mt-xs">
-              {cardHasExpired(card, now) ? 'This card has expired.' : 'This card expires soon.'}
+              {cardHasExpired(card, now)
+                ? 'This card has expired.'
+                : 'This card expires soon.'}
             </p>
           )}
         </>
@@ -363,7 +421,15 @@ function PaymentMethodCard(props: {
  * One invoice, itemised as it was charged — the server reads the lines back
  * off the invoice rather than recomputing them from today's prices.
  */
-function InvoiceCard({ invoice, busy, onPay }: { invoice: Invoice; busy: boolean; onPay: () => void }) {
+function InvoiceCard({
+  invoice,
+  busy,
+  onPay,
+}: {
+  invoice: Invoice;
+  busy: boolean;
+  onPay: () => void;
+}) {
   return (
     <AppCard>
       <div className="row">
@@ -371,10 +437,16 @@ function InvoiceCard({ invoice, busy, onPay }: { invoice: Invoice; busy: boolean
         <p className="t-title-sm">{formatMoney(invoice.totalCents)}</p>
       </div>
       <div className="mt-xs">
-        <InfoRow label={invoiceReasonLabel[invoice.reason]} value={invoiceStatusLabel[invoice.status]} />
+        <InfoRow
+          label={invoiceReasonLabel[invoice.reason]}
+          value={invoiceStatusLabel[invoice.status]}
+        />
         <InfoRow label="Issued" value={formatDay(invoice.issuedAt)} />
         {invoice.creditAppliedCents > 0 && (
-          <InfoRow label="Credit applied" value={formatMoney(invoice.creditAppliedCents)} />
+          <InfoRow
+            label="Credit applied"
+            value={formatMoney(invoice.creditAppliedCents)}
+          />
         )}
       </div>
       {invoice.lines.map((line, i) => (
@@ -388,7 +460,12 @@ function InvoiceCard({ invoice, busy, onPay }: { invoice: Invoice; busy: boolean
           <p className="t-body error-text">{DunningCopy.headline(invoice)}</p>
           <p className="t-small">{DunningCopy.detail(invoice)}</p>
           {invoiceCanBePaidNow(invoice) && (
-            <Button variant="text" className="align-start" disabled={busy} onClick={onPay}>
+            <Button
+              variant="text"
+              className="align-start"
+              disabled={busy}
+              onClick={onPay}
+            >
               Try this payment again
             </Button>
           )}
@@ -406,7 +483,9 @@ function PlanCard(props: {
 }) {
   const { plan, subscription } = props;
   const isCurrent =
-    subscription !== null && subscription.planCode === plan.code && subscription.interval === plan.interval;
+    subscription !== null &&
+    subscription.planCode === plan.code &&
+    subscription.interval === plan.interval;
   return (
     <AppCard>
       <div className="row">
@@ -450,8 +529,9 @@ function PaymentTokenDialog({ onClose }: { onClose: (token: string | null) => vo
     <Modal title="Add a card" onClose={() => onClose(null)}>
       <form onSubmit={submit} noValidate>
         <p className="t-body">
-          CareBridge never sees your card number. Your bank’s payment provider takes the card and gives
-          us a reference to it, and that reference is what goes in the box below.
+          CareBridge never sees your card number. Your bank’s payment provider takes the
+          card and gives us a reference to it, and that reference is what goes in the
+          box below.
         </p>
         <div className="mt-sm">
           <TextField
@@ -463,8 +543,8 @@ function PaymentTokenDialog({ onClose }: { onClose: (token: string | null) => vo
           />
         </div>
         <p className="t-small muted mt-sm">
-          Running against the local payments adapter, any text works and its last four digits decide the
-          outcome: 4242 succeeds, 9995 is declined.
+          Running against the local payments adapter, any text works and its last four
+          digits decide the outcome: 4242 succeeds, 9995 is declined.
         </p>
         <div className="dialog-actions">
           <Button variant="text" onClick={() => onClose(null)}>

@@ -74,9 +74,15 @@ export function failureFromResponse(
     case 'not_found_or_forbidden':
       return notFoundFailure();
     case 'invalid_transition':
-      return new Failure('invalidTransition', 'That change is not available right now.');
+      return new Failure(
+        'invalidTransition',
+        'That change is not available right now.',
+      );
     case 'conflict':
-      return new Failure('validation', message ?? 'That conflicts with something else.');
+      return new Failure(
+        'validation',
+        message ?? 'That conflicts with something else.',
+      );
     case 'rate_limited':
       return new Failure(
         'rateLimited',
@@ -90,7 +96,10 @@ export function failureFromResponse(
   // meeting a newer server sees.
   switch (status) {
     case 400:
-      return new Failure('validation', message ?? 'That request could not be processed.');
+      return new Failure(
+        'validation',
+        message ?? 'That request could not be processed.',
+      );
     case 401:
       return authenticationFailure();
     case 403:
@@ -104,7 +113,9 @@ export function failureFromResponse(
         retryAfterFrom(headers),
       );
     default:
-      return networkFailure(message ?? 'Something went wrong on our side. Please try again.');
+      return networkFailure(
+        message ?? 'Something went wrong on our side. Please try again.',
+      );
   }
 }
 

@@ -22,7 +22,11 @@ const MAX_ROUND_TRIP_MS = 5_000;
 let offsetMs = 0;
 
 /** Called with each response's `Date` header and when the request was sent and answered. */
-export function observeServerDate(header: string | null, sentAt: number, receivedAt: number): void {
+export function observeServerDate(
+  header: string | null,
+  sentAt: number,
+  receivedAt: number,
+): void {
   if (!header || receivedAt - sentAt > MAX_ROUND_TRIP_MS) return;
   const server = Date.parse(header);
   if (Number.isNaN(server)) return;

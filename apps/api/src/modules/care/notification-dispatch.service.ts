@@ -10,8 +10,15 @@ import type { AppTarget } from '@prisma/client';
 
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { MAIL, type MailPort } from '../../infrastructure/mail/mail.port';
-import { PUSH, type PushPort, type PushResult } from '../../infrastructure/push/push.port';
-import { WEB_PUSH, type WebPushPort } from '../../infrastructure/push/web-push/web-push.port';
+import {
+  PUSH,
+  type PushPort,
+  type PushResult,
+} from '../../infrastructure/push/push.port';
+import {
+  WEB_PUSH,
+  type WebPushPort,
+} from '../../infrastructure/push/web-push/web-push.port';
 import { QUEUE, QUEUES, type QueuePort } from '../../infrastructure/queue/queue.port';
 import { APP_CONFIG } from '../../common/config.token';
 import type { AppConfig } from '../../common/config';
@@ -283,7 +290,9 @@ export class NotificationDispatchService
     const native = devices.filter((d) => d.platform !== 'web').map((d) => d.token);
     const message = { title, body, data };
     const results: PushResult[] = await Promise.all([
-      native.length > 0 ? this.push.send({ ...message, tokens: native }) : { sent: 0, invalidTokens: [] },
+      native.length > 0
+        ? this.push.send({ ...message, tokens: native })
+        : { sent: 0, invalidTokens: [] },
       web.length > 0 && this.webPush.publicKey
         ? this.webPush.send({ ...message, tokens: web })
         : { sent: 0, invalidTokens: [] },

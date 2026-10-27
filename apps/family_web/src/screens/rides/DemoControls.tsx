@@ -31,18 +31,28 @@ export function DemoControls({ rideId }: { rideId: string }) {
         <p className="t-title muted grow">Preview controls</p>
       </div>
       <p className="t-small muted mt-xs">
-        The driver app and dispatch service do not exist yet. These stand in for them, and drive the
-        same state machine on the same server a real driver would.
+        The driver app and dispatch service do not exist yet. These stand in for them,
+        and drive the same state machine on the same server a real driver would.
       </p>
       <div className="wrap mt-md">
         {!running ? (
-          <Button variant="tonal" icon={Play} disabled={busy} onClick={() => run(() => store.startPreviewTrip(rideId))}>
+          <Button
+            variant="tonal"
+            icon={Play}
+            disabled={busy}
+            onClick={() => run(() => store.startPreviewTrip(rideId))}
+          >
             {ride.status === 'awaitingAssignment' || ride.status === 'requested'
               ? 'Assign a driver and run the trip'
               : 'Continue the trip'}
           </Button>
         ) : (
-          <Button variant="outlined" icon={Pause} disabled={busy} onClick={() => run(() => store.stopPreviewTrip(rideId))}>
+          <Button
+            variant="outlined"
+            icon={Pause}
+            disabled={busy}
+            onClick={() => run(() => store.stopPreviewTrip(rideId))}
+          >
             Pause
           </Button>
         )}
@@ -52,7 +62,11 @@ export function DemoControls({ rideId }: { rideId: string }) {
           disabled={busy}
           onClick={() =>
             run(() =>
-              store.setDelay(rideId, !ride.isDelayed, ride.isDelayed ? undefined : 'Heavy traffic on Route 315'),
+              store.setDelay(
+                rideId,
+                !ride.isDelayed,
+                ride.isDelayed ? undefined : 'Heavy traffic on Route 315',
+              ),
             )
           }
         >

@@ -77,7 +77,8 @@ export class DriverStore {
   }
 
   async signIn(email: string, password: string, mfaCode?: string): Promise<void> {
-    if (email.trim() === '') throw validationFailure('Enter your email address.', 'email');
+    if (email.trim() === '')
+      throw validationFailure('Enter your email address.', 'email');
     if (password === '') throw validationFailure('Enter your password.', 'password');
     await this.api.signIn({ email, password, mfaCode });
     this.set({ ...signedOut, signedIn: true });
@@ -172,16 +173,23 @@ export class DriverStore {
     this.poll = null;
   }
 
-  private async load<K extends Key>(key: K, fetch: () => Promise<NonNullable<DriverState[K]['value']>>) {
+  private async load<K extends Key>(
+    key: K,
+    fetch: () => Promise<NonNullable<DriverState[K]['value']>>,
+  ) {
     if (!this.state.signedIn) return;
     this.set({ [key]: { ...this.state[key], loading: true } } as Partial<DriverState>);
     try {
       const value = await fetch();
       if (!this.state.signedIn) return;
-      this.set({ [key]: { value, error: null, loading: false } } as Partial<DriverState>);
+      this.set({
+        [key]: { value, error: null, loading: false },
+      } as Partial<DriverState>);
     } catch (error) {
       if (this.sessionEnded(error)) return;
-      this.set({ [key]: { ...this.state[key], error, loading: false } } as Partial<DriverState>);
+      this.set({
+        [key]: { ...this.state[key], error, loading: false },
+      } as Partial<DriverState>);
     }
   }
 
@@ -196,7 +204,11 @@ export class DriverStore {
 
   /** A refresh that failed has already cleared the tokens; follow it to sign-in. */
   private sessionEnded(error: unknown): boolean {
-    if (error instanceof Failure && error.kind === 'authentication' && !this.api.tokens.read()) {
+    if (
+      error instanceof Failure &&
+      error.kind === 'authentication' &&
+      !this.api.tokens.read()
+    ) {
       this.forgetSession();
       return true;
     }

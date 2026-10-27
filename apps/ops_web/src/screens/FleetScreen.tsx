@@ -17,7 +17,12 @@ import {
 import { useRun } from '../components/useRun';
 import { plural } from '../core/format';
 import { canAdminister, vehicleLabel } from '../domain/models';
-import { useOperatorId, useResource, useSelectedOrganization, useStore } from '../state/context';
+import {
+  useOperatorId,
+  useResource,
+  useSelectedOrganization,
+  useStore,
+} from '../state/context';
 import { keys } from '../state/opsStore';
 
 /**
@@ -31,7 +36,9 @@ import { keys } from '../state/opsStore';
 export function FleetScreen() {
   const organizationId = useOperatorId();
   const organization = useSelectedOrganization();
-  const vehicles = useResource(keys.vehicles(organizationId), (api) => api.vehicles(organizationId));
+  const vehicles = useResource(keys.vehicles(organizationId), (api) =>
+    api.vehicles(organizationId),
+  );
   const [adding, setAdding] = useState(false);
 
   let body;
@@ -40,10 +47,16 @@ export function FleetScreen() {
     const accessible = list.filter((v) => v.isWheelchairAccessible).length;
     body =
       list.length === 0 ? (
-        <EmptyState icon={Car} title="No vehicles yet" message="A driver is added to a vehicle, so the fleet comes first." />
+        <EmptyState
+          icon={Car}
+          title="No vehicles yet"
+          message="A driver is added to a vehicle, so the fleet comes first."
+        />
       ) : (
         <div className="stack gap-sm">
-          {vehicles.error ? <StaleBanner error={vehicles.error} onRetry={vehicles.reload} /> : null}
+          {vehicles.error ? (
+            <StaleBanner error={vehicles.error} onRetry={vehicles.reload} />
+          ) : null}
           <Card>
             <span className="t-title">
               {plural(list.length, 'vehicle')} · {accessible} wheelchair-accessible
@@ -91,7 +104,12 @@ export function FleetScreen() {
       }
     >
       {body}
-      {adding && <AddVehicleDialog organizationId={organizationId} onClose={() => setAdding(false)} />}
+      {adding && (
+        <AddVehicleDialog
+          organizationId={organizationId}
+          onClose={() => setAdding(false)}
+        />
+      )}
     </Screen>
   );
 }
@@ -99,7 +117,12 @@ export function FleetScreen() {
 function AddVehicleDialog(props: { organizationId: string; onClose: () => void }) {
   const store = useStore();
   const { run, busy } = useRun();
-  const [form, setForm] = useState({ make: '', model: '', color: '', licensePlate: '' });
+  const [form, setForm] = useState({
+    make: '',
+    model: '',
+    color: '',
+    licensePlate: '',
+  });
   const [accessible, setAccessible] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof typeof form, string>>>({});
 
@@ -123,7 +146,11 @@ function AddVehicleDialog(props: { organizationId: string; onClose: () => void }
 
     const result = await run(() =>
       store.guard(() =>
-        store.api.addVehicle({ organizationId: props.organizationId, ...form, isWheelchairAccessible: accessible }),
+        store.api.addVehicle({
+          organizationId: props.organizationId,
+          ...form,
+          isWheelchairAccessible: accessible,
+        }),
       ),
     );
     if (result.ok) {

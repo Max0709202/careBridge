@@ -54,10 +54,15 @@ function enumOr<T extends string>(values: readonly T[], raw: unknown, fallback: 
 }
 
 function enumOrNull<T extends string>(values: readonly T[], raw: unknown): T | null {
-  return typeof raw === 'string' && (values as readonly string[]).includes(raw) ? (raw as T) : null;
+  return typeof raw === 'string' && (values as readonly string[]).includes(raw)
+    ? (raw as T)
+    : null;
 }
 
-function known<T extends string>(values: readonly T[], raw: readonly unknown[] | undefined): T[] {
+function known<T extends string>(
+  values: readonly T[],
+  raw: readonly unknown[] | undefined,
+): T[] {
   const out: T[] = [];
   for (const item of raw ?? []) {
     const value = enumOrNull(values, item);
@@ -188,7 +193,10 @@ function appointmentFromJson(json: S['AppointmentDto']): Appointment {
     patientId: json.patientId,
     clinicId: json.clinicId,
     startsAt: date(json.startsAt),
-    expectedDurationMinutes: required(json.expectedDurationMinutes, 'expectedDurationMinutes'),
+    expectedDurationMinutes: required(
+      json.expectedDurationMinutes,
+      'expectedDurationMinutes',
+    ),
     type: enumOr(APPOINTMENT_TYPES, json.type, 'other'),
     status: enumOr(APPOINTMENT_STATUSES, json.status, 'scheduled'),
     coordinationNotes: json.coordinationNotes ?? null,
@@ -231,7 +239,9 @@ function rideFromJson(json: S['RideDto']): Ride {
     cancellationReason: json.cancellationReason ?? null,
     events: (json.events ?? []).map(rideEventFromJson),
     history: (json.history ?? []).map(statusChangeFromJson),
-    lastKnownPosition: json.lastKnownPosition ? trackingPointFromJson(json.lastKnownPosition) : null,
+    lastKnownPosition: json.lastKnownPosition
+      ? trackingPointFromJson(json.lastKnownPosition)
+      : null,
     etaMinutes: json.etaMinutes ?? null,
     route: routeFromJson(json.route),
     createdAt: dateOrNull(json.createdAt),
@@ -240,7 +250,9 @@ function rideFromJson(json: S['RideDto']): Ride {
 }
 
 /** Fewer than two points is not a road; absent from an older server. */
-function routeFromJson(json: S['LiveRouteDto'] | null | undefined): Coordinates[] | null {
+function routeFromJson(
+  json: S['LiveRouteDto'] | null | undefined,
+): Coordinates[] | null {
   if (!json || json.path.length < 2) return null;
   return json.path.map((p) => ({ latitude: p.latitude, longitude: p.longitude }));
 }
@@ -270,7 +282,10 @@ function estimateFromJson(json: S['PriceEstimateDto']): PriceEstimate {
     baseCents: json.baseCents,
     distanceChargeCents: json.distanceChargeCents,
     timeChargeCents: json.timeChargeCents,
-    surcharges: (json.surcharges ?? []).map((s) => ({ label: s.label, amountCents: s.amountCents })),
+    surcharges: (json.surcharges ?? []).map((s) => ({
+      label: s.label,
+      amountCents: s.amountCents,
+    })),
     totalCents: json.totalCents,
     minimumApplied: json.minimumApplied ?? false,
   };
@@ -314,7 +329,9 @@ function notificationFromJson(json: S['NotificationDto']): AppNotification {
 // "Paid" because this build did not recognise `uncollectible` is worse than an
 // invoice that does not appear.
 
-export function subscriptionFromJson(dto: S['SubscriptionDto'] | null | undefined): Subscription | null {
+export function subscriptionFromJson(
+  dto: S['SubscriptionDto'] | null | undefined,
+): Subscription | null {
   if (!dto) return null;
   const status = enumOrNull(SUBSCRIPTION_STATUSES, dto.status);
   const interval = enumOrNull(['monthly', 'annual'] as const, dto.interval);
@@ -366,8 +383,14 @@ export function planFromJson(dto: S['SubscriptionPlanDto']): SubscriptionPlan | 
 }
 
 export function invoiceFromJson(dto: S['InvoiceDto']): Invoice | null {
-  const reason = enumOrNull(['subscriptionPeriod', 'seatProration', 'intervalSwitch'] as const, dto.reason);
-  const status = enumOrNull(['open', 'paid', 'uncollectible', 'void'] as const, dto.status);
+  const reason = enumOrNull(
+    ['subscriptionPeriod', 'seatProration', 'intervalSwitch'] as const,
+    dto.reason,
+  );
+  const status = enumOrNull(
+    ['open', 'paid', 'uncollectible', 'void'] as const,
+    dto.status,
+  );
   if (!reason || !status) return null;
 
   return {
@@ -393,7 +416,9 @@ export function invoiceFromJson(dto: S['InvoiceDto']): Invoice | null {
   };
 }
 
-export function paymentMethodFromJson(dto: S['PaymentMethodDto'] | null | undefined): PaymentMethod | null {
+export function paymentMethodFromJson(
+  dto: S['PaymentMethodDto'] | null | undefined,
+): PaymentMethod | null {
   if (!dto) return null;
   return {
     id: dto.id,

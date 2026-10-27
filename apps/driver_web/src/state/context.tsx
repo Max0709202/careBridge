@@ -1,11 +1,24 @@
-import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 
 import type { LocationService, SharingState } from '../services/locationService';
 import type { DriverState, DriverStore } from './driverStore';
 
 const StoreContext = createContext<DriverStore | null>(null);
 
-export function StoreProvider({ store, children }: { store: DriverStore; children: ReactNode }) {
+export function StoreProvider({
+  store,
+  children,
+}: {
+  store: DriverStore;
+  children: ReactNode;
+}) {
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 }
 

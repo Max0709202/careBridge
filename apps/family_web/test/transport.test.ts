@@ -24,7 +24,13 @@ describe('transport', () => {
           ? { body: loadSnapshot() }
           : { status: 401, body: { error: { code: 'authentication' } } };
       },
-      'POST /auth/refresh': () => ({ body: { accessToken: 'new-access', refreshToken: 'new-refresh', expiresInSeconds: 900 } }),
+      'POST /auth/refresh': () => ({
+        body: {
+          accessToken: 'new-access',
+          refreshToken: 'new-refresh',
+          expiresInSeconds: 900,
+        },
+      }),
     });
     const tokens = signedIn();
     const api = new CareApi(tokens, BASE, fetchImpl);
@@ -39,9 +45,18 @@ describe('transport', () => {
     expect(calls).toBe(2);
     const rides = requests.filter((r) => r.path === '/rides');
     expect(rides[0]!.headers['idempotency-key']).toBeTruthy();
-    expect(rides[1]!.headers['idempotency-key']).toBe(rides[0]!.headers['idempotency-key']);
-    expect(rides[0]!.body).toEqual({ appointmentId: 'a', pickupAt: '2026-08-13T10:00:00.000Z', roundTrip: true });
-    expect(tokens.read()).toEqual({ accessToken: 'new-access', refreshToken: 'new-refresh' });
+    expect(rides[1]!.headers['idempotency-key']).toBe(
+      rides[0]!.headers['idempotency-key'],
+    );
+    expect(rides[0]!.body).toEqual({
+      appointmentId: 'a',
+      pickupAt: '2026-08-13T10:00:00.000Z',
+      roundTrip: true,
+    });
+    expect(tokens.read()).toEqual({
+      accessToken: 'new-access',
+      refreshToken: 'new-refresh',
+    });
   });
 
   it('clears the session when the refresh fails, and does not loop', async () => {
@@ -60,8 +75,12 @@ describe('transport', () => {
   it('shares one refresh between concurrent 401s, so a single-use token is presented once', async () => {
     const { fetchImpl, requests } = fakeServer({
       'GET /care/state': (req) =>
-        req.headers.authorization === 'Bearer new-access' ? { body: loadSnapshot() } : { status: 401, body: {} },
-      'POST /auth/refresh': () => ({ body: { accessToken: 'new-access', refreshToken: 'new-refresh' } }),
+        req.headers.authorization === 'Bearer new-access'
+          ? { body: loadSnapshot() }
+          : { status: 401, body: {} },
+      'POST /auth/refresh': () => ({
+        body: { accessToken: 'new-access', refreshToken: 'new-refresh' },
+      }),
     });
     const api = new CareApi(signedIn(), BASE, fetchImpl);
 
@@ -76,14 +95,22 @@ describe('transport', () => {
     const api = new CareApi(signedIn(), BASE, fetchImpl);
     const error = await api.state().catch((e: unknown) => e);
     expect(error).toBeInstanceOf(Failure);
-    expect((error as Failure).message).toBe('We could not find that, or you do not have access to it.');
+    expect((error as Failure).message).toBe(
+      'We could not find that, or you do not have access to it.',
+    );
   });
 
   it('carries the field a validation error is about, and Retry-After on a rate limit', async () => {
     const { fetchImpl } = fakeServer({
       'POST /auth/login': () => ({
         status: 400,
-        body: { error: { code: 'validation', message: 'Enter the code from your authenticator app.', field: 'mfaCode' } },
+        body: {
+          error: {
+            code: 'validation',
+            message: 'Enter the code from your authenticator app.',
+            field: 'mfaCode',
+          },
+        },
       }),
       'POST /auth/password-reset': () => ({
         status: 429,
@@ -93,12 +120,18 @@ describe('transport', () => {
     });
     const api = new CareApi(new InMemoryTokenStore(), BASE, fetchImpl);
 
-    await expect(api.signIn({ email: 'a@b.c', password: 'x' })).rejects.toMatchObject({ field: 'mfaCode' });
-    await expect(api.requestPasswordReset('a@b.c')).rejects.toMatchObject({ kind: 'rateLimited', retryAfterSeconds: 30 });
+    await expect(api.signIn({ email: 'a@b.c', password: 'x' })).rejects.toMatchObject({
+      field: 'mfaCode',
+    });
+    await expect(api.requestPasswordReset('a@b.c')).rejects.toMatchObject({
+      kind: 'rateLimited',
+      retryAfterSeconds: 30,
+    });
   });
 
   it('treats an unparseable body on a success as a failure, not as an empty family', async () => {
-    const fetchImpl: typeof fetch = async () => new Response('<html>proxy</html>', { status: 200 });
+    const fetchImpl: typeof fetch = async () =>
+      new Response('<html>proxy</html>', { status: 200 });
     const api = new CareApi(signedIn(), BASE, fetchImpl);
     await expect(api.state()).rejects.toMatchObject({ kind: 'network' });
   });
@@ -106,7 +139,10 @@ describe('transport', () => {
   it('reports an HTML 404 from something that is not the API as unreachable, not "not found"', async () => {
     // What another dev server squatting on the API's port answers.
     const fetchImpl: typeof fetch = async () =>
-      new Response('<!DOCTYPE html><html>Not Found</html>', { status: 404, headers: { 'content-type': 'text/html' } });
+      new Response('<!DOCTYPE html><html>Not Found</html>', {
+        status: 404,
+        headers: { 'content-type': 'text/html' },
+      });
     const api = new CareApi(new InMemoryTokenStore(), BASE, fetchImpl);
     await expect(api.signIn({ email: 'a@b.c', password: 'x' })).rejects.toMatchObject({
       kind: 'network',
@@ -133,7 +169,9 @@ describe('transport', () => {
   });
 
   it('reads an absent billing account as "no plan yet", not an error', async () => {
-    const { fetchImpl } = fakeServer({ 'GET /billing/account': () => ({ status: 200, body: undefined }) });
+    const { fetchImpl } = fakeServer({
+      'GET /billing/account': () => ({ status: 200, body: undefined }),
+    });
     const api = new CareApi(signedIn(), BASE, fetchImpl);
     expect(await api.billingAccount()).toBeNull();
   });

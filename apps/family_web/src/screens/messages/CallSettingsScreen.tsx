@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 
 import { useFeedback } from '../../components/feedback';
 import { AppCard, Button, Page, SwitchRow, TextField } from '../../components/ui';
-import { backgroundPushNote, useBackgroundPush, useMessagingStore } from '../../messaging/react';
+import {
+  backgroundPushNote,
+  useBackgroundPush,
+  useMessagingStore,
+} from '../../messaging/react';
 
 /**
  * The number your phone rings on when you call dispatch or the driver through
@@ -53,7 +57,11 @@ export function CallSettingsScreen() {
           disabled={!loaded}
           onChange={(e) => setPhone(e.target.value)}
         />
-        <Button className="mt-md" disabled={!loaded || saving} onClick={() => void save()}>
+        <Button
+          className="mt-md"
+          disabled={!loaded || saving}
+          onClick={() => void save()}
+        >
           Save number
         </Button>
       </AppCard>
@@ -73,7 +81,10 @@ export function CallSettingsScreen() {
             title="Notify me when CareBridge is closed"
             subtitle={backgroundPushNote(background.status)}
             checked={background.status === 'on'}
-            disabled={background.busy || (background.status !== 'on' && background.status !== 'off')}
+            disabled={
+              background.busy ||
+              (background.status !== 'on' && background.status !== 'off')
+            }
             onChange={(on) => void background.toggle(on)}
           />
         </div>

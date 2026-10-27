@@ -26,7 +26,9 @@ export interface Address {
 }
 
 export const addressSingleLine = (a: Address) =>
-  [a.line1, ...(a.line2 ? [a.line2] : []), a.city, `${a.state} ${a.postalCode}`].join(', ');
+  [a.line1, ...(a.line2 ? [a.line2] : []), a.city, `${a.state} ${a.postalCode}`].join(
+    ', ',
+  );
 
 export const addressShortLine = (a: Address) => `${a.line1}, ${a.city}`;
 
@@ -112,9 +114,11 @@ export interface Patient {
   archivedAt: Date | null;
 }
 
-export const patientRequiresWheelchair = (p: Patient) => p.mobilityNeeds.includes('wheelchair');
+export const patientRequiresWheelchair = (p: Patient) =>
+  p.mobilityNeeds.includes('wheelchair');
 export const patientRequiresAssistance = (p: Patient) =>
-  p.mobilityNeeds.includes('escortToDoor') || p.mobilityNeeds.includes('transferAssistance');
+  p.mobilityNeeds.includes('escortToDoor') ||
+  p.mobilityNeeds.includes('transferAssistance');
 export const patientFirstInitial = (p: Patient) =>
   p.preferredName === '' ? '?' : p.preferredName[0]!.toUpperCase();
 

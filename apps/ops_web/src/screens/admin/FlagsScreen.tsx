@@ -1,4 +1,10 @@
-import { ChevronRight, Plus, ToggleLeft, ToggleRight, TriangleAlert } from 'lucide-react';
+import {
+  ChevronRight,
+  Plus,
+  ToggleLeft,
+  ToggleRight,
+  TriangleAlert,
+} from 'lucide-react';
 import { useId, useState, type FormEvent } from 'react';
 
 import { Modal, useConfirm } from '../../components/feedback';
@@ -40,7 +46,9 @@ export function FlagsScreen() {
   if (flags.value) {
     body = (
       <>
-        {flags.error ? <StaleBanner error={flags.error} onRetry={flags.reload} /> : null}
+        {flags.error ? (
+          <StaleBanner error={flags.error} onRetry={flags.reload} />
+        ) : null}
         {flags.value.length === 0 ? (
           <EmptyState
             icon={ToggleLeft}
@@ -77,7 +85,9 @@ export function FlagsScreen() {
       }
     >
       {body}
-      {editing !== undefined && <FlagDialog existing={editing} onClose={() => setEditing(undefined)} />}
+      {editing !== undefined && (
+        <FlagDialog existing={editing} onClose={() => setEditing(undefined)} />
+      )}
     </Screen>
   );
 }
@@ -105,7 +115,13 @@ function FlagCard({ flag, onEdit }: { flag: FeatureFlag; onEdit: () => void }) {
   );
 }
 
-function FlagDialog({ existing, onClose }: { existing: FeatureFlag | null; onClose: () => void }) {
+function FlagDialog({
+  existing,
+  onClose,
+}: {
+  existing: FeatureFlag | null;
+  onClose: () => void;
+}) {
   const store = useStore();
   const confirm = useConfirm();
   const { run, busy } = useRun();
@@ -157,7 +173,11 @@ function FlagDialog({ existing, onClose }: { existing: FeatureFlag | null; onClo
 
   return (
     <Modal title={existing ? existing.key : 'New flag'} onClose={onClose}>
-      <form className="stack gap-sm dialog-scroll" onSubmit={(e) => void save(e)} noValidate>
+      <form
+        className="stack gap-sm dialog-scroll"
+        onSubmit={(e) => void save(e)}
+        noValidate
+      >
         {!existing && (
           <TextField
             label="Key"
@@ -193,21 +213,28 @@ function FlagDialog({ existing, onClose }: { existing: FeatureFlag | null; onClo
             onChange={(e) => setPercent(Number(e.target.value))}
           />
           <div className="helper">
-            Applied to a stable hash of the subject, so the same person is on the same side of the line on every
-            request.
+            Applied to a stable hash of the subject, so the same person is on the same
+            side of the line on every request.
           </div>
         </div>
         {takesAway && (
           <p className="note t-small">
             <TriangleAlert size={16} className="ink-imminent" aria-hidden />
-            <span>This takes the feature away from people who have it. You will be asked to confirm.</span>
+            <span>
+              This takes the feature away from people who have it. You will be asked to
+              confirm.
+            </span>
           </p>
         )}
         <div className="dialog-actions">
           <Button variant="text" disabled={busy} onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" busy={busy} disabled={key.trim() === '' || description.trim() === ''}>
+          <Button
+            type="submit"
+            busy={busy}
+            disabled={key.trim() === '' || description.trim() === ''}
+          >
             {busy ? 'Saving…' : 'Save'}
           </Button>
         </div>

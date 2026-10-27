@@ -23,7 +23,13 @@ export function JobContact({ rideId }: { rideId: string }) {
   return (
     <InfoCard label="Dispatch">
       <p className="t-label">Dispatch</p>
-      <Button variant="outlined" icon={Headset} className="mt-sm" busy={busy} onClick={() => void open()}>
+      <Button
+        variant="outlined"
+        icon={Headset}
+        className="mt-sm"
+        busy={busy}
+        onClick={() => void open()}
+      >
         Message dispatch about this trip
       </Button>
       <div className="mt-sm">

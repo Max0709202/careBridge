@@ -2,9 +2,22 @@ import { ArrowLeft, MessageSquare, MessageSquarePlus, Settings2 } from 'lucide-r
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { Button, cx, EmptyState, IconButton, LoadFailure, LoadingBlock, Screen, StaleBanner } from '../../components/ui';
+import {
+  Button,
+  cx,
+  EmptyState,
+  IconButton,
+  LoadFailure,
+  LoadingBlock,
+  Screen,
+  StaleBanner,
+} from '../../components/ui';
 import { formatClock, formatDay } from '../../core/format';
-import { sameDay, type Conversation, type ConversationKind } from '../../messaging/model';
+import {
+  sameDay,
+  type Conversation,
+  type ConversationKind,
+} from '../../messaging/model';
 import { useInbox, useMessagingStore } from '../../messaging/react';
 import { useOperatorId } from '../../state/context';
 import { ChatThread } from './ChatThread';
@@ -39,13 +52,22 @@ export function MessagesScreen() {
   const [settings, setSettings] = useState(false);
   const [opened, setOpened] = useState<Conversation | null>(null);
 
-  const mine = useMemo(() => (inbox ?? []).filter((c) => c.organizationId === organizationId), [inbox, organizationId]);
+  const mine = useMemo(
+    () => (inbox ?? []).filter((c) => c.organizationId === organizationId),
+    [inbox, organizationId],
+  );
   const shown = useMemo(() => {
     const rule = FILTERS.find((f) => f.id === filter)!;
-    return mine.filter((c) => (filter === 'unread' ? c.unreadCount > 0 : !rule.kinds || rule.kinds.includes(c.kind)));
+    return mine.filter((c) =>
+      filter === 'unread'
+        ? c.unreadCount > 0
+        : !rule.kinds || rule.kinds.includes(c.kind),
+    );
   }, [mine, filter]);
 
-  const selected = conversationId ? (mine.find((c) => c.id === conversationId) ?? opened) : null;
+  const selected = conversationId
+    ? (mine.find((c) => c.id === conversationId) ?? opened)
+    : null;
 
   // A thread opened from a link or a notification that the list does not
   // have — asked for once the list has loaded, so it is not asked for twice.
@@ -67,8 +89,16 @@ export function MessagesScreen() {
       wide
       actions={
         <>
-          <IconButton icon={Settings2} label="Calls and alerts" onClick={() => setSettings(true)} />
-          <Button variant="tonal" icon={MessageSquarePlus} onClick={() => setComposing(true)}>
+          <IconButton
+            icon={Settings2}
+            label="Calls and alerts"
+            onClick={() => setSettings(true)}
+          />
+          <Button
+            variant="tonal"
+            icon={MessageSquarePlus}
+            onClick={() => setComposing(true)}
+          >
             New
           </Button>
         </>
@@ -90,9 +120,14 @@ export function MessagesScreen() {
               </button>
             ))}
           </div>
-          {inbox && error ? <StaleBanner error={error} onRetry={() => void store.loadInbox()} /> : null}
+          {inbox && error ? (
+            <StaleBanner error={error} onRetry={() => void store.loadInbox()} />
+          ) : null}
           {!inbox && error ? (
-            <LoadFailure title="Could not load messages" onRetry={() => void store.loadInbox()} />
+            <LoadFailure
+              title="Could not load messages"
+              onRetry={() => void store.loadInbox()}
+            />
           ) : !inbox ? (
             <LoadingBlock />
           ) : shown.length === 0 ? (
@@ -118,13 +153,22 @@ export function MessagesScreen() {
         <div className="thread-pane">
           {selected ? (
             <>
-              <Button variant="text" icon={ArrowLeft} className="thread-back" onClick={() => navigate('/messages')}>
+              <Button
+                variant="text"
+                icon={ArrowLeft}
+                className="thread-back"
+                onClick={() => navigate('/messages')}
+              >
                 All conversations
               </Button>
               <ChatThread key={selected.id} conversation={selected} />
             </>
           ) : (
-            <EmptyState icon={MessageSquare} title="Pick a conversation" message="Its messages and call controls show here." />
+            <EmptyState
+              icon={MessageSquare}
+              title="Pick a conversation"
+              message="Its messages and call controls show here."
+            />
           )}
         </div>
       </div>
@@ -142,7 +186,11 @@ export function MessagesScreen() {
   );
 }
 
-function InboxRow(props: { conversation: Conversation; selected: boolean; onOpen: () => void }) {
+function InboxRow(props: {
+  conversation: Conversation;
+  selected: boolean;
+  onOpen: () => void;
+}) {
   const { conversation: c } = props;
   const at = c.lastMessageAt;
   const unread = c.unreadCount > 0;
@@ -156,7 +204,11 @@ function InboxRow(props: { conversation: Conversation; selected: boolean; onOpen
     >
       <span className="row">
         <span className="grow t-body-lg inbox-title">{c.title}</span>
-        {at && <span className="t-small muted">{sameDay(at, new Date()) ? formatClock(at) : formatDay(at)}</span>}
+        {at && (
+          <span className="t-small muted">
+            {sameDay(at, new Date()) ? formatClock(at) : formatDay(at)}
+          </span>
+        )}
       </span>
       {c.ride && (
         <span className="t-small ink-primary">
@@ -165,7 +217,9 @@ function InboxRow(props: { conversation: Conversation; selected: boolean; onOpen
       )}
       <span className="row">
         <span className="grow t-small muted inbox-preview">
-          {c.lastMessage ? `${c.lastMessage.mine ? 'You: ' : ''}${c.lastMessage.body}` : 'No messages yet'}
+          {c.lastMessage
+            ? `${c.lastMessage.mine ? 'You: ' : ''}${c.lastMessage.body}`
+            : 'No messages yet'}
         </span>
         {unread && <span className="badge">{c.unreadCount}</span>}
       </span>

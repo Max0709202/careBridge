@@ -118,13 +118,21 @@ export function AppointmentFormScreen() {
               </option>
             ))}
           </SelectField>
-          <Button variant="text" icon={MapPinPlus} className="align-start mt-sm" onClick={() => setAddingClinic(true)}>
+          <Button
+            variant="text"
+            icon={MapPinPlus}
+            className="align-start mt-sm"
+            onClick={() => setAddingClinic(true)}
+          >
             Add a clinic
           </Button>
         </div>
 
         <div className="mt-lg">
-          <SectionHeader title="When" subtitle="Times are shown in the clinic’s local time." />
+          <SectionHeader
+            title="When"
+            subtitle="Times are shown in the clinic’s local time."
+          />
           <div className="two-col">
             <TextField
               label="Date"
@@ -134,7 +142,12 @@ export function AppointmentFormScreen() {
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
-            <TextField label="Time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            <TextField
+              label="Time"
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+            />
           </div>
           <div className="mt-md">
             <SelectField
@@ -157,7 +170,11 @@ export function AppointmentFormScreen() {
             title="What kind of visit"
             subtitle="Kept deliberately broad — CareBridge does not hold medical details."
           />
-          <SelectField label="Visit type" value={type} onChange={(e) => setType(e.target.value as AppointmentType)}>
+          <SelectField
+            label="Visit type"
+            value={type}
+            onChange={(e) => setType(e.target.value as AppointmentType)}
+          >
             {APPOINTMENT_TYPES.map((t) => (
               <option key={t} value={t}>
                 {appointmentTypeLabel[t]}

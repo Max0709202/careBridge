@@ -21,12 +21,22 @@ import {
 } from 'lucide-react';
 
 import { subscriptionStatusLabel, type SubscriptionStatus } from '../domain/billing';
-import { driverStatusLabel, urgencyLabel, type DispatchUrgency, type DriverStatus } from '../domain/dispatch';
+import {
+  driverStatusLabel,
+  urgencyLabel,
+  type DispatchUrgency,
+  type DriverStatus,
+} from '../domain/dispatch';
 
 /** The four semantic tones from the Flutter theme's OpsColors. */
 export type Tone = 'overdue' | 'imminent' | 'soon' | 'later' | 'positive';
 
-function Pill(props: { tone: Tone; icon: LucideIcon; label: string; ariaLabel: string }) {
+function Pill(props: {
+  tone: Tone;
+  icon: LucideIcon;
+  label: string;
+  ariaLabel: string;
+}) {
   const Icon = props.icon;
   return (
     <span className={`pill tone-${props.tone}`} aria-label={props.ariaLabel} role="img">
@@ -60,7 +70,9 @@ const driverLook: Record<DriverStatus, [Tone, LucideIcon]> = {
 export function DriverStatusPill({ status }: { status: DriverStatus }) {
   const [tone, icon] = driverLook[status];
   const label = driverStatusLabel[status];
-  return <Pill tone={tone} icon={icon} label={label} ariaLabel={`Driver status: ${label}`} />;
+  return (
+    <Pill tone={tone} icon={icon} label={label} ariaLabel={`Driver status: ${label}`} />
+  );
 }
 
 const subscriptionLook: Record<SubscriptionStatus, [Tone, LucideIcon]> = {
@@ -75,7 +87,9 @@ const subscriptionLook: Record<SubscriptionStatus, [Tone, LucideIcon]> = {
 export function SubscriptionPill({ status }: { status: SubscriptionStatus }) {
   const [tone, icon] = subscriptionLook[status];
   const label = subscriptionStatusLabel[status];
-  return <Pill tone={tone} icon={icon} label={label} ariaLabel={`Subscription: ${label}`} />;
+  return (
+    <Pill tone={tone} icon={icon} label={label} ariaLabel={`Subscription: ${label}`} />
+  );
 }
 
 /**

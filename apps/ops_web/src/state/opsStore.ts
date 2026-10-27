@@ -19,7 +19,11 @@ export interface Loadable<T> {
   loading: boolean;
 }
 
-export const UNLOADED: Loadable<never> = Object.freeze({ value: null, error: null, loading: false });
+export const UNLOADED: Loadable<never> = Object.freeze({
+  value: null,
+  error: null,
+  loading: false,
+});
 
 export interface SessionState {
   /** Whether a session exists as far as this tab knows — never "is the token valid". */
@@ -88,7 +92,8 @@ export class OpsStore {
   }
 
   async signIn(email: string, password: string, mfaCode?: string): Promise<void> {
-    if (email.trim() === '') throw validationFailure('Enter your email address.', 'email');
+    if (email.trim() === '')
+      throw validationFailure('Enter your email address.', 'email');
     if (password === '') throw validationFailure('Enter your password.', 'password');
     await this.api.signIn({ email, password, mfaCode });
     this.resetCache();
@@ -188,7 +193,11 @@ export class OpsStore {
    * seat count, which changes the renewal quote, which is on another screen.
    */
   invalidateBilling(organizationId: string): void {
-    this.invalidate(keys.billing(organizationId), keys.invoices(organizationId), keys.seats(organizationId));
+    this.invalidate(
+      keys.billing(organizationId),
+      keys.invoices(organizationId),
+      keys.seats(organizationId),
+    );
   }
 
   /** Runs a write and follows a dead session to sign-in, rethrowing everything for the caller to show. */
@@ -205,7 +214,11 @@ export class OpsStore {
 
   /** A refresh that failed has already cleared the tokens; follow it to sign-in. */
   private sessionEnded(error: unknown): boolean {
-    if (error instanceof Failure && error.kind === 'authentication' && !this.api.tokens.read()) {
+    if (
+      error instanceof Failure &&
+      error.kind === 'authentication' &&
+      !this.api.tokens.read()
+    ) {
       if (this.session.signedIn) this.forgetSession();
       return true;
     }

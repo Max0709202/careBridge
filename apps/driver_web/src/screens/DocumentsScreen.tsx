@@ -13,7 +13,15 @@ import { useEffect, useRef } from 'react';
 import type { DocumentKind, DriverDocument, DriverDocuments } from '../api/codec';
 import { useFeedback } from '../components/feedback';
 import { useRun } from '../components/useRun';
-import { Button, Centered, FailureBlock, IconButton, InfoCard, Page, Spinner } from '../components/ui';
+import {
+  Button,
+  Centered,
+  FailureBlock,
+  IconButton,
+  InfoCard,
+  Page,
+  Spinner,
+} from '../components/ui';
 import { useDriver, useStore } from '../state/context';
 import { formatDate } from './format';
 
@@ -43,7 +51,12 @@ export function DocumentsScreen() {
       </div>
     );
   } else if (documents.error) {
-    body = <FailureBlock error={documents.error} onRetry={() => void store.refreshDocuments()} />;
+    body = (
+      <FailureBlock
+        error={documents.error}
+        onRetry={() => void store.refreshDocuments()}
+      />
+    );
   } else {
     body = (
       <Centered>
@@ -56,7 +69,13 @@ export function DocumentsScreen() {
     <Page
       title="Your paperwork"
       back="/today"
-      actions={<IconButton icon={RefreshCw} label="Refresh" onClick={() => void store.refreshDocuments()} />}
+      actions={
+        <IconButton
+          icon={RefreshCw}
+          label="Refresh"
+          onClick={() => void store.refreshDocuments()}
+        />
+      }
     >
       {body}
     </Page>
@@ -64,7 +83,12 @@ export function DocumentsScreen() {
 }
 
 /** The order somebody has them to hand: a licence in a wallet, then the glovebox. */
-const kinds: DocumentKind[] = ['driversLicence', 'vehicleInsurance', 'vehicleRegistration', 'backgroundCheck'];
+const kinds: DocumentKind[] = [
+  'driversLicence',
+  'vehicleInsurance',
+  'vehicleRegistration',
+  'backgroundCheck',
+];
 
 export function documentLabel(kind: string): string {
   switch (kind) {
@@ -86,8 +110,14 @@ function Summary({ documents }: { documents: DriverDocuments }) {
     return (
       <InfoCard>
         <div className="row start">
-          <CircleCheck className="ink-primary" aria-hidden style={{ flex: '0 0 auto' }} />
-          <p className="grow">Everything your operator needs is on file. They can approve you to drive.</p>
+          <CircleCheck
+            className="ink-primary"
+            aria-hidden
+            style={{ flex: '0 0 auto' }}
+          />
+          <p className="grow">
+            Everything your operator needs is on file. They can approve you to drive.
+          </p>
         </div>
       </InfoCard>
     );
@@ -99,20 +129,27 @@ function Summary({ documents }: { documents: DriverDocuments }) {
       <p className="mt-xs">{documents.missing.map(documentLabel).join(', ')}</p>
       {documents.expiringSoon.length > 0 && (
         <p className="mt-md">
-          Renew soon: {documents.expiringSoon.map(documentLabel).join(', ')}. These lapse within a month, and you
-          come off the road the day they do.
+          Renew soon: {documents.expiringSoon.map(documentLabel).join(', ')}. These
+          lapse within a month, and you come off the road the day they do.
         </p>
       )}
     </InfoCard>
   );
 }
 
-function DocumentTile({ kind, documents }: { kind: DocumentKind; documents: DriverDocuments }) {
+function DocumentTile({
+  kind,
+  documents,
+}: {
+  kind: DocumentKind;
+  documents: DriverDocuments;
+}) {
   const store = useStore();
   const { showConfirmation } = useFeedback();
   const { run, busy } = useRun();
   const input = useRef<HTMLInputElement>(null);
-  const document = documents.documents.find((d) => d.kind === kind && !d.superseded) ?? null;
+  const document =
+    documents.documents.find((d) => d.kind === kind && !d.superseded) ?? null;
 
   async function upload(file: File) {
     const result = await run(() => store.uploadDocument(kind, file));
@@ -129,7 +166,11 @@ function DocumentTile({ kind, documents }: { kind: DocumentKind; documents: Driv
         // The reason, in the reviewer's own words.
         <p className="error-text mt-sm">{document.reviewNote}</p>
       )}
-      {document?.expiresAt && <p className="t-small mt-xs">Expires {formatDate(new Date(document.expiresAt))}</p>}
+      {document?.expiresAt && (
+        <p className="t-small mt-xs">
+          Expires {formatDate(new Date(document.expiresAt))}
+        </p>
+      )}
       {/* Camera or gallery, the browser's own choice: a driver has usually
           already photographed their documents. */}
       <input
@@ -145,7 +186,13 @@ function DocumentTile({ kind, documents }: { kind: DocumentKind; documents: Driv
           if (file) void upload(file);
         }}
       />
-      <Button variant="outlined" icon={Upload} busy={busy} className="mt-md" onClick={() => input.current?.click()}>
+      <Button
+        variant="outlined"
+        icon={Upload}
+        busy={busy}
+        className="mt-md"
+        onClick={() => input.current?.click()}
+      >
         {document === null ? 'Add a photo' : 'Replace'}
       </Button>
     </InfoCard>

@@ -90,7 +90,8 @@ export class TrackingSocket {
       transports: ['websocket'],
       // A function, so every (re)connect presents the token as it is now. A
       // dispatcher keeps the map open for hours; the token lasts minutes.
-      auth: (supply: (data: object) => void) => supply({ token: this.tokens.read()?.accessToken ?? '' }),
+      auth: (supply: (data: object) => void) =>
+        supply({ token: this.tokens.read()?.accessToken ?? '' }),
       forceNew: true,
     });
 

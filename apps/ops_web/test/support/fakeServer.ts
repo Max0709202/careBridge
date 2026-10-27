@@ -9,17 +9,26 @@ export interface Recorded {
   body: unknown;
 }
 
-export type Handler = (request: Recorded) => { status?: number; body?: unknown; headers?: Record<string, string> };
+export type Handler = (request: Recorded) => {
+  status?: number;
+  body?: unknown;
+  headers?: Record<string, string>;
+};
 
 export function fakeServer(routes: Record<string, Handler>) {
   const requests: Recorded[] = [];
 
   const fetchImpl: typeof fetch = async (input, init) => {
-    const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url);
+    const url = new URL(
+      typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+    );
     const path = url.pathname.replace(/^\/api\/v1/, '') + url.search;
     const method = (init?.method ?? 'GET').toUpperCase();
     const headers = Object.fromEntries(
-      Object.entries((init?.headers ?? {}) as Record<string, string>).map(([k, v]) => [k.toLowerCase(), v]),
+      Object.entries((init?.headers ?? {}) as Record<string, string>).map(([k, v]) => [
+        k.toLowerCase(),
+        v,
+      ]),
     );
     const body = typeof init?.body === 'string' ? JSON.parse(init.body) : undefined;
     const recorded = { method, path, headers, body };
@@ -43,10 +52,16 @@ export function fakeServer(routes: Record<string, Handler>) {
 function matches(pattern: string, key: string): boolean {
   const a = pattern.split(/[ /]/);
   const b = key.split(/[ /]/);
-  return a.length === b.length && a.every((part, i) => part.startsWith(':') || part === b[i]);
+  return (
+    a.length === b.length && a.every((part, i) => part.startsWith(':') || part === b[i])
+  );
 }
 
-function json(status: number, body: unknown, headers: Record<string, string> = {}): Response {
+function json(
+  status: number,
+  body: unknown,
+  headers: Record<string, string> = {},
+): Response {
   const text = body === undefined ? '' : JSON.stringify(body);
   return new Response(status === 204 ? null : text, {
     status,

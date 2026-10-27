@@ -16,7 +16,8 @@ import {
 } from '../../messaging/model';
 import { useCallFor, useMessagingStore, useThread } from '../../messaging/react';
 
-const cx = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(' ');
+const cx = (...names: (string | false | null | undefined)[]) =>
+  names.filter(Boolean).join(' ');
 
 /**
  * A conversation — with dispatch, the team, or a colleague. A port of the
@@ -40,7 +41,8 @@ export function ChatThread({ conversation }: { conversation: Conversation }) {
           <CarFront size={18} aria-hidden />
           <span>
             Trip with <span className="bold">{conversation.ride.patientName}</span>,{' '}
-            {formatDay(conversation.ride.scheduledPickupAt)} at {formatTime(conversation.ride.scheduledPickupAt)}
+            {formatDay(conversation.ride.scheduledPickupAt)} at{' '}
+            {formatTime(conversation.ride.scheduledPickupAt)}
           </span>
         </div>
       )}
@@ -48,7 +50,11 @@ export function ChatThread({ conversation }: { conversation: Conversation }) {
       <ol className="chat-messages" ref={listRef} aria-live="polite">
         {thread?.hasMore && (
           <li className="chat-older">
-            <Button variant="text" busy={thread.loading} onClick={() => void store.loadOlder(conversation.id)}>
+            <Button
+              variant="text"
+              busy={thread.loading}
+              onClick={() => void store.loadOlder(conversation.id)}
+            >
               Earlier messages
             </Button>
           </li>
@@ -73,16 +79,25 @@ export function ChatThread({ conversation }: { conversation: Conversation }) {
       {conversation.canPost ? (
         <Composer conversationId={conversation.id} />
       ) : (
-        <p className="chat-closed muted">This trip has finished, so its conversation is closed.</p>
+        <p className="chat-closed muted">
+          This trip has finished, so its conversation is closed.
+        </p>
       )}
     </section>
   );
 }
 
-function MessageItem(props: { message: ChatMessage; previous: ChatMessage | undefined; onRetry: () => void }) {
+function MessageItem(props: {
+  message: ChatMessage;
+  previous: ChatMessage | undefined;
+  onRetry: () => void;
+}) {
   const { message, previous } = props;
   const newDay = !previous || !sameDay(previous.createdAt, message.createdAt);
-  const sameSender = !newDay && previous?.senderLabel === message.senderLabel && previous.mine === message.mine;
+  const sameSender =
+    !newDay &&
+    previous?.senderLabel === message.senderLabel &&
+    previous.mine === message.mine;
 
   return (
     <>
@@ -96,8 +111,16 @@ function MessageItem(props: { message: ChatMessage; previous: ChatMessage | unde
           {message.body} · {formatTime(message.createdAt)}
         </li>
       ) : (
-        <li className={cx('chat-message', message.mine && 'mine', message.delivery !== 'sent' && message.delivery)}>
-          {!sameSender && !message.mine && <div className="chat-sender">{message.senderLabel}</div>}
+        <li
+          className={cx(
+            'chat-message',
+            message.mine && 'mine',
+            message.delivery !== 'sent' && message.delivery,
+          )}
+        >
+          {!sameSender && !message.mine && (
+            <div className="chat-sender">{message.senderLabel}</div>
+          )}
           <div className="chat-bubble">{message.body}</div>
           <div className="chat-meta">
             {message.delivery === 'pending' && (
@@ -107,7 +130,8 @@ function MessageItem(props: { message: ChatMessage; previous: ChatMessage | unde
             )}
             {message.delivery === 'failed' && (
               <button type="button" className="chat-retry" onClick={props.onRetry}>
-                <AlertCircle size={14} aria-hidden /> Not sent — tap to try again <RotateCw size={14} aria-hidden />
+                <AlertCircle size={14} aria-hidden /> Not sent — tap to try again{' '}
+                <RotateCw size={14} aria-hidden />
               </button>
             )}
             {message.delivery === 'sent' && formatTime(message.createdAt)}
@@ -153,7 +177,13 @@ function Composer({ conversationId }: { conversationId: string }) {
         onChange={(e) => setText(e.target.value)}
         onKeyDown={onKeyDown}
       />
-      <Button type="submit" variant="quiet" icon={Send} disabled={!trimmed} aria-label="Send">
+      <Button
+        type="submit"
+        variant="quiet"
+        icon={Send}
+        disabled={!trimmed}
+        aria-label="Send"
+      >
         Send
       </Button>
     </form>
@@ -164,7 +194,13 @@ function Composer({ conversationId }: { conversationId: string }) {
  * Calls through the CareBridge relay. Your own phone rings first, then the
  * other person's; neither of you sees the other's number.
  */
-export function CallBar({ context, compact }: { context: CallContext; compact?: boolean }) {
+export function CallBar({
+  context,
+  compact,
+}: {
+  context: CallContext;
+  compact?: boolean;
+}) {
   const store = useMessagingStore();
   const call = useCallFor(context);
   const { showFailure } = useFeedback();
@@ -221,7 +257,8 @@ export function CallBar({ context, compact }: { context: CallContext; compact?: 
         </Button>
       ))}
       <p className="t-small muted">
-        {unavailable?.unavailableReason ?? 'Your phone rings first. Neither side sees the other’s number.'}
+        {unavailable?.unavailableReason ??
+          'Your phone rings first. Neither side sees the other’s number.'}
       </p>
     </div>
   );

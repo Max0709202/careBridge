@@ -54,13 +54,17 @@ import { keys } from '../state/opsStore';
 export function BillingScreen() {
   const store = useStore();
   const organizationId = useOperatorId();
-  const account = useResource(keys.billing(organizationId), (api) => api.billing(organizationId));
+  const account = useResource(keys.billing(organizationId), (api) =>
+    api.billing(organizationId),
+  );
 
   let body;
   if (account.value) {
     body = (
       <>
-        {account.error ? <StaleBanner error={account.error} onRetry={account.reload} /> : null}
+        {account.error ? (
+          <StaleBanner error={account.error} onRetry={account.reload} />
+        ) : null}
         <BillingBody organizationId={organizationId} account={account.value} />
       </>
     );
@@ -71,13 +75,24 @@ export function BillingScreen() {
   }
 
   return (
-    <Screen title="Billing" actions={<RefreshButton onClick={() => store.invalidateBilling(organizationId)} />}>
+    <Screen
+      title="Billing"
+      actions={
+        <RefreshButton onClick={() => store.invalidateBilling(organizationId)} />
+      }
+    >
       {body}
     </Screen>
   );
 }
 
-function BillingBody({ organizationId, account }: { organizationId: string; account: BillingAccount }) {
+function BillingBody({
+  organizationId,
+  account,
+}: {
+  organizationId: string;
+  account: BillingAccount;
+}) {
   const store = useStore();
   const confirm = useConfirm();
   const { run, busy } = useRun();
@@ -144,15 +159,20 @@ function BillingBody({ organizationId, account }: { organizationId: string; acco
         <Card>
           <h2 className="t-title">No plan</h2>
           <p className="mt-xs">
-            This operator is not on a subscription. Without one the platform takes a margin on each fare instead — an
-            operator paying by seats keeps the whole fare, and charging both would be charging twice for one
-            relationship.
+            This operator is not on a subscription. Without one the platform takes a
+            margin on each fare instead — an operator paying by seats keeps the whole
+            fare, and charging both would be charging twice for one relationship.
           </p>
         </Card>
       )}
 
       <SectionHeader title="Card on file" />
-      <CardOnFile account={account} busy={busy} onAdd={() => setAddingCard(true)} onRemove={(c) => void removeCard(c)} />
+      <CardOnFile
+        account={account}
+        busy={busy}
+        onAdd={() => setAddingCard(true)}
+        onRemove={(c) => void removeCard(c)}
+      />
 
       {!subscription && (
         <>
@@ -161,7 +181,11 @@ function BillingBody({ organizationId, account }: { organizationId: string; acco
             busy={busy}
             onSubscribe={(plan) =>
               void act(() =>
-                store.api.subscribe({ organizationId, planCode: plan.code, interval: plan.interval }),
+                store.api.subscribe({
+                  organizationId,
+                  planCode: plan.code,
+                  interval: plan.interval,
+                }),
               )
             }
           />
@@ -172,14 +196,17 @@ function BillingBody({ organizationId, account }: { organizationId: string; acco
       <Invoices
         organizationId={organizationId}
         busy={busy}
-        onPay={(invoice) => void act(() => store.api.payInvoice(organizationId, invoice.id))}
+        onPay={(invoice) =>
+          void act(() => store.api.payInvoice(organizationId, invoice.id))
+        }
       />
 
       {addingCard && (
         <PaymentTokenDialog
           onCancel={() => setAddingCard(false)}
           onSave={async (token) => {
-            if (await act(() => store.api.attachPaymentMethod(organizationId, token))) setAddingCard(false);
+            if (await act(() => store.api.attachPaymentMethod(organizationId, token)))
+              setAddingCard(false);
           }}
           busy={busy}
         />
@@ -213,7 +240,10 @@ function PlanCard(props: {
         <KeyValue label="Drivers billed" value={subscription.seats} />
         <KeyValue label="Next renewal" value={formatCents(quote.totalCents)} />
         {subscription.carriedCreditCents > 0 && (
-          <KeyValue label="Credit carried" value={formatCents(subscription.carriedCreditCents)} />
+          <KeyValue
+            label="Credit carried"
+            value={formatCents(subscription.carriedCreditCents)}
+          />
         )}
       </div>
       {/* Itemised: "why is it $412?" is answered by the lines rather than a support conversation. */}
@@ -221,26 +251,34 @@ function PlanCard(props: {
 
       {isTrialing(subscription) && subscription.trialEndsAt && (
         <BillingNote>
-          The free trial ends on {formatDay(subscription.trialEndsAt)}. The card on file is charged then.
+          The free trial ends on {formatDay(subscription.trialEndsAt)}. The card on file
+          is charged then.
         </BillingNote>
       )}
       {subscription.status === 'pastDue' && (
         <BillingNote emphasis>
-          A payment failed. The console keeps working for the plan’s grace window — the point of that window is that
-          somebody finds out by being told rather than by a shift that stops.
+          A payment failed. The console keeps working for the plan’s grace window — the
+          point of that window is that somebody finds out by being told rather than by a
+          shift that stops.
         </BillingNote>
       )}
       {isCancelling(subscription) && (
         <BillingNote>
-          Cancelled. Everything keeps working until {formatDay(subscription.currentPeriodEnd)}, because that period is
-          paid for.
+          Cancelled. Everything keeps working until{' '}
+          {formatDay(subscription.currentPeriodEnd)}, because that period is paid for.
         </BillingNote>
       )}
 
       {!isCancelling(subscription) && (
         <div className="actions-row">
-          <Button variant="outlined" disabled={props.busy} onClick={props.onChangeInterval}>
-            {subscription.interval === 'monthly' ? 'Switch to yearly' : 'Switch to monthly'}
+          <Button
+            variant="outlined"
+            disabled={props.busy}
+            onClick={props.onChangeInterval}
+          >
+            {subscription.interval === 'monthly'
+              ? 'Switch to yearly'
+              : 'Switch to monthly'}
           </Button>
           <Button variant="text" disabled={props.busy} onClick={props.onCancel}>
             Cancel plan
@@ -275,25 +313,34 @@ function CardOnFile(props: {
               Expires {String(card.expMonth).padStart(2, '0')}/{card.expYear}
             </span>
           </div>
-          {hasExpired(card, new Date()) && <BillingNote emphasis>This card has expired.</BillingNote>}
+          {hasExpired(card, new Date()) && (
+            <BillingNote emphasis>This card has expired.</BillingNote>
+          )}
         </>
       ) : (
         <p className="t-body-lg">No card on file.</p>
       )}
       {willBillWithoutACard(props.account) && (
         <BillingNote emphasis>
-          This subscription will bill a card that is not there. Add one before the period ends.
+          This subscription will bill a card that is not there. Add one before the
+          period ends.
         </BillingNote>
       )}
       {props.account.amountDueCents > 0 && (
-        <BillingNote emphasis>Outstanding: {formatCents(props.account.amountDueCents)}</BillingNote>
+        <BillingNote emphasis>
+          Outstanding: {formatCents(props.account.amountDueCents)}
+        </BillingNote>
       )}
       <div className="actions-row">
         <Button icon={CreditCard} disabled={props.busy} onClick={props.onAdd}>
           {card ? 'Replace the card' : 'Add a card'}
         </Button>
         {card && (
-          <Button variant="text" disabled={props.busy} onClick={() => props.onRemove(card)}>
+          <Button
+            variant="text"
+            disabled={props.busy}
+            onClick={() => props.onRemove(card)}
+          >
             Remove
           </Button>
         )}
@@ -304,12 +351,19 @@ function CardOnFile(props: {
 
 // ─── the catalogue ──────────────────────────────────────────────────────────
 
-function Catalogue(props: { busy: boolean; onSubscribe: (plan: OperatorPlan) => void }) {
+function Catalogue(props: {
+  busy: boolean;
+  onSubscribe: (plan: OperatorPlan) => void;
+}) {
   // Not keyed by organisation: the catalogue is the same for every operator.
   const plans = useResource(keys.plans, (api) => api.plans());
 
   if (!plans.value) {
-    return plans.error ? <LoadFailure title="Could not load the plans" onRetry={plans.reload} /> : <LoadingBlock />;
+    return plans.error ? (
+      <LoadFailure title="Could not load the plans" onRetry={plans.reload} />
+    ) : (
+      <LoadingBlock />
+    );
   }
   if (plans.value.length === 0) {
     return (
@@ -324,14 +378,22 @@ function Catalogue(props: { busy: boolean; onSubscribe: (plan: OperatorPlan) => 
     <ul className="list">
       {plans.value.map((plan) => (
         <li key={`${plan.code}/${plan.interval}`}>
-          <PlanOffer plan={plan} busy={props.busy} onSubscribe={() => props.onSubscribe(plan)} />
+          <PlanOffer
+            plan={plan}
+            busy={props.busy}
+            onSubscribe={() => props.onSubscribe(plan)}
+          />
         </li>
       ))}
     </ul>
   );
 }
 
-function PlanOffer(props: { plan: OperatorPlan; busy: boolean; onSubscribe: () => void }) {
+function PlanOffer(props: {
+  plan: OperatorPlan;
+  busy: boolean;
+  onSubscribe: () => void;
+}) {
   const { plan } = props;
   return (
     <Card>
@@ -356,10 +418,12 @@ function PlanOffer(props: { plan: OperatorPlan; busy: boolean; onSubscribe: () =
       ))}
       {/* The answers to "can we try it" and "what if the card bounces" belong where they are asked. */}
       <p className="t-small mt-xs">
-        {plan.trialDays > 0 ? `${plan.trialDays}-day free trial. ` : ''}A failed payment keeps working for{' '}
-        {plan.graceDays} day(s).
+        {plan.trialDays > 0 ? `${plan.trialDays}-day free trial. ` : ''}A failed payment
+        keeps working for {plan.graceDays} day(s).
       </p>
-      {plan.entitlements.length > 0 && <p className="t-small muted mt-xs">Includes: {plan.entitlements.join(', ')}</p>}
+      {plan.entitlements.length > 0 && (
+        <p className="t-small muted mt-xs">Includes: {plan.entitlements.join(', ')}</p>
+      )}
       <div className="actions-row">
         <Button disabled={props.busy} onClick={props.onSubscribe}>
           Subscribe {intervalLabel[plan.interval].toLowerCase()}
@@ -371,8 +435,14 @@ function PlanOffer(props: { plan: OperatorPlan; busy: boolean; onSubscribe: () =
 
 // ─── invoices ───────────────────────────────────────────────────────────────
 
-function Invoices(props: { organizationId: string; busy: boolean; onPay: (invoice: Invoice) => void }) {
-  const invoices = useResource(keys.invoices(props.organizationId), (api) => api.invoices(props.organizationId));
+function Invoices(props: {
+  organizationId: string;
+  busy: boolean;
+  onPay: (invoice: Invoice) => void;
+}) {
+  const invoices = useResource(keys.invoices(props.organizationId), (api) =>
+    api.invoices(props.organizationId),
+  );
 
   if (!invoices.value) {
     return invoices.error ? (
@@ -382,13 +452,23 @@ function Invoices(props: { organizationId: string; busy: boolean; onPay: (invoic
     );
   }
   if (invoices.value.length === 0) {
-    return <EmptyState icon={ReceiptText} title="Nothing billed yet" message="Invoices appear here as periods renew." />;
+    return (
+      <EmptyState
+        icon={ReceiptText}
+        title="Nothing billed yet"
+        message="Invoices appear here as periods renew."
+      />
+    );
   }
   return (
     <ul className="list">
       {invoices.value.map((invoice) => (
         <li key={invoice.id}>
-          <InvoiceCard invoice={invoice} busy={props.busy} onPay={() => props.onPay(invoice)} />
+          <InvoiceCard
+            invoice={invoice}
+            busy={props.busy}
+            onPay={() => props.onPay(invoice)}
+          />
         </li>
       ))}
     </ul>
@@ -411,7 +491,11 @@ function InvoiceCard(props: { invoice: Invoice; busy: boolean; onPay: () => void
       {/* Read back off the invoice, so a bill from eight months ago shows the prices it charged. */}
       <Lines lines={invoice.lines} />
       {invoice.creditAppliedCents > 0 && (
-        <KeyValue small label="Credit applied" value={`-${formatCents(invoice.creditAppliedCents)}`} />
+        <KeyValue
+          small
+          label="Credit applied"
+          value={`-${formatCents(invoice.creditAppliedCents)}`}
+        />
       )}
       {hasFailed(invoice) && (
         <BillingNote emphasis>
@@ -449,10 +533,20 @@ function Lines({ lines }: { lines: BillingLine[] }) {
   );
 }
 
-function BillingNote({ children, emphasis }: { children: ReactNode; emphasis?: boolean }) {
+function BillingNote({
+  children,
+  emphasis,
+}: {
+  children: ReactNode;
+  emphasis?: boolean;
+}) {
   return (
     <p className={`note t-small${emphasis ? ' emphasis' : ''}`}>
-      {emphasis ? <CircleAlert size={16} aria-hidden /> : <Info size={16} aria-hidden />}
+      {emphasis ? (
+        <CircleAlert size={16} aria-hidden />
+      ) : (
+        <Info size={16} aria-hidden />
+      )}
       <span>{children}</span>
     </p>
   );
@@ -468,7 +562,11 @@ function BillingNote({ children, emphasis }: { children: ReactNode; emphasis?: b
  * the whole change; no endpoint moves. Asking for a card number here "only in
  * development" is how it ends up in production.
  */
-function PaymentTokenDialog(props: { busy: boolean; onCancel: () => void; onSave: (token: string) => void }) {
+function PaymentTokenDialog(props: {
+  busy: boolean;
+  onCancel: () => void;
+  onSave: (token: string) => void;
+}) {
   const [token, setToken] = useState('');
   const trimmed = token.trim();
   return (
@@ -481,8 +579,9 @@ function PaymentTokenDialog(props: { busy: boolean; onCancel: () => void; onSave
         }}
       >
         <p>
-          CareBridge never sees a card number. The payment processor takes the card and hands back a token; that token
-          is what this field wants and what the API stores.
+          CareBridge never sees a card number. The payment processor takes the card and
+          hands back a token; that token is what this field wants and what the API
+          stores.
         </p>
         <TextField
           label="Processor token"
@@ -493,8 +592,9 @@ function PaymentTokenDialog(props: { busy: boolean; onCancel: () => void; onSave
         />
         {/* The local adapter's unhappy paths are unreachable if nobody is told which digits produce them. */}
         <p className="t-small muted">
-          Against the local payments adapter any string works, and its last four digits choose the outcome — Stripe’s
-          own test-card meanings: 4242 settles, 9995 is declined for insufficient funds, 9979 is reported stolen.
+          Against the local payments adapter any string works, and its last four digits
+          choose the outcome — Stripe’s own test-card meanings: 4242 settles, 9995 is
+          declined for insufficient funds, 9979 is reported stolen.
         </p>
         <div className="dialog-actions">
           <Button variant="text" onClick={props.onCancel}>

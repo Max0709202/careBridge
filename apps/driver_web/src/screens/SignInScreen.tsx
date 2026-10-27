@@ -20,7 +20,11 @@ export function SignInScreen() {
   const [mfaCode, setMfaCode] = useState('');
   const [needsCode, setNeedsCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; mfaCode?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+    mfaCode?: string;
+  }>({});
   const [busy, setBusy] = useState(false);
 
   async function submit(e: FormEvent) {
@@ -28,7 +32,8 @@ export function SignInScreen() {
     const next: typeof fieldErrors = {};
     if (email.trim() === '') next.email = 'Enter your email address';
     if (password === '') next.password = 'Enter your password';
-    if (needsCode && mfaCode.trim() === '') next.mfaCode = 'Enter the code from your authenticator app';
+    if (needsCode && mfaCode.trim() === '')
+      next.mfaCode = 'Enter the code from your authenticator app';
     setFieldErrors(next);
     setError(null);
     if (Object.keys(next).length > 0) return;
@@ -98,9 +103,10 @@ export function SignInScreen() {
           <div className="stack gap-sm center">
             <a href={accountLinks.forgotPassword}>Forgot your password?</a>
             <p className="t-small muted">
-              New driver? <a href={accountLinks.register}>Create your CareBridge account</a> and verify
-              your email, then give that address to your transport company. Once they add you to their
-              roster, sign in here.
+              New driver?{' '}
+              <a href={accountLinks.register}>Create your CareBridge account</a> and
+              verify your email, then give that address to your transport company. Once
+              they add you to their roster, sign in here.
             </p>
           </div>
         )}

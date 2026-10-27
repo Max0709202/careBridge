@@ -1,9 +1,26 @@
-import { CircleAlert, CircleCheck, Clock, History, SearchX, Undo2, type LucideIcon } from 'lucide-react';
+import {
+  CircleAlert,
+  CircleCheck,
+  Clock,
+  History,
+  SearchX,
+  Undo2,
+  type LucideIcon,
+} from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 import { failureMessage } from '../../api/failures';
 import { Modal } from '../../components/feedback';
-import { Button, Card, EmptyState, KeyValue, Screen, SectionHeader, TextArea, TextField } from '../../components/ui';
+import {
+  Button,
+  Card,
+  EmptyState,
+  KeyValue,
+  Screen,
+  SectionHeader,
+  TextArea,
+  TextField,
+} from '../../components/ui';
 import { useRun } from '../../components/useRun';
 import { formatDayTime } from '../../core/format';
 import { centsToInput, formatCents, parseDollars } from '../../core/money';
@@ -74,7 +91,11 @@ export function RefundsScreen() {
         // The shared message: "no such invoice", "nothing was paid on it" and
         // "not yours" are answered the same way, and this screen must not
         // invent a distinction it was not given.
-        <EmptyState icon={SearchX} title="Nothing to refund there" message={failureMessage(error)} />
+        <EmptyState
+          icon={SearchX}
+          title="Nothing to refund there"
+          message={failureMessage(error)}
+        />
       )}
 
       {invoice && (
@@ -82,7 +103,11 @@ export function RefundsScreen() {
           <Summary invoice={invoice} onRefund={() => setRefunding(true)} />
           <SectionHeader title="Already refunded" />
           {invoice.refunds.length === 0 ? (
-            <EmptyState icon={History} title="Nothing yet" message="No credit has been issued against this payment." />
+            <EmptyState
+              icon={History}
+              title="Nothing yet"
+              message="No credit has been issued against this payment."
+            />
           ) : (
             <ul className="list">
               {invoice.refunds.map((refund) => (
@@ -108,19 +133,31 @@ export function RefundsScreen() {
   );
 }
 
-function Summary({ invoice, onRefund }: { invoice: RefundableInvoice; onRefund: () => void }) {
+function Summary({
+  invoice,
+  onRefund,
+}: {
+  invoice: RefundableInvoice;
+  onRefund: () => void;
+}) {
   return (
     <Card className="mt-md">
       <h2 className="t-title">Invoice {invoice.invoiceNumber}</h2>
       <div className="mt-sm">
         <KeyValue label="Paid" value={formatCents(invoice.paidCents)} />
-        <KeyValue label="Already refunded" value={formatCents(refundedCents(invoice))} />
+        <KeyValue
+          label="Already refunded"
+          value={formatCents(refundedCents(invoice))}
+        />
         <KeyValue label="Left to refund" value={formatCents(invoice.refundableCents)} />
       </div>
       {hasInFlightRefund(invoice) && (
         <p className="note t-small">
           <Clock size={16} className="ink-imminent" aria-hidden />
-          <span>A refund is still in flight. Wait for it to settle before issuing another, or the account is credited twice.</span>
+          <span>
+            A refund is still in flight. Wait for it to settle before issuing another,
+            or the account is credited twice.
+          </span>
         </p>
       )}
       <div className="actions-row">
@@ -156,13 +193,18 @@ function RefundRow({ refund }: { refund: Refund }) {
       </div>
       <p className="mt-xs">{refund.reason}</p>
       <p className="t-small muted">Asked for by {refund.requestedByName}</p>
-      {refund.failureMessage && <p className="t-small error-text mt-xs">{refund.failureMessage}</p>}
+      {refund.failureMessage && (
+        <p className="t-small error-text mt-xs">{refund.failureMessage}</p>
+      )}
     </Card>
   );
 }
 
 /** The amount and the reason, with the ceiling enforced before it is sent. */
-function RefundDialog(props: { invoice: RefundableInvoice; onClose: (updated?: RefundableInvoice) => void }) {
+function RefundDialog(props: {
+  invoice: RefundableInvoice;
+  onClose: (updated?: RefundableInvoice) => void;
+}) {
   const { invoice } = props;
   const store = useStore();
   const { run, busy } = useRun();
@@ -201,7 +243,10 @@ function RefundDialog(props: { invoice: RefundableInvoice; onClose: (updated?: R
   }
 
   return (
-    <Modal title={`Refund invoice ${invoice.invoiceNumber}`} onClose={() => props.onClose()}>
+    <Modal
+      title={`Refund invoice ${invoice.invoiceNumber}`}
+      onClose={() => props.onClose()}
+    >
       <form className="stack gap-sm" onSubmit={(e) => void issue(e)} noValidate>
         <TextField
           label="Amount"
@@ -223,8 +268,8 @@ function RefundDialog(props: { invoice: RefundableInvoice; onClose: (updated?: R
           onChange={(e) => setReason(e.target.value)}
         />
         <p className="t-small muted">
-          The refund is recorded here before the processor is called, so a credit that succeeded externally and failed
-          to record is still explicable.
+          The refund is recorded here before the processor is called, so a credit that
+          succeeded externally and failed to record is still explicable.
         </p>
         <div className="dialog-actions">
           <Button variant="text" disabled={busy} onClick={() => props.onClose()}>

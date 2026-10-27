@@ -11,7 +11,11 @@ import {
   formatTime,
 } from '../../core/formatting';
 import { appointmentTypeLabel, type Appointment } from '../../domain/models';
-import { appointmentIsUpcoming, appointmentStatusLabel, rideStatusLabel } from '../../domain/statuses';
+import {
+  appointmentIsUpcoming,
+  appointmentStatusLabel,
+  rideStatusLabel,
+} from '../../domain/statuses';
 import {
   can,
   clinicById,
@@ -29,7 +33,9 @@ export function AppointmentsScreen() {
   const now = useNow();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [tab, setTab] = useState<'upcoming' | 'past'>(params.get('tab') === 'past' ? 'past' : 'upcoming');
+  const [tab, setTab] = useState<'upcoming' | 'past'>(
+    params.get('tab') === 'past' ? 'past' : 'upcoming',
+  );
   const patient = selectedPatient(state);
 
   if (!patient) {
@@ -40,7 +46,9 @@ export function AppointmentsScreen() {
           icon={UserPlus}
           title="Add someone first"
           message="Appointments belong to a person. Add a profile to begin."
-          action={<Button onClick={() => navigate('/patients/new')}>Add a profile</Button>}
+          action={
+            <Button onClick={() => navigate('/patients/new')}>Add a profile</Button>
+          }
         />
       </Page>
     );
@@ -60,10 +68,18 @@ export function AppointmentsScreen() {
       title={`${patient.preferredName}’s appointments`}
       below={
         <div className="tabs" role="tablist">
-          <button role="tab" aria-selected={tab === 'upcoming'} onClick={() => choose('upcoming')}>
+          <button
+            role="tab"
+            aria-selected={tab === 'upcoming'}
+            onClick={() => choose('upcoming')}
+          >
             Upcoming ({upcoming.length})
           </button>
-          <button role="tab" aria-selected={tab === 'past'} onClick={() => choose('past')}>
+          <button
+            role="tab"
+            aria-selected={tab === 'past'}
+            onClick={() => choose('past')}
+          >
             Past ({past.length})
           </button>
         </div>
@@ -91,7 +107,11 @@ export function AppointmentsScreen() {
         )}
       </div>
       {canSchedule && (
-        <button type="button" className="fab" onClick={() => navigate('/appointments/new')}>
+        <button
+          type="button"
+          className="fab"
+          onClick={() => navigate('/appointments/new')}
+        >
           <Plus aria-hidden /> Add
         </button>
       )}
@@ -127,13 +147,26 @@ function AppointmentList(props: {
   return (
     <div className="stack gap-sm mt-md">
       {props.appointments.map((a) => (
-        <AppointmentTile key={a.id} appointment={a} state={props.state} now={props.now} />
+        <AppointmentTile
+          key={a.id}
+          appointment={a}
+          state={props.state}
+          now={props.now}
+        />
       ))}
     </div>
   );
 }
 
-function AppointmentTile({ appointment, state, now }: { appointment: Appointment; state: CareState; now: Date }) {
+function AppointmentTile({
+  appointment,
+  state,
+  now,
+}: {
+  appointment: Appointment;
+  state: CareState;
+  now: Date;
+}) {
   const navigate = useNavigate();
   const clinic = clinicById(state, appointment.clinicId);
   const activeRide = ridesForAppointment(state, appointment.id).find(rideIsActive);
@@ -147,7 +180,8 @@ function AppointmentTile({ appointment, state, now }: { appointment: Appointment
         <div className="grow">
           <p className="t-title">{formatRelativeDay(appointment.startsAt, now)}</p>
           <p className="t-body muted">
-            {formatTime(appointment.startsAt)} · {formatDuration(appointment.expectedDurationMinutes)}
+            {formatTime(appointment.startsAt)} ·{' '}
+            {formatDuration(appointment.expectedDurationMinutes)}
           </p>
         </div>
         <AppointmentStatusPill status={appointment.status} />

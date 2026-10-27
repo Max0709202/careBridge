@@ -2,7 +2,15 @@
  * Whole-app flows against a fake API. Ports of the behaviours in
  * apps/ops_console/test/*_screen_test.dart, plus the routing rules.
  */
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,7 +49,10 @@ vi.mock('../src/components/LiveMap', () => ({
     <div aria-label="Live map">
       <span>area: {props.area ? props.area.kind : 'none'}</span>
       {props.onPickPoint && (
-        <button type="button" onClick={() => props.onPickPoint?.({ latitude: 40.7, longitude: -73.9 })}>
+        <button
+          type="button"
+          onClick={() => props.onPickPoint?.({ latitude: 40.7, longitude: -73.9 })}
+        >
           Click the map
         </button>
       )}
@@ -51,7 +62,11 @@ vi.mock('../src/components/LiveMap', () => ({
 
 async function renderApp(
   path: string,
-  options: { signedIn?: boolean; organizationId?: string | null; routes?: Record<string, Handler> } = {},
+  options: {
+    signedIn?: boolean;
+    organizationId?: string | null;
+    routes?: Record<string, Handler>;
+  } = {},
 ) {
   const server = fakeServer({
     'POST /auth/login': () => ({ body: { accessToken: 'a', refreshToken: 'r' } }),
@@ -68,8 +83,10 @@ async function renderApp(
   });
   const tokens = new InMemoryTokenStore();
   if (options.signedIn ?? true) tokens.write({ accessToken: 'a', refreshToken: 'r' });
-  const organizationId = options.organizationId === undefined ? 'org-1' : options.organizationId;
-  if (organizationId) window.sessionStorage.setItem('carebridge.ops.organizationId', organizationId);
+  const organizationId =
+    options.organizationId === undefined ? 'org-1' : options.organizationId;
+  if (organizationId)
+    window.sessionStorage.setItem('carebridge.ops.organizationId', organizationId);
 
   const api = new OpsApi(tokens, BASE, server.fetchImpl);
   const store = new OpsStore(api, window.sessionStorage);
@@ -78,7 +95,10 @@ async function renderApp(
 
   render(
     <StoreProvider store={store}>
-      <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter
+        initialEntries={[path]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <FeedbackProvider>
           <ConfirmProvider>
             <App messaging={messaging.store} />
@@ -97,13 +117,20 @@ afterEach(() => {
 
 describe('signing in and choosing an operator', () => {
   it('sends a signed-out dispatcher to sign-in, then to a choice, never a default', async () => {
-    const { requests } = await renderApp('/queue', { signedIn: false, organizationId: null });
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'dispatch@example.com ' } });
+    const { requests } = await renderApp('/queue', {
+      signedIn: false,
+      organizationId: null,
+    });
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'dispatch@example.com ' },
+    });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'pw' } });
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     // Even with one operator, the picker asks.
-    fireEvent.click(await screen.findByRole('button', { name: 'Meridian Transit, owner' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Meridian Transit, owner' }),
+    );
     expect(await screen.findByRole('heading', { name: 'Queue' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Meridian Transit' })).toBeTruthy();
     expect(requests.find((r) => r.path === '/auth/login')?.body).toEqual({
@@ -118,7 +145,13 @@ describe('signing in and choosing an operator', () => {
       routes: {
         'POST /auth/login': () => ({
           status: 400,
-          body: { error: { code: 'validation', field: 'mfaCode', message: 'Enter your code.' } },
+          body: {
+            error: {
+              code: 'validation',
+              field: 'mfaCode',
+              message: 'Enter your code.',
+            },
+          },
         }),
       },
     });
@@ -132,9 +165,13 @@ describe('signing in and choosing an operator', () => {
   it('says plainly that a member role cannot dispatch', async () => {
     await renderApp('/organizations', {
       organizationId: null,
-      routes: { 'GET /organizations': () => ({ body: [organization({ role: 'member' })] }) },
+      routes: {
+        'GET /organizations': () => ({ body: [organization({ role: 'member' })] }),
+      },
     });
-    expect(await screen.findByText('This role cannot use the dispatch console.')).toBeTruthy();
+    expect(
+      await screen.findByText('This role cannot use the dispatch console.'),
+    ).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Meridian Transit/ })).toBeNull();
   });
 
@@ -147,7 +184,9 @@ describe('signing in and choosing an operator', () => {
       },
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Open administration' }));
-    expect(await screen.findByRole('heading', { name: 'CareBridge administration' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { name: 'CareBridge administration' }),
+    ).toBeTruthy();
   });
 
   it('keeps the operator across a reload, and drops it when the membership is gone', async () => {
@@ -155,7 +194,9 @@ describe('signing in and choosing an operator', () => {
       organizationId: 'org-gone',
       routes: { 'GET /organizations': () => ({ body: [organization()] }) },
     });
-    expect(await screen.findByRole('heading', { name: 'Choose an operator' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { name: 'Choose an operator' }),
+    ).toBeTruthy();
     expect(window.sessionStorage.getItem('carebridge.ops.organizationId')).toBeNull();
   });
 
@@ -163,13 +204,19 @@ describe('signing in and choosing an operator', () => {
     await renderApp('/queue');
     await screen.findByRole('heading', { name: 'Queue' });
     fireEvent.click(screen.getByRole('button', { name: 'Switch operator' }));
-    expect(await screen.findByRole('heading', { name: 'Choose an operator' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { name: 'Choose an operator' }),
+    ).toBeTruthy();
   });
 });
 
 describe('the queue', () => {
   it('an empty queue says so rather than showing a blank panel', async () => {
-    await renderApp('/queue', { routes: { 'GET /organizations/:id/dispatch/queue': () => ({ body: queue([], 3) }) } });
+    await renderApp('/queue', {
+      routes: {
+        'GET /organizations/:id/dispatch/queue': () => ({ body: queue([], 3) }),
+      },
+    });
     expect(await screen.findByText('Nothing waiting')).toBeTruthy();
     expect(screen.getByText(/3 drivers free right now/)).toBeTruthy();
   });
@@ -182,7 +229,11 @@ describe('the queue', () => {
             queueItem({
               candidates: [
                 candidate({ eligible: false, reasons: ['offShift'] }),
-                candidate({ driverId: 'd2', eligible: false, reasons: ['offShift', 'noAccessibleVehicle'] }),
+                candidate({
+                  driverId: 'd2',
+                  eligible: false,
+                  reasons: ['offShift', 'noAccessibleVehicle'],
+                }),
               ],
             }),
           ]),
@@ -190,7 +241,9 @@ describe('the queue', () => {
       },
     });
     expect(await screen.findByText('Nobody available for this trip')).toBeTruthy();
-    expect(screen.getByText('2 × Not on shift — Put them on shift from the roster')).toBeTruthy();
+    expect(
+      screen.getByText('2 × Not on shift — Put them on shift from the roster'),
+    ).toBeTruthy();
     expect(screen.getByText('1 × No wheelchair-accessible vehicle')).toBeTruthy();
     expect(screen.getByText(/needs a call, not a tap/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Assign/ })).toBeNull();
@@ -217,23 +270,34 @@ describe('the queue', () => {
           body: queue([
             queueItem({
               candidates: [
-                candidate({ driverId: 'd-busy', displayName: 'Anna B.', eligible: false, reasons: ['alreadyOnARide'] }),
+                candidate({
+                  driverId: 'd-busy',
+                  displayName: 'Anna B.',
+                  eligible: false,
+                  reasons: ['alreadyOnARide'],
+                }),
                 candidate(),
               ],
             }),
           ]),
         }),
-        'POST /organizations/:id/dispatch/rides/:ride/assign': () => ({ body: queue([]) }),
+        'POST /organizations/:id/dispatch/rides/:ride/assign': () => ({
+          body: queue([]),
+        }),
       },
     });
-    fireEvent.click(await screen.findByRole('button', { name: 'Assign (1 available)' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Assign (1 available)' }),
+    );
     const sheet = await screen.findByRole('dialog', { name: 'Assign a driver' });
     // Ineligible candidates are listed, not hidden — and cannot be chosen.
     const busy = within(sheet).getByRole('radio', { name: /Anna B\./ });
     expect((busy as HTMLButtonElement).disabled).toBe(true);
     expect(within(sheet).getByText('Already on a trip')).toBeTruthy();
 
-    const confirm = within(sheet).getByRole('button', { name: 'Confirm' }) as HTMLButtonElement;
+    const confirm = within(sheet).getByRole('button', {
+      name: 'Confirm',
+    }) as HTMLButtonElement;
     expect(confirm.disabled).toBe(true);
     fireEvent.click(within(sheet).getByRole('radio', { name: /Marcus T\./ }));
     fireEvent.click(confirm);
@@ -243,7 +307,9 @@ describe('the queue', () => {
     expect(assign.path).toBe('/organizations/org-1/dispatch/rides/ride-1/assign');
     expect(assign.body).toEqual({ driverId: 'driver-1' });
     expect(assign.headers['idempotency-key']).toMatch(/^[0-9a-f-]{36}$/);
-    await waitFor(() => expect(requests.filter((r) => r.path.endsWith('/dispatch/queue')).length).toBe(2));
+    await waitFor(() =>
+      expect(requests.filter((r) => r.path.endsWith('/dispatch/queue')).length).toBe(2),
+    );
   });
 
   it('a reassignment will not go until it says why', async () => {
@@ -252,20 +318,29 @@ describe('the queue', () => {
         'GET /organizations/:id/dispatch/queue': () => ({
           body: queue([queueItem({ status: 'reassignmentRequired' })]),
         }),
-        'POST /organizations/:id/dispatch/rides/:ride/assign': () => ({ body: queue([]) }),
+        'POST /organizations/:id/dispatch/rides/:ride/assign': () => ({
+          body: queue([]),
+        }),
       },
     });
-    fireEvent.click(await screen.findByRole('button', { name: 'Reassign (1 available)' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Reassign (1 available)' }),
+    );
     const sheet = await screen.findByRole('dialog', { name: 'Reassign this trip' });
     fireEvent.click(within(sheet).getByRole('radio', { name: /Marcus T\./ }));
-    const confirm = within(sheet).getByRole('button', { name: 'Confirm' }) as HTMLButtonElement;
+    const confirm = within(sheet).getByRole('button', {
+      name: 'Confirm',
+    }) as HTMLButtonElement;
     expect(confirm.disabled).toBe(true);
     fireEvent.change(within(sheet).getByLabelText('Why is this being reassigned?'), {
       target: { value: 'Flat tyre' },
     });
     fireEvent.click(confirm);
     await waitFor(() =>
-      expect(requests.find((r) => r.path.endsWith('/assign'))?.body).toEqual({ driverId: 'driver-1', reason: 'Flat tyre' }),
+      expect(requests.find((r) => r.path.endsWith('/assign'))?.body).toEqual({
+        driverId: 'driver-1',
+        reason: 'Flat tyre',
+      }),
     );
   });
 
@@ -274,7 +349,9 @@ describe('the queue', () => {
     await renderApp('/queue', {
       routes: {
         'GET /organizations/:id/dispatch/queue': () =>
-          fail ? { status: 500, body: { error: { code: 'internal' } } } : { body: queue([], 0) },
+          fail
+            ? { status: 500, body: { error: { code: 'internal' } } }
+            : { body: queue([], 0) },
       },
     });
     expect(await screen.findByText('Could not load the queue')).toBeTruthy();
@@ -289,25 +366,51 @@ describe('the roster', () => {
     const { requests } = await renderApp('/roster', {
       routes: {
         'GET /organizations': () => ({ body: [organization({ role: 'dispatcher' })] }),
-        'PUT /organizations/:id/drivers/:d/shift': () => ({ body: driver({ onShift: false }) }),
+        'PUT /organizations/:id/drivers/:d/shift': () => ({
+          body: driver({ onShift: false }),
+        }),
       },
     });
     const shift = await screen.findByRole('switch', { name: 'On shift' });
     expect(screen.queryByRole('button', { name: 'Suspend' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Paperwork' })).toBeNull();
     fireEvent.click(shift);
-    await waitFor(() => expect(requests.find((r) => r.method === 'PUT')?.body).toEqual({ onShift: false }));
+    await waitFor(() =>
+      expect(requests.find((r) => r.method === 'PUT')?.body).toEqual({
+        onShift: false,
+      }),
+    );
   });
 
   it('adds an existing account by its exact address, as pending approval', async () => {
-    const match = { userId: 'user-9', fullName: 'Kenji Sato', email: 'kenji@example.com', suggestedDisplayName: 'Kenji S.' };
+    const match = {
+      userId: 'user-9',
+      fullName: 'Kenji Sato',
+      email: 'kenji@example.com',
+      suggestedDisplayName: 'Kenji S.',
+    };
     const { requests } = await renderApp('/roster', {
       routes: {
         'POST /organizations/:id/drivers/account-lookup': (r) =>
           (r.body as { email: string }).email === 'kenji@example.com'
             ? { body: match }
-            : { status: 400, body: { error: { code: 'validation', message: 'No account at that address can be added.', field: 'email' } } },
-        'POST /organizations/:id/drivers': () => ({ body: driver({ id: 'd-9', displayName: 'Kenji S.', status: 'pendingApproval' }) }),
+            : {
+                status: 400,
+                body: {
+                  error: {
+                    code: 'validation',
+                    message: 'No account at that address can be added.',
+                    field: 'email',
+                  },
+                },
+              },
+        'POST /organizations/:id/drivers': () => ({
+          body: driver({
+            id: 'd-9',
+            displayName: 'Kenji S.',
+            status: 'pendingApproval',
+          }),
+        }),
       },
     });
 
@@ -315,56 +418,93 @@ describe('the roster', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Add a driver' });
 
     // Nobody it can add is said under the field, with the server's words.
-    fireEvent.change(within(dialog).getByLabelText('Email address'), { target: { value: 'nobody@example.com' } });
+    fireEvent.change(within(dialog).getByLabelText('Email address'), {
+      target: { value: 'nobody@example.com' },
+    });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Find account' }));
-    expect(await within(dialog).findByText('No account at that address can be added.')).toBeTruthy();
+    expect(
+      await within(dialog).findByText('No account at that address can be added.'),
+    ).toBeTruthy();
 
-    fireEvent.change(within(dialog).getByLabelText('Email address'), { target: { value: 'kenji@example.com' } });
+    fireEvent.change(within(dialog).getByLabelText('Email address'), {
+      target: { value: 'kenji@example.com' },
+    });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Find account' }));
     expect(await within(dialog).findByText('Kenji Sato')).toBeTruthy();
-    expect((within(dialog).getByLabelText('Name on the roster') as HTMLInputElement).value).toBe('Kenji S.');
+    expect(
+      (within(dialog).getByLabelText('Name on the roster') as HTMLInputElement).value,
+    ).toBe('Kenji S.');
 
     // A vehicle is required before it will go.
     fireEvent.click(within(dialog).getByRole('button', { name: 'Add driver' }));
-    expect(await within(dialog).findByText('Choose the vehicle they will drive')).toBeTruthy();
+    expect(
+      await within(dialog).findByText('Choose the vehicle they will drive'),
+    ).toBeTruthy();
 
-    fireEvent.change(within(dialog).getByLabelText('Vehicle'), { target: { value: driver().vehicle.id } });
+    fireEvent.change(within(dialog).getByLabelText('Vehicle'), {
+      target: { value: driver().vehicle.id },
+    });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Add driver' }));
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add a driver' })).toBeNull());
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Add a driver' })).toBeNull(),
+    );
 
-    const created = requests.find((r) => r.method === 'POST' && r.path.endsWith('/drivers'));
-    expect(created?.body).toEqual({ displayName: 'Kenji S.', vehicleId: driver().vehicle.id, userId: 'user-9' });
+    const created = requests.find(
+      (r) => r.method === 'POST' && r.path.endsWith('/drivers'),
+    );
+    expect(created?.body).toEqual({
+      displayName: 'Kenji S.',
+      vehicleId: driver().vehicle.id,
+      userId: 'user-9',
+    });
     expect(created?.headers['idempotency-key']).toBeTruthy();
   });
 
   it('only owners and admins are offered Add driver', async () => {
-    await renderApp('/roster', { routes: { 'GET /organizations': () => ({ body: [organization({ role: 'dispatcher' })] }) } });
+    await renderApp('/roster', {
+      routes: {
+        'GET /organizations': () => ({ body: [organization({ role: 'dispatcher' })] }),
+      },
+    });
     await screen.findByRole('switch', { name: 'On shift' });
     expect(screen.queryByRole('button', { name: 'Add driver' })).toBeNull();
   });
 
   it('suspending asks why, and will not go without an answer', async () => {
     const { requests } = await renderApp('/roster', {
-      routes: { 'POST /organizations/:id/drivers/:d/status': () => ({ body: driver({ status: 'suspended' }) }) },
+      routes: {
+        'POST /organizations/:id/drivers/:d/status': () => ({
+          body: driver({ status: 'suspended' }),
+        }),
+      },
     });
     expect(await screen.findByText('Occupies a billable seat')).toBeTruthy();
     // Approved drivers can be suspended or offboarded — never re-approved.
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
     const dialog = await screen.findByRole('dialog', { name: 'Why suspended?' });
-    const confirm = within(dialog).getByRole('button', { name: 'Confirm' }) as HTMLButtonElement;
+    const confirm = within(dialog).getByRole('button', {
+      name: 'Confirm',
+    }) as HTMLButtonElement;
     expect(confirm.disabled).toBe(true);
-    fireEvent.change(within(dialog).getByLabelText('Reason'), { target: { value: 'Insurance lapsed' } });
+    fireEvent.change(within(dialog).getByLabelText('Reason'), {
+      target: { value: 'Insurance lapsed' },
+    });
     fireEvent.click(confirm);
     await waitFor(() =>
-      expect(requests.find((r) => r.path.endsWith('/status'))?.body).toEqual({ to: 'suspended', reason: 'Insurance lapsed' }),
+      expect(requests.find((r) => r.path.endsWith('/status'))?.body).toEqual({
+        to: 'suspended',
+        reason: 'Insurance lapsed',
+      }),
     );
   });
 
   it('paperwork says what is missing, and a rejection needs a reason', async () => {
     await renderApp('/roster', {
       routes: {
-        'GET /organizations/:id/drivers': () => ({ body: [driver({ status: 'pendingApproval', occupiesSeat: false })] }),
+        'GET /organizations/:id/drivers': () => ({
+          body: [driver({ status: 'pendingApproval', occupiesSeat: false })],
+        }),
         'GET /organizations/:id/drivers/:d/documents': () => ({
           body: {
             compliant: false,
@@ -390,17 +530,31 @@ describe('the roster', () => {
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Paperwork' }));
     const sheet = await screen.findByRole('dialog', { name: 'Marcus T. — paperwork' });
-    expect(await within(sheet).findByText(/still missing: Vehicle insurance/)).toBeTruthy();
-    expect((within(sheet).getByRole('button', { name: 'Reject' }) as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(within(sheet).getByLabelText('Reason, if rejecting'), { target: { value: 'Blurred' } });
-    expect((within(sheet).getByRole('button', { name: 'Reject' }) as HTMLButtonElement).disabled).toBe(false);
+    expect(
+      await within(sheet).findByText(/still missing: Vehicle insurance/),
+    ).toBeTruthy();
+    expect(
+      (within(sheet).getByRole('button', { name: 'Reject' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    fireEvent.change(within(sheet).getByLabelText('Reason, if rejecting'), {
+      target: { value: 'Blurred' },
+    });
+    expect(
+      (within(sheet).getByRole('button', { name: 'Reject' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
   });
 });
 
 describe('billing', () => {
   it('an operator with no plan is told what happens instead, and offered the ladder', async () => {
     await renderApp('/billing', {
-      routes: { 'GET /organizations/:id/billing': () => ({ body: account({ subscription: null }) }) },
+      routes: {
+        'GET /organizations/:id/billing': () => ({
+          body: account({ subscription: null }),
+        }),
+      },
     });
     expect(await screen.findByText(/takes a margin on each fare instead/)).toBeTruthy();
     expect(await screen.findByText('Up to 25 drivers: $15.00 each')).toBeTruthy();
@@ -410,7 +564,11 @@ describe('billing', () => {
 
   it('a subscription with no card behind it says so', async () => {
     await renderApp('/billing', {
-      routes: { 'GET /organizations/:id/billing': () => ({ body: account({ paymentMethod: null }) }) },
+      routes: {
+        'GET /organizations/:id/billing': () => ({
+          body: account({ paymentMethod: null }),
+        }),
+      },
     });
     expect(await screen.findByText(/will bill a card that is not there/)).toBeTruthy();
   });
@@ -424,23 +582,37 @@ describe('billing', () => {
   it('a failed payment says the console is still working', async () => {
     await renderApp('/billing', {
       routes: {
-        'GET /organizations/:id/billing': () => ({ body: account({ subscription: subscription({ status: 'pastDue' }) }) }),
+        'GET /organizations/:id/billing': () => ({
+          body: account({ subscription: subscription({ status: 'pastDue' }) }),
+        }),
       },
     });
-    expect(await screen.findByText(/keeps working for the plan’s grace window/)).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Subscription: Payment failed' })).toBeTruthy();
+    expect(
+      await screen.findByText(/keeps working for the plan’s grace window/),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('img', { name: 'Subscription: Payment failed' }),
+    ).toBeTruthy();
   });
 
   it('switching interval explains that money moves today, and waits for a yes', async () => {
     const { requests } = await renderApp('/billing', {
-      routes: { 'POST /organizations/:id/billing/change-interval': () => ({ body: account() }) },
+      routes: {
+        'POST /organizations/:id/billing/change-interval': () => ({ body: account() }),
+      },
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Switch to yearly' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Switch to yearly billing' });
-    expect(within(dialog).getByText(/credited and a fresh period starts today/)).toBeTruthy();
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Switch to yearly billing',
+    });
+    expect(
+      within(dialog).getByText(/credited and a fresh period starts today/),
+    ).toBeTruthy();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Switch' }));
     await waitFor(() =>
-      expect(requests.find((r) => r.path.endsWith('/change-interval'))?.body).toEqual({ interval: 'annual' }),
+      expect(requests.find((r) => r.path.endsWith('/change-interval'))?.body).toEqual({
+        interval: 'annual',
+      }),
     );
   });
 
@@ -448,11 +620,22 @@ describe('billing', () => {
     await renderApp('/billing', {
       routes: {
         'GET /organizations/:id/billing/invoices': () => ({
-          body: [invoice({ status: 'open', attemptCount: 2, paidAt: null, nextAttemptAt: null })],
+          body: [
+            invoice({
+              status: 'open',
+              attemptCount: 2,
+              paidAt: null,
+              nextAttemptAt: null,
+            }),
+          ],
         }),
       },
     });
-    expect(await screen.findByText(/Payment failed 2 time\(s\)\. No further attempt is scheduled\./)).toBeTruthy();
+    expect(
+      await screen.findByText(
+        /Payment failed 2 time\(s\)\. No further attempt is scheduled\./,
+      ),
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Pay now' })).toBeTruthy();
   });
 
@@ -466,7 +649,9 @@ describe('billing', () => {
 });
 
 describe('administration', () => {
-  const admin = { 'GET /admin/stats': () => ({ body: stats({ staleTrackingNow: 2 }) }) };
+  const admin = {
+    'GET /admin/stats': () => ({ body: stats({ staleTrackingNow: 2 }) }),
+  };
 
   it('is a door only for an account the server answered a platform read for', async () => {
     await renderApp('/queue');
@@ -475,21 +660,33 @@ describe('administration', () => {
     cleanup();
     await renderApp('/queue', { routes: admin });
     fireEvent.click(await screen.findByRole('button', { name: 'Administration' }));
-    expect(await screen.findByRole('heading', { name: 'CareBridge administration' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { name: 'CareBridge administration' }),
+    ).toBeTruthy();
   });
 
   it('a stale trip is presented as a telephone call', async () => {
     await renderApp('/admin', { routes: admin });
-    expect(await screen.findByText('2 trip(s) in flight have not reported a position recently')).toBeTruthy();
+    expect(
+      await screen.findByText(
+        '2 trip(s) in flight have not reported a position recently',
+      ),
+    ).toBeTruthy();
     expect(screen.getByText(/Telephone the driver/)).toBeTruthy();
   });
 
   it('a week where nothing finished is not reported as 0%', async () => {
     await renderApp('/admin', {
-      routes: { 'GET /admin/stats': () => ({ body: stats({ ridesCompletedLast7Days: 0 }) }) },
+      routes: {
+        'GET /admin/stats': () => ({ body: stats({ ridesCompletedLast7Days: 0 }) }),
+      },
     });
-    expect(await screen.findByText('Nothing is waiting on a person right now.')).toBeTruthy();
-    expect(screen.getByText('No trips have reached an end state in the last seven days.')).toBeTruthy();
+    expect(
+      await screen.findByText('Nothing is waiting on a person right now.'),
+    ).toBeTruthy();
+    expect(
+      screen.getByText('No trips have reached an end state in the last seven days.'),
+    ).toBeTruthy();
   });
 
   it('the audit log pages by cursor and shows names, never values', async () => {
@@ -497,7 +694,12 @@ describe('administration', () => {
       routes: {
         'GET /admin/audit': (r) =>
           r.path.includes('cursor=')
-            ? { body: { entries: [auditEntry({ id: 'a2', action: 'ride.assigned' })], nextCursor: null } }
+            ? {
+                body: {
+                  entries: [auditEntry({ id: 'a2', action: 'ride.assigned' })],
+                  nextCursor: null,
+                },
+              }
             : { body: { entries: [auditEntry()], nextCursor: 'c1' } },
       },
     });
@@ -510,7 +712,9 @@ describe('administration', () => {
 
     fireEvent.change(screen.getByLabelText('Action'), { target: { value: 'driver.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
-    await waitFor(() => expect(requests.map((r) => r.path)).toContain('/admin/audit?action=driver.'));
+    await waitFor(() =>
+      expect(requests.map((r) => r.path)).toContain('/admin/audit?action=driver.'),
+    );
   });
 
   it('narrowing a flag asks first, and says so on the wire only when it asked', async () => {
@@ -522,11 +726,15 @@ describe('administration', () => {
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Edit marketplace' }));
     const dialog = await screen.findByRole('dialog', { name: 'marketplace' });
-    fireEvent.change(within(dialog).getByLabelText('Rollout: 50%'), { target: { value: '10' } });
+    fireEvent.change(within(dialog).getByLabelText('Rollout: 50%'), {
+      target: { value: '10' },
+    });
     expect(within(dialog).getByText(/You will be asked to confirm/)).toBeTruthy();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
 
-    const confirm = await screen.findByRole('dialog', { name: 'This takes the feature away' });
+    const confirm = await screen.findByRole('dialog', {
+      name: 'This takes the feature away',
+    });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Take it away' }));
     await waitFor(() =>
       expect(requests.find((r) => r.method === 'PUT')?.body).toEqual({
@@ -541,25 +749,41 @@ describe('administration', () => {
   it('a refund cannot exceed what is left, and carries the payment it was looking at', async () => {
     const { requests } = await renderApp('/admin/refunds', {
       routes: {
-        'GET /admin/invoices/:id/refunds': () => ({ body: refundable({ refundableCents: 5000 }) }),
-        'POST /admin/invoices/:id/refunds': () => ({ body: refundable({ refundableCents: 2550 }) }),
+        'GET /admin/invoices/:id/refunds': () => ({
+          body: refundable({ refundableCents: 5000 }),
+        }),
+        'POST /admin/invoices/:id/refunds': () => ({
+          body: refundable({ refundableCents: 2550 }),
+        }),
       },
     });
-    fireEvent.change(screen.getByLabelText('Invoice id'), { target: { value: 'inv-1' } });
+    fireEvent.change(screen.getByLabelText('Invoice id'), {
+      target: { value: 'inv-1' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Look up' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Refund' }));
 
-    const dialog = await screen.findByRole('dialog', { name: 'Refund invoice CB-0001' });
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Refund invoice CB-0001',
+    });
     const amount = within(dialog).getByLabelText('Amount') as HTMLInputElement;
     expect(amount.value).toBe('50.00');
     fireEvent.change(amount, { target: { value: '60' } });
-    fireEvent.change(within(dialog).getByLabelText('Why'), { target: { value: 'Charged twice' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Send the money back' }));
-    expect(await within(dialog).findByText('Only $50.00 is left on this payment.')).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText('Why'), {
+      target: { value: 'Charged twice' },
+    });
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Send the money back' }),
+    );
+    expect(
+      await within(dialog).findByText('Only $50.00 is left on this payment.'),
+    ).toBeTruthy();
     expect(requests.some((r) => r.method === 'POST')).toBe(false);
 
     fireEvent.change(amount, { target: { value: '24.50' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Send the money back' }));
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Send the money back' }),
+    );
     await waitFor(() =>
       expect(requests.find((r) => r.method === 'POST')?.body).toEqual({
         paymentId: 'pay-1',
@@ -634,19 +858,27 @@ describe('messages', () => {
         'GET /conversations': () => ({
           body: [
             conversationWire({ unreadCount: 2 }),
-            conversationWire({ id: 'c-2', organizationId: 'org-other', unreadCount: 5 }),
+            conversationWire({
+              id: 'c-2',
+              organizationId: 'org-other',
+              unreadCount: 5,
+            }),
           ],
         }),
       },
     });
-    expect(await screen.findByRole('link', { name: 'Messages, 2 unread' })).toBeTruthy();
+    expect(
+      await screen.findByRole('link', { name: 'Messages, 2 unread' }),
+    ).toBeTruthy();
   });
 
   it('shows a thread with the trip it is about, and sends with a reusable client id', async () => {
     const { requests } = await renderApp('/messages/c-1', {
       routes: {
         'GET /conversations': () => ({ body: [conversationWire({ unreadCount: 1 })] }),
-        'GET /conversations/:id/messages': () => ({ body: { messages: [messageWire()], hasMore: false } }),
+        'GET /conversations/:id/messages': () => ({
+          body: { messages: [messageWire()], hasMore: false },
+        }),
         'POST /conversations/:id/read': () => ({ status: 204 }),
         'GET /calls/targets': () => ({ body: [] }),
         'POST /conversations/:id/messages': (r) => ({
@@ -665,13 +897,19 @@ describe('messages', () => {
 
     expect(await screen.findByText('She will wait inside.')).toBeTruthy();
     expect(screen.getByRole('note').textContent).toContain('Eleanor');
-    await waitFor(() => expect(requests.some((r) => r.path === '/conversations/c-1/read')).toBe(true));
+    await waitFor(() =>
+      expect(requests.some((r) => r.path === '/conversations/c-1/read')).toBe(true),
+    );
 
-    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Driver is ten minutes away' } });
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'Driver is ten minutes away' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(await screen.findByText('Driver is ten minutes away')).toBeTruthy();
-    const sent = requests.find((r) => r.method === 'POST' && r.path === '/conversations/c-1/messages')!;
+    const sent = requests.find(
+      (r) => r.method === 'POST' && r.path === '/conversations/c-1/messages',
+    )!;
     const { clientMessageId } = sent.body as { clientMessageId: string };
     // The retry key and the message's own id are one and the same.
     expect(sent.headers['idempotency-key']).toBe(clientMessageId);
@@ -682,18 +920,25 @@ describe('messages', () => {
     const { requests } = await renderApp('/messages/c-1', {
       routes: {
         'GET /conversations': () => ({ body: [conversationWire()] }),
-        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+        'GET /conversations/:id/messages': () => ({
+          body: { messages: [], hasMore: false },
+        }),
         'GET /calls/targets': () => ({ body: [] }),
         'POST /conversations/:id/messages': (r) => {
           attempts += 1;
           return attempts === 1
             ? { status: 500, body: { error: { code: 'internal', message: 'boom' } } }
-            : { status: 201, body: messageWire({ id: 'm-9', mine: true, ...(r.body as object) }) };
+            : {
+                status: 201,
+                body: messageWire({ id: 'm-9', mine: true, ...(r.body as object) }),
+              };
         },
       },
     });
 
-    fireEvent.change(await screen.findByLabelText('Message'), { target: { value: 'Hello' } });
+    fireEvent.change(await screen.findByLabelText('Message'), {
+      target: { value: 'Hello' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     fireEvent.click(await screen.findByRole('button', { name: /Not sent — retry/ }));
 
@@ -728,7 +973,9 @@ describe('messages', () => {
       });
     });
 
-    expect(await screen.findByRole('link', { name: 'Messages, 1 unread' })).toBeTruthy();
+    expect(
+      await screen.findByRole('link', { name: 'Messages, 1 unread' }),
+    ).toBeTruthy();
   });
 
   it('opens the family thread for a queued trip', async () => {
@@ -737,26 +984,45 @@ describe('messages', () => {
         'GET /organizations/:id/dispatch/queue': () => ({
           body: queue([queueItem({ candidates: [candidate()] })]),
         }),
-        'POST /conversations': () => ({ body: conversationWire({ lastMessageAt: null }) }),
-        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+        'POST /conversations': () => ({
+          body: conversationWire({ lastMessageAt: null }),
+        }),
+        'GET /conversations/:id/messages': () => ({
+          body: { messages: [], hasMore: false },
+        }),
         'GET /calls/targets': () => ({ body: [] }),
       },
     });
 
-    fireEvent.click(await screen.findByRole('button', { name: /Message .*family about this trip/ }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Message .*family about this trip/ }),
+    );
     expect(await screen.findByText('No messages yet. Say hello.')).toBeTruthy();
-    const opened = requests.find((r) => r.method === 'POST' && r.path === '/conversations');
-    expect(opened?.body).toMatchObject({ kind: 'dispatchFamily', organizationId: 'org-1' });
+    const opened = requests.find(
+      (r) => r.method === 'POST' && r.path === '/conversations',
+    );
+    expect(opened?.body).toMatchObject({
+      kind: 'dispatchFamily',
+      organizationId: 'org-1',
+    });
   });
 
   it('places a relay call and shows its progress', async () => {
     const { requests, messaging } = await renderApp('/messages/c-1', {
       routes: {
         'GET /conversations': () => ({ body: [conversationWire()] }),
-        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+        'GET /conversations/:id/messages': () => ({
+          body: { messages: [], hasMore: false },
+        }),
         'GET /calls/targets': () => ({
           body: [
-            { kind: 'patient', id: 'p-1', label: 'Eleanor (patient)', available: true, unavailableReason: null },
+            {
+              kind: 'patient',
+              id: 'p-1',
+              label: 'Eleanor (patient)',
+              available: true,
+              unavailableReason: null,
+            },
             {
               kind: 'familyMember',
               id: 'u-1',
@@ -784,7 +1050,11 @@ describe('messages', () => {
       },
     });
 
-    expect((await screen.findByRole('button', { name: 'Call Sarah (daughter)' })).hasAttribute('disabled')).toBe(true);
+    expect(
+      (
+        await screen.findByRole('button', { name: 'Call Sarah (daughter)' })
+      ).hasAttribute('disabled'),
+    ).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Call Eleanor (patient)' }));
     expect(await screen.findByText(/Your phone is ringing/)).toBeTruthy();
     expect(requests.find((r) => r.path === '/calls')?.body).toEqual({
@@ -818,10 +1088,17 @@ describe('messages', () => {
     act(() => {
       messaging.socket.push({
         type: 'incoming',
-        incoming: { callId: 'call-2', fromLabel: 'Marcus T.', conversationId: null, rideId: null },
+        incoming: {
+          callId: 'call-2',
+          fromLabel: 'Marcus T.',
+          conversationId: null,
+          rideId: null,
+        },
       });
     });
-    expect((await screen.findByRole('alert')).textContent).toContain('Marcus T. is calling your phone now');
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Marcus T. is calling your phone now',
+    );
   });
 });
 
@@ -860,9 +1137,15 @@ describe('the live map', () => {
   it('lets an admin place a radius on the map and save it', async () => {
     const { requests } = await renderApp('/map', {
       routes: {
-        'GET /organizations/:id/dispatch/live': () => ({ body: liveBoard({ rides: [] }) }),
+        'GET /organizations/:id/dispatch/live': () => ({
+          body: liveBoard({ rides: [] }),
+        }),
         'PUT /organizations/:id/service-area': (request) => ({
-          body: { organizationId: 'org-1', serviceArea: { ...(request.body as object), points: null }, updatedAt: null },
+          body: {
+            organizationId: 'org-1',
+            serviceArea: { ...(request.body as object), points: null },
+            updatedAt: null,
+          },
         }),
       },
     });
@@ -870,10 +1153,14 @@ describe('the live map', () => {
     expect(await screen.findByText(/Not set/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Set area' }));
     // Nothing to save until a centre is chosen.
-    expect((screen.getByRole('button', { name: 'Save area' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (screen.getByRole('button', { name: 'Save area' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
 
     fireEvent.click(screen.getByRole('button', { name: 'Click the map' }));
-    fireEvent.change(screen.getByLabelText('Radius (miles)'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Radius (miles)'), {
+      target: { value: '12' },
+    });
     expect(screen.getByText('area: radius')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Save area' }));
 
@@ -890,7 +1177,9 @@ describe('the live map', () => {
     await renderApp('/map', {
       routes: {
         'GET /organizations': () => ({ body: [organization({ role: 'dispatcher' })] }),
-        'GET /organizations/:id/dispatch/live': () => ({ body: liveBoard({ rides: [] }) }),
+        'GET /organizations/:id/dispatch/live': () => ({
+          body: liveBoard({ rides: [] }),
+        }),
       },
     });
     expect(await screen.findByText('Owners and admins can change it.')).toBeTruthy();
@@ -910,6 +1199,8 @@ describe('the live map', () => {
       },
     });
     await screen.findAllByText('Margaret H.');
-    expect(screen.getAllByLabelText('Pickup is outside your service area')).toHaveLength(1);
+    expect(
+      screen.getAllByLabelText('Pickup is outside your service area'),
+    ).toHaveLength(1);
   });
 });

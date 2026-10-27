@@ -35,7 +35,11 @@ export class DriverApi extends ApiTransport {
 
   // ─── session ──────────────────────────────────────────────────────────────
 
-  async signIn(input: { email: string; password: string; mfaCode?: string }): Promise<void> {
+  async signIn(input: {
+    email: string;
+    password: string;
+    mfaCode?: string;
+  }): Promise<void> {
     const json = await this.send<{ accessToken?: unknown; refreshToken?: unknown }>(
       'POST',
       '/auth/login',
@@ -60,7 +64,9 @@ export class DriverApi extends ApiTransport {
     const stored = this.tokens.read();
     try {
       if (stored) {
-        await this.send('POST', '/auth/logout', { body: { refreshToken: stored.refreshToken } });
+        await this.send('POST', '/auth/logout', {
+          body: { refreshToken: stored.refreshToken },
+        });
       }
     } catch {
       // Already going; the local half below is the part that matters.
@@ -81,7 +87,9 @@ export class DriverApi extends ApiTransport {
 
   async setShift(onShift: boolean): Promise<DriverProfile> {
     return profileFromWire(
-      await this.send<S['DriverProfileDto']>('PUT', '/driver/shift', { body: { onShift } }),
+      await this.send<S['DriverProfileDto']>('PUT', '/driver/shift', {
+        body: { onShift },
+      }),
     );
   }
 
@@ -99,10 +107,14 @@ export class DriverApi extends ApiTransport {
    */
   async advance(rideId: string, to: RideStatus): Promise<Job | null> {
     return jobFromWire(
-      await this.send<S['DriverRideDto']>('POST', `/driver/rides/${encodeURIComponent(rideId)}/advance`, {
-        body: { to },
-        idempotencyKey: newId(),
-      }),
+      await this.send<S['DriverRideDto']>(
+        'POST',
+        `/driver/rides/${encodeURIComponent(rideId)}/advance`,
+        {
+          body: { to },
+          idempotencyKey: newId(),
+        },
+      ),
     );
   }
 
@@ -154,7 +166,9 @@ export class DriverApi extends ApiTransport {
 
   /** The server checks storage rather than believing this client. */
   confirmUpload(documentId: string): Promise<DriverDocuments> {
-    return this.send<DriverDocuments>('POST', '/driver/documents/confirm', { body: { documentId } });
+    return this.send<DriverDocuments>('POST', '/driver/documents/confirm', {
+      body: { documentId },
+    });
   }
 
   // ─── position ─────────────────────────────────────────────────────────────
@@ -164,8 +178,12 @@ export class DriverApi extends ApiTransport {
    * a repeated batch a no-op through a unique `(rideId, capturedAt)`.
    */
   flush(rideId: string, fixes: readonly Fix[]): Promise<FlushResult> {
-    return this.send<FlushResult>('POST', `/driver/rides/${encodeURIComponent(rideId)}/locations`, {
-      body: { points: fixes.map(fixToJson) },
-    });
+    return this.send<FlushResult>(
+      'POST',
+      `/driver/rides/${encodeURIComponent(rideId)}/locations`,
+      {
+        body: { points: fixes.map(fixToJson) },
+      },
+    );
   }
 }

@@ -23,7 +23,9 @@ describe('sending positions from a phone with a wrong clock', () => {
     vi.setSystemTime(new Date('2026-10-26T10:26:00.000Z'));
     observeServerDate('Mon, 26 Oct 2026 09:26:00 GMT', Date.now() - 100, Date.now());
 
-    const sent = new Date(fixToJson(fix(new Date('2026-10-26T10:25:55.000Z'))).capturedAt).getTime();
+    const sent = new Date(
+      fixToJson(fix(new Date('2026-10-26T10:25:55.000Z'))).capturedAt,
+    ).getTime();
     const expected = new Date('2026-10-26T09:25:55.000Z').getTime();
     expect(Math.abs(sent - expected)).toBeLessThan(1_000);
   });

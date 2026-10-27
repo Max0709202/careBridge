@@ -2,8 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import { jobFromWire } from '../src/api/codec';
 import { LocationQueue } from '../src/data/locationQueue';
-import { driverMovesFrom, driverTransitions, sharesLocation } from '../src/domain/driverAuthority';
-import { batteryPressure, Cadence, cadenceFor, staleAfterMs } from '../src/domain/locationCadence';
+import {
+  driverMovesFrom,
+  driverTransitions,
+  sharesLocation,
+} from '../src/domain/driverAuthority';
+import {
+  batteryPressure,
+  Cadence,
+  cadenceFor,
+  staleAfterMs,
+} from '../src/domain/locationCadence';
 import { fixToJson, offersNoShow, primaryMove, type Fix } from '../src/domain/models';
 import { actionLabel, driverLabel, rideStatuses } from '../src/domain/rideStatus';
 import { ride } from './support/fixtures';
@@ -32,14 +41,20 @@ describe('what the driver may do', () => {
   });
 
   it('offers nothing once the ride is over', () => {
-    for (const status of ['completed', 'canceled', 'noShow', 'reassignmentRequired'] as const) {
+    for (const status of [
+      'completed',
+      'canceled',
+      'noShow',
+      'reassignmentRequired',
+    ] as const) {
       expect(driverMovesFrom(status)).toEqual([]);
     }
   });
 
   it('only ever offers moves the shared list names', () => {
     for (const status of rideStatuses) {
-      for (const move of driverMovesFrom(status)) expect(driverTransitions).toContain(move);
+      for (const move of driverMovesFrom(status))
+        expect(driverTransitions).toContain(move);
     }
   });
 });
@@ -73,23 +88,38 @@ describe('cadence', () => {
 
   it('samples fastest on the approach, and slows for a car that is not moving', () => {
     expect(cadenceFor({ status: 'driverEnRoute' })).toBe(Cadence.approaching);
-    expect(cadenceFor({ status: 'driverEnRoute', speedMetersPerSecond: 0.2 })).toBe(Cadence.stopped);
-    expect(cadenceFor({ status: 'inProgress', speedMetersPerSecond: 12 })).toBe(Cadence.driving);
+    expect(cadenceFor({ status: 'driverEnRoute', speedMetersPerSecond: 0.2 })).toBe(
+      Cadence.stopped,
+    );
+    expect(cadenceFor({ status: 'inProgress', speedMetersPerSecond: 12 })).toBe(
+      Cadence.driving,
+    );
   });
 
   it('idles at the kerb even when the fix reads as moving', () => {
-    expect(cadenceFor({ status: 'driverArrived', speedMetersPerSecond: 3 })).toBe(Cadence.stopped);
+    expect(cadenceFor({ status: 'driverArrived', speedMetersPerSecond: 3 })).toBe(
+      Cadence.stopped,
+    );
   });
 
   it('keeps every ordinary cadence inside the stale bound', () => {
-    for (const ms of [Cadence.approaching, Cadence.driving, Cadence.stopped, Cadence.lowBattery]) {
+    for (const ms of [
+      Cadence.approaching,
+      Cadence.driving,
+      Cadence.stopped,
+      Cadence.lowBattery,
+    ]) {
       expect(ms).toBeLessThan(staleAfterMs);
     }
   });
 
   it('backs off on battery, and lets charging outrank the percentage', () => {
-    expect(cadenceFor({ status: 'driverEnRoute', battery: 'low' })).toBe(Cadence.lowBattery);
-    expect(cadenceFor({ status: 'driverEnRoute', battery: 'critical' })).toBe(Cadence.criticalBattery);
+    expect(cadenceFor({ status: 'driverEnRoute', battery: 'low' })).toBe(
+      Cadence.lowBattery,
+    );
+    expect(cadenceFor({ status: 'driverEnRoute', battery: 'critical' })).toBe(
+      Cadence.criticalBattery,
+    );
     expect(batteryPressure(4, true)).toBe('none');
     expect(batteryPressure(null, false)).toBe('none');
     expect(batteryPressure(5, false)).toBe('critical');
@@ -130,12 +160,9 @@ describe('the queue', () => {
   });
 
   it('sends the position and nothing it could be second-guessed by', () => {
-    expect(Object.keys(fixToJson({ ...fix(), speedMetersPerSecond: 9 })).sort()).toEqual([
-      'accuracyMeters',
-      'capturedAt',
-      'latitude',
-      'longitude',
-    ]);
+    expect(
+      Object.keys(fixToJson({ ...fix(), speedMetersPerSecond: 9 })).sort(),
+    ).toEqual(['accuracyMeters', 'capturedAt', 'latitude', 'longitude']);
   });
 });
 
@@ -149,7 +176,9 @@ describe('reading a ride off the wire', () => {
   });
 
   it('drops a transition this build has never heard of', () => {
-    const job = jobFromWire(ride({ availableTransitions: ['passengerOnboard', 'teleport'] }))!;
+    const job = jobFromWire(
+      ride({ availableTransitions: ['passengerOnboard', 'teleport'] }),
+    )!;
     expect(job.availableTransitions).toEqual(['passengerOnboard']);
   });
 

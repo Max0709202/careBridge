@@ -27,13 +27,17 @@ import { keys } from '../state/opsStore';
  */
 export function SeatsScreen() {
   const organizationId = useOperatorId();
-  const seats = useResource(keys.seats(organizationId), (api) => api.seats(organizationId));
+  const seats = useResource(keys.seats(organizationId), (api) =>
+    api.seats(organizationId),
+  );
 
   let body;
   if (seats.value) {
     body = (
       <>
-        {seats.error ? <StaleBanner error={seats.error} onRetry={seats.reload} /> : null}
+        {seats.error ? (
+          <StaleBanner error={seats.error} onRetry={seats.reload} />
+        ) : null}
         <SeatsBody summary={seats.value} />
       </>
     );
@@ -61,7 +65,10 @@ function SeatsBody({ summary }: { summary: SeatSummary }) {
           <KeyValue label="Drivers on the road" value={summary.activeDrivers} />
           <KeyValue label="Billed at last renewal" value={summary.billedSeats} />
           {summary.renewalTotalCents !== null && (
-            <KeyValue label="Next renewal" value={formatCents(summary.renewalTotalCents)} />
+            <KeyValue
+              label="Next renewal"
+              value={formatCents(summary.renewalTotalCents)}
+            />
           )}
         </div>
         {/*
@@ -91,7 +98,11 @@ function SeatsBody({ summary }: { summary: SeatSummary }) {
               <Card>
                 <div className="row">
                   {isGrant(entry) ? (
-                    <UserPlus size={18} className="ink-positive" aria-label="Seat granted" />
+                    <UserPlus
+                      size={18}
+                      className="ink-positive"
+                      aria-label="Seat granted"
+                    />
                   ) : (
                     <UserMinus size={18} className="muted" aria-label="Seat released" />
                   )}
@@ -102,7 +113,9 @@ function SeatsBody({ summary }: { summary: SeatSummary }) {
                     </div>
                   </div>
                   {/* Zero on a release is the rule, not a gap: a released seat is not refunded. */}
-                  <span>{entry.prorationCents > 0 ? formatCents(entry.prorationCents) : '—'}</span>
+                  <span>
+                    {entry.prorationCents > 0 ? formatCents(entry.prorationCents) : '—'}
+                  </span>
                 </div>
               </Card>
             </li>

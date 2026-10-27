@@ -57,7 +57,12 @@ export interface MessagingState {
 /** A slow safety net under the socket. */
 const INBOX_POLL_MS = 60_000;
 
-const EMPTY_THREAD: ThreadState = Object.freeze({ messages: [], hasMore: false, loading: false, error: null });
+const EMPTY_THREAD: ThreadState = Object.freeze({
+  messages: [],
+  hasMore: false,
+  loading: false,
+  error: null,
+});
 
 export class MessagingStore {
   private state: MessagingState = {
@@ -119,7 +124,14 @@ export class MessagingStore {
     if (this.poll) clearInterval(this.poll);
     document.removeEventListener('visibilitychange', this.onVisible);
     this.active = null;
-    this.set({ inbox: null, inboxError: null, threads: {}, calls: {}, incoming: null, connected: false });
+    this.set({
+      inbox: null,
+      inboxError: null,
+      threads: {},
+      calls: {},
+      incoming: null,
+      connected: false,
+    });
   }
 
   private onVisible = (): void => {
@@ -135,7 +147,9 @@ export class MessagingStore {
       const inbox = await this.client.inbox();
       // A thread opened but not yet written in is not in the server's inbox;
       // keep it so the screen showing it does not lose its header.
-      const kept = (this.state.inbox ?? []).filter((c) => c.lastMessageAt === null && !inbox.some((i) => i.id === c.id));
+      const kept = (this.state.inbox ?? []).filter(
+        (c) => c.lastMessageAt === null && !inbox.some((i) => i.id === c.id),
+      );
       this.set({ inbox: sortInbox([...inbox, ...kept]), inboxError: null });
     } catch (error) {
       this.set({ inboxError: error });
@@ -177,10 +191,20 @@ export class MessagingStore {
     this.patchThread(conversationId, { loading: true });
     try {
       const page = await this.client.messages(conversationId);
-      const pending = this.thread(conversationId).messages.filter((m) => m.delivery !== 'sent');
-      let messages: ChatMessage[] = page.messages.map((m) => ({ ...m, delivery: 'sent' }));
+      const pending = this.thread(conversationId).messages.filter(
+        (m) => m.delivery !== 'sent',
+      );
+      let messages: ChatMessage[] = page.messages.map((m) => ({
+        ...m,
+        delivery: 'sent',
+      }));
       for (const p of pending) messages = mergeMessage(messages, p);
-      this.patchThread(conversationId, { messages, hasMore: page.hasMore, loading: false, error: null });
+      this.patchThread(conversationId, {
+        messages,
+        hasMore: page.hasMore,
+        loading: false,
+        error: null,
+      });
     } catch (error) {
       this.patchThread(conversationId, { loading: false, error });
     }
@@ -194,8 +218,13 @@ export class MessagingStore {
     try {
       const page = await this.client.messages(conversationId, oldest.createdAt);
       let messages = this.thread(conversationId).messages;
-      for (const m of page.messages) messages = mergeMessage(messages, { ...m, delivery: 'sent' });
-      this.patchThread(conversationId, { messages, hasMore: page.hasMore, loading: false });
+      for (const m of page.messages)
+        messages = mergeMessage(messages, { ...m, delivery: 'sent' });
+      this.patchThread(conversationId, {
+        messages,
+        hasMore: page.hasMore,
+        loading: false,
+      });
     } catch (error) {
       this.patchThread(conversationId, { loading: false, error });
     }
@@ -244,7 +273,10 @@ export class MessagingStore {
 
   // ─── calls ────────────────────────────────────────────────────────────────
 
-  async call(context: CallContext, callee: { kind: CallPartyKind; id: string }): Promise<CallSession> {
+  async call(
+    context: CallContext,
+    callee: { kind: CallPartyKind; id: string },
+  ): Promise<CallSession> {
     const call = await this.client.startCall(context, callee);
     this.set({ calls: { ...this.state.calls, [call.id]: call } });
     return call;
@@ -253,9 +285,13 @@ export class MessagingStore {
   /** The most recent call placed from a thread or ride, for its call bar. */
   callFor(context: CallContext): CallSession | null {
     const matches = Object.values(this.state.calls).filter((c) =>
-      'conversationId' in context ? c.conversationId === context.conversationId : c.rideId === context.rideId,
+      'conversationId' in context
+        ? c.conversationId === context.conversationId
+        : c.rideId === context.rideId,
     );
-    return matches.sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())[0] ?? null;
+    return (
+      matches.sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())[0] ?? null
+    );
   }
 
   liveCalls(): CallSession[] {
@@ -289,7 +325,8 @@ export class MessagingStore {
 
       case 'call':
         this.set({ calls: { ...this.state.calls, [event.call.id]: event.call } });
-        if (this.state.incoming?.callId === event.call.id && !isLiveCall(event.call)) this.dismissIncoming();
+        if (this.state.incoming?.callId === event.call.id && !isLiveCall(event.call))
+          this.dismissIncoming();
         return;
 
       case 'incoming':
@@ -312,12 +349,16 @@ export class MessagingStore {
       // A thread this screen has not seen yet: somebody started it just now.
       void this.loadInbox();
     } else {
-      const watching = this.active === conversationId && document.visibilityState === 'visible';
+      const watching =
+        this.active === conversationId && document.visibilityState === 'visible';
       this.upsert({
         ...conversation,
         lastMessage: message,
         lastMessageAt: message.createdAt,
-        unreadCount: message.mine || watching ? conversation.unreadCount : conversation.unreadCount + 1,
+        unreadCount:
+          message.mine || watching
+            ? conversation.unreadCount
+            : conversation.unreadCount + 1,
       });
     }
 
@@ -338,7 +379,11 @@ export class MessagingStore {
 
   private async deliver(conversationId: string, pending: ChatMessage): Promise<void> {
     try {
-      const stored = await this.client.send(conversationId, pending.body, pending.clientMessageId);
+      const stored = await this.client.send(
+        conversationId,
+        pending.body,
+        pending.clientMessageId,
+      );
       this.receive(conversationId, stored);
     } catch {
       this.addMessage(conversationId, { ...pending, delivery: 'failed' });
@@ -347,12 +392,17 @@ export class MessagingStore {
 
   private addMessage(conversationId: string, message: ChatMessage): void {
     const thread = this.thread(conversationId);
-    this.patchThread(conversationId, { messages: mergeMessage(thread.messages, message) });
+    this.patchThread(conversationId, {
+      messages: mergeMessage(thread.messages, message),
+    });
   }
 
   private patchThread(conversationId: string, patch: Partial<ThreadState>): void {
     this.set({
-      threads: { ...this.state.threads, [conversationId]: { ...this.thread(conversationId), ...patch } },
+      threads: {
+        ...this.state.threads,
+        [conversationId]: { ...this.thread(conversationId), ...patch },
+      },
     });
   }
 

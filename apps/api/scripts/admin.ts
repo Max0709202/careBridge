@@ -27,14 +27,18 @@ const PLATFORM_ROLES: PlatformRole[] = ['none', 'support', 'admin'];
 
 type Flags = Record<string, string>;
 
-const COMMANDS: Record<string, { usage: string; run: (flags: Flags) => Promise<void> }> = {
+const COMMANDS: Record<
+  string,
+  { usage: string; run: (flags: Flags) => Promise<void> }
+> = {
   'create-org': {
     usage:
       'create-org --name "Acme Transit" --slug acme-transit --contact-email ops@acme.com --owner dana@acme.com [--phone +1…] [--time-zone America/New_York]',
     run: createOrg,
   },
   'add-member': {
-    usage: 'add-member --org acme-transit --email sam@acme.com --role owner|admin|dispatcher|member',
+    usage:
+      'add-member --org acme-transit --email sam@acme.com --role owner|admin|dispatcher|member',
     run: addMember,
   },
   'revoke-member': {
@@ -53,7 +57,9 @@ async function createOrg(flags: Flags): Promise<void> {
   const name = required(flags, 'name');
   const slug = required(flags, 'slug').toLowerCase();
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-    fail('--slug must be lower-case letters, digits and single hyphens, e.g. acme-transit');
+    fail(
+      '--slug must be lower-case letters, digits and single hyphens, e.g. acme-transit',
+    );
   }
   const contactEmail = required(flags, 'contact-email').toLowerCase();
   const owner = await verifiedAccount(required(flags, 'owner'));
@@ -81,15 +87,29 @@ async function createOrg(flags: Flags): Promise<void> {
     });
     await tx.auditLog.createMany({
       data: [
-        { action: 'admin.organization_created', entityType: 'Organization', entityId: created.id, correlationId, changedFields: [] },
-        { action: 'admin.membership_granted', entityType: 'User', entityId: owner.id, correlationId, changedFields: ['role:owner', `organization:${created.id}`] },
+        {
+          action: 'admin.organization_created',
+          entityType: 'Organization',
+          entityId: created.id,
+          correlationId,
+          changedFields: [],
+        },
+        {
+          action: 'admin.membership_granted',
+          entityType: 'User',
+          entityId: owner.id,
+          correlationId,
+          changedFields: ['role:owner', `organization:${created.id}`],
+        },
       ],
     });
     return created;
   });
 
   console.log(`Created ${org.name} (${org.slug}), owned by ${owner.email}.`);
-  console.log('They can now sign in to the ops console, add vehicles and drivers, and dispatch.');
+  console.log(
+    'They can now sign in to the ops console, add vehicles and drivers, and dispatch.',
+  );
 }
 
 async function addMember(flags: Flags): Promise<void> {
@@ -125,7 +145,8 @@ async function revokeMember(flags: Flags): Promise<void> {
   const membership = await prisma.organizationMembership.findUnique({
     where: { userId_organizationId: { userId: user.id, organizationId: org.id } },
   });
-  if (!membership || membership.revokedAt) fail(`${email} is not a current member of ${org.name}.`);
+  if (!membership || membership.revokedAt)
+    fail(`${email} is not a current member of ${org.name}.`);
 
   await prisma.$transaction([
     // Revoked, not deleted: who could see the queue last month is an answer an
@@ -144,7 +165,9 @@ async function revokeMember(flags: Flags): Promise<void> {
       },
     }),
   ]);
-  console.log(`Revoked ${email} from ${org.name}. Their current console session ends at its next request.`);
+  console.log(
+    `Revoked ${email} from ${org.name}. Their current console session ends at its next request.`,
+  );
 }
 
 async function setPlatformRole(flags: Flags): Promise<void> {
@@ -173,9 +196,13 @@ async function setPlatformRole(flags: Flags): Promise<void> {
       },
     }),
   ]);
-  console.log(`${user.email} now has platform role "${role}". They need to sign in again.`);
+  console.log(
+    `${user.email} now has platform role "${role}". They need to sign in again.`,
+  );
   if (role !== 'none') {
-    console.log('Platform staff must turn on two-factor authentication (Settings → Security) before the admin screens open.');
+    console.log(
+      'Platform staff must turn on two-factor authentication (Settings → Security) before the admin screens open.',
+    );
   }
 }
 
@@ -183,7 +210,10 @@ async function listOrgs(): Promise<void> {
   const orgs = await prisma.organization.findMany({
     orderBy: { createdAt: 'asc' },
     include: {
-      memberships: { where: { revokedAt: null }, include: { user: { select: { email: true } } } },
+      memberships: {
+        where: { revokedAt: null },
+        include: { user: { select: { email: true } } },
+      },
       _count: { select: { drivers: true, vehicles: true } },
     },
   });
@@ -194,7 +224,8 @@ async function listOrgs(): Promise<void> {
   for (const org of orgs) {
     console.log(`${org.slug}  ${org.name}${org.archivedAt ? '  (archived)' : ''}`);
     console.log(`  ${org._count.vehicles} vehicle(s), ${org._count.drivers} driver(s)`);
-    for (const m of org.memberships) console.log(`  ${m.role.padEnd(10)} ${m.user.email}`);
+    for (const m of org.memberships)
+      console.log(`  ${m.role.padEnd(10)} ${m.user.email}`);
   }
 }
 
@@ -209,12 +240,17 @@ async function showAccount(flags: Flags): Promise<void> {
     },
   });
   console.log(`${detail.email}  ${detail.fullName}`);
-  console.log(`  email verified: ${detail.emailVerifiedAt ? detail.emailVerifiedAt.toISOString() : 'no'}`);
+  console.log(
+    `  email verified: ${detail.emailVerifiedAt ? detail.emailVerifiedAt.toISOString() : 'no'}`,
+  );
   console.log(`  two-factor:     ${detail.mfaEnrolment?.confirmedAt ? 'on' : 'off'}`);
   console.log(`  platform role:  ${detail.platformRole}`);
-  for (const m of detail.memberships) console.log(`  ${m.role} at ${m.organization.name} (${m.organization.slug})`);
+  for (const m of detail.memberships)
+    console.log(`  ${m.role} at ${m.organization.name} (${m.organization.slug})`);
   if (detail.driverProfile) {
-    console.log(`  driver at ${detail.driverProfile.organization.name}, status ${detail.driverProfile.status}`);
+    console.log(
+      `  driver at ${detail.driverProfile.organization.name}, status ${detail.driverProfile.status}`,
+    );
   }
 }
 
@@ -233,19 +269,28 @@ async function verifiedAccount(email: string) {
   // The same rule the API applies to every invitation and access grant: an
   // unproven address is not somebody we give standing to.
   if (!user.emailVerifiedAt) {
-    fail(`${user.email} has not verified their email address yet. Ask them to click the link we sent.`);
+    fail(
+      `${user.email} has not verified their email address yet. Ask them to click the link we sent.`,
+    );
   }
-  if (user.deletionRequestedAt) fail(`${user.email} has asked for their account to be deleted.`);
+  if (user.deletionRequestedAt)
+    fail(`${user.email} has asked for their account to be deleted.`);
   return user;
 }
 
 async function organization(slug: string) {
-  const org = await prisma.organization.findUnique({ where: { slug: slug.toLowerCase() } });
+  const org = await prisma.organization.findUnique({
+    where: { slug: slug.toLowerCase() },
+  });
   if (!org) fail(`No organization with slug "${slug}". See: list-orgs`);
   return org;
 }
 
-function oneOf<T extends string>(value: string, allowed: readonly T[], flag: string): T {
+function oneOf<T extends string>(
+  value: string,
+  allowed: readonly T[],
+  flag: string,
+): T {
   if (!(allowed as readonly string[]).includes(value)) {
     fail(`${flag} must be one of: ${allowed.join(', ')}`);
   }

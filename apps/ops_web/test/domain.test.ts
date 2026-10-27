@@ -82,17 +82,22 @@ describe('urgency', () => {
   });
 
   it('orders overdue first, matching the server', () => {
-    const sorted = [...DISPATCH_URGENCIES].sort((a, b) => urgencyOrder[a] - urgencyOrder[b]);
+    const sorted = [...DISPATCH_URGENCIES].sort(
+      (a, b) => urgencyOrder[a] - urgencyOrder[b],
+    );
     expect(sorted).toEqual(['overdue', 'imminent', 'soon', 'later']);
   });
 
   it('labels every band, because colour alone is not a label', () => {
-    for (const u of DISPATCH_URGENCIES) expect(urgencyLabel[u].length).toBeGreaterThan(0);
+    for (const u of DISPATCH_URGENCIES)
+      expect(urgencyLabel[u].length).toBeGreaterThan(0);
     expect(urgencyLabel.overdue).toBe('Overdue');
   });
 
   it('drops a queue item with an unknown band, so it cannot sort into the wrong place', () => {
-    const q = queueFromWire(queue([queueItem(), queueItem({ rideId: 'x', urgency: 'someday' as never })]));
+    const q = queueFromWire(
+      queue([queueItem(), queueItem({ rideId: 'x', urgency: 'someday' as never })]),
+    );
     expect(q.items.map((i) => i.rideId)).toEqual(['ride-1']);
   });
 });
@@ -108,7 +113,9 @@ describe('ineligibility', () => {
   });
 
   it('keeps a reason it does not recognise rather than dropping it', () => {
-    const c = candidateFromWire(candidate({ eligible: false, reasons: ['offShift', 'onHoliday'] }));
+    const c = candidateFromWire(
+      candidate({ eligible: false, reasons: ['offShift', 'onHoliday'] }),
+    );
     expect(c.reasons).toEqual(['offShift']);
     expect(reasonLabels(c)).toEqual(['Not on shift', 'onHoliday']);
   });
@@ -132,7 +139,10 @@ describe('driver status', () => {
   });
 
   it('insists on a reason for the two that end somebody earning', () => {
-    expect(DRIVER_STATUSES.filter(transitionNeedsReason)).toEqual(['suspended', 'offboarded']);
+    expect(DRIVER_STATUSES.filter(transitionNeedsReason)).toEqual([
+      'suspended',
+      'offboarded',
+    ]);
   });
 
   it('drops a driver whose status it does not know', () => {
@@ -148,7 +158,9 @@ describe('driver status', () => {
   });
 
   it('describes its vehicle the way a dispatcher would say it', () => {
-    expect(vehicleLabel(driverFromWire(driver())!.vehicle)).toBe('Silver Toyota Sienna');
+    expect(vehicleLabel(driverFromWire(driver())!.vehicle)).toBe(
+      'Silver Toyota Sienna',
+    );
   });
 });
 
@@ -157,7 +169,10 @@ describe('the queue', () => {
     const q = queueFromWire(
       queue([
         queueItem(),
-        queueItem({ rideId: 'r2', candidates: [candidate({ eligible: false, reasons: ['offShift'] })] }),
+        queueItem({
+          rideId: 'r2',
+          candidates: [candidate({ eligible: false, reasons: ['offShift'] })],
+        }),
         queueItem({ rideId: 'r3', candidates: [] }),
       ]),
     );
@@ -166,7 +181,12 @@ describe('the queue', () => {
   });
 
   it('counts the rides already past their pickup time', () => {
-    const q = queueFromWire(queue([queueItem({ urgency: 'overdue' }), queueItem({ rideId: 'r2', urgency: 'imminent' })]));
+    const q = queueFromWire(
+      queue([
+        queueItem({ urgency: 'overdue' }),
+        queueItem({ rideId: 'r2', urgency: 'imminent' }),
+      ]),
+    );
     expect(overdueCount(q)).toBe(1);
   });
 
@@ -226,19 +246,34 @@ describe('billing', () => {
   });
 
   it('a card is spent the moment its month is over', () => {
-    const card = { id: 'c', brand: 'Visa', last4: '4242', expMonth: 3, expYear: 2026, isDefault: true };
+    const card = {
+      id: 'c',
+      brand: 'Visa',
+      last4: '4242',
+      expMonth: 3,
+      expYear: 2026,
+      isDefault: true,
+    };
     expect(hasExpired(card, new Date(2026, 2, 31, 23, 59))).toBe(false);
     expect(hasExpired(card, new Date(2026, 3, 1))).toBe(true);
     expect(paymentMethodLabel(card)).toBe('Visa •••• 4242');
   });
 
   it('a plan with no card is called out before the renewal; no plan and no card is not a warning', () => {
-    expect(willBillWithoutACard(accountFromWire(account({ paymentMethod: null })))).toBe(true);
-    expect(willBillWithoutACard(accountFromWire(account({ paymentMethod: null, subscription: null })))).toBe(false);
+    expect(
+      willBillWithoutACard(accountFromWire(account({ paymentMethod: null }))),
+    ).toBe(true);
+    expect(
+      willBillWithoutACard(
+        accountFromWire(account({ paymentMethod: null, subscription: null })),
+      ),
+    ).toBe(false);
   });
 
   it('a subscription it cannot decode collapses to no plan', () => {
-    const a = accountFromWire(account({ subscription: subscription({ status: 'paused' as never }) }));
+    const a = accountFromWire(
+      account({ subscription: subscription({ status: 'paused' as never }) }),
+    );
     expect(a.subscription).toBeNull();
   });
 
@@ -255,8 +290,14 @@ describe('administration', () => {
   });
 
   it('a week in which nothing ended has no completion rate at all', () => {
-    expect(completionRate(statsFromWire(stats({ ridesCompletedLast7Days: 0 })))).toBeNull();
-    expect(completionRate(statsFromWire(stats({ ridesCompletedLast7Days: 3, ridesNoShowLast7Days: 1 })))).toBe(0.75);
+    expect(
+      completionRate(statsFromWire(stats({ ridesCompletedLast7Days: 0 }))),
+    ).toBeNull();
+    expect(
+      completionRate(
+        statsFromWire(stats({ ridesCompletedLast7Days: 3, ridesNoShowLast7Days: 1 })),
+      ),
+    ).toBe(0.75);
   });
 
   it('what was kept is what settled less what went back', () => {
@@ -276,17 +317,25 @@ describe('administration', () => {
     expect(takesAwayBy(flag, { enabled: true, percent: 80 })).toBe(false);
     expect(takesAwayBy(flag, { enabled: true, percent: 20 })).toBe(true);
     expect(takesAwayBy(flag, { enabled: false, percent: 50 })).toBe(true);
-    expect(takesAwayBy({ ...flag, enabled: false }, { enabled: false, percent: 0 })).toBe(false);
+    expect(
+      takesAwayBy({ ...flag, enabled: false }, { enabled: false, percent: 0 }),
+    ).toBe(false);
   });
 
   it('says what a flag does in a sentence', () => {
     expect(flagSummary({ ...flag, enabled: false })).toBe('Off for everybody');
     expect(flagSummary(flag)).toBe('On for 50% of subjects');
-    expect(flagSummary({ ...flag, rolloutPercent: 0 })).toBe('On, but rolled out to nobody');
+    expect(flagSummary({ ...flag, rolloutPercent: 0 })).toBe(
+      'On, but rolled out to nobody',
+    );
   });
 
   it('names the system when nobody did it', () => {
-    const system = { ...auditEntry(), actorUserId: null, actorName: null } as unknown as AuditEntry;
+    const system = {
+      ...auditEntry(),
+      actorUserId: null,
+      actorName: null,
+    } as unknown as AuditEntry;
     expect(actorLabel(system)).toBe('CareBridge');
   });
 
@@ -298,7 +347,9 @@ describe('administration', () => {
   it('what was refunded is the payment less what is left', () => {
     const r = refundableFromWire(refundable({ refundableCents: 7900 }));
     expect(refundedCents(r)).toBe(20000);
-    expect(isFullyRefunded(refundableFromWire(refundable({ refundableCents: 0 })))).toBe(true);
+    expect(
+      isFullyRefunded(refundableFromWire(refundable({ refundableCents: 0 }))),
+    ).toBe(true);
   });
 
   it('a pending refund is money that may still be moving; one with an unknown status is dropped', () => {

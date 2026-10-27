@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 
 import { useFeedback } from '../../components/feedback';
 import { Button, InfoCard, Page, TextField } from '../../components/ui';
-import { backgroundPushNote, useBackgroundPush, useMessagingStore } from '../../messaging/react';
+import {
+  backgroundPushNote,
+  useBackgroundPush,
+  useMessagingStore,
+} from '../../messaging/react';
 
 /**
  * The number this phone rings on for relay calls, and how this page gets your
@@ -54,7 +58,13 @@ export function CallSettingsScreen() {
             disabled={!loaded}
             onChange={(e) => setPhone(e.target.value)}
           />
-          <Button variant="outlined" className="mt-md" busy={saving} disabled={!loaded} onClick={() => void save()}>
+          <Button
+            variant="outlined"
+            className="mt-md"
+            busy={saving}
+            disabled={!loaded}
+            onClick={() => void save()}
+          >
             Save number
           </Button>
         </InfoCard>
@@ -74,7 +84,10 @@ export function CallSettingsScreen() {
             <input
               type="checkbox"
               checked={background.status === 'on'}
-              disabled={background.busy || (background.status !== 'on' && background.status !== 'off')}
+              disabled={
+                background.busy ||
+                (background.status !== 'on' && background.status !== 'off')
+              }
               onChange={(e) => void background.toggle(e.target.checked)}
             />
             <span>
@@ -92,7 +105,8 @@ export function CallSettingsScreen() {
                 disabled={notify}
                 onChange={() => void attention.requestNotifications().then(setNotify)}
               />
-              Notify me when this page is in the background — never who sent it or what it says
+              Notify me when this page is in the background — never who sent it or what
+              it says
             </label>
           )}
         </InfoCard>

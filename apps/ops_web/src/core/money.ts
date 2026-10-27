@@ -26,4 +26,5 @@ export function parseDollars(input: string): number | null {
 }
 
 /** "24.50" — the form the refund field is pre-filled with. */
-export const centsToInput = (cents: number) => `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, '0')}`;
+export const centsToInput = (cents: number) =>
+  `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, '0')}`;

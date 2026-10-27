@@ -48,13 +48,21 @@ describe('mergeMessage', () => {
   });
 
   it('keeps time order and drops duplicates', () => {
-    const early = message({ id: 'a', clientMessageId: 'a', createdAt: at('2026-10-01T08:00:00Z') });
-    const late = message({ id: 'b', clientMessageId: 'b', createdAt: at('2026-10-01T10:00:00Z') });
+    const early = message({
+      id: 'a',
+      clientMessageId: 'a',
+      createdAt: at('2026-10-01T08:00:00Z'),
+    });
+    const late = message({
+      id: 'b',
+      clientMessageId: 'b',
+      createdAt: at('2026-10-01T10:00:00Z'),
+    });
     expect(mergeMessage([late], early).map((m) => m.id)).toEqual(['a', 'b']);
     expect(mergeMessage([early, late], early)).toHaveLength(2);
   });
 
-  it('does not confuse my message with someone else\'s that happens to share a client id', () => {
+  it("does not confuse my message with someone else's that happens to share a client id", () => {
     const mine = message({ id: 'a', clientMessageId: 'x', mine: true });
     const theirs = message({ id: 'b', clientMessageId: 'x', mine: false });
     expect(mergeMessage([mine], theirs)).toHaveLength(2);
@@ -113,10 +121,18 @@ describe('the codec', () => {
 
 describe('inbox helpers', () => {
   const convo = (id: string, last: string | null, unread = 0) =>
-    ({ id, lastMessageAt: last ? at(last) : null, unreadCount: unread }) as Conversation;
+    ({
+      id,
+      lastMessageAt: last ? at(last) : null,
+      unreadCount: unread,
+    }) as Conversation;
 
   it('sorts by latest activity, empty threads last', () => {
-    const sorted = sortInbox([convo('a', null), convo('b', '2026-10-01T08:00:00Z'), convo('c', '2026-10-01T09:00:00Z')]);
+    const sorted = sortInbox([
+      convo('a', null),
+      convo('b', '2026-10-01T08:00:00Z'),
+      convo('c', '2026-10-01T09:00:00Z'),
+    ]);
     expect(sorted.map((c) => c.id)).toEqual(['c', 'b', 'a']);
   });
 

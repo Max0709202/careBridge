@@ -14,8 +14,22 @@ import { useNavigate } from 'react-router-dom';
 
 import { Failure } from '../api/failures';
 import { useRun } from '../components/useRun';
-import { Button, Centered, EmptyState, FailureBlock, IconButton, InfoCard, Page, Spinner } from '../components/ui';
-import { placeOneLine, vehicleDescription, type DriverProfile, type Job } from '../domain/models';
+import {
+  Button,
+  Centered,
+  EmptyState,
+  FailureBlock,
+  IconButton,
+  InfoCard,
+  Page,
+  Spinner,
+} from '../components/ui';
+import {
+  placeOneLine,
+  vehicleDescription,
+  type DriverProfile,
+  type Job,
+} from '../domain/models';
 import { driverLabel } from '../domain/rideStatus';
 import { useDriver, useStore } from '../state/context';
 import { formatTime } from './format';
@@ -54,7 +68,11 @@ export function TodayScreen() {
               </span>
             )}
           </span>
-          <IconButton icon={FolderOpen} label="Your paperwork" onClick={() => navigate('/documents')} />
+          <IconButton
+            icon={FolderOpen}
+            label="Your paperwork"
+            onClick={() => navigate('/documents')}
+          />
           <IconButton
             icon={LogOut}
             label="Sign out"
@@ -94,7 +112,11 @@ function ProfileError({ error }: { error: unknown }) {
         title="No driver profile yet"
         message="This account is not on an operator’s roster. Ask your dispatcher to add you with this email address, and make sure you have confirmed it — we only join the two once the address is verified."
         action={
-          <Button variant="outlined" icon={RefreshCw} onClick={() => void store.refreshProfile()}>
+          <Button
+            variant="outlined"
+            icon={RefreshCw}
+            onClick={() => void store.refreshProfile()}
+          >
             Check again
           </Button>
         }
@@ -135,7 +157,12 @@ function ShiftCard({ profile }: { profile: DriverProfile }) {
           <>
             <p>Your operator has not approved you to drive yet.</p>
             {/* The next thing to do rather than a dead end: approval waits on paperwork. */}
-            <Button variant="outlined" icon={FolderOpen} className="mt-sm" onClick={() => navigate('/documents')}>
+            <Button
+              variant="outlined"
+              icon={FolderOpen}
+              className="mt-sm"
+              onClick={() => navigate('/documents')}
+            >
               Check your paperwork
             </Button>
           </>
@@ -183,7 +210,11 @@ function JobList() {
 function JobRow({ job }: { job: Job }) {
   const navigate = useNavigate();
   return (
-    <button type="button" className="card job-row" onClick={() => navigate(`/job/${job.id}`)}>
+    <button
+      type="button"
+      className="card job-row"
+      onClick={() => navigate(`/job/${job.id}`)}
+    >
       <span className="grow">
         <span className="t-title block">{formatTime(job.scheduledPickupAt)}</span>
         <span className="t-title-lg block">{job.passengerName}</span>

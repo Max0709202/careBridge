@@ -4,7 +4,10 @@
  * signs in with the same credentials. Where that app lives is a deployment
  * fact, supplied at build time; without it the links are simply not shown.
  */
-const base = (import.meta.env.VITE_ACCOUNT_APP_URL as string | undefined)?.replace(/\/+$/, '');
+const base = (import.meta.env.VITE_ACCOUNT_APP_URL as string | undefined)?.replace(
+  /\/+$/,
+  '',
+);
 
 export const accountLinks = base
   ? { register: `${base}/register`, forgotPassword: `${base}/forgot-password` }

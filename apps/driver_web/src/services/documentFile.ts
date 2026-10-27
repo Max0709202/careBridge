@@ -13,7 +13,9 @@ const QUALITY = 0.85;
 const DECODABLE = ['image/jpeg', 'image/png', 'image/webp'];
 const AS_IS = ['application/pdf', 'image/heic', 'image/jpeg', 'image/png'];
 
-export async function prepareDocument(file: File): Promise<{ body: Blob; contentType: string }> {
+export async function prepareDocument(
+  file: File,
+): Promise<{ body: Blob; contentType: string }> {
   const type = file.type.toLowerCase();
 
   if (DECODABLE.includes(type)) {
@@ -36,7 +38,9 @@ async function downscale(file: File): Promise<Blob | null> {
     const context = canvas.getContext('2d');
     if (!context) return null;
     context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', QUALITY));
+    return await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', QUALITY),
+    );
   } finally {
     bitmap.close();
   }

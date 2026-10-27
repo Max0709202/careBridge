@@ -3,7 +3,16 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { NotificationPreference } from '../../api/careApi';
 import { useFeedback } from '../../components/feedback';
-import { AppCard, Button, EmptyState, IconButton, Page, SectionHeader, Spinner, SwitchRow } from '../../components/ui';
+import {
+  AppCard,
+  Button,
+  EmptyState,
+  IconButton,
+  Page,
+  SectionHeader,
+  Spinner,
+  SwitchRow,
+} from '../../components/ui';
 import type { NotificationKind } from '../../domain/models';
 import { useApi } from '../../state/context';
 
@@ -84,7 +93,11 @@ export function NotificationPreferencesScreen() {
           icon={CloudOff}
           title="Could not load your settings"
           message="Check your connection and try again."
-          action={<Button variant="outlined" onClick={load}>Retry</Button>}
+          action={
+            <Button variant="outlined" onClick={load}>
+              Retry
+            </Button>
+          }
         />
       </AppCard>
     );
@@ -103,9 +116,9 @@ export function NotificationPreferencesScreen() {
       <div className="stack">
         <AppCard>
           <p className="t-body muted">
-            Emails and push messages never say who the appointment is for, which clinic it is at, or
-            when. They say something changed and ask you to open the app — a phone on a kitchen table
-            is readable by whoever is in the room.
+            Emails and push messages never say who the appointment is for, which clinic
+            it is at, or when. They say something changed and ask you to open the app —
+            a phone on a kitchen table is readable by whoever is in the room.
           </p>
         </AppCard>
         {[...byKind.entries()].map(([kind, channels]) => (
@@ -116,7 +129,13 @@ export function NotificationPreferencesScreen() {
                 row.configurable ? (
                   <div key={row.channel} className="tile dense">
                     <SwitchRow
-                      leading={row.channel === 'email' ? <Mail aria-hidden className="muted" /> : <Bell aria-hidden className="muted" />}
+                      leading={
+                        row.channel === 'email' ? (
+                          <Mail aria-hidden className="muted" />
+                        ) : (
+                          <Bell aria-hidden className="muted" />
+                        )
+                      }
                       title={channelLabel[row.channel]}
                       checked={row.enabled}
                       disabled={pending.has(`${row.kind}:${row.channel}`)}
@@ -125,10 +144,16 @@ export function NotificationPreferencesScreen() {
                   </div>
                 ) : (
                   <div key={row.channel} className="tile dense">
-                    <Inbox className="ink-primary" aria-hidden style={{ flex: '0 0 auto' }} />
+                    <Inbox
+                      className="ink-primary"
+                      aria-hidden
+                      style={{ flex: '0 0 auto' }}
+                    />
                     <div className="grow">
                       <p className="tile-title">{channelLabel[row.channel]}</p>
-                      <p className="t-small muted">Always on — this is your record of what happened</p>
+                      <p className="t-small muted">
+                        Always on — this is your record of what happened
+                      </p>
                     </div>
                   </div>
                 ),
@@ -141,7 +166,11 @@ export function NotificationPreferencesScreen() {
   }
 
   return (
-    <Page title="Notifications" back actions={<IconButton icon={RefreshCw} label="Refresh" onClick={load} />}>
+    <Page
+      title="Notifications"
+      back
+      actions={<IconButton icon={RefreshCw} label="Refresh" onClick={load} />}
+    >
       {body}
     </Page>
   );

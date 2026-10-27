@@ -48,16 +48,23 @@ export function ChatThread({ conversation }: { conversation: Conversation }) {
           <Car size={16} aria-hidden />
           <span className="bold">{conversation.ride.patientName}</span>
           <span>
-            · pickup {formatDay(conversation.ride.scheduledPickupAt)}, {formatClock(conversation.ride.scheduledPickupAt)}
+            · pickup {formatDay(conversation.ride.scheduledPickupAt)},{' '}
+            {formatClock(conversation.ride.scheduledPickupAt)}
           </span>
-          <span className="pill tone-later">{rideStatusLabel(conversation.ride.status)}</span>
+          <span className="pill tone-later">
+            {rideStatusLabel(conversation.ride.status)}
+          </span>
         </div>
       )}
       <CallBar context={{ conversationId: conversation.id }} />
       <ol className="chat-messages" ref={listRef} aria-live="polite">
         {thread?.hasMore && (
           <li className="chat-older">
-            <Button variant="text" busy={thread.loading} onClick={() => void store.loadOlder(conversation.id)}>
+            <Button
+              variant="text"
+              busy={thread.loading}
+              onClick={() => void store.loadOlder(conversation.id)}
+            >
               Earlier messages
             </Button>
           </li>
@@ -92,11 +99,18 @@ export function ChatThread({ conversation }: { conversation: Conversation }) {
   );
 }
 
-function MessageItem(props: { message: ChatMessage; previous: ChatMessage | undefined; onRetry: () => void }) {
+function MessageItem(props: {
+  message: ChatMessage;
+  previous: ChatMessage | undefined;
+  onRetry: () => void;
+}) {
   const { message, previous } = props;
   const newDay = !previous || !sameDay(previous.createdAt, message.createdAt);
   const sameSender =
-    !newDay && previous && previous.senderLabel === message.senderLabel && previous.mine === message.mine;
+    !newDay &&
+    previous &&
+    previous.senderLabel === message.senderLabel &&
+    previous.mine === message.mine;
 
   return (
     <>
@@ -110,8 +124,16 @@ function MessageItem(props: { message: ChatMessage; previous: ChatMessage | unde
           {message.body} · {formatClock(message.createdAt)}
         </li>
       ) : (
-        <li className={cx('chat-message', message.mine && 'mine', message.delivery !== 'sent' && message.delivery)}>
-          {!sameSender && !message.mine && <div className="chat-sender">{message.senderLabel}</div>}
+        <li
+          className={cx(
+            'chat-message',
+            message.mine && 'mine',
+            message.delivery !== 'sent' && message.delivery,
+          )}
+        >
+          {!sameSender && !message.mine && (
+            <div className="chat-sender">{message.senderLabel}</div>
+          )}
           <div className="chat-bubble">{message.body}</div>
           <div className="chat-meta">
             {message.delivery === 'pending' && (
@@ -121,7 +143,8 @@ function MessageItem(props: { message: ChatMessage; previous: ChatMessage | unde
             )}
             {message.delivery === 'failed' && (
               <button type="button" className="chat-retry" onClick={props.onRetry}>
-                <AlertCircle size={12} aria-hidden /> Not sent — retry <RotateCw size={12} aria-hidden />
+                <AlertCircle size={12} aria-hidden /> Not sent — retry{' '}
+                <RotateCw size={12} aria-hidden />
               </button>
             )}
             {message.delivery === 'sent' && formatClock(message.createdAt)}
@@ -225,14 +248,21 @@ export function CallBar({ context }: { context: CallContext }) {
           variant="outlined"
           icon={Phone}
           disabled={!target.available || busy}
-          title={target.unavailableReason ?? `Call ${target.label} through the CareBridge relay`}
-          onClick={() => void run(() => store.call(context, { kind: target.kind, id: target.id }))}
+          title={
+            target.unavailableReason ??
+            `Call ${target.label} through the CareBridge relay`
+          }
+          onClick={() =>
+            void run(() => store.call(context, { kind: target.kind, id: target.id }))
+          }
         >
           Call {target.label}
         </Button>
       ))}
       {targets.some((t) => !t.available) && (
-        <span className="t-small muted">{targets.find((t) => !t.available)?.unavailableReason}</span>
+        <span className="t-small muted">
+          {targets.find((t) => !t.available)?.unavailableReason}
+        </span>
       )}
     </div>
   );

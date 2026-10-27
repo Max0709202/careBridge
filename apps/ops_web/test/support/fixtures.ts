@@ -2,7 +2,9 @@ import type { components } from '../../src/api/schema';
 
 type S = components['schemas'];
 
-export const organization = (overrides: Partial<S['OrganizationDto']> = {}): S['OrganizationDto'] => ({
+export const organization = (
+  overrides: Partial<S['OrganizationDto']> = {},
+): S['OrganizationDto'] => ({
   id: 'org-1',
   name: 'Meridian Transit',
   slug: 'meridian',
@@ -39,7 +41,9 @@ export const driver = (overrides: Partial<S['DriverDto']> = {}): S['DriverDto'] 
   ...overrides,
 });
 
-export const candidate = (overrides: Partial<S['DispatchCandidateDto']> = {}): S['DispatchCandidateDto'] => ({
+export const candidate = (
+  overrides: Partial<S['DispatchCandidateDto']> = {},
+): S['DispatchCandidateDto'] => ({
   driverId: 'driver-1',
   displayName: 'Marcus T.',
   eligible: true,
@@ -47,7 +51,9 @@ export const candidate = (overrides: Partial<S['DispatchCandidateDto']> = {}): S
   ...overrides,
 });
 
-export const queueItem = (overrides: Partial<S['DispatchQueueItemDto']> = {}): S['DispatchQueueItemDto'] => ({
+export const queueItem = (
+  overrides: Partial<S['DispatchQueueItemDto']> = {},
+): S['DispatchQueueItemDto'] => ({
   rideId: 'ride-1',
   status: 'requested',
   patientName: 'Margaret H.',
@@ -62,13 +68,18 @@ export const queueItem = (overrides: Partial<S['DispatchQueueItemDto']> = {}): S
   ...overrides,
 });
 
-export const queue = (items: S['DispatchQueueItemDto'][] = [queueItem()], availableDrivers = 1): S['DispatchQueueDto'] => ({
+export const queue = (
+  items: S['DispatchQueueItemDto'][] = [queueItem()],
+  availableDrivers = 1,
+): S['DispatchQueueDto'] => ({
   organizationId: 'org-1',
   items,
   availableDrivers,
 });
 
-export const liveRide = (overrides: Partial<S['LiveRideDto']> = {}): S['LiveRideDto'] => ({
+export const liveRide = (
+  overrides: Partial<S['LiveRideDto']> = {},
+): S['LiveRideDto'] => ({
   rideId: 'ride-1',
   status: 'driverEnRoute',
   driverId: 'driver-1',
@@ -77,21 +88,30 @@ export const liveRide = (overrides: Partial<S['LiveRideDto']> = {}): S['LiveRide
   scheduledPickupAt: '2026-06-15T14:00:00Z',
   pickup: { latitude: 40.66, longitude: -73.96 },
   destination: { latitude: 40.65, longitude: -73.94 },
-  position: { latitude: 40.67, longitude: -73.97, accuracyMeters: 8, capturedAt: new Date().toISOString() },
+  position: {
+    latitude: 40.67,
+    longitude: -73.97,
+    accuracyMeters: 8,
+    capturedAt: new Date().toISOString(),
+  },
   etaMinutes: 7,
   isDelayed: false,
   route: null,
   ...overrides,
 });
 
-export const liveBoard = (overrides: Partial<S['LiveBoardDto']> = {}): S['LiveBoardDto'] => ({
+export const liveBoard = (
+  overrides: Partial<S['LiveBoardDto']> = {},
+): S['LiveBoardDto'] => ({
   organizationId: 'org-1',
   serviceArea: null,
   rides: [liveRide()],
   ...overrides,
 });
 
-export const quote = (overrides: Partial<S['SubscriptionQuoteDto']> = {}): S['SubscriptionQuoteDto'] => ({
+export const quote = (
+  overrides: Partial<S['SubscriptionQuoteDto']> = {},
+): S['SubscriptionQuoteDto'] => ({
   planCode: 'operator-standard',
   planVersion: '1',
   interval: 'monthly',
@@ -105,7 +125,9 @@ export const quote = (overrides: Partial<S['SubscriptionQuoteDto']> = {}): S['Su
   ...overrides,
 });
 
-export const subscription = (overrides: Partial<S['SubscriptionDto']> = {}): S['SubscriptionDto'] => ({
+export const subscription = (
+  overrides: Partial<S['SubscriptionDto']> = {},
+): S['SubscriptionDto'] => ({
   id: 'sub-1',
   payer: 'dispatchOrganization',
   status: 'active',
@@ -125,13 +147,22 @@ export const subscription = (overrides: Partial<S['SubscriptionDto']> = {}): S['
   ...overrides,
 });
 
-export const account = (overrides: Partial<S['BillingAccountDto']> = {}): S['BillingAccountDto'] => ({
+export const account = (
+  overrides: Partial<S['BillingAccountDto']> = {},
+): S['BillingAccountDto'] => ({
   id: 'acct-1',
   payer: 'dispatchOrganization',
   billingEmail: 'billing@meridian.example',
   organizationId: 'org-1',
   subscription: subscription(),
-  paymentMethod: { id: 'pm-1', brand: 'Visa', last4: '4242', expMonth: 12, expYear: 2099, isDefault: true },
+  paymentMethod: {
+    id: 'pm-1',
+    brand: 'Visa',
+    last4: '4242',
+    expMonth: 12,
+    expYear: 2099,
+    isDefault: true,
+  },
   amountDueCents: 0,
   ...overrides,
 });
@@ -146,7 +177,9 @@ export const invoice = (overrides: Partial<S['InvoiceDto']> = {}): S['InvoiceDto
   creditAppliedCents: 0,
   totalCents: 27900,
   amountPaidCents: 27900,
-  lines: [{ label: 'Base plan', quantity: 1, unitPriceCents: 27900, amountCents: 27900 }],
+  lines: [
+    { label: 'Base plan', quantity: 1, unitPriceCents: 27900, amountCents: 27900 },
+  ],
   issuedAt: '2026-06-01T00:00:00Z',
   paidAt: '2026-06-01T00:00:00Z',
   attemptCount: 1,
@@ -155,7 +188,9 @@ export const invoice = (overrides: Partial<S['InvoiceDto']> = {}): S['InvoiceDto
   ...overrides,
 });
 
-export const plan = (overrides: Partial<S['SubscriptionPlanDto']> = {}): S['SubscriptionPlanDto'] => ({
+export const plan = (
+  overrides: Partial<S['SubscriptionPlanDto']> = {},
+): S['SubscriptionPlanDto'] => ({
   id: 'plan-1',
   code: 'operator-standard',
   version: '1',
@@ -175,7 +210,9 @@ export const plan = (overrides: Partial<S['SubscriptionPlanDto']> = {}): S['Subs
   ...overrides,
 });
 
-export const stats = (overrides: Partial<S['PlatformStatsDto']> = {}): S['PlatformStatsDto'] => ({
+export const stats = (
+  overrides: Partial<S['PlatformStatsDto']> = {},
+): S['PlatformStatsDto'] => ({
   ridesLast7Days: 40,
   ridesCompletedLast7Days: 30,
   ridesNoShowLast7Days: 0,
@@ -193,7 +230,9 @@ export const stats = (overrides: Partial<S['PlatformStatsDto']> = {}): S['Platfo
   ...overrides,
 });
 
-export const flag = (overrides: Partial<S['FeatureFlagDto']> = {}): S['FeatureFlagDto'] => ({
+export const flag = (
+  overrides: Partial<S['FeatureFlagDto']> = {},
+): S['FeatureFlagDto'] => ({
   key: 'marketplace',
   description: 'Lets families pick from several operators.',
   enabled: true,
@@ -203,7 +242,9 @@ export const flag = (overrides: Partial<S['FeatureFlagDto']> = {}): S['FeatureFl
   ...overrides,
 });
 
-export const auditEntry = (overrides: Partial<S['AuditEntryDto']> = {}): S['AuditEntryDto'] => ({
+export const auditEntry = (
+  overrides: Partial<S['AuditEntryDto']> = {},
+): S['AuditEntryDto'] => ({
   id: 'audit-1',
   at: '2026-06-01T10:00:00Z',
   actorUserId: 'user-1',
@@ -217,7 +258,9 @@ export const auditEntry = (overrides: Partial<S['AuditEntryDto']> = {}): S['Audi
   ...overrides,
 });
 
-export const refundable = (overrides: Partial<S['RefundableInvoiceDto']> = {}): S['RefundableInvoiceDto'] => ({
+export const refundable = (
+  overrides: Partial<S['RefundableInvoiceDto']> = {},
+): S['RefundableInvoiceDto'] => ({
   invoiceId: 'inv-1',
   invoiceNumber: 'CB-0001',
   paymentId: 'pay-1',

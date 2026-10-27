@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { observeServerDate, resetServerClock, serverNowMs } from '../src/core/serverClock';
+import {
+  observeServerDate,
+  resetServerClock,
+  serverNowMs,
+} from '../src/core/serverClock';
 
 describe('serverClock', () => {
   afterEach(() => {

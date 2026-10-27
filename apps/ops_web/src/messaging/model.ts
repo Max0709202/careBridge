@@ -15,7 +15,11 @@ import type { components } from '../api/schema';
 
 type S = components['schemas'];
 
-export type ConversationKind = 'dispatchFamily' | 'dispatchDriver' | 'driverDriver' | 'operatorDrivers';
+export type ConversationKind =
+  | 'dispatchFamily'
+  | 'dispatchDriver'
+  | 'driverDriver'
+  | 'operatorDrivers';
 export type ConversationRole = 'dispatcher' | 'family' | 'driver';
 export type SenderRole = ConversationRole | 'system';
 export type CallPartyKind = 'patient' | 'familyMember' | 'driver' | 'dispatch';
@@ -30,9 +34,19 @@ export type CallStatus =
   | 'failed'
   | 'canceled';
 
-const KINDS: readonly ConversationKind[] = ['dispatchFamily', 'dispatchDriver', 'driverDriver', 'operatorDrivers'];
+const KINDS: readonly ConversationKind[] = [
+  'dispatchFamily',
+  'dispatchDriver',
+  'driverDriver',
+  'operatorDrivers',
+];
 const ROLES: readonly ConversationRole[] = ['dispatcher', 'family', 'driver'];
-const PARTIES: readonly CallPartyKind[] = ['patient', 'familyMember', 'driver', 'dispatch'];
+const PARTIES: readonly CallPartyKind[] = [
+  'patient',
+  'familyMember',
+  'driver',
+  'dispatch',
+];
 const STATUSES: readonly CallStatus[] = [
   'initiating',
   'ringingCaller',
@@ -184,7 +198,9 @@ export function totalUnread(inbox: readonly Conversation[] | null): number {
 
 /** Newest activity first; a thread nobody has written in yet sorts last. */
 export function sortInbox(inbox: readonly Conversation[]): Conversation[] {
-  return [...inbox].sort((a, b) => (b.lastMessageAt?.getTime() ?? 0) - (a.lastMessageAt?.getTime() ?? 0));
+  return [...inbox].sort(
+    (a, b) => (b.lastMessageAt?.getTime() ?? 0) - (a.lastMessageAt?.getTime() ?? 0),
+  );
 }
 
 /**
@@ -193,19 +209,31 @@ export function sortInbox(inbox: readonly Conversation[]): Conversation[] {
  * stored copy of an optimistic send replaces it rather than appearing twice
  * (the socket can deliver it before the POST answers).
  */
-export function mergeMessage(thread: readonly ChatMessage[], incoming: ChatMessage): ChatMessage[] {
+export function mergeMessage(
+  thread: readonly ChatMessage[],
+  incoming: ChatMessage,
+): ChatMessage[] {
   const rest = thread.filter(
-    (m) => m.id !== incoming.id && !(m.mine && incoming.mine && m.clientMessageId === incoming.clientMessageId),
+    (m) =>
+      m.id !== incoming.id &&
+      !(m.mine && incoming.mine && m.clientMessageId === incoming.clientMessageId),
   );
   // A stored copy never goes back to pending because a late optimistic update arrived.
-  const existing = thread.find((m) => m.clientMessageId === incoming.clientMessageId && m.mine === incoming.mine);
-  const next = existing?.delivery === 'sent' && incoming.delivery !== 'sent' ? existing : incoming;
+  const existing = thread.find(
+    (m) => m.clientMessageId === incoming.clientMessageId && m.mine === incoming.mine,
+  );
+  const next =
+    existing?.delivery === 'sent' && incoming.delivery !== 'sent' ? existing : incoming;
   return [...rest, next].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 }
 
 /** Days, for separators in a thread. */
 export function sameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 // ─── codec ──────────────────────────────────────────────────────────────────
@@ -285,7 +313,8 @@ export function callFromWire(json: S['CallSessionDto']): CallSession | null {
   const status = json.status as CallStatus;
   const calleeKind = json.calleeKind as CallPartyKind;
   const startedAt = date(json.startedAt);
-  if (!STATUSES.includes(status) || !PARTIES.includes(calleeKind) || !startedAt) return null;
+  if (!STATUSES.includes(status) || !PARTIES.includes(calleeKind) || !startedAt)
+    return null;
   return {
     id: json.id,
     status,
@@ -303,13 +332,15 @@ export function callFromWire(json: S['CallSessionDto']): CallSession | null {
 export function incomingFromWire(json: unknown): IncomingCall | null {
   if (typeof json !== 'object' || json === null) return null;
   const j = json as Record<string, unknown>;
-  if (typeof j['callId'] !== 'string' || typeof j['fromLabel'] !== 'string') return null;
+  if (typeof j['callId'] !== 'string' || typeof j['fromLabel'] !== 'string')
+    return null;
   return {
     callId: j['callId'],
     fromLabel: j['fromLabel'],
-    conversationId: typeof j['conversationId'] === 'string' ? j['conversationId'] : null,
+    conversationId:
+      typeof j['conversationId'] === 'string' ? j['conversationId'] : null,
     rideId: typeof j['rideId'] === 'string' ? j['rideId'] : null,
   };
 }
 
-export const notNull = <T,>(value: T | null): value is T => value !== null;
+export const notNull = <T>(value: T | null): value is T => value !== null;

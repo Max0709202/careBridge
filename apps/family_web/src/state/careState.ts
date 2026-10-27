@@ -11,7 +11,11 @@ import {
   type Patient,
   type Ride,
 } from '../domain/models';
-import { accessCan, type FamilyPermission, type PatientAccess } from '../domain/permissions';
+import {
+  accessCan,
+  type FamilyPermission,
+  type PatientAccess,
+} from '../domain/permissions';
 import {
   appointmentIsUpcoming,
   rideAllowsLocationSharing,
@@ -57,13 +61,17 @@ export const can = (s: CareState, patientId: string, permission: FamilyPermissio
  * a person on screen resolves through here first, so a revoked grant closes
  * every surface at once.
  */
-export const canView = (s: CareState, patientId: string) => can(s, patientId, 'viewProfile');
+export const canView = (s: CareState, patientId: string) =>
+  can(s, patientId, 'viewProfile');
 
-export const patientById = (s: CareState, id: string) => s.patients.find((p) => p.id === id) ?? null;
-export const clinicById = (s: CareState, id: string) => s.clinics.find((c) => c.id === id) ?? null;
+export const patientById = (s: CareState, id: string) =>
+  s.patients.find((p) => p.id === id) ?? null;
+export const clinicById = (s: CareState, id: string) =>
+  s.clinics.find((c) => c.id === id) ?? null;
 export const appointmentById = (s: CareState, id: string) =>
   s.appointments.find((a) => a.id === id) ?? null;
-export const rideById = (s: CareState, id: string) => s.rides.find((r) => r.id === id) ?? null;
+export const rideById = (s: CareState, id: string) =>
+  s.rides.find((r) => r.id === id) ?? null;
 
 export const activePatients = (s: CareState) =>
   s.patients.filter((p) => p.archivedAt === null && canView(s, p.id));
@@ -82,14 +90,17 @@ export const appointmentsFor = (s: CareState, patientId: string) =>
 
 export const upcomingFor = (s: CareState, patientId: string, now: Date) =>
   appointmentsFor(s, patientId).filter(
-    (a) => appointmentIsUpcoming(a.status) && appointmentEndsAt(a).getTime() > now.getTime(),
+    (a) =>
+      appointmentIsUpcoming(a.status) && appointmentEndsAt(a).getTime() > now.getTime(),
   );
 
 /** Newest first. */
 export const pastFor = (s: CareState, patientId: string, now: Date) =>
   appointmentsFor(s, patientId)
     .filter(
-      (a) => !appointmentIsUpcoming(a.status) || appointmentEndsAt(a).getTime() < now.getTime(),
+      (a) =>
+        !appointmentIsUpcoming(a.status) ||
+        appointmentEndsAt(a).getTime() < now.getTime(),
     )
     .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
 

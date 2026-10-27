@@ -16,10 +16,16 @@ import {
 
 import { failureMessage } from '../api/failures';
 
-export const cx = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(' ');
+export const cx = (...names: (string | false | null | undefined)[]) =>
+  names.filter(Boolean).join(' ');
 
 /** OpsCard. Clickable when `onClick` is given — then it is a real button for keyboard users. */
-export function Card(props: { children: ReactNode; onClick?: () => void; className?: string; label?: string }) {
+export function Card(props: {
+  children: ReactNode;
+  onClick?: () => void;
+  className?: string;
+  label?: string;
+}) {
   if (props.onClick) {
     return (
       <div
@@ -56,7 +62,12 @@ export function SectionHeader(props: { title: string; trailing?: ReactNode }) {
   );
 }
 
-export function EmptyState(props: { icon: LucideIcon; title: string; message: string; action?: ReactNode }) {
+export function EmptyState(props: {
+  icon: LucideIcon;
+  title: string;
+  message: string;
+  action?: ReactNode;
+}) {
   const Icon = props.icon;
   return (
     <div className="empty">
@@ -69,7 +80,11 @@ export function EmptyState(props: { icon: LucideIcon; title: string; message: st
 }
 
 /** "Could not load …", with a retry. Never a stack trace, never a URL. */
-export function LoadFailure(props: { title: string; onRetry: () => void; error?: unknown }) {
+export function LoadFailure(props: {
+  title: string;
+  onRetry: () => void;
+  error?: unknown;
+}) {
   return (
     <EmptyState
       icon={CloudOff}
@@ -93,7 +108,9 @@ export function StaleBanner(props: { error: unknown; onRetry: () => void }) {
   return (
     <div className="stale-banner" role="status">
       <CloudOff size={16} aria-hidden />
-      <span className="grow">Could not refresh — showing what was last loaded. {failureMessage(props.error)}</span>
+      <span className="grow">
+        Could not refresh — showing what was last loaded. {failureMessage(props.error)}
+      </span>
       <Button variant="text" onClick={props.onRetry}>
         Retry
       </Button>
@@ -101,8 +118,20 @@ export function StaleBanner(props: { error: unknown; onRetry: () => void }) {
   );
 }
 
-export function Spinner({ label = 'Loading', small }: { label?: string; small?: boolean }) {
-  return <div className={cx('spinner', small && 'small')} role="progressbar" aria-label={label} />;
+export function Spinner({
+  label = 'Loading',
+  small,
+}: {
+  label?: string;
+  small?: boolean;
+}) {
+  return (
+    <div
+      className={cx('spinner', small && 'small')}
+      role="progressbar"
+      aria-label={label}
+    />
+  );
 }
 
 /** Occupies the space its content will, so a list does not jump under the pointer. */
@@ -124,7 +153,11 @@ export function Button({
   children,
   disabled,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; icon?: LucideIcon; busy?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant;
+  icon?: LucideIcon;
+  busy?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -133,7 +166,11 @@ export function Button({
       aria-busy={busy || undefined}
       {...rest}
     >
-      {busy ? <Spinner small label="Working" /> : Icon && <Icon size={18} aria-hidden />}
+      {busy ? (
+        <Spinner small label="Working" />
+      ) : (
+        Icon && <Icon size={18} aria-hidden />
+      )}
       {children}
     </button>
   );
@@ -146,7 +183,13 @@ export function IconButton({
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { icon: LucideIcon; label: string }) {
   return (
-    <button type="button" className={cx('icon-btn', className)} aria-label={label} title={label} {...rest}>
+    <button
+      type="button"
+      className={cx('icon-btn', className)}
+      aria-label={label}
+      title={label}
+      {...rest}
+    >
       <Icon size={20} aria-hidden />
     </button>
   );
@@ -184,7 +227,13 @@ export function TextField({
           {...input}
         />
       </div>
-      <FieldFoot id={`${id}-desc`} helper={helper} error={error} counter={counter} length={length} />
+      <FieldFoot
+        id={`${id}-desc`}
+        helper={helper}
+        error={error}
+        counter={counter}
+        length={length}
+      />
     </div>
   );
 }
@@ -210,7 +259,13 @@ export function TextArea({
         rows={2}
         {...input}
       />
-      <FieldFoot id={`${id}-desc`} helper={helper} error={error} counter={counter} length={length} />
+      <FieldFoot
+        id={`${id}-desc`}
+        helper={helper}
+        error={error}
+        counter={counter}
+        length={length}
+      />
     </div>
   );
 }
@@ -227,7 +282,12 @@ export function SelectField({
   return (
     <div className={cx('field', error && 'invalid', className)}>
       <label htmlFor={id}>{label}</label>
-      <select id={id} aria-invalid={!!error} aria-describedby={`${id}-desc`} {...select}>
+      <select
+        id={id}
+        aria-invalid={!!error}
+        aria-describedby={`${id}-desc`}
+        {...select}
+      >
         {children}
       </select>
       <FieldFoot id={`${id}-desc`} helper={helper} error={error} length={0} />
@@ -235,7 +295,13 @@ export function SelectField({
   );
 }
 
-function FieldFoot(props: { id: string; helper?: string; error?: string | null; counter?: number; length: number }) {
+function FieldFoot(props: {
+  id: string;
+  helper?: string;
+  error?: string | null;
+  counter?: number;
+  length: number;
+}) {
   return (
     <div id={props.id} className="field-foot">
       {props.error ? (
@@ -276,7 +342,9 @@ export function Switch(props: {
       <span className="switch-track" aria-hidden />
       <span className="stack">
         <span>{props.label}</span>
-        {props.description && <span className="t-small muted">{props.description}</span>}
+        {props.description && (
+          <span className="t-small muted">{props.description}</span>
+        )}
       </span>
     </label>
   );
@@ -296,7 +364,11 @@ export function KeyValue(props: { label: string; value: ReactNode; small?: boole
  * A remark under a figure. `emphasis` pairs the colour with a different icon —
  * never colour alone (WCAG 1.4.1).
  */
-export function Note(props: { children: ReactNode; emphasis?: boolean; icon?: LucideIcon }) {
+export function Note(props: {
+  children: ReactNode;
+  emphasis?: boolean;
+  icon?: LucideIcon;
+}) {
   const Icon = props.icon;
   return (
     <p className={cx('note', props.emphasis && 'emphasis')}>
@@ -310,7 +382,12 @@ export function Note(props: { children: ReactNode; emphasis?: boolean; icon?: Lu
  * The body of one screen inside a shell: a toolbar with the screen's own
  * actions (Refresh stands in for pull-to-refresh), then the content.
  */
-export function Screen(props: { title: string; actions?: ReactNode; children: ReactNode; wide?: boolean }) {
+export function Screen(props: {
+  title: string;
+  actions?: ReactNode;
+  children: ReactNode;
+  wide?: boolean;
+}) {
   useEffect(() => {
     document.title = `${props.title} · CareBridge ops`;
   }, [props.title]);
@@ -328,7 +405,12 @@ export function Screen(props: { title: string; actions?: ReactNode; children: Re
 
 export function RefreshButton(props: { onClick: () => void; loading?: boolean }) {
   return (
-    <Button variant="text" icon={RefreshCw} onClick={props.onClick} busy={props.loading}>
+    <Button
+      variant="text"
+      icon={RefreshCw}
+      onClick={props.onClick}
+      busy={props.loading}
+    >
       Refresh
     </Button>
   );

@@ -42,7 +42,12 @@ import {
   parseInvoiceStatus,
   parseSubscriptionStatus,
 } from '../domain/billing';
-import { parseDriverStatus, parseReason, parseUrgency, type IneligibilityReason } from '../domain/dispatch';
+import {
+  parseDriverStatus,
+  parseReason,
+  parseUrgency,
+  type IneligibilityReason,
+} from '../domain/dispatch';
 import type {
   Candidate,
   DispatchQueue,
@@ -52,7 +57,14 @@ import type {
   SeatSummary,
   Vehicle,
 } from '../domain/models';
-import type { Coordinates, LiveBoard, LivePosition, LiveRide, LiveRoute, ServiceArea } from '../domain/liveMap';
+import type {
+  Coordinates,
+  LiveBoard,
+  LivePosition,
+  LiveRide,
+  LiveRoute,
+  ServiceArea,
+} from '../domain/liveMap';
 import type { components } from './schema';
 
 type S = components['schemas'];
@@ -65,7 +77,8 @@ export type DocumentViewUrl = S['DocumentViewUrlDto'];
 export type DriverAccountMatch = S['DriverAccountMatchDto'];
 
 const date = (value: string) => new Date(value);
-const maybeDate = (value: string | null | undefined) => (value ? new Date(value) : null);
+const maybeDate = (value: string | null | undefined) =>
+  value ? new Date(value) : null;
 
 // ─── dispatch ───────────────────────────────────────────────────────────────
 
@@ -155,10 +168,16 @@ export const queueFromWire = (dto: S['DispatchQueueDto']): DispatchQueue => ({
  * An area whose kind is unknown, or missing what its kind needs, is **dropped**
  * — drawn as no area at all, not as a guess at one.
  */
-export function serviceAreaFromWire(dto: S['ServiceAreaDto'] | null | undefined): ServiceArea | null {
+export function serviceAreaFromWire(
+  dto: S['ServiceAreaDto'] | null | undefined,
+): ServiceArea | null {
   if (!dto) return null;
   if (dto.kind === 'radius' && dto.center && typeof dto.radiusMiles === 'number') {
-    return { kind: 'radius', center: coordinates(dto.center), radiusMiles: dto.radiusMiles };
+    return {
+      kind: 'radius',
+      center: coordinates(dto.center),
+      radiusMiles: dto.radiusMiles,
+    };
   }
   if (dto.kind === 'polygon' && dto.points && dto.points.length >= 3) {
     return { kind: 'polygon', points: dto.points.map(coordinates) };
@@ -171,11 +190,18 @@ const coordinates = (dto: S['CoordinatesDto']): Coordinates => ({
   longitude: dto.longitude,
 });
 
-function livePositionFromWire(dto: S['LivePositionDto'] | null | undefined): LivePosition | null {
+function livePositionFromWire(
+  dto: S['LivePositionDto'] | null | undefined,
+): LivePosition | null {
   if (!dto) return null;
   const capturedAt = date(dto.capturedAt);
   if (Number.isNaN(capturedAt.getTime())) return null;
-  return { latitude: dto.latitude, longitude: dto.longitude, accuracyMeters: dto.accuracyMeters, capturedAt };
+  return {
+    latitude: dto.latitude,
+    longitude: dto.longitude,
+    accuracyMeters: dto.accuracyMeters,
+    capturedAt,
+  };
 }
 
 const liveRideFromWire = (dto: S['LiveRideDto']): LiveRide => ({
@@ -194,8 +220,15 @@ const liveRideFromWire = (dto: S['LiveRideDto']): LiveRide => ({
 });
 
 /** A route with an unknown target, or too few points to be a road, is dropped. */
-function liveRouteFromWire(dto: S['LiveRouteDto'] | null | undefined): LiveRoute | null {
-  if (!dto || (dto.target !== 'pickup' && dto.target !== 'destination') || dto.path.length < 2) return null;
+function liveRouteFromWire(
+  dto: S['LiveRouteDto'] | null | undefined,
+): LiveRoute | null {
+  if (
+    !dto ||
+    (dto.target !== 'pickup' && dto.target !== 'destination') ||
+    dto.path.length < 2
+  )
+    return null;
   return { target: dto.target, path: dto.path.map(coordinates) };
 }
 
@@ -290,7 +323,9 @@ export function refundFromWire(dto: S['RefundDto']): Refund | null {
   };
 }
 
-export const refundableFromWire = (dto: S['RefundableInvoiceDto']): RefundableInvoice => ({
+export const refundableFromWire = (
+  dto: S['RefundableInvoiceDto'],
+): RefundableInvoice => ({
   invoiceId: dto.invoiceId,
   invoiceNumber: dto.invoiceNumber,
   paymentId: dto.paymentId,
@@ -301,14 +336,18 @@ export const refundableFromWire = (dto: S['RefundableInvoiceDto']): RefundableIn
 
 // ─── billing ────────────────────────────────────────────────────────────────
 
-const lineFromWire = (dto: S['SubscriptionLineDto'] | S['InvoiceLineDto']): BillingLine => ({
+const lineFromWire = (
+  dto: S['SubscriptionLineDto'] | S['InvoiceLineDto'],
+): BillingLine => ({
   label: dto.label,
   quantity: dto.quantity,
   unitPriceCents: dto.unitPriceCents,
   amountCents: dto.amountCents,
 });
 
-export function quoteFromWire(dto: S['SubscriptionQuoteDto'] | null | undefined): BillingQuote | null {
+export function quoteFromWire(
+  dto: S['SubscriptionQuoteDto'] | null | undefined,
+): BillingQuote | null {
   if (!dto) return null;
   const interval = parseInterval(dto.interval);
   if (interval === null) return null;
@@ -333,14 +372,19 @@ export function planFromWire(dto: S['SubscriptionPlanDto']): OperatorPlan | null
     description: dto.description,
     basePriceCents: dto.basePriceCents,
     includedSeats: dto.includedSeats,
-    seatTiers: dto.seatTiers.map((t) => ({ upToSeats: t.upToSeats ?? null, unitPriceCents: t.unitPriceCents })),
+    seatTiers: dto.seatTiers.map((t) => ({
+      upToSeats: t.upToSeats ?? null,
+      unitPriceCents: t.unitPriceCents,
+    })),
     entitlements: [...dto.entitlements],
     trialDays: dto.trialDays,
     graceDays: dto.graceDays,
   };
 }
 
-export function subscriptionFromWire(dto: S['SubscriptionDto'] | null | undefined): OperatorSubscription | null {
+export function subscriptionFromWire(
+  dto: S['SubscriptionDto'] | null | undefined,
+): OperatorSubscription | null {
   if (!dto) return null;
   const status = parseSubscriptionStatus(dto.status);
   const interval = parseInterval(dto.interval);
@@ -386,7 +430,9 @@ export function invoiceFromWire(dto: S['InvoiceDto']): Invoice | null {
   };
 }
 
-export function paymentMethodFromWire(dto: S['PaymentMethodDto'] | null | undefined): PaymentMethod | null {
+export function paymentMethodFromWire(
+  dto: S['PaymentMethodDto'] | null | undefined,
+): PaymentMethod | null {
   if (!dto) return null;
   return {
     id: dto.id,

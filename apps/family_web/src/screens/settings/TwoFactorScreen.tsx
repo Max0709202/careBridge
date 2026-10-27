@@ -3,7 +3,15 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
 import type { MfaEnrolment, MfaStatus } from '../../api/careApi';
 import { useConfirm, useFeedback } from '../../components/feedback';
-import { AppCard, Button, EmptyState, Page, SectionHeader, Spinner, TextField } from '../../components/ui';
+import {
+  AppCard,
+  Button,
+  EmptyState,
+  Page,
+  SectionHeader,
+  Spinner,
+  TextField,
+} from '../../components/ui';
 import { groupInFours } from '../../core/formatting';
 import { useApi } from '../../state/context';
 
@@ -92,7 +100,11 @@ export function TwoFactorScreen() {
           icon={CloudOff}
           title="Could not load your settings"
           message="Check your connection and try again."
-          action={<Button variant="outlined" onClick={load}>Retry</Button>}
+          action={
+            <Button variant="outlined" onClick={load}>
+              Retry
+            </Button>
+          }
         />
       </AppCard>
     );
@@ -102,13 +114,21 @@ export function TwoFactorScreen() {
         <SectionHeader title="1 · Add it to your authenticator app" />
         <AppCard>
           <p className="t-body">
-            Type this key into an authenticator app — Google Authenticator, 1Password, or whatever you
-            already use.
+            Type this key into an authenticator app — Google Authenticator, 1Password,
+            or whatever you already use.
           </p>
-          <p className="t-title mono mt-md" style={{ letterSpacing: '0.1em', userSelect: 'all' }}>
+          <p
+            className="t-title mono mt-md"
+            style={{ letterSpacing: '0.1em', userSelect: 'all' }}
+          >
             {groupInFours(enrolment.secretBase32)}
           </p>
-          <Button variant="text" icon={Copy} className="align-start mt-sm" onClick={() => copyKey(enrolment.secretBase32)}>
+          <Button
+            variant="text"
+            icon={Copy}
+            className="align-start mt-sm"
+            onClick={() => copyKey(enrolment.secretBase32)}
+          >
             Copy the key
           </Button>
           <p className="t-small muted mt-sm">
@@ -121,10 +141,13 @@ export function TwoFactorScreen() {
           <SectionHeader title="2 · Save your recovery codes" />
           <AppCard>
             <p className="t-body">
-              Shown once, and never again — not even to support. Put them somewhere that is not your
-              phone.
+              Shown once, and never again — not even to support. Put them somewhere that
+              is not your phone.
             </p>
-            <pre className="t-body-lg mono mt-md" style={{ margin: 'var(--space-md) 0 0', userSelect: 'all' }}>
+            <pre
+              className="t-body-lg mono mt-md"
+              style={{ margin: 'var(--space-md) 0 0', userSelect: 'all' }}
+            >
               {enrolment.recoveryCodes.join('\n')}
             </pre>
           </AppCard>
@@ -134,8 +157,9 @@ export function TwoFactorScreen() {
           <SectionHeader title="3 · Confirm it works" />
           <AppCard>
             <p className="t-body muted">
-              Nothing changes until a code from your app is accepted. That is deliberate — turning it
-              on before checking would lock you out if the app did not take the key.
+              Nothing changes until a code from your app is accepted. That is deliberate
+              — turning it on before checking would lock you out if the app did not take
+              the key.
             </p>
             <form className="stack gap-md mt-md" onSubmit={confirmCode} noValidate>
               <TextField
@@ -149,7 +173,12 @@ export function TwoFactorScreen() {
               <Button type="submit" block disabled={busy}>
                 {busy ? 'Checking…' : 'Turn on two-factor'}
               </Button>
-              <Button variant="text" block disabled={busy} onClick={() => setEnrolment(null)}>
+              <Button
+                variant="text"
+                block
+                disabled={busy}
+                onClick={() => setEnrolment(null)}
+              >
                 Cancel
               </Button>
             </form>
@@ -167,10 +196,16 @@ export function TwoFactorScreen() {
           <p className="t-title">On</p>
         </div>
         <p className="t-body muted mt-sm">
-          {status.recoveryCodesRemaining} recovery codes left. Each one works once, and they are the
-          only way in if you lose your phone.
+          {status.recoveryCodesRemaining} recovery codes left. Each one works once, and
+          they are the only way in if you lose your phone.
         </p>
-        <Button variant="outlined" icon={Shield} className="mt-md" disabled={busy} onClick={disable}>
+        <Button
+          variant="outlined"
+          icon={Shield}
+          className="mt-md"
+          disabled={busy}
+          onClick={disable}
+        >
           Turn off
         </Button>
       </AppCard>
@@ -180,8 +215,9 @@ export function TwoFactorScreen() {
       <AppCard>
         <p className="t-title">Off</p>
         <p className="t-body mt-sm">
-          With two-factor authentication on, signing in needs your password and a six-digit code from
-          an app on your phone. Someone who learns your password still cannot get in.
+          With two-factor authentication on, signing in needs your password and a
+          six-digit code from an app on your phone. Someone who learns your password
+          still cannot get in.
         </p>
         <Button icon={Shield} className="mt-md" disabled={busy} onClick={begin}>
           Set it up

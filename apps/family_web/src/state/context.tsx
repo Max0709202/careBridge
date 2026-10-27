@@ -21,8 +21,16 @@ interface Services {
 
 const ServicesContext = createContext<Services | null>(null);
 
-export function ServicesProvider({ services, children }: { services: Services; children: ReactNode }) {
-  return <ServicesContext.Provider value={services}>{children}</ServicesContext.Provider>;
+export function ServicesProvider({
+  services,
+  children,
+}: {
+  services: Services;
+  children: ReactNode;
+}) {
+  return (
+    <ServicesContext.Provider value={services}>{children}</ServicesContext.Provider>
+  );
 }
 
 function useServices(): Services {

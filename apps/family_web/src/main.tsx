@@ -35,7 +35,9 @@ void store.restoreSession().then(() => {
   root.render(
     <StrictMode>
       <ServicesProvider services={{ store, api, tracking }}>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BrowserRouter
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <FeedbackProvider>
             <ConfirmProvider>
               <div className="app-frame">

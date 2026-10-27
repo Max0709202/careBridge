@@ -26,7 +26,13 @@ class FakePositions implements PositionSource {
   }
 
   emit(at: Date, speed: number | null = 10) {
-    this.onFix?.({ latitude: 40.65, longitude: -73.95, capturedAt: at, accuracyMeters: 8, speedMetersPerSecond: speed });
+    this.onFix?.({
+      latitude: 40.65,
+      longitude: -73.95,
+      capturedAt: at,
+      accuracyMeters: 8,
+      speedMetersPerSecond: speed,
+    });
   }
 }
 
@@ -48,7 +54,8 @@ function setup() {
   return { positions, api, sent, service };
 }
 
-const job = (status: Job['status'], id = 'ride-1') => jobFromWire(ride({ id, status }))!;
+const job = (status: Job['status'], id = 'ride-1') =>
+  jobFromWire(ride({ id, status }))!;
 const start = Date.now();
 const at = (s: number) => new Date(start + s * 1000);
 const settle = () => vi.advanceTimersByTimeAsync(0);

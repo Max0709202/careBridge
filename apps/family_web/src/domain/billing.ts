@@ -238,7 +238,8 @@ export const paymentMethodLabel = (card: PaymentMethod) =>
   `${brandLabels[card.brand.toLowerCase()] ?? 'Card'} ···· ${card.last4}`;
 
 /** A card marked 12/2026 works until the last day of December. */
-const endOfExpiryMonth = (card: PaymentMethod) => Date.UTC(card.expYear, card.expMonth, 1);
+const endOfExpiryMonth = (card: PaymentMethod) =>
+  Date.UTC(card.expYear, card.expMonth, 1);
 
 export const cardHasExpired = (card: PaymentMethod, now: Date) =>
   now.getTime() >= endOfExpiryMonth(card);
@@ -246,6 +247,8 @@ export const cardHasExpired = (card: PaymentMethod, now: Date) =>
 /** Warned before it fails, not after. */
 export function cardExpiresSoon(card: PaymentMethod, now: Date, days = 45): boolean {
   if (cardHasExpired(card, now)) return false;
-  const remainingDays = Math.floor((endOfExpiryMonth(card) - now.getTime()) / 86_400_000);
+  const remainingDays = Math.floor(
+    (endOfExpiryMonth(card) - now.getTime()) / 86_400_000,
+  );
   return remainingDays <= days;
 }

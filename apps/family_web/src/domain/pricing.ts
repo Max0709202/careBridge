@@ -61,10 +61,20 @@ export function estimateFare(options: {
 
   const surcharges: Surcharge[] = [
     ...(options.wheelchairAccessRequired
-      ? [{ label: 'Wheelchair-accessible vehicle', amountCents: rule.wheelchairSurchargeCents }]
+      ? [
+          {
+            label: 'Wheelchair-accessible vehicle',
+            amountCents: rule.wheelchairSurchargeCents,
+          },
+        ]
       : []),
     ...(options.assistanceRequired
-      ? [{ label: 'Door-through-door assistance', amountCents: rule.assistanceSurchargeCents }]
+      ? [
+          {
+            label: 'Door-through-door assistance',
+            amountCents: rule.assistanceSurchargeCents,
+          },
+        ]
       : []),
   ];
 

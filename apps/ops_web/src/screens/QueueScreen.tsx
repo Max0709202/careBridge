@@ -1,10 +1,30 @@
-import { ArrowLeftRight, Accessibility, CircleCheck, HandHelping, MessageSquare, PhoneCall } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  Accessibility,
+  CircleCheck,
+  HandHelping,
+  MessageSquare,
+  PhoneCall,
+} from 'lucide-react';
 import { useState } from 'react';
 
 import { OutsideAreaPill, UrgencyPill } from '../components/pills';
-import { Button, Card, EmptyState, LoadFailure, LoadingBlock, RefreshButton, Screen, StaleBanner } from '../components/ui';
+import {
+  Button,
+  Card,
+  EmptyState,
+  LoadFailure,
+  LoadingBlock,
+  RefreshButton,
+  Screen,
+  StaleBanner,
+} from '../components/ui';
 import { formatClock, plural } from '../core/format';
-import { reasonLabel, reasonRemedy, type IneligibilityReason } from '../domain/dispatch';
+import {
+  reasonLabel,
+  reasonRemedy,
+  type IneligibilityReason,
+} from '../domain/dispatch';
 import {
   eligibleCandidates,
   hasAnyoneAvailable,
@@ -32,16 +52,22 @@ import { useOpenThread } from './messages/useOpenThread';
 export function QueueScreen() {
   const store = useStore();
   const organizationId = useOperatorId();
-  const queue = useResource(keys.queue(organizationId), (api) => api.queue(organizationId), {
-    pollMs: QUEUE_POLL_MS,
-  });
+  const queue = useResource(
+    keys.queue(organizationId),
+    (api) => api.queue(organizationId),
+    {
+      pollMs: QUEUE_POLL_MS,
+    },
+  );
   const [assigning, setAssigning] = useState<QueueItem | null>(null);
 
   let body;
   if (queue.value) {
     body = (
       <>
-        {queue.error ? <StaleBanner error={queue.error} onRetry={queue.reload} /> : null}
+        {queue.error ? (
+          <StaleBanner error={queue.error} onRetry={queue.reload} />
+        ) : null}
         <QueueBody queue={queue.value} onAssign={setAssigning} />
       </>
     );
@@ -68,7 +94,13 @@ export function QueueScreen() {
   );
 }
 
-function QueueBody({ queue, onAssign }: { queue: DispatchQueue; onAssign: (item: QueueItem) => void }) {
+function QueueBody({
+  queue,
+  onAssign,
+}: {
+  queue: DispatchQueue;
+  onAssign: (item: QueueItem) => void;
+}) {
   if (queue.items.length === 0) {
     return (
       <EmptyState
@@ -88,10 +120,14 @@ function QueueBody({ queue, onAssign }: { queue: DispatchQueue; onAssign: (item:
         <div className="t-title">
           {queue.items.length} waiting · {queue.availableDrivers} free
         </div>
-        {overdue > 0 && <div className="t-small ink-overdue">{overdue} past their pickup time</div>}
+        {overdue > 0 && (
+          <div className="t-small ink-overdue">{overdue} past their pickup time</div>
+        )}
         {/* The number to act on first: no amount of clicking here will fix these. */}
         {stranded > 0 && (
-          <div className="t-small ink-overdue bold">{stranded} with nobody available — needs a call, not a tap</div>
+          <div className="t-small ink-overdue bold">
+            {stranded} with nobody available — needs a call, not a tap
+          </div>
         )}
       </Card>
       <ul className="list">
@@ -122,7 +158,10 @@ function QueueRow({ item, onAssign }: { item: QueueItem; onAssign: () => void })
         <span className="grow" />
         {reassignment && (
           <span className="muted" title="The previous driver dropped this trip">
-            <ArrowLeftRight size={18} aria-label="The previous driver dropped this trip" />
+            <ArrowLeftRight
+              size={18}
+              aria-label="The previous driver dropped this trip"
+            />
           </span>
         )}
         {/*
@@ -131,7 +170,10 @@ function QueueRow({ item, onAssign }: { item: QueueItem; onAssign: () => void })
         */}
         {item.wheelchairRequired && (
           <span title="Needs a wheelchair-accessible vehicle">
-            <Accessibility size={18} aria-label="Needs a wheelchair-accessible vehicle" />
+            <Accessibility
+              size={18}
+              aria-label="Needs a wheelchair-accessible vehicle"
+            />
           </span>
         )}
         {item.assistanceRequired && (
@@ -163,7 +205,13 @@ function QueueRow({ item, onAssign }: { item: QueueItem; onAssign: () => void })
           icon={MessageSquare}
           busy={busy}
           aria-label={`Message ${item.patientName}'s family about this trip`}
-          onClick={() => void openThread({ kind: 'dispatchFamily', organizationId, rideId: item.rideId })}
+          onClick={() =>
+            void openThread({
+              kind: 'dispatchFamily',
+              organizationId,
+              rideId: item.rideId,
+            })
+          }
         >
           Message family
         </Button>
@@ -180,7 +228,8 @@ function QueueRow({ item, onAssign }: { item: QueueItem; onAssign: () => void })
 function NobodyAvailable({ item }: { item: QueueItem }) {
   const counts = new Map<IneligibilityReason, number>();
   for (const candidate of item.candidates) {
-    for (const reason of candidate.reasons) counts.set(reason, (counts.get(reason) ?? 0) + 1);
+    for (const reason of candidate.reasons)
+      counts.set(reason, (counts.get(reason) ?? 0) + 1);
   }
   const ordered = [...counts.entries()].sort((a, b) => b[1] - a[1]);
 
@@ -188,7 +237,9 @@ function NobodyAvailable({ item }: { item: QueueItem }) {
     <div className="stranded" role="note">
       <div className="row gap-xs bold">
         <PhoneCall size={16} aria-hidden />
-        {item.candidates.length === 0 ? 'No drivers on this roster' : 'Nobody available for this trip'}
+        {item.candidates.length === 0
+          ? 'No drivers on this roster'
+          : 'Nobody available for this trip'}
       </div>
       {ordered.map(([reason, count]) => (
         <div key={reason} className="mt-xs">

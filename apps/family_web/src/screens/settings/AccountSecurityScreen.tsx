@@ -63,7 +63,8 @@ export function AccountSecurityScreen() {
   async function revoke(session: SessionSummary) {
     const confirmed = await confirm({
       title: `Sign out ${session.deviceLabel}?`,
-      message: 'That device will have to sign in again. Anything it is doing right now stops.',
+      message:
+        'That device will have to sign in again. Anything it is doing right now stops.',
       confirmLabel: 'Sign it out',
       cancelLabel: 'Cancel',
     });
@@ -101,7 +102,11 @@ export function AccountSecurityScreen() {
           icon={CloudOff}
           title="Could not load your sessions"
           message="Check your connection and try again."
-          action={<Button variant="outlined" onClick={load}>Retry</Button>}
+          action={
+            <Button variant="outlined" onClick={load}>
+              Retry
+            </Button>
+          }
         />
       </AppCard>
     );
@@ -118,15 +123,28 @@ export function AccountSecurityScreen() {
           const Icon = iconFor(session.deviceLabel);
           return (
             <div key={session.id} className="tile">
-              <Icon className={session.isCurrent ? 'ink-primary' : 'muted'} aria-hidden style={{ flex: '0 0 auto' }} />
+              <Icon
+                className={session.isCurrent ? 'ink-primary' : 'muted'}
+                aria-hidden
+                style={{ flex: '0 0 auto' }}
+              />
               <div className="grow">
                 <p className="tile-title">{session.deviceLabel}</p>
                 <p className="tile-sub">
-                  {session.isCurrent ? 'This device' : `Last used ${formatSessionAge(new Date(session.lastUsedAt))}`}
+                  {session.isCurrent
+                    ? 'This device'
+                    : `Last used ${formatSessionAge(new Date(session.lastUsedAt))}`}
                 </p>
               </div>
               {session.isCurrent ? (
-                <span className="chip" style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)', borderColor: 'transparent' }}>
+                <span
+                  className="chip"
+                  style={{
+                    background: 'var(--primary-container)',
+                    color: 'var(--on-primary-container)',
+                    borderColor: 'transparent',
+                  }}
+                >
                   Current
                 </span>
               ) : (
@@ -145,7 +163,11 @@ export function AccountSecurityScreen() {
   }
 
   return (
-    <Page title="Account security" back actions={<IconButton icon={RefreshCw} label="Refresh" onClick={load} />}>
+    <Page
+      title="Account security"
+      back
+      actions={<IconButton icon={RefreshCw} label="Refresh" onClick={load} />}
+    >
       <div className="stack">
         <SectionHeader title="Where you are signed in" />
         {sessionList}
@@ -154,10 +176,16 @@ export function AccountSecurityScreen() {
           <SectionHeader title="Password" />
           <AppCard>
             <p className="t-body muted">
-              Changing your password signs out every device, including this one, and emails you to
-              say it happened.
+              Changing your password signs out every device, including this one, and
+              emails you to say it happened.
             </p>
-            <Button variant="outlined" icon={KeyRound} block className="mt-md" onClick={() => setChangingPassword(true)}>
+            <Button
+              variant="outlined"
+              icon={KeyRound}
+              block
+              className="mt-md"
+              onClick={() => setChangingPassword(true)}
+            >
               Change password
             </Button>
           </AppCard>
@@ -179,10 +207,17 @@ export function AccountSecurityScreen() {
           <SectionHeader title="Everywhere" />
           <AppCard>
             <p className="t-body muted">
-              If you have lost a phone, this is the fastest thing to do. It takes effect on the next
-              request each device makes, not at the end of its session.
+              If you have lost a phone, this is the fastest thing to do. It takes effect
+              on the next request each device makes, not at the end of its session.
             </p>
-            <Button variant="tonal" icon={LogOut} block className="mt-md" disabled={busy} onClick={signOutEverywhere}>
+            <Button
+              variant="tonal"
+              icon={LogOut}
+              block
+              className="mt-md"
+              disabled={busy}
+              onClick={signOutEverywhere}
+            >
               Sign out everywhere
             </Button>
           </AppCard>

@@ -9,7 +9,11 @@ import { useStore } from '../../state/context';
  * Adds a clinic without leaving the appointment being created. Clinics are
  * entered by hand in the MVP. Port of clinic_form_sheet.dart.
  */
-export function ClinicFormSheet({ onClose }: { onClose: (clinic: Clinic | null) => void }) {
+export function ClinicFormSheet({
+  onClose,
+}: {
+  onClose: (clinic: Clinic | null) => void;
+}) {
   const store = useStore();
   const { showFailure } = useFeedback();
   const [values, setValues] = useState({
@@ -21,7 +25,9 @@ export function ClinicFormSheet({ onClose }: { onClose: (clinic: Clinic | null) 
     postalCode: '',
     entrance: '',
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof typeof values, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof typeof values, string>>>(
+    {},
+  );
   const [busy, setBusy] = useState(false);
 
   const set = (key: keyof typeof values) => (e: { target: { value: string } }) =>
@@ -29,7 +35,14 @@ export function ClinicFormSheet({ onClose }: { onClose: (clinic: Clinic | null) 
 
   async function save(e: FormEvent) {
     e.preventDefault();
-    const required: (keyof typeof values)[] = ['name', 'phone', 'line1', 'city', 'state', 'postalCode'];
+    const required: (keyof typeof values)[] = [
+      'name',
+      'phone',
+      'line1',
+      'city',
+      'state',
+      'postalCode',
+    ];
     const next: typeof errors = {};
     for (const key of required) if (values[key].trim() === '') next[key] = 'Required';
     setErrors(next);
@@ -59,14 +72,49 @@ export function ClinicFormSheet({ onClose }: { onClose: (clinic: Clinic | null) 
   return (
     <Modal sheet title="Add a clinic" onClose={() => onClose(null)}>
       <form className="stack gap-md" onSubmit={save} noValidate>
-        <TextField label="Clinic name" autoCapitalize="words" value={values.name} onChange={set('name')} error={errors.name} />
-        <TextField label="Phone number" type="tel" autoComplete="off" value={values.phone} onChange={set('phone')} error={errors.phone} />
-        <TextField label="Street address" value={values.line1} onChange={set('line1')} error={errors.line1} />
+        <TextField
+          label="Clinic name"
+          autoCapitalize="words"
+          value={values.name}
+          onChange={set('name')}
+          error={errors.name}
+        />
+        <TextField
+          label="Phone number"
+          type="tel"
+          autoComplete="off"
+          value={values.phone}
+          onChange={set('phone')}
+          error={errors.phone}
+        />
+        <TextField
+          label="Street address"
+          value={values.line1}
+          onChange={set('line1')}
+          error={errors.line1}
+        />
         <div className="city-state">
-          <TextField label="City" value={values.city} onChange={set('city')} error={errors.city} />
-          <TextField label="State" autoCapitalize="characters" value={values.state} onChange={set('state')} error={errors.state} />
+          <TextField
+            label="City"
+            value={values.city}
+            onChange={set('city')}
+            error={errors.city}
+          />
+          <TextField
+            label="State"
+            autoCapitalize="characters"
+            value={values.state}
+            onChange={set('state')}
+            error={errors.state}
+          />
         </div>
-        <TextField label="ZIP code" inputMode="numeric" value={values.postalCode} onChange={set('postalCode')} error={errors.postalCode} />
+        <TextField
+          label="ZIP code"
+          inputMode="numeric"
+          value={values.postalCode}
+          onChange={set('postalCode')}
+          error={errors.postalCode}
+        />
         <TextField
           label="Where should the car stop? (optional)"
           helper="Large campuses are the most common reason a driver cannot find someone."

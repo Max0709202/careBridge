@@ -2,7 +2,14 @@ import { Building2, ChevronRight, LogOut, ShieldCheck } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Button, Card, EmptyState, IconButton, LoadFailure, LoadingBlock } from '../components/ui';
+import {
+  Button,
+  Card,
+  EmptyState,
+  IconButton,
+  LoadFailure,
+  LoadingBlock,
+} from '../components/ui';
 import { canDispatch } from '../domain/models';
 import { useOrganizations, usePlatformAccess, useStore } from '../state/context';
 
@@ -28,7 +35,10 @@ export function OrganizationPickerScreen() {
   const list = organizations.value;
   if (list === null) {
     body = organizations.error ? (
-      <LoadFailure title="Could not load your operators" onRetry={organizations.reload} />
+      <LoadFailure
+        title="Could not load your operators"
+        onRetry={organizations.reload}
+      />
     ) : (
       <LoadingBlock />
     );
@@ -45,7 +55,11 @@ export function OrganizationPickerScreen() {
             ? 'This account is not a member of any transport operator, so there is no queue to work. The administration surface does not need one.'
             : 'This account is not a member of any transport operator. Ask an owner or administrator to add you.'
         }
-        action={isPlatform ? <Button onClick={() => navigate('/admin')}>Open administration</Button> : undefined}
+        action={
+          isPlatform ? (
+            <Button onClick={() => navigate('/admin')}>Open administration</Button>
+          ) : undefined
+        }
       />
     );
   } else {
@@ -59,7 +73,11 @@ export function OrganizationPickerScreen() {
                 <div className="t-title">{organization.name}</div>
                 <div className="t-small muted">{organization.role}</div>
                 {/* A `member` holds a membership without being able to dispatch — said plainly. */}
-                {!allowed && <div className="t-small error-text mt-xs">This role cannot use the dispatch console.</div>}
+                {!allowed && (
+                  <div className="t-small error-text mt-xs">
+                    This role cannot use the dispatch console.
+                  </div>
+                )}
               </div>
               {allowed && <ChevronRight size={20} aria-hidden />}
             </div>
@@ -67,7 +85,10 @@ export function OrganizationPickerScreen() {
           return (
             <li key={organization.id}>
               {allowed ? (
-                <Card label={`${organization.name}, ${organization.role}`} onClick={() => store.selectOrganization(organization.id)}>
+                <Card
+                  label={`${organization.name}, ${organization.role}`}
+                  onClick={() => store.selectOrganization(organization.id)}
+                >
                   {content}
                 </Card>
               ) : (
@@ -85,8 +106,18 @@ export function OrganizationPickerScreen() {
       <header className="app-bar">
         <h1 className="app-title">Choose an operator</h1>
         <div className="app-actions">
-          {isPlatform && <IconButton icon={ShieldCheck} label="Administration" onClick={() => navigate('/admin')} />}
-          <IconButton icon={LogOut} label="Sign out" onClick={() => void store.signOut()} />
+          {isPlatform && (
+            <IconButton
+              icon={ShieldCheck}
+              label="Administration"
+              onClick={() => navigate('/admin')}
+            />
+          )}
+          <IconButton
+            icon={LogOut}
+            label="Sign out"
+            onClick={() => void store.signOut()}
+          />
         </div>
       </header>
       <main className="picker">{body}</main>

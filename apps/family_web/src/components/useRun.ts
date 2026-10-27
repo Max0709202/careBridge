@@ -12,7 +12,9 @@ export function useRun() {
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
-    async <T,>(action: () => Promise<T>): Promise<{ ok: true; value: T } | { ok: false }> => {
+    async <T>(
+      action: () => Promise<T>,
+    ): Promise<{ ok: true; value: T } | { ok: false }> => {
       setBusy(true);
       try {
         return { ok: true, value: await action() };

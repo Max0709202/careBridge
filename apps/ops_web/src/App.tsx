@@ -23,7 +23,9 @@ import { MessagesScreen } from './screens/messages/MessagesScreen';
 
 // Loaded when first opened: the map library is most of its weight, and the
 // queue — the screen every dispatcher starts on — should not wait for it.
-const LiveMapScreen = lazy(() => import('./screens/LiveMapScreen').then((m) => ({ default: m.LiveMapScreen })));
+const LiveMapScreen = lazy(() =>
+  import('./screens/LiveMapScreen').then((m) => ({ default: m.LiveMapScreen })),
+);
 
 /**
  * Routes, and the redirects that matter — the same locations as
@@ -39,53 +41,62 @@ const LiveMapScreen = lazy(() => import('./screens/LiveMapScreen').then((m) => (
 export function App({ messaging }: { messaging: MessagingStore }) {
   const { signedIn, organizationId } = useSession();
   const navigate = useNavigate();
-  const openThread = useCallback((id: string) => navigate(`/messages/${id}`), [navigate]);
+  const openThread = useCallback(
+    (id: string) => navigate(`/messages/${id}`),
+    [navigate],
+  );
 
   return (
     <MessagingProvider store={messaging} active={signedIn} openThread={openThread}>
       <Routes>
-      <Route
-        path="/sign-in"
-        element={signedIn ? <Navigate to="/queue" replace /> : <SignInScreen />}
-      />
-      <Route element={<SignedInOnly />}>
         <Route
-          path="/organizations"
-          element={organizationId ? <Navigate to="/queue" replace /> : <OrganizationPickerScreen />}
+          path="/sign-in"
+          element={signedIn ? <Navigate to="/queue" replace /> : <SignInScreen />}
         />
-        {/*
+        <Route element={<SignedInOnly />}>
+          <Route
+            path="/organizations"
+            element={
+              organizationId ? (
+                <Navigate to="/queue" replace />
+              ) : (
+                <OrganizationPickerScreen />
+              )
+            }
+          />
+          {/*
           Administration is not scoped to an operator, so it sits outside the
           operator check. It is also the only surface a platform account with no
           membership can use; sending them to a picker they cannot satisfy
           would be a closed loop.
         */}
-        <Route path="/admin" element={<AdminShell />}>
-          <Route index element={<OverviewScreen />} />
-          <Route path="audit" element={<AuditScreen />} />
-          <Route path="flags" element={<FlagsScreen />} />
-          <Route path="refunds" element={<RefundsScreen />} />
-        </Route>
-        <Route element={<OperatorChosen />}>
-          <Route element={<ConsoleShell />}>
-            <Route path="/queue" element={<QueueScreen />} />
-            <Route
-              path="/map"
-              element={
-                <Suspense fallback={<LoadingBlock />}>
-                  <LiveMapScreen />
-                </Suspense>
-              }
-            />
-            <Route path="/roster" element={<RosterScreen />} />
-            <Route path="/fleet" element={<FleetScreen />} />
-            <Route path="/seats" element={<SeatsScreen />} />
-            <Route path="/billing" element={<BillingScreen />} />
-            <Route path="/messages" element={<MessagesScreen />} />
-            <Route path="/messages/:conversationId" element={<MessagesScreen />} />
+          <Route path="/admin" element={<AdminShell />}>
+            <Route index element={<OverviewScreen />} />
+            <Route path="audit" element={<AuditScreen />} />
+            <Route path="flags" element={<FlagsScreen />} />
+            <Route path="refunds" element={<RefundsScreen />} />
+          </Route>
+          <Route element={<OperatorChosen />}>
+            <Route element={<ConsoleShell />}>
+              <Route path="/queue" element={<QueueScreen />} />
+              <Route
+                path="/map"
+                element={
+                  <Suspense fallback={<LoadingBlock />}>
+                    <LiveMapScreen />
+                  </Suspense>
+                }
+              />
+              <Route path="/roster" element={<RosterScreen />} />
+              <Route path="/fleet" element={<FleetScreen />} />
+              <Route path="/seats" element={<SeatsScreen />} />
+              <Route path="/billing" element={<BillingScreen />} />
+              <Route path="/messages" element={<MessagesScreen />} />
+              <Route path="/messages/:conversationId" element={<MessagesScreen />} />
+            </Route>
           </Route>
         </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/queue" replace />} />
+        <Route path="*" element={<Navigate to="/queue" replace />} />
       </Routes>
     </MessagingProvider>
   );
@@ -108,7 +119,8 @@ function OperatorChosen() {
   const { organizationId } = useSession();
   const organizations = useOrganizations();
   const list = organizations.value;
-  const stillHeld = list?.some((o) => o.id === organizationId && canDispatch(o)) ?? true;
+  const stillHeld =
+    list?.some((o) => o.id === organizationId && canDispatch(o)) ?? true;
 
   useEffect(() => {
     if (!stillHeld) store.selectOrganization(null);

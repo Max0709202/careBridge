@@ -28,7 +28,11 @@ export function DriverRow({ driver }: { driver: Driver }) {
         </p>
         {driver.vehicle.isWheelchairAccessible && (
           <div className="mt-xs">
-            <StatusPill label="Wheelchair accessible" icon={Accessibility} ink="positive" />
+            <StatusPill
+              label="Wheelchair accessible"
+              icon={Accessibility}
+              ink="positive"
+            />
           </div>
         )}
       </div>
@@ -36,7 +40,15 @@ export function DriverRow({ driver }: { driver: Driver }) {
   );
 }
 
-export function PriceLine({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+export function PriceLine({
+  label,
+  value,
+  muted,
+}: {
+  label: string;
+  value: string;
+  muted?: boolean;
+}) {
   return (
     <div className={`line${muted ? ' muted' : ''}`}>
       <span>{label}</span>

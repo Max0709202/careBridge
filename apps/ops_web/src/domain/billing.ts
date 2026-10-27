@@ -12,13 +12,21 @@ export const BILLING_INTERVALS = ['monthly', 'annual'] as const;
 export type BillingInterval = (typeof BILLING_INTERVALS)[number];
 
 export function parseInterval(value: unknown): BillingInterval | null {
-  return (BILLING_INTERVALS as readonly unknown[]).includes(value) ? (value as BillingInterval) : null;
+  return (BILLING_INTERVALS as readonly unknown[]).includes(value)
+    ? (value as BillingInterval)
+    : null;
 }
 
-export const intervalLabel: Record<BillingInterval, string> = { monthly: 'Monthly', annual: 'Yearly' };
+export const intervalLabel: Record<BillingInterval, string> = {
+  monthly: 'Monthly',
+  annual: 'Yearly',
+};
 
 /** What follows the price on a plan card: "$249 a month". */
-export const intervalCadence: Record<BillingInterval, string> = { monthly: 'a month', annual: 'a year' };
+export const intervalCadence: Record<BillingInterval, string> = {
+  monthly: 'a month',
+  annual: 'a year',
+};
 
 export const SUBSCRIPTION_STATUSES = [
   'trialing',
@@ -31,7 +39,9 @@ export const SUBSCRIPTION_STATUSES = [
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
 export function parseSubscriptionStatus(value: unknown): SubscriptionStatus | null {
-  return (SUBSCRIPTION_STATUSES as readonly unknown[]).includes(value) ? (value as SubscriptionStatus) : null;
+  return (SUBSCRIPTION_STATUSES as readonly unknown[]).includes(value)
+    ? (value as SubscriptionStatus)
+    : null;
 }
 
 export const subscriptionStatusLabel: Record<SubscriptionStatus, string> = {
@@ -91,7 +101,9 @@ export const INVOICE_STATUSES = ['open', 'paid', 'uncollectible', 'void'] as con
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
 export function parseInvoiceStatus(value: unknown): InvoiceStatus | null {
-  return (INVOICE_STATUSES as readonly unknown[]).includes(value) ? (value as InvoiceStatus) : null;
+  return (INVOICE_STATUSES as readonly unknown[]).includes(value)
+    ? (value as InvoiceStatus)
+    : null;
 }
 
 /**
@@ -105,11 +117,17 @@ export const invoiceStatusLabel: Record<InvoiceStatus, string> = {
   void: 'Cancelled',
 };
 
-export const INVOICE_REASONS = ['subscriptionPeriod', 'seatProration', 'intervalSwitch'] as const;
+export const INVOICE_REASONS = [
+  'subscriptionPeriod',
+  'seatProration',
+  'intervalSwitch',
+] as const;
 export type InvoiceReason = (typeof INVOICE_REASONS)[number];
 
 export function parseInvoiceReason(value: unknown): InvoiceReason | null {
-  return (INVOICE_REASONS as readonly unknown[]).includes(value) ? (value as InvoiceReason) : null;
+  return (INVOICE_REASONS as readonly unknown[]).includes(value)
+    ? (value as InvoiceReason)
+    : null;
 }
 
 export const invoiceReasonLabel: Record<InvoiceReason, string> = {
@@ -144,7 +162,8 @@ export const hasFailed = (i: Invoice) => i.attemptCount > 0 && i.status === 'ope
  * Offered on anything still owed, including `uncollectible`: the retries
  * stopped, but a person with a new card should not have to telephone anybody.
  */
-export const isPayable = (i: Invoice) => i.status === 'open' || i.status === 'uncollectible';
+export const isPayable = (i: Invoice) =>
+  i.status === 'open' || i.status === 'uncollectible';
 
 /** The card on file. Four digits and a brand — no card number exists anywhere to decode. */
 export interface PaymentMethod {
@@ -201,4 +220,5 @@ export interface BillingAccount {
  * A subscription that will bill a card that is not there — the single most
  * common way an account lapses without anybody deciding to let it.
  */
-export const willBillWithoutACard = (a: BillingAccount) => a.subscription !== null && a.paymentMethod === null;
+export const willBillWithoutACard = (a: BillingAccount) =>
+  a.subscription !== null && a.paymentMethod === null;

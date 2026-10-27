@@ -51,7 +51,11 @@ export function VerifyEmailScreen() {
             icon={MailCheck}
             title="Your address is confirmed"
             message="You can now invite relatives and accept invitations."
-            action={<Button onClick={() => navigate(home, { replace: true })}>Continue</Button>}
+            action={
+              <Button onClick={() => navigate(home, { replace: true })}>
+                Continue
+              </Button>
+            }
           />
         ) : (
           <EmptyState

@@ -16,8 +16,23 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { useConfirm } from '../components/feedback';
 import { useRun } from '../components/useRun';
-import { Button, Centered, EmptyState, FailureBlock, InfoCard, Page, RequirementChip, Spinner } from '../components/ui';
-import { offersNoShow, placeOneLine, primaryMove, type Job, type Place } from '../domain/models';
+import {
+  Button,
+  Centered,
+  EmptyState,
+  FailureBlock,
+  InfoCard,
+  Page,
+  RequirementChip,
+  Spinner,
+} from '../components/ui';
+import {
+  offersNoShow,
+  placeOneLine,
+  primaryMove,
+  type Job,
+  type Place,
+} from '../domain/models';
 import { actionLabel, driverLabel } from '../domain/rideStatus';
 import type { LocationAccess } from '../services/positionSource';
 import type { SharingState } from '../services/locationService';
@@ -53,7 +68,11 @@ export function JobScreen() {
           icon={CircleCheck}
           title="This ride is done"
           message="It is no longer on your list. Go back to see what is next."
-          action={<Button variant="outlined" onClick={() => navigate('/today')}>Back to today</Button>}
+          action={
+            <Button variant="outlined" onClick={() => navigate('/today')}>
+              Back to today
+            </Button>
+          }
         />
       );
     } else {
@@ -77,7 +96,12 @@ function JobBody({ job }: { job: Job }) {
     <div className="stack gap-md">
       <Passenger job={job} />
       <div className="stack gap-sm">
-        <Stop icon={CircleDot} title="Pick up" place={job.pickup} at={job.scheduledPickupAt} />
+        <Stop
+          icon={CircleDot}
+          title="Pick up"
+          place={job.pickup}
+          at={job.scheduledPickupAt}
+        />
         <Stop icon={MapPin} title="Drop off" place={job.destination} />
       </div>
       {job.notesForDriver && (
@@ -99,14 +123,21 @@ function Passenger({ job }: { job: Job }) {
       <p className="muted">{driverLabel(job.status)}</p>
       {(job.wheelchairRequired || job.assistanceRequired) && (
         <div className="chips mt-md">
-          {job.wheelchairRequired && <RequirementChip icon={Accessibility} label="Wheelchair" />}
-          {job.assistanceRequired && <RequirementChip icon={HandHeart} label="Needs help to the door" />}
+          {job.wheelchairRequired && (
+            <RequirementChip icon={Accessibility} label="Wheelchair" />
+          )}
+          {job.assistanceRequired && (
+            <RequirementChip icon={HandHeart} label="Needs help to the door" />
+          )}
         </div>
       )}
       {job.passengerPhone && (
         // A call from the kerb is what stops a five-minute wait becoming a
         // no-show, so it is a button rather than a number to copy out.
-        <a className="btn btn-outlined mt-md" href={`tel:${job.passengerPhone.replace(/\s/g, '')}`}>
+        <a
+          className="btn btn-outlined mt-md"
+          href={`tel:${job.passengerPhone.replace(/\s/g, '')}`}
+        >
           <Phone size={22} aria-hidden />
           Call {job.passengerName}
         </a>
@@ -127,7 +158,9 @@ function Stop(props: { icon: LucideIcon; title: string; place: Place; at?: Date 
             {props.at && <span className="t-label">{formatTime(props.at)}</span>}
           </div>
           <p className="t-body-lg mt-xs">{placeOneLine(props.place)}</p>
-          {props.place.accessNotes && <p className="muted mt-xs">{props.place.accessNotes}</p>}
+          {props.place.accessNotes && (
+            <p className="muted mt-xs">{props.place.accessNotes}</p>
+          )}
         </div>
       </div>
     </InfoCard>
@@ -165,7 +198,9 @@ function SharingCard() {
         <Crosshair className="ink-primary" aria-hidden style={{ flex: '0 0 auto' }} />
         <div className="grow">
           <p className="t-label">
-            {state.access === 'prompt' ? 'Allow location when your browser asks' : 'Sharing your location with the family'}
+            {state.access === 'prompt'
+              ? 'Allow location when your browser asks'
+              : 'Sharing your location with the family'}
           </p>
           <p className="muted">{detail(state)}</p>
         </div>
@@ -234,7 +269,8 @@ function NoShowButton({ job }: { job: Job }) {
 
   // A fresh figure from the server replaces the local count.
   useEffect(() => {
-    if (job.noShowAvailableInSeconds !== null) setRemaining(job.noShowAvailableInSeconds);
+    if (job.noShowAvailableInSeconds !== null)
+      setRemaining(job.noShowAvailableInSeconds);
   }, [job.noShowAvailableInSeconds]);
 
   // Counted down locally between polls: a button that refuses without
@@ -257,8 +293,16 @@ function NoShowButton({ job }: { job: Job }) {
   }
 
   return (
-    <Button variant="danger-outlined" icon={UserX} disabled={!ready} busy={busy} onClick={() => void record()}>
-      {ready ? 'Nobody came out' : `Nobody came out — wait ${formatCountdown(remaining)}`}
+    <Button
+      variant="danger-outlined"
+      icon={UserX}
+      disabled={!ready}
+      busy={busy}
+      onClick={() => void record()}
+    >
+      {ready
+        ? 'Nobody came out'
+        : `Nobody came out — wait ${formatCountdown(remaining)}`}
     </Button>
   );
 }

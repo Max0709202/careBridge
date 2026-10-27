@@ -2,9 +2,23 @@ import { History, Settings2, User } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { useFeedback } from '../../components/feedback';
-import { Button, Card, EmptyState, LoadFailure, LoadingBlock, Screen, TextField } from '../../components/ui';
+import {
+  Button,
+  Card,
+  EmptyState,
+  LoadFailure,
+  LoadingBlock,
+  Screen,
+  TextField,
+} from '../../components/ui';
 import { formatDayTimeSeconds } from '../../core/format';
-import { actorLabel, isEmptyFilter, isSystem, type AuditEntry, type AuditFilter } from '../../domain/admin';
+import {
+  actorLabel,
+  isEmptyFilter,
+  isSystem,
+  type AuditEntry,
+  type AuditFilter,
+} from '../../domain/admin';
 import { useStore } from '../../state/context';
 
 /**
@@ -22,7 +36,11 @@ export function AuditScreen() {
   const store = useStore();
   const { showFailure } = useFeedback();
 
-  const [draft, setDraft] = useState<Required<AuditFilter>>({ action: '', entityType: '', entityId: '' });
+  const [draft, setDraft] = useState<Required<AuditFilter>>({
+    action: '',
+    entityType: '',
+    entityId: '',
+  });
   const [filter, setFilter] = useState<AuditFilter>({});
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -96,7 +114,9 @@ export function AuditScreen() {
   if (loading) {
     body = <LoadingBlock />;
   } else if (error) {
-    body = <LoadFailure title="Could not read the log" onRetry={() => void reload(filter)} />;
+    body = (
+      <LoadFailure title="Could not read the log" onRetry={() => void reload(filter)} />
+    );
   } else if (entries.length === 0) {
     // An empty result under a filter is ambiguous: "nothing happened" or
     // "that is not what the action is called".
@@ -123,7 +143,11 @@ export function AuditScreen() {
         </ul>
         <div className="list-footer">
           {cursor ? (
-            <Button variant="outlined" busy={appending} onClick={() => void appendPage()}>
+            <Button
+              variant="outlined"
+              busy={appending}
+              onClick={() => void appendPage()}
+            >
               {appending ? 'Loading…' : 'Load more'}
             </Button>
           ) : (
@@ -187,14 +211,20 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
         <span className="t-small muted nowrap">{formatDayTimeSeconds(entry.at)}</span>
       </div>
       <div className="t-small muted mt-xs">
-        {entry.entityId === null ? entry.entityType : `${entry.entityType} ${entry.entityId}`}
+        {entry.entityId === null
+          ? entry.entityType
+          : `${entry.entityType} ${entry.entityId}`}
       </div>
       {/* Names, never values — and the wording says so. */}
       {entry.changedFields.length > 0 && (
-        <div className="t-small mt-xs">Fields changed: {entry.changedFields.join(', ')}</div>
+        <div className="t-small mt-xs">
+          Fields changed: {entry.changedFields.join(', ')}
+        </div>
       )}
       {/* The join between this row and the request logs. */}
-      {entry.correlationId && <div className="t-small outline mt-xs">Correlation {entry.correlationId}</div>}
+      {entry.correlationId && (
+        <div className="t-small outline mt-xs">Correlation {entry.correlationId}</div>
+      )}
     </Card>
   );
 }

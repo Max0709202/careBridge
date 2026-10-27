@@ -97,7 +97,8 @@ export function TrackingScreen() {
   // more recent *reading*.
   const livePoint = live?.type === 'position' ? live.point : null;
   const position = newerPoint(ride.lastKnownPosition, livePoint);
-  const etaMinutes = (live?.type === 'position' ? live.etaMinutes : null) ?? ride.etaMinutes;
+  const etaMinutes =
+    (live?.type === 'position' ? live.etaMinutes : null) ?? ride.etaMinutes;
   const age = position === null ? null : now.getTime() - position.capturedAt.getTime();
   const stale = age !== null && age > TrackingFreshness.staleMs;
   const lost = age !== null && age > TrackingFreshness.lostMs;
@@ -129,7 +130,13 @@ export function TrackingScreen() {
     <Page
       title={patient ? `${patient.preferredName}’s trip` : 'Live trip'}
       back
-      actions={<IconButton icon={ReceiptText} label="Ride details" onClick={() => navigate(`/rides/${id}`)} />}
+      actions={
+        <IconButton
+          icon={ReceiptText}
+          label="Ride details"
+          onClick={() => navigate(`/rides/${id}`)}
+        />
+      }
     >
       <div className="stack">
         {ride.pickup.coordinates && ride.destination.coordinates ? (
@@ -146,8 +153,8 @@ export function TrackingScreen() {
         ) : (
           <AppCard>
             <p className="t-body muted">
-              This address has not been verified yet, so the route cannot be drawn. Status updates
-              below are unaffected.
+              This address has not been verified yet, so the route cannot be drawn.
+              Status updates below are unaffected.
             </p>
           </AppCard>
         )}
@@ -187,7 +194,13 @@ export function TrackingScreen() {
           {import.meta.env.DEV && <DemoControls rideId={id} />}
         </div>
 
-        <Button variant="outlined-danger" icon={CircleOff} block className="mt-lg" onClick={() => cancel(ride)}>
+        <Button
+          variant="outlined-danger"
+          icon={CircleOff}
+          block
+          className="mt-lg"
+          onClick={() => cancel(ride)}
+        >
           Cancel this ride
         </Button>
       </div>
@@ -195,7 +208,15 @@ export function TrackingScreen() {
   );
 }
 
-function FreshnessBanner({ age, stale, lost }: { age: number | null; stale: boolean; lost: boolean }) {
+function FreshnessBanner({
+  age,
+  stale,
+  lost,
+}: {
+  age: number | null;
+  stale: boolean;
+  lost: boolean;
+}) {
   let ink: Ink;
   let icon;
   let message: string;
@@ -226,14 +247,25 @@ function FreshnessBanner({ age, stale, lost }: { age: number | null; stale: bool
   );
 }
 
-function StatusHeadline({ ride, lost, etaMinutes }: { ride: Ride; lost: boolean; etaMinutes: number | null }) {
+function StatusHeadline({
+  ride,
+  lost,
+  etaMinutes,
+}: {
+  ride: Ride;
+  lost: boolean;
+  etaMinutes: number | null;
+}) {
   const eta = etaMinutes;
   const unit = eta === 1 ? 'minute' : 'minutes';
 
   let headline: string;
   switch (ride.status) {
     case 'driverEnRoute':
-      headline = lost || eta === null ? 'The driver is on the way' : `Driver is about ${eta} ${unit} away`;
+      headline =
+        lost || eta === null
+          ? 'The driver is on the way'
+          : `Driver is about ${eta} ${unit} away`;
       break;
     case 'driverArrived':
       headline = 'The driver is outside';
@@ -242,7 +274,10 @@ function StatusHeadline({ ride, lost, etaMinutes }: { ride: Ride; lost: boolean;
       headline = 'Picked up safely';
       break;
     case 'inProgress':
-      headline = lost || eta === null ? 'On the way to the clinic' : `Arriving in about ${eta} ${unit}`;
+      headline =
+        lost || eta === null
+          ? 'On the way to the clinic'
+          : `Arriving in about ${eta} ${unit}`;
       break;
     case 'arrivedAtDestination':
       headline = 'Arrived at the clinic';
@@ -287,11 +322,19 @@ function DriverCard({ driver, rideId }: { driver: Driver; rideId: string }) {
         </div>
       </div>
       <Divider />
-      <InfoRow icon={CarFront} label="Look for" value={vehicleDescription(driver.vehicle)} />
+      <InfoRow
+        icon={CarFront}
+        label="Look for"
+        value={vehicleDescription(driver.vehicle)}
+      />
       <InfoRow icon={Hash} label="Licence plate" value={driver.vehicle.licensePlate} />
       {driver.vehicle.isWheelchairAccessible && (
         <div className="mt-sm">
-          <StatusPill label="Wheelchair accessible" icon={Accessibility} ink="positive" />
+          <StatusPill
+            label="Wheelchair accessible"
+            icon={Accessibility}
+            ink="positive"
+          />
         </div>
       )}
       {/* Through the relay: your phone rings first, and neither side sees the other's number. */}
@@ -320,7 +363,11 @@ function FinishedRideView({ ride }: { ride: Ride }) {
             ? 'Location sharing ended when the trip finished. The full timeline is on the ride details.'
             : `This ride is ${rideStatusLabel[ride.status].toLowerCase()}, so the driver is no longer sharing location.`
         }
-        action={<Button onClick={() => navigate(`/rides/${ride.id}`, { replace: true })}>See ride details</Button>}
+        action={
+          <Button onClick={() => navigate(`/rides/${ride.id}`, { replace: true })}>
+            See ride details
+          </Button>
+        }
       />
     </Page>
   );

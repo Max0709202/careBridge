@@ -3,7 +3,15 @@
  * same strings as its `intl` patterns so the two apps read identically.
  */
 
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const WEEKDAYS = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
 const MONTHS = [
   'January',
   'February',
@@ -131,7 +139,8 @@ export function formatSessionAge(at: Date, now: Date = new Date()): string {
 }
 
 /** Grouped in fours because a secret key is transcribed by hand. */
-export const groupInFours = (secret: string) => secret.match(/.{1,4}/g)?.join(' ') ?? '';
+export const groupInFours = (secret: string) =>
+  secret.match(/.{1,4}/g)?.join(' ') ?? '';
 
 // ─── <input type="date|time"> plumbing ───────────────────────────────────────
 

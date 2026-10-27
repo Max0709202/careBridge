@@ -51,14 +51,25 @@ export function DocumentReviewSheet(props: {
             <p className="muted">Nothing has been handed in yet.</p>
           ) : (
             current.map((document) => (
-              <DocumentRow key={document.id} organizationId={organizationId} driverId={driverId} document={document} />
+              <DocumentRow
+                key={document.id}
+                organizationId={organizationId}
+                driverId={driverId}
+                document={document}
+              />
             ))
           )}
         </div>
       </>
     );
   } else if (documents.error) {
-    body = <EmptyState icon={CircleAlert} title="Could not load the paperwork" message={failureMessage(documents.error)} />;
+    body = (
+      <EmptyState
+        icon={CircleAlert}
+        title="Could not load the paperwork"
+        message={failureMessage(documents.error)}
+      />
+    );
   } else {
     body = <LoadingBlock />;
   }
@@ -92,12 +103,19 @@ function ComplianceLine({ compliance }: { compliance: DriverCompliance }) {
   return (
     <p className="row gap-xs">
       <Hourglass size={20} className="error-text" aria-hidden />
-      <span>Cannot be approved yet — still missing: {compliance.missing.map(documentLabel).join(', ')}.</span>
+      <span>
+        Cannot be approved yet — still missing:{' '}
+        {compliance.missing.map(documentLabel).join(', ')}.
+      </span>
     </p>
   );
 }
 
-function DocumentRow(props: { organizationId: string; driverId: string; document: DriverDocument }) {
+function DocumentRow(props: {
+  organizationId: string;
+  driverId: string;
+  document: DriverDocument;
+}) {
   const { organizationId, driverId, document } = props;
   const store = useStore();
   const { showFailure } = useFeedback();
@@ -111,7 +129,9 @@ function DocumentRow(props: { organizationId: string; driverId: string; document
     // from reaching back into the console.
     const tab = window.open('about:blank', '_blank');
     try {
-      const view = await store.guard(() => store.api.viewDocument(organizationId, driverId, document.id));
+      const view = await store.guard(() =>
+        store.api.viewDocument(organizationId, driverId, document.id),
+      );
       if (tab) {
         tab.opener = null;
         tab.location.href = view.url;
@@ -127,7 +147,13 @@ function DocumentRow(props: { organizationId: string; driverId: string; document
   async function review(approve: boolean) {
     const result = await run(() =>
       store.guard(() =>
-        store.api.reviewDocument({ organizationId, driverId, documentId: document.id, approve, note: note.trim() }),
+        store.api.reviewDocument({
+          organizationId,
+          driverId,
+          documentId: document.id,
+          approve,
+          note: note.trim(),
+        }),
       ),
     );
     if (result.ok) {
@@ -141,11 +167,18 @@ function DocumentRow(props: { organizationId: string; driverId: string; document
     <Card>
       <div className="row">
         <span className="t-title grow">{documentLabel(document.kind)}</span>
-        <span className="t-label">{documentStatusLabel[document.status] ?? document.status}</span>
+        <span className="t-label">
+          {documentStatusLabel[document.status] ?? document.status}
+        </span>
       </div>
       {document.reviewNote && <p className="t-small mt-xs">{document.reviewNote}</p>}
       <div className="actions-row">
-        <Button variant="outlined" icon={ExternalLink} disabled={busy} onClick={() => void open()}>
+        <Button
+          variant="outlined"
+          icon={ExternalLink}
+          disabled={busy}
+          onClick={() => void open()}
+        >
           Open
         </Button>
         {awaitingDecision && (
@@ -153,7 +186,11 @@ function DocumentRow(props: { organizationId: string; driverId: string; document
             <Button disabled={busy} onClick={() => void review(true)}>
               Approve
             </Button>
-            <Button variant="outlined" disabled={busy || note.trim() === ''} onClick={() => void review(false)}>
+            <Button
+              variant="outlined"
+              disabled={busy || note.trim() === ''}
+              onClick={() => void review(false)}
+            >
               Reject
             </Button>
           </>

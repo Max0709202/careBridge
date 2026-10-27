@@ -49,14 +49,16 @@ export function ForgotPasswordScreen() {
             icon={MailCheck}
             title="Check your inbox"
             message={`If ${email.trim()} has a CareBridge account, a link to choose a new password is on its way. It works once.`}
-            action={<Button onClick={() => navigate('/sign-in')}>Back to sign in</Button>}
+            action={
+              <Button onClick={() => navigate('/sign-in')}>Back to sign in</Button>
+            }
           />
         </AppCard>
       ) : (
         <form className="stack gap-md" onSubmit={submit} noValidate>
           <p className="t-body-lg muted">
-            Enter the address you signed up with and we will email you a link to choose a new
-            password.
+            Enter the address you signed up with and we will email you a link to choose
+            a new password.
           </p>
           <TextField
             label="Email address"
@@ -117,7 +119,11 @@ export function ResetPasswordScreen() {
             icon={KeyRound}
             title="Your password is changed"
             message="Every device has been signed out. Sign in with your new password."
-            action={<Button onClick={() => navigate('/sign-in', { replace: true })}>Sign in</Button>}
+            action={
+              <Button onClick={() => navigate('/sign-in', { replace: true })}>
+                Sign in
+              </Button>
+            }
           />
         </AppCard>
       ) : token === '' ? (
@@ -125,12 +131,17 @@ export function ResetPasswordScreen() {
           icon={KeyRound}
           title="This link is incomplete"
           message="Open the link from the email again, or ask for a new one."
-          action={<Button onClick={() => navigate('/forgot-password')}>Ask for a new link</Button>}
+          action={
+            <Button onClick={() => navigate('/forgot-password')}>
+              Ask for a new link
+            </Button>
+          }
         />
       ) : (
         <form className="stack gap-md" onSubmit={submit} noValidate>
           <p className="t-body-lg muted">
-            Changing your password signs out every device and emails you to say it happened.
+            Changing your password signs out every device and emails you to say it
+            happened.
           </p>
           <TextField
             label="New password"

@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import type { TrackingSocket } from '../api/trackingSocket';
 import { serverNow } from '../core/serverClock';
@@ -13,8 +20,15 @@ import { withPosition, type LiveBoard, type LiveRide } from '../domain/liveMap';
  */
 const TrackingContext = createContext<TrackingSocket | null>(null);
 
-export function TrackingProvider(props: { socket: TrackingSocket | null; children: ReactNode }) {
-  return <TrackingContext.Provider value={props.socket}>{props.children}</TrackingContext.Provider>;
+export function TrackingProvider(props: {
+  socket: TrackingSocket | null;
+  children: ReactNode;
+}) {
+  return (
+    <TrackingContext.Provider value={props.socket}>
+      {props.children}
+    </TrackingContext.Provider>
+  );
 }
 
 /**
@@ -26,9 +40,14 @@ export function TrackingProvider(props: { socket: TrackingSocket | null; childre
  */
 export function useLiveRides(board: LiveBoard | null): LiveRide[] {
   const socket = useContext(TrackingContext);
-  const [pushed, setPushed] = useState<Record<string, Pick<LiveRide, 'position' | 'etaMinutes'>>>({});
+  const [pushed, setPushed] = useState<
+    Record<string, Pick<LiveRide, 'position' | 'etaMinutes'>>
+  >({});
 
-  const rideIds = useMemo(() => (board ? board.rides.map((r) => r.rideId).sort() : []), [board]);
+  const rideIds = useMemo(
+    () => (board ? board.rides.map((r) => r.rideId).sort() : []),
+    [board],
+  );
   const watchKey = rideIds.join(',');
 
   useEffect(() => {
@@ -50,7 +69,9 @@ export function useLiveRides(board: LiveBoard | null): LiveRide[] {
     () =>
       (board?.rides ?? []).map((ride) => {
         const live = pushed[ride.rideId];
-        return live?.position ? withPosition(ride, live.position, live.etaMinutes) : ride;
+        return live?.position
+          ? withPosition(ride, live.position, live.etaMinutes)
+          : ride;
       }),
     [board, pushed],
   );

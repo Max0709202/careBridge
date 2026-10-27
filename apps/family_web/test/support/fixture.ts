@@ -6,7 +6,9 @@ import type { components } from '../../src/api/schema';
 /** The Flutter app's captured snapshot, shared rather than copied. */
 export function loadSnapshot(): components['schemas']['CareStateDto'] {
   const path = resolve(__dirname, '../../../../test/fixtures/care_state_snapshot.json');
-  return JSON.parse(readFileSync(path, 'utf8')) as components['schemas']['CareStateDto'];
+  return JSON.parse(
+    readFileSync(path, 'utf8'),
+  ) as components['schemas']['CareStateDto'];
 }
 
 export const Seeded = {

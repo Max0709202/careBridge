@@ -28,7 +28,11 @@ import {
 } from '../src/domain/billing';
 import { initialsOf, newerPoint, type TrackingPoint } from '../src/domain/models';
 import { estimateFare, standardPricingRule } from '../src/domain/pricing';
-import { rideAllowsLocationSharing, ridePassengerIsOnboard, rideIsTerminal } from '../src/domain/statuses';
+import {
+  rideAllowsLocationSharing,
+  ridePassengerIsOnboard,
+  rideIsTerminal,
+} from '../src/domain/statuses';
 
 describe('money', () => {
   it('formats cents without floating-point drift', () => {
@@ -66,13 +70,23 @@ describe('fare estimate', () => {
   });
 
   it('shows when the minimum fare lifted the total', () => {
-    const e = estimateFare({ rule: standardPricingRule, distanceMiles: 0, durationMinutes: 0 });
+    const e = estimateFare({
+      rule: standardPricingRule,
+      distanceMiles: 0,
+      durationMinutes: 0,
+    });
     expect(e.totalCents).toBe(1800);
     expect(e.minimumApplied).toBe(true);
   });
 
   it('refuses negative inputs', () => {
-    expect(() => estimateFare({ rule: standardPricingRule, distanceMiles: -1, durationMinutes: 0 })).toThrow();
+    expect(() =>
+      estimateFare({
+        rule: standardPricingRule,
+        distanceMiles: -1,
+        durationMinutes: 0,
+      }),
+    ).toThrow();
   });
 
   it('estimates distance and drive time conservatively', () => {
@@ -140,7 +154,9 @@ describe('formatting', () => {
   });
 
   it('combines a date and a time field into a local instant', () => {
-    expect(combineLocal('2026-08-13', '10:40')?.getTime()).toBe(new Date(2026, 7, 13, 10, 40).getTime());
+    expect(combineLocal('2026-08-13', '10:40')?.getTime()).toBe(
+      new Date(2026, 7, 13, 10, 40).getTime(),
+    );
     expect(combineLocal('', '10:40')).toBeNull();
     expect(combineLocal('2026-08-13', '')).toBeNull();
   });
@@ -180,7 +196,14 @@ describe('tracking', () => {
 });
 
 describe('billing', () => {
-  const card: PaymentMethod = { id: 'c', brand: 'visa', last4: '4242', expMonth: 12, expYear: 2026, isDefault: true };
+  const card: PaymentMethod = {
+    id: 'c',
+    brand: 'visa',
+    last4: '4242',
+    expMonth: 12,
+    expYear: 2026,
+    isDefault: true,
+  };
 
   it('judges card expiry against the end of the expiry month', () => {
     expect(cardHasExpired(card, new Date(Date.UTC(2026, 11, 1)))).toBe(false);
@@ -198,11 +221,17 @@ describe('billing', () => {
     const invoice = { status: 'open' } as Invoice;
     expect(DunningCopy.headline(invoice)).toBe('Your payment did not go through');
     expect(DunningCopy.detail(invoice)).toMatch(/^Nothing has been switched off/);
-    expect(DunningCopy.detail({ status: 'uncollectible' } as Invoice)).toMatch(/stopped trying/);
+    expect(DunningCopy.detail({ status: 'uncollectible' } as Invoice)).toMatch(
+      /stopped trying/,
+    );
   });
 
   it('prices a family plan at its base and a seat plan by graduated bands', () => {
-    const family = { basePriceCents: 2900, includedSeats: 0, seatTiers: [] } as unknown as SubscriptionPlan;
+    const family = {
+      basePriceCents: 2900,
+      includedSeats: 0,
+      seatTiers: [],
+    } as unknown as SubscriptionPlan;
     expect(periodPriceCents(family)).toBe(2900);
 
     const seats = {

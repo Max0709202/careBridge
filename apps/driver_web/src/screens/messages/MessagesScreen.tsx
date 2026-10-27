@@ -3,10 +3,22 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Modal } from '../../components/feedback';
-import { Button, Centered, EmptyState, IconButton, Page, Spinner } from '../../components/ui';
+import {
+  Button,
+  Centered,
+  EmptyState,
+  IconButton,
+  Page,
+  Spinner,
+} from '../../components/ui';
 import { useRun } from '../../components/useRun';
 import { formatDay, formatTime } from '../format';
-import { sameDay, type Colleague, type Conversation, type OpenSubject } from '../../messaging/model';
+import {
+  sameDay,
+  type Colleague,
+  type Conversation,
+  type OpenSubject,
+} from '../../messaging/model';
 import { useInbox, useMessagingStore } from '../../messaging/react';
 import { useDriver } from '../../state/context';
 
@@ -32,7 +44,13 @@ export function MessagesScreen() {
     <Page
       title="Messages"
       back="/today"
-      actions={<IconButton icon={Settings2} label="Calls and alerts" onClick={() => navigate('/settings/calls')} />}
+      actions={
+        <IconButton
+          icon={Settings2}
+          label="Calls and alerts"
+          onClick={() => navigate('/settings/calls')}
+        />
+      }
     >
       <div className="stack gap-md">
         <div className="message-shortcuts">
@@ -48,7 +66,9 @@ export function MessagesScreen() {
             variant="outlined"
             icon={Users}
             disabled={busy || !organizationId}
-            onClick={() => organizationId && void open({ kind: 'operatorDrivers', organizationId })}
+            onClick={() =>
+              organizationId && void open({ kind: 'operatorDrivers', organizationId })
+            }
           >
             Team
           </Button>
@@ -66,19 +86,30 @@ export function MessagesScreen() {
             icon={MessageSquare}
             title="Could not load messages"
             message="Check your signal and try again."
-            action={<Button variant="outlined" onClick={() => void store.loadInbox()}>Try again</Button>}
+            action={
+              <Button variant="outlined" onClick={() => void store.loadInbox()}>
+                Try again
+              </Button>
+            }
           />
         ) : !inbox ? (
           <Centered>
             <Spinner />
           </Centered>
         ) : inbox.length === 0 ? (
-          <EmptyState icon={MessageSquare} title="No messages yet" message="Message dispatch or the team from here." />
+          <EmptyState
+            icon={MessageSquare}
+            title="No messages yet"
+            message="Message dispatch or the team from here."
+          />
         ) : (
           <ul className="list">
             {inbox.map((c) => (
               <li key={c.id}>
-                <InboxRow conversation={c} onOpen={() => navigate(`/messages/${c.id}`)} />
+                <InboxRow
+                  conversation={c}
+                  onOpen={() => navigate(`/messages/${c.id}`)}
+                />
               </li>
             ))}
           </ul>
@@ -89,7 +120,8 @@ export function MessagesScreen() {
           organizationId={organizationId}
           onClose={(colleague) => {
             setPicking(false);
-            if (colleague) void open({ kind: 'driverDriver', peerDriverId: colleague.driverId });
+            if (colleague)
+              void open({ kind: 'driverDriver', peerDriverId: colleague.driverId });
           }}
         />
       )}
@@ -97,7 +129,13 @@ export function MessagesScreen() {
   );
 }
 
-function InboxRow({ conversation: c, onOpen }: { conversation: Conversation; onOpen: () => void }) {
+function InboxRow({
+  conversation: c,
+  onOpen,
+}: {
+  conversation: Conversation;
+  onOpen: () => void;
+}) {
   const unread = c.unreadCount > 0;
   const at = c.lastMessageAt;
   return (
@@ -111,12 +149,18 @@ function InboxRow({ conversation: c, onOpen }: { conversation: Conversation; onO
         <span className="grow t-title" style={{ fontWeight: unread ? 700 : 500 }}>
           {c.title}
         </span>
-        {at && <span className="muted">{sameDay(at, new Date()) ? formatTime(at) : formatDay(at)}</span>}
+        {at && (
+          <span className="muted">
+            {sameDay(at, new Date()) ? formatTime(at) : formatDay(at)}
+          </span>
+        )}
       </span>
       {c.ride && <span className="ink-primary">Trip with {c.ride.patientName}</span>}
       <span className="row">
         <span className="grow muted inbox-preview">
-          {c.lastMessage ? `${c.lastMessage.mine ? 'You: ' : ''}${c.lastMessage.body}` : 'No messages yet'}
+          {c.lastMessage
+            ? `${c.lastMessage.mine ? 'You: ' : ''}${c.lastMessage.body}`
+            : 'No messages yet'}
         </span>
         {unread && <span className="count-badge">{c.unreadCount}</span>}
       </span>
@@ -128,7 +172,10 @@ function InboxRow({ conversation: c, onOpen }: { conversation: Conversation; onO
  * Drivers at the same company. Only someone on shift can be messaged for the
  * first time — the rule is the server's; this just says so before you try.
  */
-function ColleaguePicker(props: { organizationId: string; onClose: (colleague: Colleague | null) => void }) {
+function ColleaguePicker(props: {
+  organizationId: string;
+  onClose: (colleague: Colleague | null) => void;
+}) {
   const store = useMessagingStore();
   const [colleagues, setColleagues] = useState<Colleague[] | null>(null);
 
@@ -156,7 +203,9 @@ function ColleaguePicker(props: { organizationId: string; onClose: (colleague: C
                 aria-label={c.onShift ? c.displayName : `${c.displayName}, off shift`}
               >
                 {c.displayName}
-                <span className="muted">{c.onShift ? ' · on shift' : ' · off shift'}</span>
+                <span className="muted">
+                  {c.onShift ? ' · on shift' : ' · off shift'}
+                </span>
               </Button>
             </li>
           ))}

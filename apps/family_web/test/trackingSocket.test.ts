@@ -26,7 +26,8 @@ function fakeIo() {
     sockets.push({ handlers, auth: options.auth });
     return socket;
   }) as unknown as ConstructorParameters<typeof TrackingSocket>[2];
-  const fire = (index: number, event: string, data?: unknown) => sockets[index]?.handlers.get(event)?.(data);
+  const fire = (index: number, event: string, data?: unknown) =>
+    sockets[index]?.handlers.get(event)?.(data);
   return { connect, sockets, fire };
 }
 
@@ -38,7 +39,11 @@ describe('TrackingSocket', () => {
     const tokens = new InMemoryTokenStore();
     tokens.write({ accessToken: 'first', refreshToken: 'r' });
     const io = fakeIo();
-    return { tokens, io, socket: new TrackingSocket(tokens, 'http://localhost/api/v1', io.connect) };
+    return {
+      tokens,
+      io,
+      socket: new TrackingSocket(tokens, 'http://localhost/api/v1', io.connect),
+    };
   }
 
   it('starts again with the current token after the server ends the connection', () => {

@@ -34,7 +34,10 @@ export type BatteryPressure = 'none' | 'low' | 'critical';
  * Charging outranks the reading: a phone at 4% on a car charger will be at 40%
  * in half an hour. An unknown level is not a reason to back off.
  */
-export function batteryPressure(percent: number | null, charging: boolean): BatteryPressure {
+export function batteryPressure(
+  percent: number | null,
+  charging: boolean,
+): BatteryPressure {
   if (charging || percent === null) return 'none';
   if (percent <= 5) return 'critical';
   if (percent <= 15) return 'low';

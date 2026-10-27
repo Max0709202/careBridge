@@ -14,7 +14,11 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { rideStatusVisual, AppointmentStatusPill, RideStatusPill } from '../../components/status';
+import {
+  rideStatusVisual,
+  AppointmentStatusPill,
+  RideStatusPill,
+} from '../../components/status';
 import { useRun } from '../../components/useRun';
 import {
   AppCard,
@@ -95,8 +99,17 @@ export function DashboardScreen() {
       title="CareBridge"
       actions={
         <>
-          <IconButton icon={RefreshCw} label="Refresh" disabled={busy} onClick={() => run(() => store.refresh())} />
-          <IconButton icon={Settings} label="Settings" onClick={() => navigate('/settings')} />
+          <IconButton
+            icon={RefreshCw}
+            label="Refresh"
+            disabled={busy}
+            onClick={() => run(() => store.refresh())}
+          />
+          <IconButton
+            icon={Settings}
+            label="Settings"
+            onClick={() => navigate('/settings')}
+          />
         </>
       }
     >
@@ -109,10 +122,17 @@ export function DashboardScreen() {
           </div>
         ))}
         <div className="mt-lg">
-          <NextAppointmentSection appointment={nextAppointment} state={state} now={now} />
+          <NextAppointmentSection
+            appointment={nextAppointment}
+            state={state}
+            now={now}
+          />
         </div>
         <div className="mt-lg">
-          <SectionHeader title="Quick actions" subtitle={`For ${patient.preferredName}`} />
+          <SectionHeader
+            title="Quick actions"
+            subtitle={`For ${patient.preferredName}`}
+          />
           <QuickActions patient={patient} state={state} />
         </div>
         <EmergencyContactCard patient={patient} />
@@ -128,8 +148,8 @@ export function DashboardScreen() {
           <RecentActivity state={state} patient={patient} now={now} />
         </div>
         <p className="t-small muted center mt-xl">
-          CareBridge coordinates appointments and transport. It is not for emergencies — in an
-          emergency, call 911.
+          CareBridge coordinates appointments and transport. It is not for emergencies —
+          in an emergency, call 911.
         </p>
       </div>
     </Page>
@@ -189,7 +209,9 @@ function ActiveRideCard({ ride, patient }: { ride: Ride; patient: Patient }) {
         block
         className="mt-md"
         icon={trackable ? LocateFixed : ReceiptText}
-        onClick={() => navigate(trackable ? `/rides/${ride.id}/track` : `/rides/${ride.id}`)}
+        onClick={() =>
+          navigate(trackable ? `/rides/${ride.id}/track` : `/rides/${ride.id}`)
+        }
       >
         {trackable ? 'Follow the trip' : 'Ride details'}
       </Button>
@@ -243,7 +265,11 @@ function NextAppointmentSection({
         <p className="t-body muted mt-xs">
           When you add one, it will show here with its transport status.
         </p>
-        <Button icon={Plus} className="mt-md" onClick={() => navigate('/appointments/new')}>
+        <Button
+          icon={Plus}
+          className="mt-md"
+          onClick={() => navigate('/appointments/new')}
+        >
           Add an appointment
         </Button>
       </AppCard>
@@ -280,7 +306,11 @@ function QuickActions({ patient, state }: { patient: Patient; state: CareState }
   return (
     <div className="wrap">
       {can(state, patient.id, 'scheduleAppointments') && (
-        <Button variant="tonal" icon={CalendarDays} onClick={() => navigate('/appointments/new')}>
+        <Button
+          variant="tonal"
+          icon={CalendarDays}
+          onClick={() => navigate('/appointments/new')}
+        >
           Add appointment
         </Button>
       )}
@@ -289,7 +319,11 @@ function QuickActions({ patient, state }: { patient: Patient; state: CareState }
           Request transport
         </Button>
       )}
-      <Button variant="outlined" icon={User} onClick={() => navigate(`/patients/${patient.id}`)}>
+      <Button
+        variant="outlined"
+        icon={User}
+        onClick={() => navigate(`/patients/${patient.id}`)}
+      >
         Profile
       </Button>
     </div>
@@ -316,7 +350,15 @@ function EmergencyContactCard({ patient }: { patient: Patient }) {
   );
 }
 
-function RecentActivity({ state, patient, now }: { state: CareState; patient: Patient; now: Date }) {
+function RecentActivity({
+  state,
+  patient,
+  now,
+}: {
+  state: CareState;
+  patient: Patient;
+  now: Date;
+}) {
   const navigate = useNavigate();
   const rides = ridesFor(state, patient.id)
     .filter((r) => rideIsTerminal(r.status))
@@ -333,9 +375,12 @@ function RecentActivity({ state, patient, now }: { state: CareState; patient: Pa
         <AppCard key={ride.id} onClick={() => navigate(`/rides/${ride.id}`)}>
           <div className="row">
             <div className="grow">
-              <p className="t-body-lg">{formatRelativeDay(ride.scheduledPickupAt, now)}</p>
+              <p className="t-body-lg">
+                {formatRelativeDay(ride.scheduledPickupAt, now)}
+              </p>
               <p className="t-body muted" style={{ marginTop: 2 }}>
-                {rideDirectionLabel[ride.direction]} · {formatMoney(ride.estimate.totalCents)}
+                {rideDirectionLabel[ride.direction]} ·{' '}
+                {formatMoney(ride.estimate.totalCents)}
               </p>
             </div>
             <RideStatusPill status={ride.status} outlined />

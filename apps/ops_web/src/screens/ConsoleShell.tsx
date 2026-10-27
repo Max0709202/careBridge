@@ -16,7 +16,12 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { IconButton } from '../components/ui';
 import { useInbox } from '../messaging/react';
 import { IncomingCallBanner } from './messages/IncomingCallBanner';
-import { usePlatformAccess, useSelectedOrganization, useSession, useStore } from '../state/context';
+import {
+  usePlatformAccess,
+  useSelectedOrganization,
+  useSession,
+  useStore,
+} from '../state/context';
 
 export interface Destination {
   path: string;
@@ -58,7 +63,9 @@ export function ConsoleShell() {
   const unread = (inbox ?? [])
     .filter((c) => c.organizationId === organizationId)
     .reduce((sum, c) => sum + c.unreadCount, 0);
-  const items = destinations.map((d) => (d.path === '/messages' ? { ...d, badge: unread } : d));
+  const items = destinations.map((d) =>
+    d.path === '/messages' ? { ...d, badge: unread } : d,
+  );
 
   return (
     <div className="shell">
@@ -78,7 +85,13 @@ export function ConsoleShell() {
             with the queue. Shown only to an account the server answered a
             platform read for.
           */}
-          {isPlatform && <IconButton icon={ShieldCheck} label="Administration" onClick={() => navigate('/admin')} />}
+          {isPlatform && (
+            <IconButton
+              icon={ShieldCheck}
+              label="Administration"
+              onClick={() => navigate('/admin')}
+            />
+          )}
           <IconButton
             icon={ArrowLeftRight}
             label="Switch operator"
@@ -87,7 +100,11 @@ export function ConsoleShell() {
               navigate('/organizations');
             }}
           />
-          <IconButton icon={LogOut} label="Sign out" onClick={() => void store.signOut()} />
+          <IconButton
+            icon={LogOut}
+            label="Sign out"
+            onClick={() => void store.signOut()}
+          />
         </div>
       </header>
       <div className="shell-body">

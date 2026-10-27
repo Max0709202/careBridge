@@ -45,12 +45,14 @@ export const needsAttention = (s: PlatformStats) =>
  * zero when nothing finished: 0% and "no rides yet" are different facts.
  */
 export function completionRate(s: PlatformStats): number | null {
-  const ended = s.ridesCompletedLast7Days + s.ridesNoShowLast7Days + s.ridesCancelledLast7Days;
+  const ended =
+    s.ridesCompletedLast7Days + s.ridesNoShowLast7Days + s.ridesCancelledLast7Days;
   return ended === 0 ? null : s.ridesCompletedLast7Days / ended;
 }
 
 /** Money kept, after refunds, over the last thirty days. */
-export const netRevenueCentsLast30Days = (s: PlatformStats) => s.revenueCentsLast30Days - s.refundedCentsLast30Days;
+export const netRevenueCentsLast30Days = (s: PlatformStats) =>
+  s.revenueCentsLast30Days - s.refundedCentsLast30Days;
 
 /** One row of the append-only audit log. */
 export interface AuditEntry {
@@ -72,7 +74,8 @@ export interface AuditEntry {
 /** Whether a scheduled job did this rather than a person. */
 export const isSystem = (e: AuditEntry) => e.actorUserId === null;
 
-export const actorLabel = (e: AuditEntry) => e.actorName ?? (isSystem(e) ? 'CareBridge' : 'Unknown');
+export const actorLabel = (e: AuditEntry) =>
+  e.actorName ?? (isSystem(e) ? 'CareBridge' : 'Unknown');
 
 /** One keyset page of the log, and the key to the next. */
 export interface AuditPage {
@@ -87,7 +90,8 @@ export interface AuditFilter {
   entityId?: string;
 }
 
-export const isEmptyFilter = (f: AuditFilter) => !f.action && !f.entityType && !f.entityId;
+export const isEmptyFilter = (f: AuditFilter) =>
+  !f.action && !f.entityType && !f.entityId;
 
 export interface FeatureFlag {
   key: string;
@@ -115,14 +119,18 @@ export const narrowsTo = (f: FeatureFlag, to: number) => to < f.rolloutPercent;
  * Whether saving would take the feature away from anybody who has it.
  * Switching the master off is the widest narrowing there is.
  */
-export const takesAwayBy = (f: FeatureFlag, next: { enabled: boolean; percent: number }) =>
-  f.enabled && (!next.enabled || narrowsTo(f, next.percent));
+export const takesAwayBy = (
+  f: FeatureFlag,
+  next: { enabled: boolean; percent: number },
+) => f.enabled && (!next.enabled || narrowsTo(f, next.percent));
 
 export const REFUND_STATUSES = ['pending', 'succeeded', 'failed'] as const;
 export type RefundStatus = (typeof REFUND_STATUSES)[number];
 
 export function parseRefundStatus(value: unknown): RefundStatus | null {
-  return (REFUND_STATUSES as readonly unknown[]).includes(value) ? (value as RefundStatus) : null;
+  return (REFUND_STATUSES as readonly unknown[]).includes(value)
+    ? (value as RefundStatus)
+    : null;
 }
 
 export const refundStatusLabel: Record<RefundStatus, string> = {

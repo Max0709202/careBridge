@@ -56,7 +56,9 @@ export function PatientSwitcher() {
                     {mobilityNeedLabel[need]}
                   </span>
                 ))}
-                {needs.length > 2 && <span className="t-small muted">+{needs.length - 2} more</span>}
+                {needs.length > 2 && (
+                  <span className="t-small muted">+{needs.length - 2} more</span>
+                )}
               </div>
             )}
           </div>
@@ -94,7 +96,9 @@ export function PatientSwitcher() {
                   </span>
                   <span className="tile-sub">{addressShortLine(p.homeAddress)}</span>
                 </span>
-                {p.id === patient.id && <CircleCheck className="ink-primary" aria-label="Selected" />}
+                {p.id === patient.id && (
+                  <CircleCheck className="ink-primary" aria-label="Selected" />
+                )}
               </button>
             ))}
             <Divider />

@@ -10,11 +10,29 @@
  * 404, indistinguishable from one that does not exist, and this client must
  * not invent a distinction it was not given.
  */
-import type { AuditFilter, AuditPage, FeatureFlag, PlatformStats, RefundableInvoice } from '../domain/admin';
-import type { BillingAccount, BillingInterval, Invoice, OperatorPlan, PaymentMethod } from '../domain/billing';
+import type {
+  AuditFilter,
+  AuditPage,
+  FeatureFlag,
+  PlatformStats,
+  RefundableInvoice,
+} from '../domain/admin';
+import type {
+  BillingAccount,
+  BillingInterval,
+  Invoice,
+  OperatorPlan,
+  PaymentMethod,
+} from '../domain/billing';
 import type { DriverStatus } from '../domain/dispatch';
 import type { LiveBoard, ServiceArea } from '../domain/liveMap';
-import type { DispatchQueue, Driver, Organization, SeatSummary, Vehicle } from '../domain/models';
+import type {
+  DispatchQueue,
+  Driver,
+  Organization,
+  SeatSummary,
+  Vehicle,
+} from '../domain/models';
 import {
   accountFromWire,
   auditPageFromWire,
@@ -43,7 +61,7 @@ import { ApiTransport } from './transport';
 
 type S = components['schemas'];
 
-const notNull = <T,>(value: T | null): value is T => value !== null;
+const notNull = <T>(value: T | null): value is T => value !== null;
 const seg = encodeURIComponent;
 
 export class OpsApi extends ApiTransport {
@@ -57,15 +75,23 @@ export class OpsApi extends ApiTransport {
 
   // ─── session ──────────────────────────────────────────────────────────────
 
-  async signIn(input: { email: string; password: string; mfaCode?: string }): Promise<void> {
-    const json = await this.send<{ accessToken?: unknown; refreshToken?: unknown }>('POST', '/auth/login', {
-      body: {
-        email: input.email.trim(),
-        password: input.password,
-        ...(input.mfaCode ? { mfaCode: input.mfaCode.trim() } : {}),
+  async signIn(input: {
+    email: string;
+    password: string;
+    mfaCode?: string;
+  }): Promise<void> {
+    const json = await this.send<{ accessToken?: unknown; refreshToken?: unknown }>(
+      'POST',
+      '/auth/login',
+      {
+        body: {
+          email: input.email.trim(),
+          password: input.password,
+          ...(input.mfaCode ? { mfaCode: input.mfaCode.trim() } : {}),
+        },
+        authenticated: false,
       },
-      authenticated: false,
-    });
+    );
     this.storeSession(json);
   }
 
@@ -77,7 +103,10 @@ export class OpsApi extends ApiTransport {
   async signOut(): Promise<void> {
     const stored = this.tokens.read();
     try {
-      if (stored) await this.send('POST', '/auth/logout', { body: { refreshToken: stored.refreshToken } });
+      if (stored)
+        await this.send('POST', '/auth/logout', {
+          body: { refreshToken: stored.refreshToken },
+        });
     } catch {
       // Already going; the local half below is the part that matters.
     } finally {
@@ -89,13 +118,20 @@ export class OpsApi extends ApiTransport {
 
   /** Somebody can dispatch for two operators, and picking one is a decision rather than a default. */
   async organizations(): Promise<Organization[]> {
-    return (await this.sendList<S['OrganizationDto']>('GET', '/organizations')).map(organizationFromWire);
+    return (await this.sendList<S['OrganizationDto']>('GET', '/organizations')).map(
+      organizationFromWire,
+    );
   }
 
   // ─── the queue ────────────────────────────────────────────────────────────
 
   async queue(organizationId: string): Promise<DispatchQueue> {
-    return queueFromWire(await this.send<S['DispatchQueueDto']>('GET', this.org(organizationId, '/dispatch/queue')));
+    return queueFromWire(
+      await this.send<S['DispatchQueueDto']>(
+        'GET',
+        this.org(organizationId, '/dispatch/queue'),
+      ),
+    );
   }
 
   /**
@@ -116,7 +152,10 @@ export class OpsApi extends ApiTransport {
         this.org(input.organizationId, `/dispatch/rides/${seg(input.rideId)}/assign`),
         {
           idempotencyKey: newId(),
-          body: { driverId: input.driverId, ...(input.reason ? { reason: input.reason } : {}) },
+          body: {
+            driverId: input.driverId,
+            ...(input.reason ? { reason: input.reason } : {}),
+          },
         },
       ),
     );
@@ -125,14 +164,26 @@ export class OpsApi extends ApiTransport {
   // ─── the live map ─────────────────────────────────────────────────────────
 
   async liveBoard(organizationId: string): Promise<LiveBoard> {
-    return liveBoardFromWire(await this.send<S['LiveBoardDto']>('GET', this.org(organizationId, '/dispatch/live')));
+    return liveBoardFromWire(
+      await this.send<S['LiveBoardDto']>(
+        'GET',
+        this.org(organizationId, '/dispatch/live'),
+      ),
+    );
   }
 
   /** Replaces the area. Owners and admins only; anyone else is refused by the server. */
-  async setServiceArea(organizationId: string, area: ServiceArea): Promise<ServiceArea | null> {
-    const json = await this.send<S['OrganizationServiceAreaDto']>('PUT', this.org(organizationId, '/service-area'), {
-      body: area,
-    });
+  async setServiceArea(
+    organizationId: string,
+    area: ServiceArea,
+  ): Promise<ServiceArea | null> {
+    const json = await this.send<S['OrganizationServiceAreaDto']>(
+      'PUT',
+      this.org(organizationId, '/service-area'),
+      {
+        body: area,
+      },
+    );
     return serviceAreaFromWire(json.serviceArea);
   }
 
@@ -143,7 +194,9 @@ export class OpsApi extends ApiTransport {
   // ─── roster and fleet ─────────────────────────────────────────────────────
 
   async drivers(organizationId: string): Promise<Driver[]> {
-    return (await this.sendList<S['DriverDto']>('GET', this.org(organizationId, '/drivers')))
+    return (
+      await this.sendList<S['DriverDto']>('GET', this.org(organizationId, '/drivers'))
+    )
       .map(driverFromWire)
       .filter(notNull);
   }
@@ -155,17 +208,29 @@ export class OpsApi extends ApiTransport {
     reason?: string;
   }): Promise<Driver | null> {
     return driverFromWire(
-      await this.send<S['DriverDto']>('POST', this.org(input.organizationId, `/drivers/${seg(input.driverId)}/status`), {
-        body: { to: input.to, ...(input.reason ? { reason: input.reason } : {}) },
-      }),
+      await this.send<S['DriverDto']>(
+        'POST',
+        this.org(input.organizationId, `/drivers/${seg(input.driverId)}/status`),
+        {
+          body: { to: input.to, ...(input.reason ? { reason: input.reason } : {}) },
+        },
+      ),
     );
   }
 
-  async setShift(input: { organizationId: string; driverId: string; onShift: boolean }): Promise<Driver | null> {
+  async setShift(input: {
+    organizationId: string;
+    driverId: string;
+    onShift: boolean;
+  }): Promise<Driver | null> {
     return driverFromWire(
-      await this.send<S['DriverDto']>('PUT', this.org(input.organizationId, `/drivers/${seg(input.driverId)}/shift`), {
-        body: { onShift: input.onShift },
-      }),
+      await this.send<S['DriverDto']>(
+        'PUT',
+        this.org(input.organizationId, `/drivers/${seg(input.driverId)}/shift`),
+        {
+          body: { onShift: input.onShift },
+        },
+      ),
     );
   }
 
@@ -174,10 +239,17 @@ export class OpsApi extends ApiTransport {
    * cannot be added — no account, unverified, already a driver — is one
    * validation failure, deliberately: the server will not say which.
    */
-  lookupDriverAccount(input: { organizationId: string; email: string }): Promise<DriverAccountMatch> {
-    return this.send<DriverAccountMatch>('POST', this.org(input.organizationId, '/drivers/account-lookup'), {
-      body: { email: input.email.trim() },
-    });
+  lookupDriverAccount(input: {
+    organizationId: string;
+    email: string;
+  }): Promise<DriverAccountMatch> {
+    return this.send<DriverAccountMatch>(
+      'POST',
+      this.org(input.organizationId, '/drivers/account-lookup'),
+      {
+        body: { email: input.email.trim() },
+      },
+    );
   }
 
   /**
@@ -194,21 +266,29 @@ export class OpsApi extends ApiTransport {
     email?: string;
   }): Promise<Driver | null> {
     return driverFromWire(
-      await this.send<S['DriverDto']>('POST', this.org(input.organizationId, '/drivers'), {
-        idempotencyKey: newId(),
-        body: {
-          displayName: input.displayName.trim(),
-          vehicleId: input.vehicleId,
-          ...(input.yearsDriving !== undefined ? { yearsDriving: input.yearsDriving } : {}),
-          ...(input.userId ? { userId: input.userId } : {}),
-          ...(input.email ? { email: input.email.trim() } : {}),
+      await this.send<S['DriverDto']>(
+        'POST',
+        this.org(input.organizationId, '/drivers'),
+        {
+          idempotencyKey: newId(),
+          body: {
+            displayName: input.displayName.trim(),
+            vehicleId: input.vehicleId,
+            ...(input.yearsDriving !== undefined
+              ? { yearsDriving: input.yearsDriving }
+              : {}),
+            ...(input.userId ? { userId: input.userId } : {}),
+            ...(input.email ? { email: input.email.trim() } : {}),
+          },
         },
-      }),
+      ),
     );
   }
 
   async vehicles(organizationId: string): Promise<Vehicle[]> {
-    return (await this.sendList<S['VehicleDto']>('GET', this.org(organizationId, '/vehicles'))).map(vehicleFromWire);
+    return (
+      await this.sendList<S['VehicleDto']>('GET', this.org(organizationId, '/vehicles'))
+    ).map(vehicleFromWire);
   }
 
   async addVehicle(input: {
@@ -220,23 +300,30 @@ export class OpsApi extends ApiTransport {
     isWheelchairAccessible: boolean;
   }): Promise<Vehicle> {
     return vehicleFromWire(
-      await this.send<S['VehicleDto']>('POST', this.org(input.organizationId, '/vehicles'), {
-        idempotencyKey: newId(),
-        body: {
-          make: input.make.trim(),
-          model: input.model.trim(),
-          color: input.color.trim(),
-          licensePlate: input.licensePlate.trim(),
-          isWheelchairAccessible: input.isWheelchairAccessible,
+      await this.send<S['VehicleDto']>(
+        'POST',
+        this.org(input.organizationId, '/vehicles'),
+        {
+          idempotencyKey: newId(),
+          body: {
+            make: input.make.trim(),
+            model: input.model.trim(),
+            color: input.color.trim(),
+            licensePlate: input.licensePlate.trim(),
+            isWheelchairAccessible: input.isWheelchairAccessible,
+          },
         },
-      }),
+      ),
     );
   }
 
   // ─── paperwork ────────────────────────────────────────────────────────────
 
   documentsFor(organizationId: string, driverId: string): Promise<DriverCompliance> {
-    return this.send<DriverCompliance>('GET', this.org(organizationId, `/drivers/${seg(driverId)}/documents`));
+    return this.send<DriverCompliance>(
+      'GET',
+      this.org(organizationId, `/drivers/${seg(driverId)}/documents`),
+    );
   }
 
   /**
@@ -244,10 +331,17 @@ export class OpsApi extends ApiTransport {
    * is not a read: it mints a credential and writes an audit row saying that a
    * named person looked at a named driver's licence.
    */
-  viewDocument(organizationId: string, driverId: string, documentId: string): Promise<DocumentViewUrl> {
+  viewDocument(
+    organizationId: string,
+    driverId: string,
+    documentId: string,
+  ): Promise<DocumentViewUrl> {
     return this.send<DocumentViewUrl>(
       'POST',
-      this.org(organizationId, `/drivers/${seg(driverId)}/documents/${seg(documentId)}/view`),
+      this.org(
+        organizationId,
+        `/drivers/${seg(driverId)}/documents/${seg(documentId)}/view`,
+      ),
     );
   }
 
@@ -260,7 +354,10 @@ export class OpsApi extends ApiTransport {
   }): Promise<DriverCompliance> {
     return this.send<DriverCompliance>(
       'POST',
-      this.org(input.organizationId, `/drivers/${seg(input.driverId)}/documents/${seg(input.documentId)}/review`),
+      this.org(
+        input.organizationId,
+        `/drivers/${seg(input.driverId)}/documents/${seg(input.documentId)}/review`,
+      ),
       {
         body: {
           decision: input.approve ? 'approved' : 'rejected',
@@ -273,7 +370,12 @@ export class OpsApi extends ApiTransport {
   // ─── seats ────────────────────────────────────────────────────────────────
 
   async seats(organizationId: string): Promise<SeatSummary> {
-    return seatsFromWire(await this.send<S['OrganizationSeatsDto']>('GET', this.org(organizationId, '/seats')));
+    return seatsFromWire(
+      await this.send<S['OrganizationSeatsDto']>(
+        'GET',
+        this.org(organizationId, '/seats'),
+      ),
+    );
   }
 
   // ─── the operator's subscription ──────────────────────────────────────────
@@ -283,7 +385,12 @@ export class OpsApi extends ApiTransport {
   // decides that.
 
   async billing(organizationId: string): Promise<BillingAccount> {
-    return accountFromWire(await this.send<S['BillingAccountDto']>('GET', this.org(organizationId, '/billing')));
+    return accountFromWire(
+      await this.send<S['BillingAccountDto']>(
+        'GET',
+        this.org(organizationId, '/billing'),
+      ),
+    );
   }
 
   /**
@@ -292,13 +399,23 @@ export class OpsApi extends ApiTransport {
    * from offering a household plan to a transport company.
    */
   async plans(): Promise<OperatorPlan[]> {
-    return (await this.sendList<S['SubscriptionPlanDto']>('GET', '/billing/plans?payer=dispatchOrganization'))
+    return (
+      await this.sendList<S['SubscriptionPlanDto']>(
+        'GET',
+        '/billing/plans?payer=dispatchOrganization',
+      )
+    )
       .map(planFromWire)
       .filter(notNull);
   }
 
   async invoices(organizationId: string): Promise<Invoice[]> {
-    return (await this.sendList<S['InvoiceDto']>('GET', this.org(organizationId, '/billing/invoices')))
+    return (
+      await this.sendList<S['InvoiceDto']>(
+        'GET',
+        this.org(organizationId, '/billing/invoices'),
+      )
+    )
       .map(invoiceFromWire)
       .filter(notNull);
   }
@@ -309,24 +426,40 @@ export class OpsApi extends ApiTransport {
     interval: BillingInterval;
   }): Promise<BillingAccount> {
     return accountFromWire(
-      await this.send<S['BillingAccountDto']>('POST', this.org(input.organizationId, '/billing/subscribe'), {
-        // A double-click on a slow connection must not start two subscriptions.
-        idempotencyKey: newId(),
-        body: { planCode: input.planCode, interval: input.interval },
-      }),
+      await this.send<S['BillingAccountDto']>(
+        'POST',
+        this.org(input.organizationId, '/billing/subscribe'),
+        {
+          // A double-click on a slow connection must not start two subscriptions.
+          idempotencyKey: newId(),
+          body: { planCode: input.planCode, interval: input.interval },
+        },
+      ),
     );
   }
 
-  async changeInterval(organizationId: string, interval: BillingInterval): Promise<BillingAccount> {
+  async changeInterval(
+    organizationId: string,
+    interval: BillingInterval,
+  ): Promise<BillingAccount> {
     return accountFromWire(
-      await this.send<S['BillingAccountDto']>('POST', this.org(organizationId, '/billing/change-interval'), {
-        body: { interval },
-      }),
+      await this.send<S['BillingAccountDto']>(
+        'POST',
+        this.org(organizationId, '/billing/change-interval'),
+        {
+          body: { interval },
+        },
+      ),
     );
   }
 
   async cancelSubscription(organizationId: string): Promise<BillingAccount> {
-    return accountFromWire(await this.send<S['BillingAccountDto']>('POST', this.org(organizationId, '/billing/cancel')));
+    return accountFromWire(
+      await this.send<S['BillingAccountDto']>(
+        'POST',
+        this.org(organizationId, '/billing/cancel'),
+      ),
+    );
   }
 
   /**
@@ -334,23 +467,39 @@ export class OpsApi extends ApiTransport {
    * processor** — no endpoint accepts a card number and this method cannot be
    * given one (ADR-0006).
    */
-  async attachPaymentMethod(organizationId: string, token: string): Promise<PaymentMethod | null> {
+  async attachPaymentMethod(
+    organizationId: string,
+    token: string,
+  ): Promise<PaymentMethod | null> {
     return paymentMethodFromWire(
-      await this.send<S['PaymentMethodDto']>('POST', this.org(organizationId, '/billing/payment-method'), {
-        idempotencyKey: newId(),
-        body: { token },
-      }),
+      await this.send<S['PaymentMethodDto']>(
+        'POST',
+        this.org(organizationId, '/billing/payment-method'),
+        {
+          idempotencyKey: newId(),
+          body: { token },
+        },
+      ),
     );
   }
 
-  async detachPaymentMethod(organizationId: string, paymentMethodId: string): Promise<void> {
-    await this.send('DELETE', this.org(organizationId, `/billing/payment-method/${seg(paymentMethodId)}`));
+  async detachPaymentMethod(
+    organizationId: string,
+    paymentMethodId: string,
+  ): Promise<void> {
+    await this.send(
+      'DELETE',
+      this.org(organizationId, `/billing/payment-method/${seg(paymentMethodId)}`),
+    );
   }
 
   /** Charges an open invoice now — for the moment after a declined card is replaced. */
   async payInvoice(organizationId: string, invoiceId: string): Promise<Invoice | null> {
     return invoiceFromWire(
-      await this.send<S['InvoiceDto']>('POST', this.org(organizationId, `/billing/invoices/${seg(invoiceId)}/pay`)),
+      await this.send<S['InvoiceDto']>(
+        'POST',
+        this.org(organizationId, `/billing/invoices/${seg(invoiceId)}/pay`),
+      ),
     );
   }
 
@@ -393,11 +542,15 @@ export class OpsApi extends ApiTransport {
     if (filter.entityId) query.set('entityId', filter.entityId);
     if (cursor) query.set('cursor', cursor);
     const suffix = query.size === 0 ? '' : `?${query.toString()}`;
-    return auditPageFromWire(await this.send<S['AuditPageDto']>('GET', `/admin/audit${suffix}`));
+    return auditPageFromWire(
+      await this.send<S['AuditPageDto']>('GET', `/admin/audit${suffix}`),
+    );
   }
 
   async flags(): Promise<FeatureFlag[]> {
-    return (await this.sendList<S['FeatureFlagDto']>('GET', '/admin/flags')).map(flagFromWire);
+    return (await this.sendList<S['FeatureFlagDto']>('GET', '/admin/flags')).map(
+      flagFromWire,
+    );
   }
 
   /**
@@ -413,20 +566,27 @@ export class OpsApi extends ApiTransport {
     confirmNarrowing?: boolean;
   }): Promise<FeatureFlag[]> {
     return (
-      await this.sendList<S['FeatureFlagDto']>('PUT', `/admin/flags/${seg(input.key)}`, {
-        body: {
-          description: input.description.trim(),
-          enabled: input.enabled,
-          rolloutPercent: input.rolloutPercent,
-          ...(input.confirmNarrowing ? { confirmNarrowing: true } : {}),
+      await this.sendList<S['FeatureFlagDto']>(
+        'PUT',
+        `/admin/flags/${seg(input.key)}`,
+        {
+          body: {
+            description: input.description.trim(),
+            enabled: input.enabled,
+            rolloutPercent: input.rolloutPercent,
+            ...(input.confirmNarrowing ? { confirmNarrowing: true } : {}),
+          },
         },
-      })
+      )
     ).map(flagFromWire);
   }
 
   async refundable(invoiceId: string): Promise<RefundableInvoice> {
     return refundableFromWire(
-      await this.send<S['RefundableInvoiceDto']>('GET', `/admin/invoices/${seg(invoiceId)}/refunds`),
+      await this.send<S['RefundableInvoiceDto']>(
+        'GET',
+        `/admin/invoices/${seg(invoiceId)}/refunds`,
+      ),
     );
   }
 
@@ -441,11 +601,19 @@ export class OpsApi extends ApiTransport {
     reason: string;
   }): Promise<RefundableInvoice> {
     return refundableFromWire(
-      await this.send<S['RefundableInvoiceDto']>('POST', `/admin/invoices/${seg(input.invoiceId)}/refunds`, {
-        // A retried refund must not be a second one.
-        idempotencyKey: newId(),
-        body: { paymentId: input.paymentId, amountCents: input.amountCents, reason: input.reason.trim() },
-      }),
+      await this.send<S['RefundableInvoiceDto']>(
+        'POST',
+        `/admin/invoices/${seg(input.invoiceId)}/refunds`,
+        {
+          // A retried refund must not be a second one.
+          idempotencyKey: newId(),
+          body: {
+            paymentId: input.paymentId,
+            amountCents: input.amountCents,
+            reason: input.reason.trim(),
+          },
+        },
+      ),
     );
   }
 }

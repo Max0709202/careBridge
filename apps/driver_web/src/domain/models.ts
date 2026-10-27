@@ -69,7 +69,11 @@ export interface Place {
 }
 
 export function placeOneLine(place: Place): string {
-  return [place.line1, place.line2 || null, `${place.city}, ${place.state} ${place.postalCode}`]
+  return [
+    place.line1,
+    place.line2 || null,
+    `${place.city}, ${place.state} ${place.postalCode}`,
+  ]
     .filter(Boolean)
     .join(', ');
 }
@@ -107,7 +111,9 @@ export const offersNoShow = (job: Job) => job.availableTransitions.includes('noS
  * The one job the driver is actually on — at most one, because a driver is
  * only ever assigned one passenger at a time.
  */
-export const activeJob = (jobs: readonly Job[]): Job | null => jobs.find(jobSharesLocation) ?? null;
+export const activeJob = (jobs: readonly Job[]): Job | null =>
+  jobs.find(jobSharesLocation) ?? null;
 
 /** The one under way if there is one; otherwise the next thing to accept. */
-export const currentJob = (jobs: readonly Job[]): Job | null => activeJob(jobs) ?? jobs[0] ?? null;
+export const currentJob = (jobs: readonly Job[]): Job | null =>
+  activeJob(jobs) ?? jobs[0] ?? null;

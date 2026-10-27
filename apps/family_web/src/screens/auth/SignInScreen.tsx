@@ -19,16 +19,22 @@ export function SignInScreen() {
   const [mfaCode, setMfaCode] = useState('');
   const [needsCode, setNeedsCode] = useState(false);
   const [obscure, setObscure] = useState(true);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; mfaCode?: string }>({});
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    mfaCode?: string;
+  }>({});
   const [busy, setBusy] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     const next: typeof errors = {};
     if (email.trim() === '') next.email = 'Enter your email address.';
-    else if (!email.includes('@')) next.email = 'That does not look like an email address.';
+    else if (!email.includes('@'))
+      next.email = 'That does not look like an email address.';
     if (password === '') next.password = 'Enter your password.';
-    if (needsCode && mfaCode.trim() === '') next.mfaCode = 'Enter the code from your authenticator app.';
+    if (needsCode && mfaCode.trim() === '')
+      next.mfaCode = 'Enter the code from your authenticator app.';
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
@@ -59,7 +65,8 @@ export function SignInScreen() {
           <h1 className="t-headline-md">CareBridge</h1>
         </div>
         <p className="t-body-lg muted">
-          Appointments, transportation, and the reassurance that someone you love arrived safely.
+          Appointments, transportation, and the reassurance that someone you love
+          arrived safely.
         </p>
 
         <h2 className="t-headline mt-lg">Sign in</h2>
@@ -103,7 +110,11 @@ export function SignInScreen() {
           <Button type="submit" block disabled={busy} className="mt-sm">
             {busy ? 'Signing in…' : 'Sign in'}
           </Button>
-          <Button variant="outlined" block onClick={() => navigate(`/register${location.search}`)}>
+          <Button
+            variant="outlined"
+            block
+            onClick={() => navigate(`/register${location.search}`)}
+          >
             Create an account
           </Button>
           <Link to="/forgot-password" className="btn btn-text">

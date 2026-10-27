@@ -34,7 +34,13 @@ import {
   vehicleDescription,
 } from '../../domain/models';
 import { rideIsTerminal } from '../../domain/statuses';
-import { canView, patientById, rideById, rideIsActive, rideIsTrackable } from '../../state/careState';
+import {
+  canView,
+  patientById,
+  rideById,
+  rideIsActive,
+  rideIsTrackable,
+} from '../../state/careState';
 import { useCare, useNow, useStore } from '../../state/context';
 import { DemoControls } from './DemoControls';
 import { PriceLine } from './rideParts';
@@ -61,7 +67,8 @@ export function RideDetailScreen() {
   async function cancel() {
     const confirmed = await confirm({
       title: 'Cancel this ride?',
-      message: 'The driver will be told not to come. You can book another ride afterwards.',
+      message:
+        'The driver will be told not to come. You can book another ride afterwards.',
       confirmLabel: 'Cancel the ride',
     });
     if (!confirmed) return;
@@ -82,7 +89,9 @@ export function RideDetailScreen() {
             <RideStatusPill status={ride.status} />
           </div>
           <div className="mt-sm">
-            {patient && <InfoRow icon={User} label="Passenger" value={patient.preferredName} />}
+            {patient && (
+              <InfoRow icon={User} label="Passenger" value={patient.preferredName} />
+            )}
             <InfoRow
               icon={Clock}
               label="Pickup"
@@ -92,11 +101,29 @@ export function RideDetailScreen() {
                   : `${formatRelativeDay(ride.scheduledPickupAt, now)}, ${formatTime(ride.scheduledPickupAt)}`
               }
             />
-            <InfoRow icon={CircleDot} label="From" value={addressSingleLine(ride.pickup)} />
-            <InfoRow icon={MapPin} label="To" value={addressSingleLine(ride.destination)} />
-            {ride.notesForDriver && <InfoRow icon={StickyNote} label="Notes for the driver" value={ride.notesForDriver} />}
+            <InfoRow
+              icon={CircleDot}
+              label="From"
+              value={addressSingleLine(ride.pickup)}
+            />
+            <InfoRow
+              icon={MapPin}
+              label="To"
+              value={addressSingleLine(ride.destination)}
+            />
+            {ride.notesForDriver && (
+              <InfoRow
+                icon={StickyNote}
+                label="Notes for the driver"
+                value={ride.notesForDriver}
+              />
+            )}
             {ride.cancellationReason && (
-              <InfoRow icon={Info} label="Reason for cancellation" value={ride.cancellationReason} />
+              <InfoRow
+                icon={Info}
+                label="Reason for cancellation"
+                value={ride.cancellationReason}
+              />
             )}
           </div>
         </AppCard>
@@ -106,10 +133,18 @@ export function RideDetailScreen() {
             <p className="t-title">Requirements for this trip</p>
             <div className="wrap mt-sm">
               {ride.wheelchairRequired && (
-                <StatusPill label="Wheelchair-accessible vehicle" icon={Accessibility} ink="info" />
+                <StatusPill
+                  label="Wheelchair-accessible vehicle"
+                  icon={Accessibility}
+                  ink="info"
+                />
               )}
               {ride.assistanceRequired && (
-                <StatusPill label="Door-through-door assistance" icon={HandHeart} ink="info" />
+                <StatusPill
+                  label="Door-through-door assistance"
+                  icon={HandHeart}
+                  ink="info"
+                />
               )}
             </div>
           </AppCard>
@@ -122,7 +157,8 @@ export function RideDetailScreen() {
               <div className="grow">
                 <p className="t-title">{ride.driver.displayName}</p>
                 <p className="t-body muted">
-                  {vehicleDescription(ride.driver.vehicle)} · {ride.driver.vehicle.licensePlate}
+                  {vehicleDescription(ride.driver.vehicle)} ·{' '}
+                  {ride.driver.vehicle.licensePlate}
                 </p>
               </div>
             </div>
@@ -152,7 +188,11 @@ export function RideDetailScreen() {
               </>
             )}
             {estimate.surcharges.map((s) => (
-              <PriceLine key={s.label} label={s.label} value={formatMoney(s.amountCents)} />
+              <PriceLine
+                key={s.label}
+                label={s.label}
+                value={formatMoney(s.amountCents)}
+              />
             ))}
             <Divider />
             <div className="row">
@@ -168,7 +208,12 @@ export function RideDetailScreen() {
         </div>
 
         {rideIsTrackable(ride) && (
-          <Button icon={LocateFixed} block className="mt-lg" onClick={() => navigate(`/rides/${id}/track`)}>
+          <Button
+            icon={LocateFixed}
+            block
+            className="mt-lg"
+            onClick={() => navigate(`/rides/${id}/track`)}
+          >
             Follow the trip
           </Button>
         )}
@@ -178,7 +223,13 @@ export function RideDetailScreen() {
             <div className="mt-lg">
               {import.meta.env.DEV && <DemoControls rideId={id} />}
             </div>
-            <Button variant="outlined-danger" icon={CircleOff} block className="mt-md" onClick={cancel}>
+            <Button
+              variant="outlined-danger"
+              icon={CircleOff}
+              block
+              className="mt-md"
+              onClick={cancel}
+            >
               Cancel this ride
             </Button>
           </>

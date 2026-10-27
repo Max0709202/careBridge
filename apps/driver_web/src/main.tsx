@@ -8,7 +8,11 @@ import { App } from './App';
 import { createMessagingStore } from './messaging/react';
 import { ConfirmProvider, FeedbackProvider } from './components/feedback';
 import { LocationService } from './services/locationService';
-import { BrowserBatterySource, BrowserPositionSource, BrowserScreenKeeper } from './services/positionSource';
+import {
+  BrowserBatterySource,
+  BrowserPositionSource,
+  BrowserScreenKeeper,
+} from './services/positionSource';
 import { StoreProvider } from './state/context';
 import { DriverStore } from './state/driverStore';
 import './styles.css';
@@ -39,7 +43,9 @@ void store.restoreSession().then(() => {
   root.render(
     <StrictMode>
       <StoreProvider store={store}>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BrowserRouter
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <FeedbackProvider>
             <ConfirmProvider>
               <App messaging={messaging} />

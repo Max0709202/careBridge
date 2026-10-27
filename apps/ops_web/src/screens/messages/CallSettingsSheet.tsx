@@ -3,7 +3,11 @@ import { useEffect, useState } from 'react';
 import { Modal, useFeedback } from '../../components/feedback';
 import { Button, Switch, TextField } from '../../components/ui';
 import { useRun } from '../../components/useRun';
-import { backgroundPushNote, useBackgroundPush, useMessagingStore } from '../../messaging/react';
+import {
+  backgroundPushNote,
+  useBackgroundPush,
+  useMessagingStore,
+} from '../../messaging/react';
 
 /**
  * The number your own phone rings on when you place a relay call, and how
@@ -32,7 +36,11 @@ export function CallSettingsSheet({ onClose }: { onClose: () => void }) {
     const result = await run(() => store.client.setMyNumber(phone));
     if (result.ok) {
       setPhone(result.value ?? '');
-      showConfirmation(result.value ? 'Saved. Calls you place will ring this number first.' : 'Number removed.');
+      showConfirmation(
+        result.value
+          ? 'Saved. Calls you place will ring this number first.'
+          : 'Number removed.',
+      );
     }
   };
 
@@ -68,7 +76,9 @@ export function CallSettingsSheet({ onClose }: { onClose: () => void }) {
         label="Notifications when the console is closed"
         description={backgroundPushNote(background.status)}
         checked={background.status === 'on'}
-        disabled={background.busy || (background.status !== 'on' && background.status !== 'off')}
+        disabled={
+          background.busy || (background.status !== 'on' && background.status !== 'off')
+        }
         onChange={(on) => void background.toggle(on)}
       />
       <div className="dialog-actions">

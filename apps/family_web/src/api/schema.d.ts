@@ -4,7261 +4,7371 @@
  */
 
 export interface paths {
-    "/billing/plans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The plan catalogue
-         * @description Plans are rows, resolved server-side. The app renders what it is told — a price change or a new tier is an insert, not a release.
-         */
-        get: operations["Billing_plans"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/billing/account": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The caller's household subscription */
-        get: operations["Billing_account"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/billing/subscribe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start a household subscription
-         * @description Refused if one is already live — changing plan is `change-interval`, and anything else is two intentions sharing an endpoint.
-         */
-        post: operations["Billing_subscribe"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/billing/change-interval": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Move between monthly and annual
-         * @description The unused remainder of the current period is credited and a fresh period starts today. Annual → monthly leaves a credit carried against renewals, not a refund.
-         */
-        post: operations["Billing_changeInterval"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/billing/invoices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What this household has been billed
-         * @description Newest first. Line items are read back from the invoice, not recomputed — a superseded plan must not reprint last March at this March’s prices.
-         */
-        get: operations["Billing_invoices"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/billing/payment-method": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Put a card on file
-         * @description Takes a token the client obtained directly from the processor. No endpoint in this system accepts a card number — see ADR-0006.
-         */
-        post: operations["Billing_attachPaymentMethod"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/billing/payment-method/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Take a card off file
-         * @description The row is kept and marked detached, so a payment made months ago still names the card that made it. Removing the last card is allowed.
-         */
-        delete: operations["Billing_detachPaymentMethod"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/billing/invoices/{id}/pay": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Charge an open invoice now
-         * @description For the moment after a declined card is replaced: waiting a day for the scheduled retry, while the screen still says the payment failed, reads as the update not having worked.
-         */
-        post: operations["Billing_payInvoice"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/billing/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Cancel at the end of the paid period
-         * @description Not a refund and not an immediate switch-off: a family part-way through a booked month keeps live tracking for the rides they have already arranged.
-         */
-        post: operations["Billing_cancel"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Organisations the caller belongs to */
-        get: operations["Organizations_mine"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{id}/billing": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** An operator's subscription */
-        get: operations["Organizations_organizationBilling"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{id}/billing/subscribe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start an operator subscription
-         * @description Priced at the drivers actually on the road — an operator cannot subscribe at five seats and run twenty.
-         */
-        post: operations["Organizations_subscribeOrganization"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{id}/billing/change-interval": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Move an operator between monthly and annual */
-        post: operations["Organizations_changeOrganizationInterval"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{id}/billing/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cancel an operator subscription at period end */
-        post: operations["Organizations_cancelOrganization"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{id}/billing/invoices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** What this operator has been billed */
-        get: operations["Organizations_organizationInvoices"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{id}/billing/payment-method": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Put a card on an operator's account */
-        post: operations["Organizations_attachOrganizationPaymentMethod"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{id}/billing/payment-method/{paymentMethodId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Take a card off an operator's account */
-        delete: operations["Organizations_detachOrganizationPaymentMethod"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{id}/billing/invoices/{invoiceId}/pay": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Charge an operator's open invoice now */
-        post: operations["Organizations_payOrganizationInvoice"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{id}/seats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Drivers, seats and the ledger behind them
-         * @description The audit trail an invoice line is answerable from: without it, "why were we billed for eleven drivers" can only be answered from a driver table that has since changed.
-         */
-        get: operations["Organizations_seats"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{id}/seats/quote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** What a given driver count would cost */
-        get: operations["Organizations_quote"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/care/state": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["Care_state"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/me/preferences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** UI preferences: selected patient, simplified mode */
-        patch: operations["Me_update"];
-        trace?: never;
-    };
-    "/me/devices/web-push-key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The key a browser subscribes to push with
-         * @description Null where web push is not configured — the web apps then do not offer background notifications. Register the resulting subscription with POST /me/devices, `platform: web`, the subscription JSON as `token`.
-         */
-        get: operations["Me_webPushKey"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/me/devices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Devices registered for push
-         * @description The registration token itself is never returned — it is a capability to push to that device, and the list only needs to be recognisable.
-         */
-        get: operations["Me_listDevices"];
-        put?: never;
-        /** Register or refresh an FCM token for this device */
-        post: operations["Me_registerDevice"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/me/devices/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Stop pushing to a device */
-        delete: operations["Me_revokeDevice"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/patients": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Patients_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/patients/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["Patients_update"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/patients/{id}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Patients_archive"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/patients/{id}/permissions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["Patients_setPermissions"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/patients/{id}/select": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Patients_select"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/patients/{id}/invitations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Invitations issued for this patient */
-        get: operations["Patients_listInvitations"];
-        put?: never;
-        /**
-         * Invite someone into this patient’s care circle
-         * @description Requires manageAccess, a verified address on the inviter, and permissions no broader than the inviter’s own. The emailed link is single-use, expiring, and can only be accepted by a verified account with the invited address.
-         */
-        post: operations["Patients_invite"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/patients/{id}/invitations/{invitationId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Revoke an invitation that has not been accepted */
-        delete: operations["Patients_revokeInvitation"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/clinics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Clinics_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/appointments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Appointments_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/appointments/{id}/reschedule": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Appointments_reschedule"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/appointments/{id}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Appointments_cancel"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rides": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Rides_request"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rides/{id}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Rides_cancel"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rides/{id}/delay": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Rides_delay"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rides/{id}/location": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Rides_location"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rides/{id}/preview/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Rides_startPreview"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rides/{id}/preview/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Rides_stopPreview"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications/read-all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Notifications_markAllRead"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications/{id}/read": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Notifications_markRead"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications/preferences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The full notification matrix
-         * @description Returned complete — defaults merged with the user’s changes — so the client never has to hold a second copy of the policy, which would be free to drift from the server’s.
-         */
-        get: operations["Notifications_listPreferences"];
-        /**
-         * Turn one channel on or off for one event kind
-         * @description Only email and push are configurable. In-app is the record of what happened and is always on.
-         */
-        put: operations["Notifications_setPreference"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/invitations/accept": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Accept an invitation
-         * @description The signed-in account must be the invited address and must have verified it. Returns the full state snapshot, which now includes the newly shared patient.
-         */
-        post: operations["Invitations_accept"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/vehicles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The operator's vehicles */
-        get: operations["Dispatch_vehicles"];
-        put?: never;
-        /** Add a vehicle */
-        post: operations["Dispatch_addVehicle"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/service-area": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Where the operator works */
-        get: operations["Dispatch_serviceArea"];
-        /**
-         * Set where the operator works
-         * @description A radius round a point, or an outline drawn on the map. Replaces any previous area. The dispatch queue then flags pickups outside it; assignment is not refused. Owners and admins only.
-         */
-        put: operations["Dispatch_setServiceArea"];
-        post?: never;
-        /**
-         * Remove the service area
-         * @description Nothing is flagged afterwards. Owners and admins only.
-         */
-        delete: operations["Dispatch_clearServiceArea"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/drivers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The roster, with who is billable and who is free */
-        get: operations["Dispatch_drivers"];
-        put?: never;
-        /**
-         * Add a driver
-         * @description Created as `invited`, or as `pendingApproval` with `userId` when an existing account (from `account-lookup`) is linked directly. The billable seat moves at approval, so a roster can be built without being charged for people who have not handed in a licence.
-         */
-        post: operations["Dispatch_addDriver"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/drivers/account-lookup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Find an account to add as a driver
-         * @description Exact, verified address only — there is no browsing or partial match, because every account, families included, is in the one table. Anything that cannot be added (no account, unverified, already a driver, deletion requested) is the same 400, so the answer never says where somebody already drives. Owners and admins only.
-         */
-        post: operations["Dispatch_lookupDriverAccount"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/drivers/{driverId}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Move a driver through the lifecycle
-         * @description Crossing into or out of `approved` grants or releases a billable seat, in the same transaction as the status change.
-         */
-        post: operations["Dispatch_setDriverStatus"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/drivers/{driverId}/shift": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Put a driver on or off shift
-         * @description A dispatcher may do this: they are the person who knows somebody called in sick, and waiting for an admin would leave the queue offering a driver who is not there.
-         */
-        put: operations["Dispatch_setShift"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/drivers/{driverId}/documents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What this driver has handed in, and what is still missing
-         * @description The `compliant` flag is what the approval button turns on. It is advisory here — the same check runs inside the approval transaction, because a check only a screen performs is one a second tab can race past.
-         */
-        get: operations["Dispatch_documentsFor"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/drivers/{driverId}/documents/{documentId}/view": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * A short-lived link to one document
-         * @description A POST rather than a GET because it is not a read: it mints a credential and writes an audit row saying that a named person looked at a named driver’s licence. “Who has seen this” cannot be answered after the fact.
-         */
-        post: operations["Dispatch_viewDocument"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/drivers/{driverId}/documents/{documentId}/review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Approve or reject a document
-         * @description A rejection must say why — enforced here and by a check constraint on the table.
-         */
-        post: operations["Dispatch_reviewDocument"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/dispatch/queue": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Rides waiting for a car, ordered by when the car is needed
-         * @description Not by when the request arrived: a ride booked this morning for 4pm is not more urgent than one booked five minutes ago for 2pm.
-         */
-        get: operations["Dispatch_queue"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/dispatch/live": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Rides the operator's drivers are carrying now, for the live map
-         * @description A snapshot with the service area and each car's last position, if it is recent enough to show. Live updates come from the tracking socket (`watch` each ride id).
-         */
-        get: operations["Dispatch_liveBoard"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/dispatch/rides/{rideId}/assign": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Give a ride to a driver, or move it to another one
-         * @description Eligibility is asserted, not advised — a wheelchair trip cannot be given to a saloon car, and a driver cannot be given a second passenger. A reassignment requires a reason and passes through `reassignmentRequired`, so the family timeline records that the first driver dropped it.
-         */
-        post: operations["Dispatch_assign"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/driver/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The signed-in driver, claiming their roster place on first use
-         * @description A driver is added to a roster before they have an account. This is where the two are joined — by matching the address the operator recorded against a **verified** address on the account, because an unverified match would let anyone who knows a driver’s email inherit their assignments.
-         */
-        get: operations["Driver_me"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/driver/shift": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Start or end a shift
-         * @description Refuses to end one mid-trip: dispatch reads “on shift” to decide who can be offered the next job, and a driver who leaves that list while carrying somebody is a passenger nobody is accountable for.
-         */
-        put: operations["Driver_setShift"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/driver/rides": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The work still to do, soonest first
-         * @description Not a history. A finished ride leaves this list and takes the passenger’s address and telephone number with it — the record of who was carried where belongs to the operator, not to a phone in a glovebox.
-         */
-        get: operations["Driver_rides"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/driver/rides/{rideId}/advance": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Move a ride to its next state
-         * @description Only the driver’s own moves. Accepting requires an approved driver on shift; finishing a trip already begun requires neither, because a driver suspended mid-journey still has somebody in the car.
-         */
-        post: operations["Driver_advance"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/driver/documents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What has been handed in, and what is still wanted
-         * @description Includes the rejection note. Being told “you cannot drive” without being told which document and why is how somebody re-uploads the same unreadable photograph three times.
-         */
-        get: operations["Driver_documents"];
-        put?: never;
-        /**
-         * Authorise one upload
-         * @description Returns a URL to PUT the file to. The bytes never pass through this API — a multipart body would be a copy of the file in the heap of a process that is also holding a WebSocket open for every live ride, and an API that can stream any object is an API where one bug hands over the bucket.
-         */
-        post: operations["Driver_requestUpload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/driver/documents/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Say the upload finished
-         * @description The server checks storage rather than believing the client. A client reporting its own success could report it without uploading, and an operator would then see a complete file with an empty object behind it.
-         */
-        post: operations["Driver_confirmUpload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/driver/rides/{rideId}/locations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Flush the offline queue
-         * @description Safe to send twice: one device takes one reading per instant, so a retry after a lost response inserts nothing. Readings too old to present as current are still kept as journey history — they simply do not move the position the family is watching.
-         */
-        post: operations["Driver_reportLocations"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/audit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The audit log, filtered and paged
-         * @description Keyset paged. An offset over a table appended to on every authenticated action would skip rows between pages — and quietly omitting rows is the one failure a log like this cannot have.
-         */
-        get: operations["Admin_auditLog"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The operational dashboard
-         * @description Each number implies an action rather than being interesting. “Stale tracking now” is a list of telephone calls; “drivers with expiring documents” is a list of drivers who come off the road unless somebody chases them.
-         */
-        get: operations["Admin_stats"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/flags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Every feature flag and how far it is rolled out */
-        get: operations["Admin_flags"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/flags/{key}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Create or update a flag
-         * @description Narrowing a rollout needs `confirmNarrowing`: it takes a feature away from people who already have it, which reads to them as a bug rather than as a decision.
-         */
-        put: operations["Admin_setFlag"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/invoices/{invoiceId}/refunds": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** What may still be refunded, and what already was */
-        get: operations["Admin_refundable"];
-        put?: never;
-        /**
-         * Send money back
-         * @description The row is written before the processor is called, in the same shape the collection path uses: a refund that succeeded externally and failed to record here would be money that left the business with nothing to explain it.
-         */
-        post: operations["Admin_issueRefund"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/clinic/sites": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The sites this network has claimed */
-        get: operations["Clinic_sites"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/clinic/sites/{clinicId}/claim": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attach an existing clinic record to this network
-         * @description A claim rather than a creation: the record was almost certainly typed by a family saying where their relative’s appointment is. Restricted to an admin and audited, because claiming a site grants sight of every appointment anybody has ever booked there.
-         */
-        post: operations["Clinic_claim"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/clinic/day": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Everybody expected today, and where their car is
-         * @description The date is resolved in the **clinic’s** own zone rather than the server’s. A portal that showed yesterday’s list to a west-coast clinic every morning would be useless by nine o’clock.
-         */
-        get: operations["Clinic_day"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/clinic/appointments/{appointmentId}/check-in": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * The patient walked in
-         * @description Never inferred from the ride completing. A completed ride says a car reached an address; this says somebody inside the building saw them, and the gap between the two is an eighty-year-old at the wrong entrance of a hospital.
-         */
-        post: operations["Clinic_checkIn"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/clinic/appointments/{appointmentId}/ready": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * The visit is over — send the car
-         * @description What a `flexibleReturn` ride has been waiting for since it was booked. Nobody knows when a cardiology follow-up will finish, which is why the return leg is created without a time; this is the thing that tells it the time has come.
-         */
-        post: operations["Clinic_ready"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/caregivers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Search bookable caregivers
-         * @description Ordered by a lower confidence bound on the rating, so a longer good record always outranks a shorter one and a single five-star review cannot reach the top. **Not** ordered by verification: ranking by it would be the platform asserting the safety claim it says it does not make.
-         */
-        get: operations["Marketplace_search"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/caregivers/{caregiverId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One caregiver, with their availability and reviews */
-        get: operations["Marketplace_profile"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Create or update your own listing
-         * @description Always lands as `applied`. There is deliberately no endpoint that marks somebody verified — one that could would be the most valuable thing in this module to find a flaw in.
-         */
-        put: operations["Marketplace_saveProfile"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/me/availability": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Replace your weekly availability
-         * @description Weekly rather than a list of dates: somebody who has to re-enter their availability every Sunday stops by the third week, and a marketplace of stale availability is a marketplace of dead ends.
-         */
-        put: operations["Marketplace_setAvailability"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/bookings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Everything you are part of, either side of it */
-        get: operations["Marketplace_bookings"];
-        put?: never;
-        /**
-         * Ask a caregiver for a visit
-         * @description Requires the same `requestTransport` grant that arranging a car does. Booking somebody to sit with a patient is at least as consequential, and a separate permission would mean two answers to “who may arrange care”.
-         */
-        post: operations["Marketplace_book"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/bookings/{bookingId}/accept": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** The caregiver accepting */
-        post: operations["Marketplace_accept"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/bookings/{bookingId}/decline": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** The caregiver declining */
-        post: operations["Marketplace_decline"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/bookings/{bookingId}/cancellation-quote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What cancelling would cost, before committing to it
-         * @description Free with more than a day’s notice; half after that, never the whole visit. A caregiver cancelling never charges the family.
-         */
-        get: operations["Marketplace_quote"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/bookings/{bookingId}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Call it off */
-        post: operations["Marketplace_cancel"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/bookings/{bookingId}/check-in": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** The caregiver arriving */
-        post: operations["Marketplace_checkIn"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/bookings/{bookingId}/check-out": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * The caregiver leaving, and the moment the money is decided
-         * @description Charged from the checked times rather than the booked window, rounded up to a quarter-hour: a visit that ran twenty minutes over is twenty minutes of somebody’s afternoon, and rounding down would have a caregiver work fourteen minutes for nothing.
-         */
-        post: operations["Marketplace_checkOut"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/bookings/{bookingId}/no-show": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Nobody came
-         * @description Reported by the family only. A caregiver marking their own booking as a no-show would be marking the family.
-         */
-        post: operations["Marketplace_noShow"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/bookings/{bookingId}/review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Rate a visit that happened
-         * @description Only a completed booking, and only once. A marketplace where a cancelled engagement can be rated is one where a family who never met somebody can end their career.
-         */
-        post: operations["Marketplace_review"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/marketplace/bookings/{bookingId}/dispute": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Raise a disagreement about a visit */
-        post: operations["Marketplace_dispute"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/marketplace/bookings/{bookingId}/dispute/resolve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Decide a dispute
-         * @description Names an outcome, a reason and a person — enforced by a check constraint as well as here. A decision with none of those is one nobody can defend when the same question is asked again.
-         */
-        post: operations["MarketplaceAdmin_resolve"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Threads the caller is in, newest first, with unread counts */
-        get: operations["Messaging_inbox"];
-        put?: never;
-        /**
-         * Find or open a thread
-         * @description Returns the existing thread for this subject if there is one. `organizationId`, `patientId` and `driverId` may be left out where a ride, or the caller being a driver, already says what they are. 409 when the colleague is off shift, or a finished trip's thread has closed.
-         */
-        post: operations["Messaging_open"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations/unread": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Totals for a badge */
-        get: operations["Messaging_unread"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations/{conversationId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["Messaging_conversation"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations/{conversationId}/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** A page of messages, oldest first */
-        get: operations["Messaging_messages"];
-        put?: never;
-        /**
-         * Send a message
-         * @description Safe to retry with the same `clientMessageId`: the stored message is returned rather than a second one posted.
-         */
-        post: operations["Messaging_send"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations/{conversationId}/read": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mark the thread read up to now */
-        post: operations["Messaging_markRead"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{organizationId}/colleagues": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Drivers at the operator the caller can message, on shift first
-         * @description For a dispatcher at the operator or one of its approved drivers.
-         */
-        get: operations["Messaging_colleagues"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/calls/targets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Who the caller can ring from a conversation or a ride
-         * @description Never includes a number. `available` is false, with a reason to show, when a call cannot be placed right now.
-         */
-        get: operations["Calls_targets"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/calls": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Place a relay call
-         * @description Your own phone rings first, from the relay number; answer it and you are put through. Progress arrives as `call.updated` on the messaging socket.
-         */
-        post: operations["Calls_start"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/calls/my-number": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The number your phone rings on when you place a call */
-        get: operations["Calls_myNumber"];
-        /** Set or clear it */
-        put: operations["Calls_setMyNumber"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/calls/{callId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["Calls_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create an account
-         * @description Signs the new account in immediately and sends a verification email. Nothing is blocked on verification — locking a family out of a ride they have already booked because an email went to spam is the worse outcome — but invitations require a verified address.
-         */
-        post: operations["Auth_register"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Sign in
-         * @description Accounts with two-factor authentication confirmed must also send `mfaCode`. The code is checked only after the password, so an attacker without the password never learns whether an account has MFA at all.
-         */
-        post: operations["Auth_login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Rotate the refresh token
-         * @description Single-use. Presenting one that has already been rotated revokes the whole family and forces a fresh sign-in: two parties hold tokens from one login and only one of them is legitimate.
-         */
-        post: operations["Auth_refresh"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Sign out of this device, or of all of them */
-        post: operations["Auth_logout"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/logout-all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Sign out everywhere
-         * @description Revokes every refresh token and raises the account’s token version, so access tokens already in the wild stop working on their next request rather than at their next expiry.
-         */
-        post: operations["Auth_logoutAll"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/verify-email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Confirm an email address with the emailed token */
-        post: operations["Auth_verifyEmail"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/resend-verification": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Send the verification email again
-         * @description Always accepted. Whether the address has an account, and whether it is already verified, are facts about a person that an unauthenticated caller does not get to read.
-         */
-        post: operations["Auth_resendVerification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/password-reset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Request a password reset link
-         * @description Always accepted, whether or not the address has an account. Anything else turns this endpoint into a way to enumerate the customer list — which for this product is a list of people with a vulnerable relative.
-         */
-        post: operations["Auth_requestPasswordReset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/password-reset/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Set a new password with the emailed token
-         * @description Revokes every session and emails the account holder that it happened. A reset that leaves sessions alive hands an attacker who already has one a foothold the new password does not dislodge.
-         */
-        post: operations["Auth_confirmPasswordReset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Change the password while signed in */
-        post: operations["Auth_changePassword"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List active sessions
-         * @description One row per sign-in, not per token. Tokens rotate every few minutes; the family id is stable for the life of a session, so it is what a person recognises and can act on.
-         */
-        get: operations["Auth_listSessions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/sessions/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Revoke one session */
-        delete: operations["Auth_revokeSession"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/account/deletion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Whether a deletion could be started, and why not if not
-         * @description Returns the blockers so the screen can explain itself before the person commits, rather than accepting a tap and then refusing it. It reports no pending deletion because there can be no session in which one is visible — the request signs every device out, and signing back in cancels it.
-         */
-        get: operations["Auth_deletionStatus"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/account/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download everything we hold about this account
-         * @description Available on its own, not only as part of a deletion. Sign-in credentials, two-factor secrets and recovery codes are deliberately excluded — a file containing those is a credential in somebody’s inbox.
-         */
-        get: operations["Auth_exportAccount"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/account": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete this account
-         * @description Schedules deletion 30 days out, signs every device out immediately, and returns a full export. Signing in again before the date cancels it. Refused with 409 while a journey is under way, while the account is the last owner of an operator that still has drivers, or while an invoice is unpaid.
-         */
-        delete: operations["Auth_deleteAccount"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/account/deletion-request": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Request a deletion link by email, without signing in
-         * @description Always accepted. Anything else turns this endpoint into a way to enumerate the customer list — which for this product is a list of people with a vulnerable relative.
-         */
-        post: operations["Auth_requestDeletionByEmail"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/account/deletion-request/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Confirm a deletion requested from the public page
-         * @description Spends the emailed token and schedules the deletion on the same terms as the in-app path, blockers included: the public route does not get to skip the rule about somebody being in a car.
-         */
-        post: operations["Auth_confirmDeletionByToken"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/mfa": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Two-factor authentication status */
-        get: operations["Auth_mfaStatus"];
-        put?: never;
-        post?: never;
-        /** Turn two-factor authentication off */
-        delete: operations["Auth_disableMfa"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/mfa/enrol": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Begin two-factor enrolment
-         * @description Returns the QR payload and the recovery codes, once. Enrolment is not active until a code is confirmed — marking it active here would lock out anyone whose authenticator app failed to scan the code, with no second factor to recover with.
-         */
-        post: operations["Auth_beginMfaEnrolment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/mfa/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Confirm enrolment with one generated code */
-        post: operations["Auth_confirmMfa"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/health/live": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Liveness
-         * @description Checks nothing external on purpose. A database blip must not get the container killed and restarted, which would turn a recoverable outage into a crash loop.
-         */
-        get: operations["Health_live"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/health/ready": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Readiness — may this instance take traffic */
-        get: operations["Health_ready"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["Health_check"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
+  '/billing/plans': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The plan catalogue
+     * @description Plans are rows, resolved server-side. The app renders what it is told — a price change or a new tier is an insert, not a release.
+     */
+    get: operations['Billing_plans'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/billing/account': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The caller's household subscription */
+    get: operations['Billing_account'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/billing/subscribe': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start a household subscription
+     * @description Refused if one is already live — changing plan is `change-interval`, and anything else is two intentions sharing an endpoint.
+     */
+    post: operations['Billing_subscribe'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/billing/change-interval': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move between monthly and annual
+     * @description The unused remainder of the current period is credited and a fresh period starts today. Annual → monthly leaves a credit carried against renewals, not a refund.
+     */
+    post: operations['Billing_changeInterval'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/billing/invoices': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * What this household has been billed
+     * @description Newest first. Line items are read back from the invoice, not recomputed — a superseded plan must not reprint last March at this March’s prices.
+     */
+    get: operations['Billing_invoices'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/billing/payment-method': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Put a card on file
+     * @description Takes a token the client obtained directly from the processor. No endpoint in this system accepts a card number — see ADR-0006.
+     */
+    post: operations['Billing_attachPaymentMethod'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/billing/payment-method/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Take a card off file
+     * @description The row is kept and marked detached, so a payment made months ago still names the card that made it. Removing the last card is allowed.
+     */
+    delete: operations['Billing_detachPaymentMethod'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/billing/invoices/{id}/pay': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Charge an open invoice now
+     * @description For the moment after a declined card is replaced: waiting a day for the scheduled retry, while the screen still says the payment failed, reads as the update not having worked.
+     */
+    post: operations['Billing_payInvoice'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/billing/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Cancel at the end of the paid period
+     * @description Not a refund and not an immediate switch-off: a family part-way through a booked month keeps live tracking for the rides they have already arranged.
+     */
+    post: operations['Billing_cancel'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Organisations the caller belongs to */
+    get: operations['Organizations_mine'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/billing': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** An operator's subscription */
+    get: operations['Organizations_organizationBilling'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/billing/subscribe': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start an operator subscription
+     * @description Priced at the drivers actually on the road — an operator cannot subscribe at five seats and run twenty.
+     */
+    post: operations['Organizations_subscribeOrganization'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/billing/change-interval': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Move an operator between monthly and annual */
+    post: operations['Organizations_changeOrganizationInterval'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/billing/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cancel an operator subscription at period end */
+    post: operations['Organizations_cancelOrganization'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/billing/invoices': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** What this operator has been billed */
+    get: operations['Organizations_organizationInvoices'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/billing/payment-method': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Put a card on an operator's account */
+    post: operations['Organizations_attachOrganizationPaymentMethod'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/billing/payment-method/{paymentMethodId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Take a card off an operator's account */
+    delete: operations['Organizations_detachOrganizationPaymentMethod'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/billing/invoices/{invoiceId}/pay': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Charge an operator's open invoice now */
+    post: operations['Organizations_payOrganizationInvoice'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/seats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Drivers, seats and the ledger behind them
+     * @description The audit trail an invoice line is answerable from: without it, "why were we billed for eleven drivers" can only be answered from a driver table that has since changed.
+     */
+    get: operations['Organizations_seats'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/seats/quote': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** What a given driver count would cost */
+    get: operations['Organizations_quote'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/care/state': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['Care_state'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/me/preferences': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** UI preferences: selected patient, simplified mode */
+    patch: operations['Me_update'];
+    trace?: never;
+  };
+  '/me/devices/web-push-key': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The key a browser subscribes to push with
+     * @description Null where web push is not configured — the web apps then do not offer background notifications. Register the resulting subscription with POST /me/devices, `platform: web`, the subscription JSON as `token`.
+     */
+    get: operations['Me_webPushKey'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/me/devices': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Devices registered for push
+     * @description The registration token itself is never returned — it is a capability to push to that device, and the list only needs to be recognisable.
+     */
+    get: operations['Me_listDevices'];
+    put?: never;
+    /** Register or refresh an FCM token for this device */
+    post: operations['Me_registerDevice'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/me/devices/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Stop pushing to a device */
+    delete: operations['Me_revokeDevice'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/patients': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Patients_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/patients/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: operations['Patients_update'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/patients/{id}/archive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Patients_archive'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/patients/{id}/permissions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: operations['Patients_setPermissions'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/patients/{id}/select': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Patients_select'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/patients/{id}/invitations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Invitations issued for this patient */
+    get: operations['Patients_listInvitations'];
+    put?: never;
+    /**
+     * Invite someone into this patient’s care circle
+     * @description Requires manageAccess, a verified address on the inviter, and permissions no broader than the inviter’s own. The emailed link is single-use, expiring, and can only be accepted by a verified account with the invited address.
+     */
+    post: operations['Patients_invite'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/patients/{id}/invitations/{invitationId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Revoke an invitation that has not been accepted */
+    delete: operations['Patients_revokeInvitation'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/clinics': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Clinics_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/appointments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Appointments_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/appointments/{id}/reschedule': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Appointments_reschedule'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/appointments/{id}/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Appointments_cancel'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rides': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Rides_request'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rides/{id}/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Rides_cancel'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rides/{id}/delay': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Rides_delay'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rides/{id}/location': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Rides_location'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rides/{id}/preview/start': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Rides_startPreview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rides/{id}/preview/stop': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Rides_stopPreview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/notifications/read-all': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Notifications_markAllRead'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/notifications/{id}/read': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['Notifications_markRead'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/notifications/preferences': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The full notification matrix
+     * @description Returned complete — defaults merged with the user’s changes — so the client never has to hold a second copy of the policy, which would be free to drift from the server’s.
+     */
+    get: operations['Notifications_listPreferences'];
+    /**
+     * Turn one channel on or off for one event kind
+     * @description Only email and push are configurable. In-app is the record of what happened and is always on.
+     */
+    put: operations['Notifications_setPreference'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/invitations/accept': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Accept an invitation
+     * @description The signed-in account must be the invited address and must have verified it. Returns the full state snapshot, which now includes the newly shared patient.
+     */
+    post: operations['Invitations_accept'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/vehicles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The operator's vehicles */
+    get: operations['Dispatch_vehicles'];
+    put?: never;
+    /** Add a vehicle */
+    post: operations['Dispatch_addVehicle'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/service-area': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Where the operator works */
+    get: operations['Dispatch_serviceArea'];
+    /**
+     * Set where the operator works
+     * @description A radius round a point, or an outline drawn on the map. Replaces any previous area. The dispatch queue then flags pickups outside it; assignment is not refused. Owners and admins only.
+     */
+    put: operations['Dispatch_setServiceArea'];
+    post?: never;
+    /**
+     * Remove the service area
+     * @description Nothing is flagged afterwards. Owners and admins only.
+     */
+    delete: operations['Dispatch_clearServiceArea'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/drivers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The roster, with who is billable and who is free */
+    get: operations['Dispatch_drivers'];
+    put?: never;
+    /**
+     * Add a driver
+     * @description Created as `invited`, or as `pendingApproval` with `userId` when an existing account (from `account-lookup`) is linked directly. The billable seat moves at approval, so a roster can be built without being charged for people who have not handed in a licence.
+     */
+    post: operations['Dispatch_addDriver'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/drivers/account-lookup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Find an account to add as a driver
+     * @description Exact, verified address only — there is no browsing or partial match, because every account, families included, is in the one table. Anything that cannot be added (no account, unverified, already a driver, deletion requested) is the same 400, so the answer never says where somebody already drives. Owners and admins only.
+     */
+    post: operations['Dispatch_lookupDriverAccount'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/drivers/{driverId}/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move a driver through the lifecycle
+     * @description Crossing into or out of `approved` grants or releases a billable seat, in the same transaction as the status change.
+     */
+    post: operations['Dispatch_setDriverStatus'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/drivers/{driverId}/shift': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Put a driver on or off shift
+     * @description A dispatcher may do this: they are the person who knows somebody called in sick, and waiting for an admin would leave the queue offering a driver who is not there.
+     */
+    put: operations['Dispatch_setShift'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/drivers/{driverId}/documents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * What this driver has handed in, and what is still missing
+     * @description The `compliant` flag is what the approval button turns on. It is advisory here — the same check runs inside the approval transaction, because a check only a screen performs is one a second tab can race past.
+     */
+    get: operations['Dispatch_documentsFor'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/drivers/{driverId}/documents/{documentId}/view': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * A short-lived link to one document
+     * @description A POST rather than a GET because it is not a read: it mints a credential and writes an audit row saying that a named person looked at a named driver’s licence. “Who has seen this” cannot be answered after the fact.
+     */
+    post: operations['Dispatch_viewDocument'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/drivers/{driverId}/documents/{documentId}/review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Approve or reject a document
+     * @description A rejection must say why — enforced here and by a check constraint on the table.
+     */
+    post: operations['Dispatch_reviewDocument'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/dispatch/queue': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Rides waiting for a car, ordered by when the car is needed
+     * @description Not by when the request arrived: a ride booked this morning for 4pm is not more urgent than one booked five minutes ago for 2pm.
+     */
+    get: operations['Dispatch_queue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/dispatch/live': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Rides the operator's drivers are carrying now, for the live map
+     * @description A snapshot with the service area and each car's last position, if it is recent enough to show. Live updates come from the tracking socket (`watch` each ride id).
+     */
+    get: operations['Dispatch_liveBoard'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/dispatch/rides/{rideId}/assign': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Give a ride to a driver, or move it to another one
+     * @description Eligibility is asserted, not advised — a wheelchair trip cannot be given to a saloon car, and a driver cannot be given a second passenger. A reassignment requires a reason and passes through `reassignmentRequired`, so the family timeline records that the first driver dropped it.
+     */
+    post: operations['Dispatch_assign'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/driver/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The signed-in driver, claiming their roster place on first use
+     * @description A driver is added to a roster before they have an account. This is where the two are joined — by matching the address the operator recorded against a **verified** address on the account, because an unverified match would let anyone who knows a driver’s email inherit their assignments.
+     */
+    get: operations['Driver_me'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/driver/shift': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Start or end a shift
+     * @description Refuses to end one mid-trip: dispatch reads “on shift” to decide who can be offered the next job, and a driver who leaves that list while carrying somebody is a passenger nobody is accountable for.
+     */
+    put: operations['Driver_setShift'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/driver/rides': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The work still to do, soonest first
+     * @description Not a history. A finished ride leaves this list and takes the passenger’s address and telephone number with it — the record of who was carried where belongs to the operator, not to a phone in a glovebox.
+     */
+    get: operations['Driver_rides'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/driver/rides/{rideId}/advance': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move a ride to its next state
+     * @description Only the driver’s own moves. Accepting requires an approved driver on shift; finishing a trip already begun requires neither, because a driver suspended mid-journey still has somebody in the car.
+     */
+    post: operations['Driver_advance'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/driver/documents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * What has been handed in, and what is still wanted
+     * @description Includes the rejection note. Being told “you cannot drive” without being told which document and why is how somebody re-uploads the same unreadable photograph three times.
+     */
+    get: operations['Driver_documents'];
+    put?: never;
+    /**
+     * Authorise one upload
+     * @description Returns a URL to PUT the file to. The bytes never pass through this API — a multipart body would be a copy of the file in the heap of a process that is also holding a WebSocket open for every live ride, and an API that can stream any object is an API where one bug hands over the bucket.
+     */
+    post: operations['Driver_requestUpload'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/driver/documents/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Say the upload finished
+     * @description The server checks storage rather than believing the client. A client reporting its own success could report it without uploading, and an operator would then see a complete file with an empty object behind it.
+     */
+    post: operations['Driver_confirmUpload'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/driver/rides/{rideId}/locations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Flush the offline queue
+     * @description Safe to send twice: one device takes one reading per instant, so a retry after a lost response inserts nothing. Readings too old to present as current are still kept as journey history — they simply do not move the position the family is watching.
+     */
+    post: operations['Driver_reportLocations'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/audit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The audit log, filtered and paged
+     * @description Keyset paged. An offset over a table appended to on every authenticated action would skip rows between pages — and quietly omitting rows is the one failure a log like this cannot have.
+     */
+    get: operations['Admin_auditLog'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/stats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The operational dashboard
+     * @description Each number implies an action rather than being interesting. “Stale tracking now” is a list of telephone calls; “drivers with expiring documents” is a list of drivers who come off the road unless somebody chases them.
+     */
+    get: operations['Admin_stats'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/flags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Every feature flag and how far it is rolled out */
+    get: operations['Admin_flags'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/flags/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Create or update a flag
+     * @description Narrowing a rollout needs `confirmNarrowing`: it takes a feature away from people who already have it, which reads to them as a bug rather than as a decision.
+     */
+    put: operations['Admin_setFlag'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/invoices/{invoiceId}/refunds': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** What may still be refunded, and what already was */
+    get: operations['Admin_refundable'];
+    put?: never;
+    /**
+     * Send money back
+     * @description The row is written before the processor is called, in the same shape the collection path uses: a refund that succeeded externally and failed to record here would be money that left the business with nothing to explain it.
+     */
+    post: operations['Admin_issueRefund'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/clinic/sites': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The sites this network has claimed */
+    get: operations['Clinic_sites'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/clinic/sites/{clinicId}/claim': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Attach an existing clinic record to this network
+     * @description A claim rather than a creation: the record was almost certainly typed by a family saying where their relative’s appointment is. Restricted to an admin and audited, because claiming a site grants sight of every appointment anybody has ever booked there.
+     */
+    post: operations['Clinic_claim'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/clinic/day': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Everybody expected today, and where their car is
+     * @description The date is resolved in the **clinic’s** own zone rather than the server’s. A portal that showed yesterday’s list to a west-coast clinic every morning would be useless by nine o’clock.
+     */
+    get: operations['Clinic_day'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/clinic/appointments/{appointmentId}/check-in': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * The patient walked in
+     * @description Never inferred from the ride completing. A completed ride says a car reached an address; this says somebody inside the building saw them, and the gap between the two is an eighty-year-old at the wrong entrance of a hospital.
+     */
+    post: operations['Clinic_checkIn'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/clinic/appointments/{appointmentId}/ready': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * The visit is over — send the car
+     * @description What a `flexibleReturn` ride has been waiting for since it was booked. Nobody knows when a cardiology follow-up will finish, which is why the return leg is created without a time; this is the thing that tells it the time has come.
+     */
+    post: operations['Clinic_ready'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/caregivers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Search bookable caregivers
+     * @description Ordered by a lower confidence bound on the rating, so a longer good record always outranks a shorter one and a single five-star review cannot reach the top. **Not** ordered by verification: ranking by it would be the platform asserting the safety claim it says it does not make.
+     */
+    get: operations['Marketplace_search'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/caregivers/{caregiverId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** One caregiver, with their availability and reviews */
+    get: operations['Marketplace_profile'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Create or update your own listing
+     * @description Always lands as `applied`. There is deliberately no endpoint that marks somebody verified — one that could would be the most valuable thing in this module to find a flaw in.
+     */
+    put: operations['Marketplace_saveProfile'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/me/availability': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Replace your weekly availability
+     * @description Weekly rather than a list of dates: somebody who has to re-enter their availability every Sunday stops by the third week, and a marketplace of stale availability is a marketplace of dead ends.
+     */
+    put: operations['Marketplace_setAvailability'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/bookings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Everything you are part of, either side of it */
+    get: operations['Marketplace_bookings'];
+    put?: never;
+    /**
+     * Ask a caregiver for a visit
+     * @description Requires the same `requestTransport` grant that arranging a car does. Booking somebody to sit with a patient is at least as consequential, and a separate permission would mean two answers to “who may arrange care”.
+     */
+    post: operations['Marketplace_book'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/bookings/{bookingId}/accept': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** The caregiver accepting */
+    post: operations['Marketplace_accept'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/bookings/{bookingId}/decline': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** The caregiver declining */
+    post: operations['Marketplace_decline'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/bookings/{bookingId}/cancellation-quote': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * What cancelling would cost, before committing to it
+     * @description Free with more than a day’s notice; half after that, never the whole visit. A caregiver cancelling never charges the family.
+     */
+    get: operations['Marketplace_quote'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/bookings/{bookingId}/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Call it off */
+    post: operations['Marketplace_cancel'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/bookings/{bookingId}/check-in': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** The caregiver arriving */
+    post: operations['Marketplace_checkIn'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/bookings/{bookingId}/check-out': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * The caregiver leaving, and the moment the money is decided
+     * @description Charged from the checked times rather than the booked window, rounded up to a quarter-hour: a visit that ran twenty minutes over is twenty minutes of somebody’s afternoon, and rounding down would have a caregiver work fourteen minutes for nothing.
+     */
+    post: operations['Marketplace_checkOut'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/bookings/{bookingId}/no-show': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Nobody came
+     * @description Reported by the family only. A caregiver marking their own booking as a no-show would be marking the family.
+     */
+    post: operations['Marketplace_noShow'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/bookings/{bookingId}/review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rate a visit that happened
+     * @description Only a completed booking, and only once. A marketplace where a cancelled engagement can be rated is one where a family who never met somebody can end their career.
+     */
+    post: operations['Marketplace_review'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/marketplace/bookings/{bookingId}/dispute': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Raise a disagreement about a visit */
+    post: operations['Marketplace_dispute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/marketplace/bookings/{bookingId}/dispute/resolve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Decide a dispute
+     * @description Names an outcome, a reason and a person — enforced by a check constraint as well as here. A decision with none of those is one nobody can defend when the same question is asked again.
+     */
+    post: operations['MarketplaceAdmin_resolve'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/conversations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Threads the caller is in, newest first, with unread counts */
+    get: operations['Messaging_inbox'];
+    put?: never;
+    /**
+     * Find or open a thread
+     * @description Returns the existing thread for this subject if there is one. `organizationId`, `patientId` and `driverId` may be left out where a ride, or the caller being a driver, already says what they are. 409 when the colleague is off shift, or a finished trip's thread has closed.
+     */
+    post: operations['Messaging_open'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/conversations/unread': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Totals for a badge */
+    get: operations['Messaging_unread'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/conversations/{conversationId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['Messaging_conversation'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/conversations/{conversationId}/messages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** A page of messages, oldest first */
+    get: operations['Messaging_messages'];
+    put?: never;
+    /**
+     * Send a message
+     * @description Safe to retry with the same `clientMessageId`: the stored message is returned rather than a second one posted.
+     */
+    post: operations['Messaging_send'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/conversations/{conversationId}/read': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark the thread read up to now */
+    post: operations['Messaging_markRead'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/colleagues': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Drivers at the operator the caller can message, on shift first
+     * @description For a dispatcher at the operator or one of its approved drivers.
+     */
+    get: operations['Messaging_colleagues'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/calls/targets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Who the caller can ring from a conversation or a ride
+     * @description Never includes a number. `available` is false, with a reason to show, when a call cannot be placed right now.
+     */
+    get: operations['Calls_targets'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/calls': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Place a relay call
+     * @description Your own phone rings first, from the relay number; answer it and you are put through. Progress arrives as `call.updated` on the messaging socket.
+     */
+    post: operations['Calls_start'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/calls/my-number': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The number your phone rings on when you place a call */
+    get: operations['Calls_myNumber'];
+    /** Set or clear it */
+    put: operations['Calls_setMyNumber'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/calls/{callId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['Calls_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/register': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create an account
+     * @description Signs the new account in immediately and sends a verification email. Nothing is blocked on verification — locking a family out of a ride they have already booked because an email went to spam is the worse outcome — but invitations require a verified address.
+     */
+    post: operations['Auth_register'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/login': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Sign in
+     * @description Accounts with two-factor authentication confirmed must also send `mfaCode`. The code is checked only after the password, so an attacker without the password never learns whether an account has MFA at all.
+     */
+    post: operations['Auth_login'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/refresh': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rotate the refresh token
+     * @description Single-use. Presenting one that has already been rotated revokes the whole family and forces a fresh sign-in: two parties hold tokens from one login and only one of them is legitimate.
+     */
+    post: operations['Auth_refresh'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/logout': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Sign out of this device, or of all of them */
+    post: operations['Auth_logout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/logout-all': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Sign out everywhere
+     * @description Revokes every refresh token and raises the account’s token version, so access tokens already in the wild stop working on their next request rather than at their next expiry.
+     */
+    post: operations['Auth_logoutAll'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/verify-email': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Confirm an email address with the emailed token */
+    post: operations['Auth_verifyEmail'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/resend-verification': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Send the verification email again
+     * @description Always accepted. Whether the address has an account, and whether it is already verified, are facts about a person that an unauthenticated caller does not get to read.
+     */
+    post: operations['Auth_resendVerification'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/password-reset': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Request a password reset link
+     * @description Always accepted, whether or not the address has an account. Anything else turns this endpoint into a way to enumerate the customer list — which for this product is a list of people with a vulnerable relative.
+     */
+    post: operations['Auth_requestPasswordReset'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/password-reset/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Set a new password with the emailed token
+     * @description Revokes every session and emails the account holder that it happened. A reset that leaves sessions alive hands an attacker who already has one a foothold the new password does not dislodge.
+     */
+    post: operations['Auth_confirmPasswordReset'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/password': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Change the password while signed in */
+    post: operations['Auth_changePassword'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/sessions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List active sessions
+     * @description One row per sign-in, not per token. Tokens rotate every few minutes; the family id is stable for the life of a session, so it is what a person recognises and can act on.
+     */
+    get: operations['Auth_listSessions'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/sessions/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Revoke one session */
+    delete: operations['Auth_revokeSession'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/account/deletion': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Whether a deletion could be started, and why not if not
+     * @description Returns the blockers so the screen can explain itself before the person commits, rather than accepting a tap and then refusing it. It reports no pending deletion because there can be no session in which one is visible — the request signs every device out, and signing back in cancels it.
+     */
+    get: operations['Auth_deletionStatus'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/account/export': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Download everything we hold about this account
+     * @description Available on its own, not only as part of a deletion. Sign-in credentials, two-factor secrets and recovery codes are deliberately excluded — a file containing those is a credential in somebody’s inbox.
+     */
+    get: operations['Auth_exportAccount'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/account': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Delete this account
+     * @description Schedules deletion 30 days out, signs every device out immediately, and returns a full export. Signing in again before the date cancels it. Refused with 409 while a journey is under way, while the account is the last owner of an operator that still has drivers, or while an invoice is unpaid.
+     */
+    delete: operations['Auth_deleteAccount'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/account/deletion-request': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Request a deletion link by email, without signing in
+     * @description Always accepted. Anything else turns this endpoint into a way to enumerate the customer list — which for this product is a list of people with a vulnerable relative.
+     */
+    post: operations['Auth_requestDeletionByEmail'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/account/deletion-request/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Confirm a deletion requested from the public page
+     * @description Spends the emailed token and schedules the deletion on the same terms as the in-app path, blockers included: the public route does not get to skip the rule about somebody being in a car.
+     */
+    post: operations['Auth_confirmDeletionByToken'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/mfa': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Two-factor authentication status */
+    get: operations['Auth_mfaStatus'];
+    put?: never;
+    post?: never;
+    /** Turn two-factor authentication off */
+    delete: operations['Auth_disableMfa'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/mfa/enrol': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Begin two-factor enrolment
+     * @description Returns the QR payload and the recovery codes, once. Enrolment is not active until a code is confirmed — marking it active here would lock out anyone whose authenticator app failed to scan the code, with no second factor to recover with.
+     */
+    post: operations['Auth_beginMfaEnrolment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/mfa/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Confirm enrolment with one generated code */
+    post: operations['Auth_confirmMfa'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/health/live': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Liveness
+     * @description Checks nothing external on purpose. A database blip must not get the container killed and restarted, which would turn a recoverable outage into a crash loop.
+     */
+    get: operations['Health_live'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/health/ready': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Readiness — may this instance take traffic */
+    get: operations['Health_ready'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/health': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['Health_check'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        /** @enum {string} */
-        BillingPayer: "family" | "dispatchOrganization";
-        /** @enum {string} */
-        BillingInterval: "monthly" | "annual";
-        SubscriptionSeatTierDto: {
-            /** @description Total driver count this band covers, inclusive. Null on the final band, which is unbounded. */
-            upToSeats: number | null;
-            unitPriceCents: number;
-        };
-        SubscriptionPlanDto: {
-            /** Format: uuid */
-            id: string;
-            code: string;
-            /** @description Immutable price identity, stamped onto every period this plan bills — so a charge from eight months ago can still be explained. */
-            version: string;
-            payer: components["schemas"]["BillingPayer"];
-            interval: components["schemas"]["BillingInterval"];
-            name: string;
-            description: string;
-            basePriceCents: number;
-            /** @description Drivers covered by the base price. Always 0 on a family plan. */
-            includedSeats: number;
-            seatTiers: components["schemas"]["SubscriptionSeatTierDto"][];
-            entitlements: string[];
-            trialDays: number;
-            /** @description How long a failed payment keeps entitling. Not zero: cutting live tracking off the instant a card expires blanks the map mid-trip. */
-            graceDays: number;
-        };
-        /** @enum {string} */
-        SubscriptionStatus: "trialing" | "active" | "pastDue" | "pendingCancellation" | "canceled" | "expired";
-        SubscriptionLineDto: {
-            label: string;
-            quantity: number;
-            unitPriceCents: number;
-            amountCents: number;
-        };
-        SubscriptionQuoteDto: {
-            planCode: string;
-            planVersion: string;
-            interval: components["schemas"]["BillingInterval"];
-            seats: number;
-            billableSeats: number;
-            lines: components["schemas"]["SubscriptionLineDto"][];
-            totalCents: number;
-        };
-        SubscriptionDto: {
-            /** Format: uuid */
-            id: string;
-            payer: components["schemas"]["BillingPayer"];
-            status: components["schemas"]["SubscriptionStatus"];
-            interval: components["schemas"]["BillingInterval"];
-            planCode: string;
-            planName: string;
-            planVersion: string;
-            /** @description Drivers billed from the next renewal. Zero on a family subscription. */
-            seats: number;
-            /** Format: date-time */
-            currentPeriodStart: string;
-            /** Format: date-time */
-            currentPeriodEnd: string;
-            /** Format: date-time */
-            trialEndsAt: string | null;
-            /**
-             * Format: date-time
-             * @description When a payment first failed. Entitlements survive until this plus the plan grace window.
-             */
-            pastDueSince: string | null;
-            /** Format: date-time */
-            cancelRequestedAt: string | null;
-            /** @description What is switched on right now — resolved server-side from status, period and grace. The client renders it; it never derives it. */
-            entitlements: string[];
-            carriedCreditCents: number;
-            /** @description What the next renewal will cost at the current driver count. */
-            renewalQuote: components["schemas"]["SubscriptionQuoteDto"];
-        };
-        PaymentMethodDto: {
-            /** Format: uuid */
-            id: string;
-            /** @description Card brand. Display only — no card number exists in this system. */
-            brand: string;
-            last4: string;
-            expMonth: number;
-            expYear: number;
-            /** @description Which card renewals are charged against. At most one per account. */
-            isDefault: boolean;
-        };
-        BillingAccountDto: {
-            /** Format: uuid */
-            id: string;
-            payer: components["schemas"]["BillingPayer"];
-            billingEmail: string;
-            /**
-             * Format: uuid
-             * @description Set on an operator account, null on a family one.
-             */
-            organizationId: string | null;
-            subscription: components["schemas"]["SubscriptionDto"] | null;
-            /** @description The card renewals are charged against, or null if there is none. */
-            paymentMethod: components["schemas"]["PaymentMethodDto"] | null;
-            /** @description Total owed across every open invoice. Zero when nothing is outstanding. */
-            amountDueCents: number;
-        };
-        SubscribeDto: {
-            /** @description Plan code, e.g. "family-standard" or "dispatch-core". */
-            planCode: string;
-            interval: components["schemas"]["BillingInterval"];
-        };
-        ChangeIntervalDto: {
-            /** @description The unused remainder of the current period is credited; a fresh period starts today. Annual → monthly produces a credit carried forward, not a refund. */
-            interval: components["schemas"]["BillingInterval"];
-        };
-        /**
-         * @description What raised it: a billed period, drivers added mid-period, or an interval switch.
-         * @enum {string}
-         */
-        InvoiceReason: "subscriptionPeriod" | "seatProration" | "intervalSwitch";
-        /**
-         * @description `uncollectible` is owed and was pursued; `void` was never owed. They are not the same and are never merged.
-         * @enum {string}
-         */
-        InvoiceStatus: "open" | "paid" | "uncollectible" | "void";
-        InvoiceLineDto: {
-            label: string;
-            quantity: number;
-            unitPriceCents: number;
-            amountCents: number;
-        };
-        InvoiceDto: {
-            /** Format: uuid */
-            id: string;
-            /** @description Human-quotable. An invoice somebody rings up about has to be findable by the number printed on it. */
-            number: string;
-            /** @description What raised it: a billed period, drivers added mid-period, or an interval switch. */
-            reason: components["schemas"]["InvoiceReason"];
-            /** @description `uncollectible` is owed and was pursued; `void` was never owed. They are not the same and are never merged. */
-            status: components["schemas"]["InvoiceStatus"];
-            currency: string;
-            subtotalCents: number;
-            /** @description Credit spent against this invoice. */
-            creditAppliedCents: number;
-            totalCents: number;
-            amountPaidCents: number;
-            lines: components["schemas"]["InvoiceLineDto"][];
-            /** Format: date-time */
-            issuedAt: string;
-            /** Format: date-time */
-            paidAt: string | null;
-            /** @description Charges attempted, including the first. */
-            attemptCount: number;
-            /**
-             * Format: date-time
-             * @description When the next attempt is scheduled. Null once we have stopped trying.
-             */
-            nextAttemptAt: string | null;
-            /** @description The processor's code for the last decline, for support to read. */
-            lastFailureCode: string | null;
-        };
-        AttachPaymentMethodDto: {
-            /** @description A reference the client obtained directly from the payment processor. Never a card number — no endpoint in this system accepts one (ADR-0006). */
-            token: string;
-        };
-        /**
-         * @description The caller's role in this organisation.
-         * @enum {string}
-         */
-        OrgRole: "owner" | "admin" | "dispatcher" | "member";
-        OrganizationDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            slug: string;
-            kind: string;
-            timeZone: string;
-            /** @description The caller's role in this organisation. */
-            role: components["schemas"]["OrgRole"];
-        };
-        /** @enum {string} */
-        SeatChange: "granted" | "released";
-        SeatLedgerEntryDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            driverId: string;
-            driverDisplayName: string;
-            change: components["schemas"]["SeatChange"];
-            /** Format: date-time */
-            at: string;
-            seatsAfter: number;
-            /** @description Charged immediately for the remainder of the period on a grant. Zero on a release — a released seat stays usable until the period that paid for it ends. */
-            prorationCents: number;
-        };
-        OrganizationSeatsDto: {
-            /** Format: uuid */
-            organizationId: string;
-            /** @description Drivers on the road right now. */
-            activeDrivers: number;
-            /** @description Drivers the current subscription is billing for. */
-            billedSeats: number;
-            renewalQuote: components["schemas"]["SubscriptionQuoteDto"] | null;
-            ledger: components["schemas"]["SeatLedgerEntryDto"][];
-        };
-        PatientAccessDto: {
-            /** Format: uuid */
-            userId: string;
-            /** Format: uuid */
-            patientId: string;
-            relationship: string;
-            permissions: string[];
-            /** Format: date-time */
-            grantedAt: string;
-            /**
-             * Format: uuid
-             * @description Null marks the organiser who created the patient record. They keep manageAccess unconditionally, or a family could lock itself out of its own patient.
-             */
-            grantedByUserId: string | null;
-            /** Format: date-time */
-            revokedAt: string | null;
-        };
-        AppUserDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: email */
-            email: string;
-            fullName: string;
-            phone: string | null;
-            /**
-             * Format: date-time
-             * @description Null until the address is proven. Nothing is blocked on it except issuing and accepting invitations — but the app needs the fact to prompt, and a prompt is the only reason an unverified address ever gets verified.
-             */
-            emailVerifiedAt: string | null;
-            /** @description IANA zone. Reminder scheduling for this user is computed in it. */
-            timeZone: string;
-        };
-        AddressDto: {
-            label: string;
-            line1: string;
-            line2: string | null;
-            city: string;
-            state: string;
-            postalCode: string;
-            /** @description What stops a driver waiting at the wrong entrance while a patient waits at the right one. */
-            accessNotes: string | null;
-            /** Format: double */
-            latitude: number | null;
-            /** Format: double */
-            longitude: number | null;
-        };
-        EmergencyContactDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            relationship: string;
-            phone: string;
-            isPrimary: boolean;
-        };
-        PatientDto: {
-            /** Format: uuid */
-            id: string;
-            preferredName: string;
-            legalName: string | null;
-            phone: string;
-            homeAddress: components["schemas"]["AddressDto"];
-            /** @description Coarse by design. There is no date of birth anywhere in this API. */
-            ageBand: string | null;
-            preferredLanguage: string;
-            mobilityNeeds: string[];
-            mobilityNotes: string | null;
-            emergencyContacts: components["schemas"]["EmergencyContactDto"][];
-            /** Format: uuid */
-            preferredClinicId: string | null;
-            /**
-             * Format: date-time
-             * @description Soft delete. Audit and dispute resolution need the record to survive.
-             */
-            archivedAt: string | null;
-        };
-        ClinicDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            phone: string;
-            address: components["schemas"]["AddressDto"];
-            entranceNotes: string | null;
-            operatingNotes: string | null;
-        };
-        StatusChangeDto: {
-            /** Format: date-time */
-            at: string;
-            from: string;
-            to: string;
-            actor: string;
-            reason: string | null;
-        };
-        AppointmentDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            patientId: string;
-            /** Format: uuid */
-            clinicId: string;
-            /** Format: date-time */
-            startsAt: string;
-            expectedDurationMinutes: number;
-            type: string;
-            status: string;
-            coordinationNotes: string | null;
-            transportRequired: boolean;
-            /** @description The label a person reads, e.g. "clinic time" — not the IANA zone the scheduler computes in. Conflating the two is how a reminder fires at 3am. */
-            timeZoneLabel: string;
-            history: components["schemas"]["StatusChangeDto"][];
-            /** Format: date-time */
-            createdAt: string;
-        };
-        RideVehicleDto: {
-            make: string;
-            model: string;
-            color: string;
-            licensePlate: string;
-            isWheelchairAccessible: boolean;
-        };
-        RideDriverDto: {
-            /** Format: uuid */
-            id: string;
-            /** @description First name and last initial only. The family needs to recognise the person at the kerb, not to be able to look them up. */
-            displayName: string;
-            /** Format: double */
-            rating: number;
-            yearsDriving: number;
-            vehicle: components["schemas"]["RideVehicleDto"];
-        };
-        SurchargeDto: {
-            label: string;
-            amountCents: number;
-        };
-        PriceEstimateDto: {
-            /** @description The pricing rule that produced these numbers, so a historical charge can always be explained. */
-            ruleVersion: string;
-            /** Format: double */
-            distanceMiles: number;
-            durationMinutes: number;
-            baseCents: number;
-            distanceChargeCents: number;
-            timeChargeCents: number;
-            surcharges: components["schemas"]["SurchargeDto"][];
-            totalCents: number;
-            minimumApplied: boolean;
-        };
-        RideEventDto: {
-            /** Format: date-time */
-            at: string;
-            title: string;
-            detail: string | null;
-            isException: boolean;
-        };
-        TrackingPointDto: {
-            /** Format: double */
-            latitude: number;
-            /** Format: double */
-            longitude: number;
-            /** Format: double */
-            accuracyMeters: number;
-            /**
-             * Format: date-time
-             * @description When the device took the reading. Every freshness label ages against this and never against when the server received it — a stale position rendered as a confident moving car manufactures false certainty about a vulnerable person.
-             */
-            capturedAt: string;
-        };
-        /** @enum {string} */
-        RouteTarget: "pickup" | "destination";
-        CoordinatesDto: {
-            latitude: number;
-            longitude: number;
-        };
-        LiveRouteDto: {
-            target: components["schemas"]["RouteTarget"];
-            path: components["schemas"]["CoordinatesDto"][];
-        };
-        RideDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            patientId: string;
-            /** Format: uuid */
-            appointmentId: string | null;
-            /**
-             * Format: uuid
-             * @description A round trip is two rides sharing this id, not one ride with two legs — each is assigned, tracked, cancelled and priced independently.
-             */
-            roundTripGroupId: string | null;
-            direction: string;
-            pickup: components["schemas"]["AddressDto"];
-            destination: components["schemas"]["AddressDto"];
-            /** Format: date-time */
-            scheduledPickupAt: string;
-            flexibleReturn: boolean;
-            status: string;
-            wheelchairRequired: boolean;
-            assistanceRequired: boolean;
-            notesForDriver: string | null;
-            driver: components["schemas"]["RideDriverDto"] | null;
-            estimate: components["schemas"]["PriceEstimateDto"];
-            /** @description A flag rather than a status, so a delay can be raised and cleared without losing the state the ride must return to. */
-            isDelayed: boolean;
-            delayReason: string | null;
-            cancellationReason: string | null;
-            events: components["schemas"]["RideEventDto"][];
-            history: components["schemas"]["StatusChangeDto"][];
-            lastKnownPosition: components["schemas"]["TrackingPointDto"] | null;
-            /** @description Minutes until the driver reaches the stop in question — the pickup while they are on the way, the destination once the passenger is aboard. Computed server-side from the reported position; there is deliberately no field on the position report for a device to set it. Null while the car is standing at a kerb, and null when the address never geocoded. */
-            etaMinutes: number | null;
-            /** @description The road the arrival estimate was computed along, to the stop the car is heading for now. Only while location is shared and the last position is recent; null otherwise, and null when the routing provider offered no road. Never computed for this response — read from the route the ETA already paid for. */
-            route: components["schemas"]["LiveRouteDto"] | null;
-            /** Format: date-time */
-            createdAt: string;
-            /** @description Whether the preview trip runner is currently driving this ride. Removed when the driver app lands. */
-            simulationActive: boolean;
-        };
-        NotificationDto: {
-            /** Format: uuid */
-            id: string;
-            kind: string;
-            /** @description Carries no patient name, clinic name, address or time. A phone on a kitchen table is readable by whoever is in the room. */
-            title: string;
-            body: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            readAt: string | null;
-            /** Format: uuid */
-            rideId: string | null;
-            /** Format: uuid */
-            appointmentId: string | null;
-            /**
-             * Format: uuid
-             * @description The thread a message or missed-call notification opens.
-             */
-            conversationId: string | null;
-        };
-        CareStateDto: {
-            user: components["schemas"]["AppUserDto"] | null;
-            patients: components["schemas"]["PatientDto"][];
-            /** @description Keyed by patient id. Only active grants appear — a revoked grant closes every surface at once, so the patient, their appointments, their rides and their live position all disappear from the next snapshot together. */
-            access: {
-                [key: string]: components["schemas"]["PatientAccessDto"];
-            };
-            clinics: components["schemas"]["ClinicDto"][];
-            appointments: components["schemas"]["AppointmentDto"][];
-            rides: components["schemas"]["RideDto"][];
-            notifications: components["schemas"]["NotificationDto"][];
-            /** Format: uuid */
-            selectedPatientId: string | null;
-            simplifiedMode: boolean;
-        };
-        UpdatePreferencesDto: {
-            /** @description Larger type, higher contrast, fewer controls. */
-            simplifiedMode?: boolean;
-            /**
-             * Format: uuid
-             * @description Persisted per account so a refresh or a new device lands the user back where they were. A selection whose grant has since been revoked is dropped on read rather than stored forever.
-             */
-            selectedPatientId?: string;
-        };
-        WebPushKeyDto: {
-            /** @description base64url VAPID public key. */
-            publicKey: string | null;
-        };
-        /** @enum {string} */
-        DevicePlatform: "android" | "ios" | "web";
-        /** @enum {string} */
-        AppTarget: "family" | "driver" | "ops";
-        DeviceTokenDto: {
-            id: string;
-            platform: components["schemas"]["DevicePlatform"];
-            appTarget: components["schemas"]["AppTarget"];
-            /** Format: date-time */
-            lastSeenAt: string;
-        };
-        RegisterDeviceDto: {
-            /** @description The FCM registration token. */
-            token: string;
-            platform: components["schemas"]["DevicePlatform"];
-            /**
-             * @description Which install this token belongs to. The driver app is a separate binary (D4) with a separate token set — a family notification arriving on a driver’s phone would be both confusing and a disclosure.
-             * @enum {string}
-             */
-            appTarget?: "family" | "driver" | "ops";
-        };
-        AddressInput: {
-            /** @example Home */
-            label: string;
-            line1: string;
-            line2?: string;
-            city: string;
-            /** @example NY */
-            state: string;
-            postalCode: string;
-            /** @example Gate code 4417; flat is up one flight, no lift. */
-            accessNotes?: string;
-            /** @description Supply a pin only when the client already has a good one — a dragged marker or an autocomplete pick. Supplying it suppresses server-side geocoding, which is the point: re-geocoding would silently move a marker the user set. */
-            latitude?: number;
-            longitude?: number;
-        };
-        /**
-         * @description Coarse by design. There is no date-of-birth field anywhere in this API: name + address + DOB is the classic re-identification triple, and nothing in arranging a car needs it.
-         * @enum {string}
-         */
-        AgeBand: "under65" | "from65to74" | "from75to84" | "over85";
-        /**
-         * @description Operational, not diagnostic. What a driver and a vehicle need to know, and nothing about why.
-         * @enum {string}
-         */
-        MobilityNeed: "walker" | "wheelchair" | "cane" | "oxygen" | "transferAssistance" | "escortToDoor" | "lowVision" | "hardOfHearing" | "memorySupport";
-        EmergencyContactInput: {
-            name: string;
-            /** @example Neighbour */
-            relationship: string;
-            phone: string;
-            isPrimary?: boolean;
-        };
-        /**
-         * @description The creator’s relationship to the patient, recorded on the access grant this call creates.
-         * @enum {string}
-         */
-        RelationshipType: "son" | "daughter" | "spouse" | "sibling" | "grandchild" | "friend" | "professionalCaregiver" | "other";
-        SavePatientDto: {
-            /** @description Required. Someone must be greeted by the name they actually use. */
-            preferredName: string;
-            /** @description Collected only when a transport provider or clinic needs it to match their records — never required of everyone. */
-            legalName?: string;
-            phone: string;
-            homeAddress: components["schemas"]["AddressInput"];
-            /** @description Coarse by design. There is no date-of-birth field anywhere in this API: name + address + DOB is the classic re-identification triple, and nothing in arranging a car needs it. */
-            ageBand?: components["schemas"]["AgeBand"];
-            /** @example English */
-            preferredLanguage?: string;
-            /** @description Operational, not diagnostic. What a driver and a vehicle need to know, and nothing about why. */
-            mobilityNeeds?: components["schemas"]["MobilityNeed"][];
-            mobilityNotes?: string;
-            emergencyContacts?: components["schemas"]["EmergencyContactInput"][];
-            /** Format: uuid */
-            preferredClinicId?: string;
-            /** @description The creator’s relationship to the patient, recorded on the access grant this call creates. */
-            relationship?: components["schemas"]["RelationshipType"];
-        };
-        /** @enum {string} */
-        FamilyPermission: "viewProfile" | "scheduleAppointments" | "requestTransport" | "makePayments" | "manageAccess";
-        SetPermissionsDto: {
-            permissions: components["schemas"]["FamilyPermission"][];
-        };
-        /** @enum {string} */
-        InvitationStatus: "pending" | "accepted" | "revoked" | "expired";
-        InvitationDto: {
-            id: string;
-            patientId: string;
-            /**
-             * @description Masked. Enough for the invitee to recognise their own address; not enough for the rest of the circle to harvest one.
-             * @example a••••@example.com
-             */
-            emailHint: string;
-            relationship: components["schemas"]["RelationshipType"];
-            permissions: components["schemas"]["FamilyPermission"][];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            expiresAt: string;
-            status: components["schemas"]["InvitationStatus"];
-        };
-        CreateInvitationDto: {
-            /**
-             * Format: email
-             * @description The invitation is bound to this address: it can only be accepted by an account signed in as this address, with the address verified.
-             */
-            email: string;
-            relationship: components["schemas"]["RelationshipType"];
-            /** @description Must include viewProfile, and may not exceed what the inviter holds — nobody hands out more access than they have. */
-            permissions: components["schemas"]["FamilyPermission"][];
-        };
-        SaveClinicDto: {
-            name: string;
-            phone: string;
-            address: components["schemas"]["AddressInput"];
-            /** @example America/New_York */
-            timeZone?: string;
-        };
-        /**
-         * @description Coarse on purpose. "Specialist" is enough to plan a visit’s length and transport; the specialty itself is clinical information this API does not accept.
-         * @enum {string}
-         */
-        AppointmentType: "primaryCare" | "specialist" | "imaging" | "labWork" | "therapy" | "dental" | "vision" | "followUp" | "other";
-        CreateAppointmentDto: {
-            /** Format: uuid */
-            patientId: string;
-            /** Format: uuid */
-            clinicId: string;
-            /**
-             * Format: date-time
-             * @description UTC. Reminder offsets are measured against the clinic’s local wall time, which the appointment inherits from the clinic record.
-             */
-            startsAt: string;
-            expectedDurationMinutes: number;
-            /** @description Coarse on purpose. "Specialist" is enough to plan a visit’s length and transport; the specialty itself is clinical information this API does not accept. */
-            type: components["schemas"]["AppointmentType"];
-            /** @description Logistics only: "bring the walker", "Dr Osei’s office is on floor 3". Never symptoms, diagnoses or medication. */
-            coordinationNotes?: string;
-            transportRequired?: boolean;
-        };
-        RescheduleAppointmentDto: {
-            /** Format: date-time */
-            startsAt: string;
-        };
-        CancelAppointmentDto: {
-            reason?: string;
-        };
-        RequestTransportDto: {
-            /** Format: uuid */
-            appointmentId: string;
-            /** Format: date-time */
-            pickupAt: string;
-            /** @description A round trip produces **two rides** sharing a group id, not one ride with two legs: each is assigned, tracked, cancelled and priced independently. */
-            roundTrip: boolean;
-            notesForDriver?: string;
-        };
-        CancelRideDto: {
-            reason: string;
-        };
-        SetDelayDto: {
-            delayed: boolean;
-            reason?: string;
-        };
-        ReportLocationDto: {
-            latitude: number;
-            longitude: number;
-            accuracyMeters?: number;
-            /**
-             * Format: date-time
-             * @description When the **device** took the reading, not when the server received it. Every freshness label ages against this, so the server judges it before storing.
-             */
-            capturedAt: string;
-        };
-        /** @enum {string} */
-        NotificationKind: "appointmentCreated" | "appointmentReminder" | "appointmentChanged" | "appointmentCanceled" | "rideRequested" | "driverAssigned" | "driverEnRoute" | "driverArrivingSoon" | "driverArrived" | "patientPickedUp" | "patientArrived" | "rideDelayed" | "rideCompleted" | "rideCanceled" | "accessGranted" | "messageReceived" | "callMissed";
-        /** @enum {string} */
-        NotificationChannel: "inApp" | "email" | "push";
-        NotificationPreferenceDto: {
-            kind: components["schemas"]["NotificationKind"];
-            channel: components["schemas"]["NotificationChannel"];
-            enabled: boolean;
-            /** @description False for in-app. The centre inside the app is the record of what happened; a timeline a user can switch off would lie by omission, and the timeline is what disputes are resolved with. */
-            configurable: boolean;
-        };
-        /** @enum {string} */
-        ConfigurableChannel: "email" | "push";
-        SetNotificationPreferenceDto: {
-            kind: components["schemas"]["NotificationKind"];
-            channel: components["schemas"]["ConfigurableChannel"];
-            enabled: boolean;
-        };
-        AcceptInvitationDto: {
-            /** @description The single-use token from the invitation link. */
-            token: string;
-        };
-        VehicleDto: {
-            /** Format: uuid */
-            id: string;
-            make: string;
-            model: string;
-            color: string;
-            licensePlate: string;
-            isWheelchairAccessible: boolean;
-        };
-        CreateVehicleDto: {
-            make: string;
-            model: string;
-            color: string;
-            licensePlate: string;
-            isWheelchairAccessible: boolean;
-        };
-        /** @enum {string} */
-        ServiceAreaKind: "radius" | "polygon";
-        ServiceAreaDto: {
-            kind: components["schemas"]["ServiceAreaKind"];
-            center: components["schemas"]["CoordinatesDto"] | null;
-            radiusMiles: number | null;
-            points: components["schemas"]["CoordinatesDto"][] | null;
-        };
-        OrganizationServiceAreaDto: {
-            /** Format: uuid */
-            organizationId: string;
-            /** @description Null until the operator sets one; nothing is flagged until then. */
-            serviceArea: components["schemas"]["ServiceAreaDto"] | null;
-            /** Format: date-time */
-            updatedAt: string | null;
-        };
-        CoordinatesInput: {
-            latitude: number;
-            longitude: number;
-        };
-        SetServiceAreaDto: {
-            kind: components["schemas"]["ServiceAreaKind"];
-            /** @description Required for `radius`: the point the radius is measured from. */
-            center?: components["schemas"]["CoordinatesInput"];
-            /** @description Required for `radius`. Straight-line miles, not road miles. */
-            radiusMiles?: number;
-            /** @description Required for `polygon`: the outline, 3 to 500 points, not closed (the last point joins the first). */
-            points?: components["schemas"]["CoordinatesInput"][];
-        };
-        /** @enum {string} */
-        DriverStatus: "invited" | "pendingApproval" | "approved" | "suspended" | "offboarded";
-        DriverDto: {
-            /** Format: uuid */
-            id: string;
-            /** @description First name and last initial only. The family needs to recognise the person at the kerb, not to be able to look them up. */
-            displayName: string;
-            status: components["schemas"]["DriverStatus"];
-            /** @description Working right now. Separate from status, which is whether the company has said this person may carry a passenger at all. */
-            onShift: boolean;
-            /** Format: float */
-            rating: number;
-            yearsDriving: number;
-            vehicle: components["schemas"]["VehicleDto"];
-            /** Format: date-time */
-            approvedAt: string | null;
-            suspensionReason: string | null;
-            /** @description Whether this driver counts towards the operator’s per-driver subscription. True for approved drivers and nobody else. */
-            occupiesSeat: boolean;
-            activeRideCount: number;
-            /** @description The address this driver will sign into the driver app with, as recorded by the operator. */
-            invitedEmail: string | null;
-            /** @description Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for. */
-            hasAppAccount: boolean;
-        };
-        CreateDriverDto: {
-            /** @description First name and last initial. Never a full legal name. */
-            displayName: string;
-            /** Format: uuid */
-            vehicleId: string;
-            yearsDriving?: number;
-            /**
-             * Format: email
-             * @description The address this driver will sign into the driver app with. Recorded, not invited: the link is only made once an account exists at that address **and has verified it**, so writing it here grants nothing on its own.
-             */
-            email?: string;
-            /**
-             * Format: uuid
-             * @description An existing account to drive as, from `POST drivers/account-lookup`. The account is linked straight away and the driver starts as `pendingApproval` rather than `invited`; approval still needs their paperwork. When set, `email` is ignored and the account's own address is recorded.
-             */
-            userId?: string;
-        };
-        LookupDriverAccountDto: {
-            /**
-             * Format: email
-             * @description The full address the person signed up with. There is no partial match.
-             */
-            email: string;
-        };
-        DriverAccountMatchDto: {
-            /** Format: uuid */
-            userId: string;
-            fullName: string;
-            /** Format: email */
-            email: string;
-            /** @description First name and last initial, for the roster. The operator may change it. */
-            suggestedDisplayName: string;
-        };
-        SetDriverStatusDto: {
-            /** @description Drives the lifecycle state machine in src/domain/driver-status.ts. Crossing into or out of `approved` is what moves a billable seat. */
-            to: components["schemas"]["DriverStatus"];
-            reason?: string;
-        };
-        SetShiftDto: {
-            onShift: boolean;
-        };
-        /** @enum {string} */
-        DriverDocumentKind: "driversLicence" | "vehicleInsurance" | "vehicleRegistration" | "backgroundCheck";
-        /** @enum {string} */
-        DriverDocumentStatus: "awaitingUpload" | "submitted" | "approved" | "rejected" | "expired";
-        DriverDocumentDto: {
-            /** Format: uuid */
-            id: string;
-            kind: components["schemas"]["DriverDocumentKind"];
-            status: components["schemas"]["DriverDocumentStatus"];
-            contentType: string;
-            byteSize: number | null;
-            /**
-             * Format: date-time
-             * @description The date printed on the document. An approved certificate past this date stops counting immediately, rather than when a sweep next notices.
-             */
-            expiresAt: string | null;
-            /** Format: date-time */
-            submittedAt: string | null;
-            /** Format: date-time */
-            reviewedAt: string | null;
-            reviewNote: string | null;
-            /** @description Replaced by a newer upload. Kept rather than deleted, so “which certificate was in force in March” stays answerable. */
-            superseded: boolean;
-        };
-        DriverComplianceDto: {
-            /** @description Whether the paperwork permits approving this driver. Re-checked inside the approval transaction — the console greys the button out, but a check only the screen performs is one a second tab can race past. */
-            compliant: boolean;
-            /** @description Every required document still missing, not just the first. Deliberately excludes the background check: a platform lookup is not what makes somebody safe, and treating it as such would be a claim this product does not make. */
-            missing: string[];
-            /** @description Valid today, lapsing within thirty days. */
-            expiringSoon: string[];
-            documents: components["schemas"]["DriverDocumentDto"][];
-        };
-        DocumentViewUrlDto: {
-            /** @description Short-lived on purpose. A link to a driver’s licence that works for a week is a link that ends up in a chat message, an email thread and a browser history. */
-            url: string;
-            expiresInSeconds: number;
-        };
-        ReviewDocumentDto: {
-            /** @enum {string} */
-            decision: "approved" | "rejected";
-            /** @description Required when rejecting. “Rejected” with no reason is a driver who re-uploads the same unreadable photograph three times. */
-            note?: string;
-        };
-        /**
-         * @description "overdue" is its own band rather than the top of "imminent": a pickup time that has passed with nobody assigned is a failure already in progress — somebody is standing in a hallway waiting.
-         * @enum {string}
-         */
-        DispatchUrgency: "overdue" | "imminent" | "soon" | "later";
-        DispatchCandidateDto: {
-            /** Format: uuid */
-            driverId: string;
-            displayName: string;
-            eligible: boolean;
-            /** @description Every reason this driver cannot take the trip, not just the first — "nobody is on shift" and "nobody has an accessible vehicle" need different phone calls. */
-            reasons: string[];
-        };
-        DispatchQueueItemDto: {
-            /** Format: uuid */
-            rideId: string;
-            status: string;
-            patientName: string;
-            pickupLine: string;
-            destinationLine: string;
-            /** Format: date-time */
-            scheduledPickupAt: string;
-            wheelchairRequired: boolean;
-            assistanceRequired: boolean;
-            /** @description "overdue" is its own band rather than the top of "imminent": a pickup time that has passed with nobody assigned is a failure already in progress — somebody is standing in a hallway waiting. */
-            urgency: components["schemas"]["DispatchUrgency"];
-            /** @description Whether the pickup is inside this operator's service area. Null when the operator has not set an area or the pickup address could not be located — unknown, not inside. Advisory: assignment is not refused on it. */
-            pickupInServiceArea: boolean | null;
-            candidates: components["schemas"]["DispatchCandidateDto"][];
-        };
-        DispatchQueueDto: {
-            /** Format: uuid */
-            organizationId: string;
-            items: components["schemas"]["DispatchQueueItemDto"][];
-            /** @description Drivers on shift and free right now, across the whole roster. */
-            availableDrivers: number;
-        };
-        LivePositionDto: {
-            latitude: number;
-            longitude: number;
-            accuracyMeters: number;
-            /**
-             * Format: date-time
-             * @description When the device took the reading — age is measured from this.
-             */
-            capturedAt: string;
-        };
-        LiveRideDto: {
-            /** Format: uuid */
-            rideId: string;
-            status: string;
-            /** Format: uuid */
-            driverId: string;
-            driverName: string;
-            patientName: string;
-            /** Format: date-time */
-            scheduledPickupAt: string;
-            /** @description Null when the address was never located. */
-            pickup: components["schemas"]["CoordinatesDto"] | null;
-            /** @description Null when the address was never located. */
-            destination: components["schemas"]["CoordinatesDto"] | null;
-            /** @description The car's last reported position. Null before the driver sets off, after tracking ends, or once the last report is older than the tracking cut-off — never a stale position presented as current. Live updates arrive on the tracking socket. */
-            position: components["schemas"]["LivePositionDto"] | null;
-            etaMinutes: number | null;
-            isDelayed: boolean;
-            /** @description The road the ETA was last computed along, from where the car was then to the stop it is heading for. Null when there is no live position, no countdown, or the routing provider offered no road — draw a plain guide line, never a guessed route. */
-            route: components["schemas"]["LiveRouteDto"] | null;
-        };
-        LiveBoardDto: {
-            /** Format: uuid */
-            organizationId: string;
-            serviceArea: components["schemas"]["ServiceAreaDto"] | null;
-            rides: components["schemas"]["LiveRideDto"][];
-        };
-        AssignRideDto: {
-            /** Format: uuid */
-            driverId: string;
-            /** @description Required when taking a ride off a driver who already had it. */
-            reason?: string;
-        };
-        DriverProfileDto: {
-            /** Format: uuid */
-            driverId: string;
-            /** Format: uuid */
-            organizationId: string;
-            /** @description Shown in the app so a driver working for two companies can tell at a glance which one is dispatching them. */
-            organizationName: string;
-            displayName: string;
-            status: components["schemas"]["DriverStatus"];
-            onShift: boolean;
-            vehicle: components["schemas"]["VehicleDto"];
-            /** @description Whether this driver may go on shift at all. False until the operator has approved them, and false again the moment they are suspended. */
-            canWork: boolean;
-            /** @description Why the operator stopped them. Shown to the driver: being locked out of your own job with no reason given is how support queues fill up. */
-            suspensionReason: string | null;
-        };
-        DriverShiftDto: {
-            /** @description A driver may take themselves on and off shift. The dispatcher can too — they are the one who hears about the flat tyre first. */
-            onShift: boolean;
-        };
-        /** @enum {string} */
-        RideStatus: "draft" | "requested" | "awaitingAssignment" | "assigned" | "driverAccepted" | "driverEnRoute" | "driverArrived" | "passengerOnboard" | "inProgress" | "arrivedAtDestination" | "completed" | "canceled" | "noShow" | "reassignmentRequired";
-        DriverRideDto: {
-            /** Format: uuid */
-            id: string;
-            status: components["schemas"]["RideStatus"];
-            /** Format: date-time */
-            scheduledPickupAt: string;
-            direction: string;
-            /** @description The name to call out at the door. Never a full legal name. */
-            passengerName: string;
-            /** @description For ringing from the kerb, which is what stops a five-minute wait becoming a no-show. */
-            passengerPhone: string | null;
-            pickup: components["schemas"]["AddressDto"];
-            destination: components["schemas"]["AddressDto"];
-            wheelchairRequired: boolean;
-            assistanceRequired: boolean;
-            notesForDriver: string | null;
-            isDelayed: boolean;
-            /** @description The moves this driver may make right now — the intersection of what the ride allows and what belongs to the driver. Advisory: the server asserts it again. */
-            availableTransitions: string[];
-            /** @description Seconds left on the kerbside wait before a no-show may be declared, or null when a no-show is not on offer at all. */
-            noShowAvailableInSeconds: number | null;
-            /** @description Whether the app should be sampling location for this ride. Derived from the status by the same rule the write path enforces, so the app is never asked to send what the server would refuse. */
-            shareLocation: boolean;
-            /** Format: date-time */
-            lastCapturedAt: string | null;
-        };
-        /**
-         * @description Only the moves that belong to the driver. Cancellation and reassignment are deliberately absent: a ride the driver cannot do is still owed, and telling the family it was called off would be a different and untrue statement.
-         * @enum {string}
-         */
-        DriverRideTransition: "driverAccepted" | "driverEnRoute" | "driverArrived" | "passengerOnboard" | "inProgress" | "arrivedAtDestination" | "completed" | "noShow";
-        AdvanceRideDto: {
-            /** @description Only the moves that belong to the driver. Cancellation and reassignment are deliberately absent: a ride the driver cannot do is still owed, and telling the family it was called off would be a different and untrue statement. */
-            to: components["schemas"]["DriverRideTransition"];
-            reason?: string;
-        };
-        DriverDocumentsDto: {
-            /** @description Whether the paperwork permits the operator approving this driver. */
-            compliant: boolean;
-            /** @description Every required document still wanted, not just the first. */
-            missing: string[];
-            expiringSoon: string[];
-            /** @description Including the rejection note. Being told “you cannot drive” without being told which document and why is how somebody re-uploads the same unreadable photograph three times and then telephones. */
-            documents: components["schemas"]["DriverDocumentDto"][];
-        };
-        RequestDocumentUploadDto: {
-            /** @description A short list of legal requirements and nothing else. A server that stored whatever arrived would be an operator holding a driver’s passport because the form allowed one. */
-            kind: components["schemas"]["DriverDocumentKind"];
-            /**
-             * @description Signed into the upload URL, so it is a bound rather than a request: a slot authorised for a JPEG cannot be filled with anything else.
-             * @example image/jpeg
-             */
-            contentType: string;
-            /**
-             * Format: date-time
-             * @description The date printed on the document, where it has one. Not a retention deadline — this is what makes an insurance certificate stop counting the day it lapses.
-             */
-            expiresAt?: string;
-        };
-        PresignedUploadDto: {
-            /** Format: uuid */
-            documentId: string;
-            /** @description PUT the file here. The bytes never pass through this API: a multipart body would be a copy of the file in the heap of a process that is also holding a WebSocket open for every live ride. */
-            url: string;
-            /** @description Send these exactly. They are covered by the signature, which is what stops a slot authorised for a 4 MB photograph being filled with 400 MB of something else. */
-            headers: {
-                [key: string]: string;
-            };
-            expiresInSeconds: number;
-            maxBytes: number;
-        };
-        ConfirmDocumentUploadDto: {
-            /**
-             * Format: uuid
-             * @description The slot the upload was authorised against. The server checks storage rather than believing this — a client that says “done” is a client that could say it without having uploaded anything.
-             */
-            documentId: string;
-        };
-        ReportLocationBatchDto: {
-            /** @description Readings in any order; the server sorts them. Two hundred and forty is twenty minutes of the fastest cadence, which is longer than any dead zone this product expects to survive — a queue longer than that is flushed in several batches rather than being silently truncated. */
-            points: components["schemas"]["ReportLocationDto"][];
-        };
-        LocationBatchResultDto: {
-            /** @description Readings written to the journey record. */
-            stored: number;
-            /** @description Readings the server declined to keep — stamped in the future, or already held from an earlier flush of the same queue. */
-            ignored: number;
-            /** @description Whether the batch moved the position the family sees. False for a batch that drained late: its readings are history, and history must not overwrite a fresher position. */
-            positionUpdated: boolean;
-        };
-        AuditEntryDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: date-time */
-            at: string;
-            /** Format: uuid */
-            actorUserId: string | null;
-            /** @description The actor’s name, resolved for display. Absent for actions the system took on its own. */
-            actorName: string | null;
-            action: string;
-            entityType: string;
-            entityId: string | null;
-            /** @description Field **names** only, never values — the whole reason this log can be read by somebody who may not read the records it describes. */
-            changedFields: string[];
-            correlationId: string | null;
-            ip: string | null;
-        };
-        AuditPageDto: {
-            entries: components["schemas"]["AuditEntryDto"][];
-            /** @description Pass as `cursor` for the next page. Keyset rather than an offset: an audit log is appended to constantly, and an offset would skip or repeat rows between pages. */
-            nextCursor: string | null;
-        };
-        PlatformStatsDto: {
-            ridesLast7Days: number;
-            ridesCompletedLast7Days: number;
-            /** @description Rides that ended without the passenger travelling. Counted beside completions rather than buried, because it is the number that says whether the product is working for the people it is for. */
-            ridesNoShowLast7Days: number;
-            ridesCancelledLast7Days: number;
-            activeRidesNow: number;
-            /** @description Rides in flight whose last position is older than the staleness bound — the number a dispatcher would want telephoned about. */
-            staleTrackingNow: number;
-            familiesSubscribed: number;
-            operatorsSubscribed: number;
-            driversApproved: number;
-            /** @description Approved drivers whose paperwork lapses within thirty days. Each one is a driver who comes off the road unless somebody telephones. */
-            driversWithExpiringDocuments: number;
-            documentsAwaitingReview: number;
-            /** @description Invoices that have failed at least once and have not been paid. The dunning queue, as a single number. */
-            invoicesPastDue: number;
-            revenueCentsLast30Days: number;
-            refundedCentsLast30Days: number;
-        };
-        FeatureFlagDto: {
-            key: string;
-            description: string;
-            enabled: boolean;
-            /** @description Applied to a stable hash of the subject, so a given user is on the same side of the line on every request. A flag that flipped per request would be worse than one that is simply off. */
-            rolloutPercent: number;
-            /** Format: date-time */
-            updatedAt: string;
-            updatedByName: string | null;
-        };
-        SetFeatureFlagDto: {
-            description: string;
-            enabled: boolean;
-            rolloutPercent: number;
-            /** @description Required when narrowing a rollout. Taking a feature away from people who already had it reads to them as a bug, so it has to be said out loud rather than typed by accident. */
-            confirmNarrowing?: boolean;
-        };
-        RefundDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            invoiceId: string;
-            invoiceNumber: string;
-            amountCents: number;
-            currency: string;
-            reason: string;
-            /** @enum {string} */
-            status: "pending" | "succeeded" | "failed";
-            failureMessage: string | null;
-            requestedByName: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            settledAt: string | null;
-        };
-        RefundableInvoiceDto: {
-            /** Format: uuid */
-            invoiceId: string;
-            invoiceNumber: string;
-            /** Format: uuid */
-            paymentId: string;
-            paidCents: number;
-            /** @description What is left to refund: the payment less everything already refunded against it. The ceiling on a new refund. */
-            refundableCents: number;
-            refunds: components["schemas"]["RefundDto"][];
-        };
-        IssueRefundDto: {
-            /** Format: uuid */
-            paymentId: string;
-            /** @description Integer cents, never a float. Bounded above by what is left on the payment. */
-            amountCents: number;
-            /** @description Required. An unexplained credit is something somebody has to justify to an accountant a quarter later, by which time whoever issued it has forgotten. */
-            reason: string;
-        };
-        ClinicSiteDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            addressLine: string;
-            timeZone: string;
-        };
-        ClaimClinicDto: {
-            /** @description Why this network is claiming this site. Recorded in the audit log — claiming a clinic grants sight of every appointment booked there. */
-            note?: string;
-        };
-        ExpectedArrivalDto: {
-            /** Format: uuid */
-            appointmentId: string;
-            /** Format: uuid */
-            clinicId: string;
-            clinicName: string;
-            /** @description The name the family uses. Never a full legal name. */
-            patientName: string;
-            /** Format: date-time */
-            startsAt: string;
-            appointmentType: string;
-            /**
-             * @description Checking in is deliberately **not** inferred from the ride completing. A completed ride says a car reached an address; a check-in says somebody inside the building saw the patient, and the gap between the two is the case this product exists for.
-             * @enum {string}
-             */
-            stage: "expected" | "checkedIn" | "readyForReturn" | "returning" | "finished";
-            outboundStatus: string | null;
-            returnStatus: string | null;
-            /** @description Minutes until the car arrives, when one is on its way. */
-            etaMinutes: number | null;
-            driverName: string | null;
-            vehicleDescription: string | null;
-            wheelchairRequired: boolean;
-            /** Format: date-time */
-            checkedInAt: string | null;
-            /** Format: date-time */
-            readyForReturnAt: string | null;
-            /** @description How long since the clinic said the visit was over. Shown because the person who pressed the button is standing next to somebody in a coat by the door. */
-            waitingMinutes: number | null;
-            /** @description The wait has stopped being ordinary. Twenty-five minutes. */
-            overdue: boolean;
-            /** @description Whether the “send a car home” button should do anything. */
-            canDispatchReturn: boolean;
-            cannotDispatchReason: string | null;
-        };
-        ClinicDayDto: {
-            /** @description The clinic-local date, ISO. */
-            date: string;
-            arrivals: components["schemas"]["ExpectedArrivalDto"][];
-            /** @description Patients the clinic has said are ready, still waiting for a car. */
-            waitingForReturn: number;
-            overdueReturns: number;
-        };
-        /** @enum {string} */
-        CaregiverStatus: "applied" | "verified" | "suspended" | "offboarded";
-        CaregiverCardDto: {
-            /** Format: uuid */
-            id: string;
-            /** @description First name and last initial. Never a full legal name. */
-            displayName: string;
-            bio: string;
-            yearsExperience: number;
-            languages: string[];
-            hourlyRateCents: number;
-            serviceArea: string;
-            status: components["schemas"]["CaregiverStatus"];
-            /**
-             * Format: float
-             * @description Pulled towards a prior, so one bad review cannot halve a career. Null until there are enough reviews to say anything — a number from one opinion looks exactly like a number from a hundred.
-             */
-            rating: number | null;
-            /** Format: float */
-            rawAverage: number | null;
-            reviewCount: number;
-            /** @description What was checked and when, in a sentence. Deliberately not a badge: this platform does not assert that anybody is safe, and a tick would say exactly that. */
-            verificationStatement: string;
-            identityConfirmed: boolean;
-            backgroundCheckRun: boolean;
-            backgroundCheckAgeDays: number | null;
-        };
-        AvailabilityWindowDto: {
-            /** @description 1 = Monday, 7 = Sunday (ISO). */
-            weekday: number;
-            startMinute: number;
-            endMinute: number;
-            timeZone: string;
-        };
-        ReviewDto: {
-            /** Format: uuid */
-            id: string;
-            rating: number;
-            comment: string | null;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        CaregiverProfileDto: {
-            /** Format: uuid */
-            id: string;
-            /** @description First name and last initial. Never a full legal name. */
-            displayName: string;
-            bio: string;
-            yearsExperience: number;
-            languages: string[];
-            hourlyRateCents: number;
-            serviceArea: string;
-            status: components["schemas"]["CaregiverStatus"];
-            /**
-             * Format: float
-             * @description Pulled towards a prior, so one bad review cannot halve a career. Null until there are enough reviews to say anything — a number from one opinion looks exactly like a number from a hundred.
-             */
-            rating: number | null;
-            /** Format: float */
-            rawAverage: number | null;
-            reviewCount: number;
-            /** @description What was checked and when, in a sentence. Deliberately not a badge: this platform does not assert that anybody is safe, and a tick would say exactly that. */
-            verificationStatement: string;
-            identityConfirmed: boolean;
-            backgroundCheckRun: boolean;
-            backgroundCheckAgeDays: number | null;
-            availability: components["schemas"]["AvailabilityWindowDto"][];
-            reviews: components["schemas"]["ReviewDto"][];
-        };
-        SaveCaregiverProfileDto: {
-            displayName: string;
-            bio: string;
-            yearsExperience: number;
-            languages: string[];
-            hourlyRateCents: number;
-            serviceAreaCity: string;
-            serviceAreaState: string;
-        };
-        /** @enum {string} */
-        BookingStatus: "requested" | "confirmed" | "inProgress" | "completed" | "cancelledByFamily" | "cancelledByCaregiver" | "noShow";
-        BookingDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            caregiverId: string;
-            caregiverName: string;
-            /** Format: uuid */
-            patientId: string;
-            patientName: string;
-            /** Format: date-time */
-            startsAt: string;
-            /** Format: date-time */
-            endsAt: string;
-            status: components["schemas"]["BookingStatus"];
-            /** @description The rate agreed at booking, not today’s. A caregiver raising their price must not re-price work somebody has already agreed to. */
-            hourlyRateCents: number;
-            /** Format: date-time */
-            checkedInAt: string | null;
-            /** Format: date-time */
-            checkedOutAt: string | null;
-            billableMinutes: number | null;
-            totalCents: number | null;
-            /** @description What the caregiver keeps. Derived by subtraction, so the two halves always add up. */
-            caregiverPayoutCents: number | null;
-            cancellationReason: string | null;
-            hasReview: boolean;
-            hasOpenDispute: boolean;
-        };
-        CreateBookingDto: {
-            /** Format: uuid */
-            caregiverId: string;
-            /** Format: uuid */
-            patientId: string;
-            /** Format: date-time */
-            startsAt: string;
-            /** Format: date-time */
-            endsAt: string;
-        };
-        CancellationQuoteDto: {
-            feeCents: number;
-            /** @description Shown before the family confirms, in their own words. */
-            explanation: string;
-        };
-        CancelBookingDto: {
-            /** @description Required. A cancellation with no reason is a dispute nobody can settle, and the caregiver has kept the time free. */
-            reason: string;
-        };
-        ReviewBookingDto: {
-            rating: number;
-            comment?: string;
-        };
-        RaiseDisputeDto: {
-            reason: string;
-        };
-        ResolveDisputeDto: {
-            /** @enum {string} */
-            outcome: "upheld" | "refunded" | "waived";
-            /** @description Required. A decision with no reasoning is one nobody can defend when the same question is asked again. */
-            note: string;
-        };
-        /** @enum {string} */
-        ConversationKind: "dispatchFamily" | "dispatchDriver" | "driverDriver" | "operatorDrivers";
-        /** @enum {string} */
-        ConversationRole: "dispatcher" | "family" | "driver";
-        ConversationRideDto: {
-            /** Format: uuid */
-            id: string;
-            status: components["schemas"]["RideStatus"];
-            direction: string;
-            /** Format: date-time */
-            scheduledPickupAt: string;
-            /** @description The passenger's preferred name. Everyone who can read the thread can already see it on the ride. */
-            patientName: string;
-        };
-        /** @enum {string} */
-        MessageSenderRole: "dispatcher" | "family" | "driver" | "system";
-        MessageDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            conversationId: string;
-            senderRole: components["schemas"]["MessageSenderRole"];
-            /** @description Who wrote it, as they were labelled when they wrote it — "Dana · Dispatch", "Marcus T.", "Sarah (daughter)". "Former member" after an account is deleted. */
-            senderLabel: string;
-            body: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** @description Echoed back so a client can reconcile its optimistic copy with the stored one. */
-            clientMessageId: string;
-            /** @description Written by the caller. */
-            mine: boolean;
-        };
-        ConversationDto: {
-            /** Format: uuid */
-            id: string;
-            kind: components["schemas"]["ConversationKind"];
-            /** Format: uuid */
-            organizationId: string;
-            organizationName: string;
-            /** Format: uuid */
-            patientId: string | null;
-            /** Format: uuid */
-            driverId: string | null;
-            /** Format: uuid */
-            peerDriverId: string | null;
-            /** Format: uuid */
-            rideId: string | null;
-            /** @description The other side, from the caller's point of view — "Meridian Transit dispatch" to a family, "Eleanor's family" to a dispatcher. */
-            title: string;
-            myRole: components["schemas"]["ConversationRole"];
-            /** @description False for dispatch in a driver-to-driver thread, and for the family and driver once a finished ride's thread has closed. */
-            canPost: boolean;
-            ride: components["schemas"]["ConversationRideDto"] | null;
-            lastMessage: components["schemas"]["MessageDto"] | null;
-            /** Format: date-time */
-            lastMessageAt: string | null;
-            unreadCount: number;
-        };
-        UnreadSummaryDto: {
-            unreadConversations: number;
-            unreadMessages: number;
-        };
-        OpenConversationDto: {
-            kind: components["schemas"]["ConversationKind"];
-            /** Format: uuid */
-            organizationId?: string;
-            /** Format: uuid */
-            patientId?: string;
-            /** Format: uuid */
-            driverId?: string;
-            /**
-             * Format: uuid
-             * @description `driverDriver`: the colleague. The caller is the other side.
-             */
-            peerDriverId?: string;
-            /**
-             * Format: uuid
-             * @description Tie the thread to one trip. `dispatchFamily` and `dispatchDriver` only.
-             */
-            rideId?: string;
-        };
-        MessagePageDto: {
-            /** @description Oldest first. */
-            messages: components["schemas"]["MessageDto"][];
-            /** @description Whether there are older messages. Ask again with `before` set to the oldest `createdAt`. */
-            hasMore: boolean;
-        };
-        SendMessageDto: {
-            body: string;
-            /**
-             * Format: uuid
-             * @description Generated by the client once per message and reused on every retry of it. A resend with the same id returns the message already stored.
-             */
-            clientMessageId: string;
-        };
-        ColleagueDto: {
-            /** Format: uuid */
-            driverId: string;
-            displayName: string;
-            onShift: boolean;
-        };
-        /** @enum {string} */
-        CallPartyKind: "patient" | "familyMember" | "driver" | "dispatch";
-        CallTargetDto: {
-            kind: components["schemas"]["CallPartyKind"];
-            /**
-             * Format: uuid
-             * @description Patient, user, driver or organisation id, as `kind` says.
-             */
-            id: string;
-            /** @description "Eleanor (patient)", "Sarah (daughter)", "Meridian Transit dispatch". */
-            label: string;
-            available: boolean;
-            /** @description Why not, in words to show: no number on file, calling not set up. */
-            unavailableReason: string | null;
-        };
-        CallCalleeDto: {
-            kind: components["schemas"]["CallPartyKind"];
-            /**
-             * Format: uuid
-             * @description From the call target.
-             */
-            id: string;
-        };
-        StartCallDto: {
-            /** Format: uuid */
-            conversationId?: string;
-            /** Format: uuid */
-            rideId?: string;
-            callee: components["schemas"]["CallCalleeDto"];
-        };
-        /** @enum {string} */
-        CallStatus: "initiating" | "ringingCaller" | "ringingCallee" | "inProgress" | "completed" | "noAnswer" | "busy" | "failed" | "canceled";
-        CallSessionDto: {
-            /** Format: uuid */
-            id: string;
-            status: components["schemas"]["CallStatus"];
-            calleeKind: components["schemas"]["CallPartyKind"];
-            calleeLabel: string;
-            /** Format: uuid */
-            conversationId: string | null;
-            /** Format: uuid */
-            rideId: string | null;
-            /** Format: date-time */
-            startedAt: string;
-            /** Format: date-time */
-            answeredAt: string | null;
-            /** Format: date-time */
-            endedAt: string | null;
-            durationSeconds: number | null;
-        };
-        MyNumberDto: {
-            /** @description E.164, or null if none is set. */
-            phone: string | null;
-        };
-        SetMyNumberDto: {
-            /** @description Written any reasonable way; stored as E.164. An empty string removes it. */
-            phone: string;
-        };
-        RegisterDto: {
-            /** @example Ada Okonkwo */
-            fullName: string;
-            /**
-             * Format: email
-             * @example ada@example.com
-             */
-            email: string;
-            password: string;
-            /** @description Records a terms and privacy consent. Consent is an explicit act, never inferred from use of the app. */
-            acceptedTerms?: boolean;
-            /**
-             * @description IANA zone. Reminder scheduling is computed in it, so "the evening before" means the user’s evening.
-             * @example America/New_York
-             */
-            timeZone?: string;
-        };
-        SessionResponseDto: {
-            /** @description Short-lived JWT. Carries the user id, a token version and the session id — never patient ids or a permission list, which are resolved server-side per request so revocation takes effect on the next call. */
-            accessToken: string;
-            /** @description Opaque, single-use, rotated on every refresh. Store it in the platform keychain, never in shared preferences. */
-            refreshToken: string;
-            expiresInSeconds: number;
-            /** @description The whole snapshot, so the app has everything it needs to render its first screen without a second round trip. For a new account this is genuinely empty — the first-run experience should be the one a real user gets, not a seeded one. */
-            state: components["schemas"]["CareStateDto"];
-        };
-        LoginDto: {
-            /** Format: email */
-            email: string;
-            password: string;
-            /** @description Six-digit authenticator code, or a recovery code. Required only for accounts with two-factor authentication confirmed. */
-            mfaCode?: string;
-        };
-        RefreshDto: {
-            refreshToken: string;
-        };
-        TokenPairDto: {
-            /** @description Short-lived JWT. Carries the user id, a token version and the session id — never patient ids or a permission list, which are resolved server-side per request so revocation takes effect on the next call. */
-            accessToken: string;
-            /** @description Opaque, single-use, rotated on every refresh. Store it in the platform keychain, never in shared preferences. */
-            refreshToken: string;
-            expiresInSeconds: number;
-        };
-        LogoutDto: {
-            refreshToken?: string;
-            /** @description Revoke every session for this account. Also raises the token version, so access tokens already issued stop working immediately rather than at their next expiry. */
-            allDevices?: boolean;
-        };
-        TokenDto: {
-            /** @description The single-use token from the emailed link. */
-            token: string;
-        };
-        EmailOnlyDto: {
-            /** Format: email */
-            email: string;
-        };
-        ResetPasswordDto: {
-            /** @description The single-use token from the emailed link. */
-            token: string;
-            newPassword: string;
-        };
-        ChangePasswordDto: {
-            currentPassword: string;
-            newPassword: string;
-        };
-        SessionSummaryDto: {
-            /** @description The refresh-token family id. Stable for the life of one sign-in, which is what makes it the thing a person recognises and revokes — individual tokens rotate every few minutes. */
-            id: string;
-            /** @example iPhone · Safari */
-            deviceLabel: string;
-            isCurrent: boolean;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            lastUsedAt: string;
-            /** Format: date-time */
-            expiresAt: string;
-        };
-        DeletionStatusDto: {
-            /** @description Machine-readable reasons deletion is currently refused: `rideInFlight`, `lastOrganizationOwner`, `unpaidInvoice`. Empty when it would succeed. */
-            blockers: string[];
-            /** @description The same reasons, each with the remedy, as shown to the account holder. A refusal with no remedy is what makes somebody email support instead — which is the thing both app stores refuse to accept. */
-            blockerMessages: string[];
-            /**
-             * @description The grace period, in days, so the screen can say it.
-             * @example 30
-             */
-            graceDays: number;
-        };
-        DeletionReceiptDto: {
-            /** Format: date-time */
-            scheduledFor: string;
-            /** @example 30 */
-            graceDays: number;
-            /** @description True when a deletion was already pending. The request is idempotent — a second tap, or a retry after a dropped connection, is not a second deletion. */
-            alreadyPending: boolean;
-            /** @description Everything CareBridge holds about this account, taken before anything changed. Returned in the response rather than left behind an endpoint, because the request signs every device out — so this is the last moment the account holder can be handed their own data. Credentials are deliberately excluded. */
-            data: {
-                [key: string]: unknown;
-            };
-        };
-        PublicDeletionRequestDto: {
-            /**
-             * Format: email
-             * @description Always accepted, whatever the address turns out to be. Whether an address has an account is a fact about a person, and for this product that person has a vulnerable relative.
-             * @example ada@example.com
-             */
-            email: string;
-        };
-        DeletionTokenDto: {
-            /** @description The single-use token from the emailed link. */
-            token: string;
-        };
-        MfaStatusDto: {
-            enrolled: boolean;
-            /** Format: date-time */
-            confirmedAt: string | null;
-            recoveryCodesRemaining: number;
-        };
-        MfaEnrolmentDto: {
-            /** @description Rendered as a QR code by the client. Returned exactly once — it cannot be read back, because a re-readable second factor is not one. */
-            otpauthUri: string;
-            /** @description For manual entry when there is no camera. */
-            secretBase32: string;
-            /** @description Shown once, stored only as digests. Support cannot read them back, which is the point — a recoverable recovery code is a social-engineering path. */
-            recoveryCodes: string[];
-        };
-        MfaCodeDto: {
-            /** @description Six-digit authenticator code, or a recovery code. */
-            code: string;
-        };
+  schemas: {
+    /** @enum {string} */
+    BillingPayer: 'family' | 'dispatchOrganization';
+    /** @enum {string} */
+    BillingInterval: 'monthly' | 'annual';
+    SubscriptionSeatTierDto: {
+      /** @description Total driver count this band covers, inclusive. Null on the final band, which is unbounded. */
+      upToSeats: number | null;
+      unitPriceCents: number;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    SubscriptionPlanDto: {
+      /** Format: uuid */
+      id: string;
+      code: string;
+      /** @description Immutable price identity, stamped onto every period this plan bills — so a charge from eight months ago can still be explained. */
+      version: string;
+      payer: components['schemas']['BillingPayer'];
+      interval: components['schemas']['BillingInterval'];
+      name: string;
+      description: string;
+      basePriceCents: number;
+      /** @description Drivers covered by the base price. Always 0 on a family plan. */
+      includedSeats: number;
+      seatTiers: components['schemas']['SubscriptionSeatTierDto'][];
+      entitlements: string[];
+      trialDays: number;
+      /** @description How long a failed payment keeps entitling. Not zero: cutting live tracking off the instant a card expires blanks the map mid-trip. */
+      graceDays: number;
+    };
+    /** @enum {string} */
+    SubscriptionStatus:
+      | 'trialing'
+      | 'active'
+      | 'pastDue'
+      | 'pendingCancellation'
+      | 'canceled'
+      | 'expired';
+    SubscriptionLineDto: {
+      label: string;
+      quantity: number;
+      unitPriceCents: number;
+      amountCents: number;
+    };
+    SubscriptionQuoteDto: {
+      planCode: string;
+      planVersion: string;
+      interval: components['schemas']['BillingInterval'];
+      seats: number;
+      billableSeats: number;
+      lines: components['schemas']['SubscriptionLineDto'][];
+      totalCents: number;
+    };
+    SubscriptionDto: {
+      /** Format: uuid */
+      id: string;
+      payer: components['schemas']['BillingPayer'];
+      status: components['schemas']['SubscriptionStatus'];
+      interval: components['schemas']['BillingInterval'];
+      planCode: string;
+      planName: string;
+      planVersion: string;
+      /** @description Drivers billed from the next renewal. Zero on a family subscription. */
+      seats: number;
+      /** Format: date-time */
+      currentPeriodStart: string;
+      /** Format: date-time */
+      currentPeriodEnd: string;
+      /** Format: date-time */
+      trialEndsAt: string | null;
+      /**
+       * Format: date-time
+       * @description When a payment first failed. Entitlements survive until this plus the plan grace window.
+       */
+      pastDueSince: string | null;
+      /** Format: date-time */
+      cancelRequestedAt: string | null;
+      /** @description What is switched on right now — resolved server-side from status, period and grace. The client renders it; it never derives it. */
+      entitlements: string[];
+      carriedCreditCents: number;
+      /** @description What the next renewal will cost at the current driver count. */
+      renewalQuote: components['schemas']['SubscriptionQuoteDto'];
+    };
+    PaymentMethodDto: {
+      /** Format: uuid */
+      id: string;
+      /** @description Card brand. Display only — no card number exists in this system. */
+      brand: string;
+      last4: string;
+      expMonth: number;
+      expYear: number;
+      /** @description Which card renewals are charged against. At most one per account. */
+      isDefault: boolean;
+    };
+    BillingAccountDto: {
+      /** Format: uuid */
+      id: string;
+      payer: components['schemas']['BillingPayer'];
+      billingEmail: string;
+      /**
+       * Format: uuid
+       * @description Set on an operator account, null on a family one.
+       */
+      organizationId: string | null;
+      subscription: components['schemas']['SubscriptionDto'] | null;
+      /** @description The card renewals are charged against, or null if there is none. */
+      paymentMethod: components['schemas']['PaymentMethodDto'] | null;
+      /** @description Total owed across every open invoice. Zero when nothing is outstanding. */
+      amountDueCents: number;
+    };
+    SubscribeDto: {
+      /** @description Plan code, e.g. "family-standard" or "dispatch-core". */
+      planCode: string;
+      interval: components['schemas']['BillingInterval'];
+    };
+    ChangeIntervalDto: {
+      /** @description The unused remainder of the current period is credited; a fresh period starts today. Annual → monthly produces a credit carried forward, not a refund. */
+      interval: components['schemas']['BillingInterval'];
+    };
+    /**
+     * @description What raised it: a billed period, drivers added mid-period, or an interval switch.
+     * @enum {string}
+     */
+    InvoiceReason: 'subscriptionPeriod' | 'seatProration' | 'intervalSwitch';
+    /**
+     * @description `uncollectible` is owed and was pursued; `void` was never owed. They are not the same and are never merged.
+     * @enum {string}
+     */
+    InvoiceStatus: 'open' | 'paid' | 'uncollectible' | 'void';
+    InvoiceLineDto: {
+      label: string;
+      quantity: number;
+      unitPriceCents: number;
+      amountCents: number;
+    };
+    InvoiceDto: {
+      /** Format: uuid */
+      id: string;
+      /** @description Human-quotable. An invoice somebody rings up about has to be findable by the number printed on it. */
+      number: string;
+      /** @description What raised it: a billed period, drivers added mid-period, or an interval switch. */
+      reason: components['schemas']['InvoiceReason'];
+      /** @description `uncollectible` is owed and was pursued; `void` was never owed. They are not the same and are never merged. */
+      status: components['schemas']['InvoiceStatus'];
+      currency: string;
+      subtotalCents: number;
+      /** @description Credit spent against this invoice. */
+      creditAppliedCents: number;
+      totalCents: number;
+      amountPaidCents: number;
+      lines: components['schemas']['InvoiceLineDto'][];
+      /** Format: date-time */
+      issuedAt: string;
+      /** Format: date-time */
+      paidAt: string | null;
+      /** @description Charges attempted, including the first. */
+      attemptCount: number;
+      /**
+       * Format: date-time
+       * @description When the next attempt is scheduled. Null once we have stopped trying.
+       */
+      nextAttemptAt: string | null;
+      /** @description The processor's code for the last decline, for support to read. */
+      lastFailureCode: string | null;
+    };
+    AttachPaymentMethodDto: {
+      /** @description A reference the client obtained directly from the payment processor. Never a card number — no endpoint in this system accepts one (ADR-0006). */
+      token: string;
+    };
+    /**
+     * @description The caller's role in this organisation.
+     * @enum {string}
+     */
+    OrgRole: 'owner' | 'admin' | 'dispatcher' | 'member';
+    OrganizationDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      slug: string;
+      kind: string;
+      timeZone: string;
+      /** @description The caller's role in this organisation. */
+      role: components['schemas']['OrgRole'];
+    };
+    /** @enum {string} */
+    SeatChange: 'granted' | 'released';
+    SeatLedgerEntryDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      driverId: string;
+      driverDisplayName: string;
+      change: components['schemas']['SeatChange'];
+      /** Format: date-time */
+      at: string;
+      seatsAfter: number;
+      /** @description Charged immediately for the remainder of the period on a grant. Zero on a release — a released seat stays usable until the period that paid for it ends. */
+      prorationCents: number;
+    };
+    OrganizationSeatsDto: {
+      /** Format: uuid */
+      organizationId: string;
+      /** @description Drivers on the road right now. */
+      activeDrivers: number;
+      /** @description Drivers the current subscription is billing for. */
+      billedSeats: number;
+      renewalQuote: components['schemas']['SubscriptionQuoteDto'] | null;
+      ledger: components['schemas']['SeatLedgerEntryDto'][];
+    };
+    PatientAccessDto: {
+      /** Format: uuid */
+      userId: string;
+      /** Format: uuid */
+      patientId: string;
+      relationship: string;
+      permissions: string[];
+      /** Format: date-time */
+      grantedAt: string;
+      /**
+       * Format: uuid
+       * @description Null marks the organiser who created the patient record. They keep manageAccess unconditionally, or a family could lock itself out of its own patient.
+       */
+      grantedByUserId: string | null;
+      /** Format: date-time */
+      revokedAt: string | null;
+    };
+    AppUserDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: email */
+      email: string;
+      fullName: string;
+      phone: string | null;
+      /**
+       * Format: date-time
+       * @description Null until the address is proven. Nothing is blocked on it except issuing and accepting invitations — but the app needs the fact to prompt, and a prompt is the only reason an unverified address ever gets verified.
+       */
+      emailVerifiedAt: string | null;
+      /** @description IANA zone. Reminder scheduling for this user is computed in it. */
+      timeZone: string;
+    };
+    AddressDto: {
+      label: string;
+      line1: string;
+      line2: string | null;
+      city: string;
+      state: string;
+      postalCode: string;
+      /** @description What stops a driver waiting at the wrong entrance while a patient waits at the right one. */
+      accessNotes: string | null;
+      /** Format: double */
+      latitude: number | null;
+      /** Format: double */
+      longitude: number | null;
+    };
+    EmergencyContactDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      relationship: string;
+      phone: string;
+      isPrimary: boolean;
+    };
+    PatientDto: {
+      /** Format: uuid */
+      id: string;
+      preferredName: string;
+      legalName: string | null;
+      phone: string;
+      homeAddress: components['schemas']['AddressDto'];
+      /** @description Coarse by design. There is no date of birth anywhere in this API. */
+      ageBand: string | null;
+      preferredLanguage: string;
+      mobilityNeeds: string[];
+      mobilityNotes: string | null;
+      emergencyContacts: components['schemas']['EmergencyContactDto'][];
+      /** Format: uuid */
+      preferredClinicId: string | null;
+      /**
+       * Format: date-time
+       * @description Soft delete. Audit and dispute resolution need the record to survive.
+       */
+      archivedAt: string | null;
+    };
+    ClinicDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      phone: string;
+      address: components['schemas']['AddressDto'];
+      entranceNotes: string | null;
+      operatingNotes: string | null;
+    };
+    StatusChangeDto: {
+      /** Format: date-time */
+      at: string;
+      from: string;
+      to: string;
+      actor: string;
+      reason: string | null;
+    };
+    AppointmentDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      patientId: string;
+      /** Format: uuid */
+      clinicId: string;
+      /** Format: date-time */
+      startsAt: string;
+      expectedDurationMinutes: number;
+      type: string;
+      status: string;
+      coordinationNotes: string | null;
+      transportRequired: boolean;
+      /** @description The label a person reads, e.g. "clinic time" — not the IANA zone the scheduler computes in. Conflating the two is how a reminder fires at 3am. */
+      timeZoneLabel: string;
+      history: components['schemas']['StatusChangeDto'][];
+      /** Format: date-time */
+      createdAt: string;
+    };
+    RideVehicleDto: {
+      make: string;
+      model: string;
+      color: string;
+      licensePlate: string;
+      isWheelchairAccessible: boolean;
+    };
+    RideDriverDto: {
+      /** Format: uuid */
+      id: string;
+      /** @description First name and last initial only. The family needs to recognise the person at the kerb, not to be able to look them up. */
+      displayName: string;
+      /** Format: double */
+      rating: number;
+      yearsDriving: number;
+      vehicle: components['schemas']['RideVehicleDto'];
+    };
+    SurchargeDto: {
+      label: string;
+      amountCents: number;
+    };
+    PriceEstimateDto: {
+      /** @description The pricing rule that produced these numbers, so a historical charge can always be explained. */
+      ruleVersion: string;
+      /** Format: double */
+      distanceMiles: number;
+      durationMinutes: number;
+      baseCents: number;
+      distanceChargeCents: number;
+      timeChargeCents: number;
+      surcharges: components['schemas']['SurchargeDto'][];
+      totalCents: number;
+      minimumApplied: boolean;
+    };
+    RideEventDto: {
+      /** Format: date-time */
+      at: string;
+      title: string;
+      detail: string | null;
+      isException: boolean;
+    };
+    TrackingPointDto: {
+      /** Format: double */
+      latitude: number;
+      /** Format: double */
+      longitude: number;
+      /** Format: double */
+      accuracyMeters: number;
+      /**
+       * Format: date-time
+       * @description When the device took the reading. Every freshness label ages against this and never against when the server received it — a stale position rendered as a confident moving car manufactures false certainty about a vulnerable person.
+       */
+      capturedAt: string;
+    };
+    /** @enum {string} */
+    RouteTarget: 'pickup' | 'destination';
+    CoordinatesDto: {
+      latitude: number;
+      longitude: number;
+    };
+    LiveRouteDto: {
+      target: components['schemas']['RouteTarget'];
+      path: components['schemas']['CoordinatesDto'][];
+    };
+    RideDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      patientId: string;
+      /** Format: uuid */
+      appointmentId: string | null;
+      /**
+       * Format: uuid
+       * @description A round trip is two rides sharing this id, not one ride with two legs — each is assigned, tracked, cancelled and priced independently.
+       */
+      roundTripGroupId: string | null;
+      direction: string;
+      pickup: components['schemas']['AddressDto'];
+      destination: components['schemas']['AddressDto'];
+      /** Format: date-time */
+      scheduledPickupAt: string;
+      flexibleReturn: boolean;
+      status: string;
+      wheelchairRequired: boolean;
+      assistanceRequired: boolean;
+      notesForDriver: string | null;
+      driver: components['schemas']['RideDriverDto'] | null;
+      estimate: components['schemas']['PriceEstimateDto'];
+      /** @description A flag rather than a status, so a delay can be raised and cleared without losing the state the ride must return to. */
+      isDelayed: boolean;
+      delayReason: string | null;
+      cancellationReason: string | null;
+      events: components['schemas']['RideEventDto'][];
+      history: components['schemas']['StatusChangeDto'][];
+      lastKnownPosition: components['schemas']['TrackingPointDto'] | null;
+      /** @description Minutes until the driver reaches the stop in question — the pickup while they are on the way, the destination once the passenger is aboard. Computed server-side from the reported position; there is deliberately no field on the position report for a device to set it. Null while the car is standing at a kerb, and null when the address never geocoded. */
+      etaMinutes: number | null;
+      /** @description The road the arrival estimate was computed along, to the stop the car is heading for now. Only while location is shared and the last position is recent; null otherwise, and null when the routing provider offered no road. Never computed for this response — read from the route the ETA already paid for. */
+      route: components['schemas']['LiveRouteDto'] | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** @description Whether the preview trip runner is currently driving this ride. Removed when the driver app lands. */
+      simulationActive: boolean;
+    };
+    NotificationDto: {
+      /** Format: uuid */
+      id: string;
+      kind: string;
+      /** @description Carries no patient name, clinic name, address or time. A phone on a kitchen table is readable by whoever is in the room. */
+      title: string;
+      body: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      readAt: string | null;
+      /** Format: uuid */
+      rideId: string | null;
+      /** Format: uuid */
+      appointmentId: string | null;
+      /**
+       * Format: uuid
+       * @description The thread a message or missed-call notification opens.
+       */
+      conversationId: string | null;
+    };
+    CareStateDto: {
+      user: components['schemas']['AppUserDto'] | null;
+      patients: components['schemas']['PatientDto'][];
+      /** @description Keyed by patient id. Only active grants appear — a revoked grant closes every surface at once, so the patient, their appointments, their rides and their live position all disappear from the next snapshot together. */
+      access: {
+        [key: string]: components['schemas']['PatientAccessDto'];
+      };
+      clinics: components['schemas']['ClinicDto'][];
+      appointments: components['schemas']['AppointmentDto'][];
+      rides: components['schemas']['RideDto'][];
+      notifications: components['schemas']['NotificationDto'][];
+      /** Format: uuid */
+      selectedPatientId: string | null;
+      simplifiedMode: boolean;
+    };
+    UpdatePreferencesDto: {
+      /** @description Larger type, higher contrast, fewer controls. */
+      simplifiedMode?: boolean;
+      /**
+       * Format: uuid
+       * @description Persisted per account so a refresh or a new device lands the user back where they were. A selection whose grant has since been revoked is dropped on read rather than stored forever.
+       */
+      selectedPatientId?: string;
+    };
+    WebPushKeyDto: {
+      /** @description base64url VAPID public key. */
+      publicKey: string | null;
+    };
+    /** @enum {string} */
+    DevicePlatform: 'android' | 'ios' | 'web';
+    /** @enum {string} */
+    AppTarget: 'family' | 'driver' | 'ops';
+    DeviceTokenDto: {
+      id: string;
+      platform: components['schemas']['DevicePlatform'];
+      appTarget: components['schemas']['AppTarget'];
+      /** Format: date-time */
+      lastSeenAt: string;
+    };
+    RegisterDeviceDto: {
+      /** @description The FCM registration token. */
+      token: string;
+      platform: components['schemas']['DevicePlatform'];
+      /**
+       * @description Which install this token belongs to. The driver app is a separate binary (D4) with a separate token set — a family notification arriving on a driver’s phone would be both confusing and a disclosure.
+       * @enum {string}
+       */
+      appTarget?: 'family' | 'driver' | 'ops';
+    };
+    AddressInput: {
+      /** @example Home */
+      label: string;
+      line1: string;
+      line2?: string;
+      city: string;
+      /** @example NY */
+      state: string;
+      postalCode: string;
+      /** @example Gate code 4417; flat is up one flight, no lift. */
+      accessNotes?: string;
+      /** @description Supply a pin only when the client already has a good one — a dragged marker or an autocomplete pick. Supplying it suppresses server-side geocoding, which is the point: re-geocoding would silently move a marker the user set. */
+      latitude?: number;
+      longitude?: number;
+    };
+    /**
+     * @description Coarse by design. There is no date-of-birth field anywhere in this API: name + address + DOB is the classic re-identification triple, and nothing in arranging a car needs it.
+     * @enum {string}
+     */
+    AgeBand: 'under65' | 'from65to74' | 'from75to84' | 'over85';
+    /**
+     * @description Operational, not diagnostic. What a driver and a vehicle need to know, and nothing about why.
+     * @enum {string}
+     */
+    MobilityNeed:
+      | 'walker'
+      | 'wheelchair'
+      | 'cane'
+      | 'oxygen'
+      | 'transferAssistance'
+      | 'escortToDoor'
+      | 'lowVision'
+      | 'hardOfHearing'
+      | 'memorySupport';
+    EmergencyContactInput: {
+      name: string;
+      /** @example Neighbour */
+      relationship: string;
+      phone: string;
+      isPrimary?: boolean;
+    };
+    /**
+     * @description The creator’s relationship to the patient, recorded on the access grant this call creates.
+     * @enum {string}
+     */
+    RelationshipType:
+      | 'son'
+      | 'daughter'
+      | 'spouse'
+      | 'sibling'
+      | 'grandchild'
+      | 'friend'
+      | 'professionalCaregiver'
+      | 'other';
+    SavePatientDto: {
+      /** @description Required. Someone must be greeted by the name they actually use. */
+      preferredName: string;
+      /** @description Collected only when a transport provider or clinic needs it to match their records — never required of everyone. */
+      legalName?: string;
+      phone: string;
+      homeAddress: components['schemas']['AddressInput'];
+      /** @description Coarse by design. There is no date-of-birth field anywhere in this API: name + address + DOB is the classic re-identification triple, and nothing in arranging a car needs it. */
+      ageBand?: components['schemas']['AgeBand'];
+      /** @example English */
+      preferredLanguage?: string;
+      /** @description Operational, not diagnostic. What a driver and a vehicle need to know, and nothing about why. */
+      mobilityNeeds?: components['schemas']['MobilityNeed'][];
+      mobilityNotes?: string;
+      emergencyContacts?: components['schemas']['EmergencyContactInput'][];
+      /** Format: uuid */
+      preferredClinicId?: string;
+      /** @description The creator’s relationship to the patient, recorded on the access grant this call creates. */
+      relationship?: components['schemas']['RelationshipType'];
+    };
+    /** @enum {string} */
+    FamilyPermission:
+      | 'viewProfile'
+      | 'scheduleAppointments'
+      | 'requestTransport'
+      | 'makePayments'
+      | 'manageAccess';
+    SetPermissionsDto: {
+      permissions: components['schemas']['FamilyPermission'][];
+    };
+    /** @enum {string} */
+    InvitationStatus: 'pending' | 'accepted' | 'revoked' | 'expired';
+    InvitationDto: {
+      id: string;
+      patientId: string;
+      /**
+       * @description Masked. Enough for the invitee to recognise their own address; not enough for the rest of the circle to harvest one.
+       * @example a••••@example.com
+       */
+      emailHint: string;
+      relationship: components['schemas']['RelationshipType'];
+      permissions: components['schemas']['FamilyPermission'][];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      expiresAt: string;
+      status: components['schemas']['InvitationStatus'];
+    };
+    CreateInvitationDto: {
+      /**
+       * Format: email
+       * @description The invitation is bound to this address: it can only be accepted by an account signed in as this address, with the address verified.
+       */
+      email: string;
+      relationship: components['schemas']['RelationshipType'];
+      /** @description Must include viewProfile, and may not exceed what the inviter holds — nobody hands out more access than they have. */
+      permissions: components['schemas']['FamilyPermission'][];
+    };
+    SaveClinicDto: {
+      name: string;
+      phone: string;
+      address: components['schemas']['AddressInput'];
+      /** @example America/New_York */
+      timeZone?: string;
+    };
+    /**
+     * @description Coarse on purpose. "Specialist" is enough to plan a visit’s length and transport; the specialty itself is clinical information this API does not accept.
+     * @enum {string}
+     */
+    AppointmentType:
+      | 'primaryCare'
+      | 'specialist'
+      | 'imaging'
+      | 'labWork'
+      | 'therapy'
+      | 'dental'
+      | 'vision'
+      | 'followUp'
+      | 'other';
+    CreateAppointmentDto: {
+      /** Format: uuid */
+      patientId: string;
+      /** Format: uuid */
+      clinicId: string;
+      /**
+       * Format: date-time
+       * @description UTC. Reminder offsets are measured against the clinic’s local wall time, which the appointment inherits from the clinic record.
+       */
+      startsAt: string;
+      expectedDurationMinutes: number;
+      /** @description Coarse on purpose. "Specialist" is enough to plan a visit’s length and transport; the specialty itself is clinical information this API does not accept. */
+      type: components['schemas']['AppointmentType'];
+      /** @description Logistics only: "bring the walker", "Dr Osei’s office is on floor 3". Never symptoms, diagnoses or medication. */
+      coordinationNotes?: string;
+      transportRequired?: boolean;
+    };
+    RescheduleAppointmentDto: {
+      /** Format: date-time */
+      startsAt: string;
+    };
+    CancelAppointmentDto: {
+      reason?: string;
+    };
+    RequestTransportDto: {
+      /** Format: uuid */
+      appointmentId: string;
+      /** Format: date-time */
+      pickupAt: string;
+      /** @description A round trip produces **two rides** sharing a group id, not one ride with two legs: each is assigned, tracked, cancelled and priced independently. */
+      roundTrip: boolean;
+      notesForDriver?: string;
+    };
+    CancelRideDto: {
+      reason: string;
+    };
+    SetDelayDto: {
+      delayed: boolean;
+      reason?: string;
+    };
+    ReportLocationDto: {
+      latitude: number;
+      longitude: number;
+      accuracyMeters?: number;
+      /**
+       * Format: date-time
+       * @description When the **device** took the reading, not when the server received it. Every freshness label ages against this, so the server judges it before storing.
+       */
+      capturedAt: string;
+    };
+    /** @enum {string} */
+    NotificationKind:
+      | 'appointmentCreated'
+      | 'appointmentReminder'
+      | 'appointmentChanged'
+      | 'appointmentCanceled'
+      | 'rideRequested'
+      | 'driverAssigned'
+      | 'driverEnRoute'
+      | 'driverArrivingSoon'
+      | 'driverArrived'
+      | 'patientPickedUp'
+      | 'patientArrived'
+      | 'rideDelayed'
+      | 'rideCompleted'
+      | 'rideCanceled'
+      | 'accessGranted'
+      | 'messageReceived'
+      | 'callMissed';
+    /** @enum {string} */
+    NotificationChannel: 'inApp' | 'email' | 'push';
+    NotificationPreferenceDto: {
+      kind: components['schemas']['NotificationKind'];
+      channel: components['schemas']['NotificationChannel'];
+      enabled: boolean;
+      /** @description False for in-app. The centre inside the app is the record of what happened; a timeline a user can switch off would lie by omission, and the timeline is what disputes are resolved with. */
+      configurable: boolean;
+    };
+    /** @enum {string} */
+    ConfigurableChannel: 'email' | 'push';
+    SetNotificationPreferenceDto: {
+      kind: components['schemas']['NotificationKind'];
+      channel: components['schemas']['ConfigurableChannel'];
+      enabled: boolean;
+    };
+    AcceptInvitationDto: {
+      /** @description The single-use token from the invitation link. */
+      token: string;
+    };
+    VehicleDto: {
+      /** Format: uuid */
+      id: string;
+      make: string;
+      model: string;
+      color: string;
+      licensePlate: string;
+      isWheelchairAccessible: boolean;
+    };
+    CreateVehicleDto: {
+      make: string;
+      model: string;
+      color: string;
+      licensePlate: string;
+      isWheelchairAccessible: boolean;
+    };
+    /** @enum {string} */
+    ServiceAreaKind: 'radius' | 'polygon';
+    ServiceAreaDto: {
+      kind: components['schemas']['ServiceAreaKind'];
+      center: components['schemas']['CoordinatesDto'] | null;
+      radiusMiles: number | null;
+      points: components['schemas']['CoordinatesDto'][] | null;
+    };
+    OrganizationServiceAreaDto: {
+      /** Format: uuid */
+      organizationId: string;
+      /** @description Null until the operator sets one; nothing is flagged until then. */
+      serviceArea: components['schemas']['ServiceAreaDto'] | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    CoordinatesInput: {
+      latitude: number;
+      longitude: number;
+    };
+    SetServiceAreaDto: {
+      kind: components['schemas']['ServiceAreaKind'];
+      /** @description Required for `radius`: the point the radius is measured from. */
+      center?: components['schemas']['CoordinatesInput'];
+      /** @description Required for `radius`. Straight-line miles, not road miles. */
+      radiusMiles?: number;
+      /** @description Required for `polygon`: the outline, 3 to 500 points, not closed (the last point joins the first). */
+      points?: components['schemas']['CoordinatesInput'][];
+    };
+    /** @enum {string} */
+    DriverStatus:
+      | 'invited'
+      | 'pendingApproval'
+      | 'approved'
+      | 'suspended'
+      | 'offboarded';
+    DriverDto: {
+      /** Format: uuid */
+      id: string;
+      /** @description First name and last initial only. The family needs to recognise the person at the kerb, not to be able to look them up. */
+      displayName: string;
+      status: components['schemas']['DriverStatus'];
+      /** @description Working right now. Separate from status, which is whether the company has said this person may carry a passenger at all. */
+      onShift: boolean;
+      /** Format: float */
+      rating: number;
+      yearsDriving: number;
+      vehicle: components['schemas']['VehicleDto'];
+      /** Format: date-time */
+      approvedAt: string | null;
+      suspensionReason: string | null;
+      /** @description Whether this driver counts towards the operator’s per-driver subscription. True for approved drivers and nobody else. */
+      occupiesSeat: boolean;
+      activeRideCount: number;
+      /** @description The address this driver will sign into the driver app with, as recorded by the operator. */
+      invitedEmail: string | null;
+      /** @description Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for. */
+      hasAppAccount: boolean;
+    };
+    CreateDriverDto: {
+      /** @description First name and last initial. Never a full legal name. */
+      displayName: string;
+      /** Format: uuid */
+      vehicleId: string;
+      yearsDriving?: number;
+      /**
+       * Format: email
+       * @description The address this driver will sign into the driver app with. Recorded, not invited: the link is only made once an account exists at that address **and has verified it**, so writing it here grants nothing on its own.
+       */
+      email?: string;
+      /**
+       * Format: uuid
+       * @description An existing account to drive as, from `POST drivers/account-lookup`. The account is linked straight away and the driver starts as `pendingApproval` rather than `invited`; approval still needs their paperwork. When set, `email` is ignored and the account's own address is recorded.
+       */
+      userId?: string;
+    };
+    LookupDriverAccountDto: {
+      /**
+       * Format: email
+       * @description The full address the person signed up with. There is no partial match.
+       */
+      email: string;
+    };
+    DriverAccountMatchDto: {
+      /** Format: uuid */
+      userId: string;
+      fullName: string;
+      /** Format: email */
+      email: string;
+      /** @description First name and last initial, for the roster. The operator may change it. */
+      suggestedDisplayName: string;
+    };
+    SetDriverStatusDto: {
+      /** @description Drives the lifecycle state machine in src/domain/driver-status.ts. Crossing into or out of `approved` is what moves a billable seat. */
+      to: components['schemas']['DriverStatus'];
+      reason?: string;
+    };
+    SetShiftDto: {
+      onShift: boolean;
+    };
+    /** @enum {string} */
+    DriverDocumentKind:
+      | 'driversLicence'
+      | 'vehicleInsurance'
+      | 'vehicleRegistration'
+      | 'backgroundCheck';
+    /** @enum {string} */
+    DriverDocumentStatus:
+      | 'awaitingUpload'
+      | 'submitted'
+      | 'approved'
+      | 'rejected'
+      | 'expired';
+    DriverDocumentDto: {
+      /** Format: uuid */
+      id: string;
+      kind: components['schemas']['DriverDocumentKind'];
+      status: components['schemas']['DriverDocumentStatus'];
+      contentType: string;
+      byteSize: number | null;
+      /**
+       * Format: date-time
+       * @description The date printed on the document. An approved certificate past this date stops counting immediately, rather than when a sweep next notices.
+       */
+      expiresAt: string | null;
+      /** Format: date-time */
+      submittedAt: string | null;
+      /** Format: date-time */
+      reviewedAt: string | null;
+      reviewNote: string | null;
+      /** @description Replaced by a newer upload. Kept rather than deleted, so “which certificate was in force in March” stays answerable. */
+      superseded: boolean;
+    };
+    DriverComplianceDto: {
+      /** @description Whether the paperwork permits approving this driver. Re-checked inside the approval transaction — the console greys the button out, but a check only the screen performs is one a second tab can race past. */
+      compliant: boolean;
+      /** @description Every required document still missing, not just the first. Deliberately excludes the background check: a platform lookup is not what makes somebody safe, and treating it as such would be a claim this product does not make. */
+      missing: string[];
+      /** @description Valid today, lapsing within thirty days. */
+      expiringSoon: string[];
+      documents: components['schemas']['DriverDocumentDto'][];
+    };
+    DocumentViewUrlDto: {
+      /** @description Short-lived on purpose. A link to a driver’s licence that works for a week is a link that ends up in a chat message, an email thread and a browser history. */
+      url: string;
+      expiresInSeconds: number;
+    };
+    ReviewDocumentDto: {
+      /** @enum {string} */
+      decision: 'approved' | 'rejected';
+      /** @description Required when rejecting. “Rejected” with no reason is a driver who re-uploads the same unreadable photograph three times. */
+      note?: string;
+    };
+    /**
+     * @description "overdue" is its own band rather than the top of "imminent": a pickup time that has passed with nobody assigned is a failure already in progress — somebody is standing in a hallway waiting.
+     * @enum {string}
+     */
+    DispatchUrgency: 'overdue' | 'imminent' | 'soon' | 'later';
+    DispatchCandidateDto: {
+      /** Format: uuid */
+      driverId: string;
+      displayName: string;
+      eligible: boolean;
+      /** @description Every reason this driver cannot take the trip, not just the first — "nobody is on shift" and "nobody has an accessible vehicle" need different phone calls. */
+      reasons: string[];
+    };
+    DispatchQueueItemDto: {
+      /** Format: uuid */
+      rideId: string;
+      status: string;
+      patientName: string;
+      pickupLine: string;
+      destinationLine: string;
+      /** Format: date-time */
+      scheduledPickupAt: string;
+      wheelchairRequired: boolean;
+      assistanceRequired: boolean;
+      /** @description "overdue" is its own band rather than the top of "imminent": a pickup time that has passed with nobody assigned is a failure already in progress — somebody is standing in a hallway waiting. */
+      urgency: components['schemas']['DispatchUrgency'];
+      /** @description Whether the pickup is inside this operator's service area. Null when the operator has not set an area or the pickup address could not be located — unknown, not inside. Advisory: assignment is not refused on it. */
+      pickupInServiceArea: boolean | null;
+      candidates: components['schemas']['DispatchCandidateDto'][];
+    };
+    DispatchQueueDto: {
+      /** Format: uuid */
+      organizationId: string;
+      items: components['schemas']['DispatchQueueItemDto'][];
+      /** @description Drivers on shift and free right now, across the whole roster. */
+      availableDrivers: number;
+    };
+    LivePositionDto: {
+      latitude: number;
+      longitude: number;
+      accuracyMeters: number;
+      /**
+       * Format: date-time
+       * @description When the device took the reading — age is measured from this.
+       */
+      capturedAt: string;
+    };
+    LiveRideDto: {
+      /** Format: uuid */
+      rideId: string;
+      status: string;
+      /** Format: uuid */
+      driverId: string;
+      driverName: string;
+      patientName: string;
+      /** Format: date-time */
+      scheduledPickupAt: string;
+      /** @description Null when the address was never located. */
+      pickup: components['schemas']['CoordinatesDto'] | null;
+      /** @description Null when the address was never located. */
+      destination: components['schemas']['CoordinatesDto'] | null;
+      /** @description The car's last reported position. Null before the driver sets off, after tracking ends, or once the last report is older than the tracking cut-off — never a stale position presented as current. Live updates arrive on the tracking socket. */
+      position: components['schemas']['LivePositionDto'] | null;
+      etaMinutes: number | null;
+      isDelayed: boolean;
+      /** @description The road the ETA was last computed along, from where the car was then to the stop it is heading for. Null when there is no live position, no countdown, or the routing provider offered no road — draw a plain guide line, never a guessed route. */
+      route: components['schemas']['LiveRouteDto'] | null;
+    };
+    LiveBoardDto: {
+      /** Format: uuid */
+      organizationId: string;
+      serviceArea: components['schemas']['ServiceAreaDto'] | null;
+      rides: components['schemas']['LiveRideDto'][];
+    };
+    AssignRideDto: {
+      /** Format: uuid */
+      driverId: string;
+      /** @description Required when taking a ride off a driver who already had it. */
+      reason?: string;
+    };
+    DriverProfileDto: {
+      /** Format: uuid */
+      driverId: string;
+      /** Format: uuid */
+      organizationId: string;
+      /** @description Shown in the app so a driver working for two companies can tell at a glance which one is dispatching them. */
+      organizationName: string;
+      displayName: string;
+      status: components['schemas']['DriverStatus'];
+      onShift: boolean;
+      vehicle: components['schemas']['VehicleDto'];
+      /** @description Whether this driver may go on shift at all. False until the operator has approved them, and false again the moment they are suspended. */
+      canWork: boolean;
+      /** @description Why the operator stopped them. Shown to the driver: being locked out of your own job with no reason given is how support queues fill up. */
+      suspensionReason: string | null;
+    };
+    DriverShiftDto: {
+      /** @description A driver may take themselves on and off shift. The dispatcher can too — they are the one who hears about the flat tyre first. */
+      onShift: boolean;
+    };
+    /** @enum {string} */
+    RideStatus:
+      | 'draft'
+      | 'requested'
+      | 'awaitingAssignment'
+      | 'assigned'
+      | 'driverAccepted'
+      | 'driverEnRoute'
+      | 'driverArrived'
+      | 'passengerOnboard'
+      | 'inProgress'
+      | 'arrivedAtDestination'
+      | 'completed'
+      | 'canceled'
+      | 'noShow'
+      | 'reassignmentRequired';
+    DriverRideDto: {
+      /** Format: uuid */
+      id: string;
+      status: components['schemas']['RideStatus'];
+      /** Format: date-time */
+      scheduledPickupAt: string;
+      direction: string;
+      /** @description The name to call out at the door. Never a full legal name. */
+      passengerName: string;
+      /** @description For ringing from the kerb, which is what stops a five-minute wait becoming a no-show. */
+      passengerPhone: string | null;
+      pickup: components['schemas']['AddressDto'];
+      destination: components['schemas']['AddressDto'];
+      wheelchairRequired: boolean;
+      assistanceRequired: boolean;
+      notesForDriver: string | null;
+      isDelayed: boolean;
+      /** @description The moves this driver may make right now — the intersection of what the ride allows and what belongs to the driver. Advisory: the server asserts it again. */
+      availableTransitions: string[];
+      /** @description Seconds left on the kerbside wait before a no-show may be declared, or null when a no-show is not on offer at all. */
+      noShowAvailableInSeconds: number | null;
+      /** @description Whether the app should be sampling location for this ride. Derived from the status by the same rule the write path enforces, so the app is never asked to send what the server would refuse. */
+      shareLocation: boolean;
+      /** Format: date-time */
+      lastCapturedAt: string | null;
+    };
+    /**
+     * @description Only the moves that belong to the driver. Cancellation and reassignment are deliberately absent: a ride the driver cannot do is still owed, and telling the family it was called off would be a different and untrue statement.
+     * @enum {string}
+     */
+    DriverRideTransition:
+      | 'driverAccepted'
+      | 'driverEnRoute'
+      | 'driverArrived'
+      | 'passengerOnboard'
+      | 'inProgress'
+      | 'arrivedAtDestination'
+      | 'completed'
+      | 'noShow';
+    AdvanceRideDto: {
+      /** @description Only the moves that belong to the driver. Cancellation and reassignment are deliberately absent: a ride the driver cannot do is still owed, and telling the family it was called off would be a different and untrue statement. */
+      to: components['schemas']['DriverRideTransition'];
+      reason?: string;
+    };
+    DriverDocumentsDto: {
+      /** @description Whether the paperwork permits the operator approving this driver. */
+      compliant: boolean;
+      /** @description Every required document still wanted, not just the first. */
+      missing: string[];
+      expiringSoon: string[];
+      /** @description Including the rejection note. Being told “you cannot drive” without being told which document and why is how somebody re-uploads the same unreadable photograph three times and then telephones. */
+      documents: components['schemas']['DriverDocumentDto'][];
+    };
+    RequestDocumentUploadDto: {
+      /** @description A short list of legal requirements and nothing else. A server that stored whatever arrived would be an operator holding a driver’s passport because the form allowed one. */
+      kind: components['schemas']['DriverDocumentKind'];
+      /**
+       * @description Signed into the upload URL, so it is a bound rather than a request: a slot authorised for a JPEG cannot be filled with anything else.
+       * @example image/jpeg
+       */
+      contentType: string;
+      /**
+       * Format: date-time
+       * @description The date printed on the document, where it has one. Not a retention deadline — this is what makes an insurance certificate stop counting the day it lapses.
+       */
+      expiresAt?: string;
+    };
+    PresignedUploadDto: {
+      /** Format: uuid */
+      documentId: string;
+      /** @description PUT the file here. The bytes never pass through this API: a multipart body would be a copy of the file in the heap of a process that is also holding a WebSocket open for every live ride. */
+      url: string;
+      /** @description Send these exactly. They are covered by the signature, which is what stops a slot authorised for a 4 MB photograph being filled with 400 MB of something else. */
+      headers: {
+        [key: string]: string;
+      };
+      expiresInSeconds: number;
+      maxBytes: number;
+    };
+    ConfirmDocumentUploadDto: {
+      /**
+       * Format: uuid
+       * @description The slot the upload was authorised against. The server checks storage rather than believing this — a client that says “done” is a client that could say it without having uploaded anything.
+       */
+      documentId: string;
+    };
+    ReportLocationBatchDto: {
+      /** @description Readings in any order; the server sorts them. Two hundred and forty is twenty minutes of the fastest cadence, which is longer than any dead zone this product expects to survive — a queue longer than that is flushed in several batches rather than being silently truncated. */
+      points: components['schemas']['ReportLocationDto'][];
+    };
+    LocationBatchResultDto: {
+      /** @description Readings written to the journey record. */
+      stored: number;
+      /** @description Readings the server declined to keep — stamped in the future, or already held from an earlier flush of the same queue. */
+      ignored: number;
+      /** @description Whether the batch moved the position the family sees. False for a batch that drained late: its readings are history, and history must not overwrite a fresher position. */
+      positionUpdated: boolean;
+    };
+    AuditEntryDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      at: string;
+      /** Format: uuid */
+      actorUserId: string | null;
+      /** @description The actor’s name, resolved for display. Absent for actions the system took on its own. */
+      actorName: string | null;
+      action: string;
+      entityType: string;
+      entityId: string | null;
+      /** @description Field **names** only, never values — the whole reason this log can be read by somebody who may not read the records it describes. */
+      changedFields: string[];
+      correlationId: string | null;
+      ip: string | null;
+    };
+    AuditPageDto: {
+      entries: components['schemas']['AuditEntryDto'][];
+      /** @description Pass as `cursor` for the next page. Keyset rather than an offset: an audit log is appended to constantly, and an offset would skip or repeat rows between pages. */
+      nextCursor: string | null;
+    };
+    PlatformStatsDto: {
+      ridesLast7Days: number;
+      ridesCompletedLast7Days: number;
+      /** @description Rides that ended without the passenger travelling. Counted beside completions rather than buried, because it is the number that says whether the product is working for the people it is for. */
+      ridesNoShowLast7Days: number;
+      ridesCancelledLast7Days: number;
+      activeRidesNow: number;
+      /** @description Rides in flight whose last position is older than the staleness bound — the number a dispatcher would want telephoned about. */
+      staleTrackingNow: number;
+      familiesSubscribed: number;
+      operatorsSubscribed: number;
+      driversApproved: number;
+      /** @description Approved drivers whose paperwork lapses within thirty days. Each one is a driver who comes off the road unless somebody telephones. */
+      driversWithExpiringDocuments: number;
+      documentsAwaitingReview: number;
+      /** @description Invoices that have failed at least once and have not been paid. The dunning queue, as a single number. */
+      invoicesPastDue: number;
+      revenueCentsLast30Days: number;
+      refundedCentsLast30Days: number;
+    };
+    FeatureFlagDto: {
+      key: string;
+      description: string;
+      enabled: boolean;
+      /** @description Applied to a stable hash of the subject, so a given user is on the same side of the line on every request. A flag that flipped per request would be worse than one that is simply off. */
+      rolloutPercent: number;
+      /** Format: date-time */
+      updatedAt: string;
+      updatedByName: string | null;
+    };
+    SetFeatureFlagDto: {
+      description: string;
+      enabled: boolean;
+      rolloutPercent: number;
+      /** @description Required when narrowing a rollout. Taking a feature away from people who already had it reads to them as a bug, so it has to be said out loud rather than typed by accident. */
+      confirmNarrowing?: boolean;
+    };
+    RefundDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      invoiceId: string;
+      invoiceNumber: string;
+      amountCents: number;
+      currency: string;
+      reason: string;
+      /** @enum {string} */
+      status: 'pending' | 'succeeded' | 'failed';
+      failureMessage: string | null;
+      requestedByName: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      settledAt: string | null;
+    };
+    RefundableInvoiceDto: {
+      /** Format: uuid */
+      invoiceId: string;
+      invoiceNumber: string;
+      /** Format: uuid */
+      paymentId: string;
+      paidCents: number;
+      /** @description What is left to refund: the payment less everything already refunded against it. The ceiling on a new refund. */
+      refundableCents: number;
+      refunds: components['schemas']['RefundDto'][];
+    };
+    IssueRefundDto: {
+      /** Format: uuid */
+      paymentId: string;
+      /** @description Integer cents, never a float. Bounded above by what is left on the payment. */
+      amountCents: number;
+      /** @description Required. An unexplained credit is something somebody has to justify to an accountant a quarter later, by which time whoever issued it has forgotten. */
+      reason: string;
+    };
+    ClinicSiteDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      addressLine: string;
+      timeZone: string;
+    };
+    ClaimClinicDto: {
+      /** @description Why this network is claiming this site. Recorded in the audit log — claiming a clinic grants sight of every appointment booked there. */
+      note?: string;
+    };
+    ExpectedArrivalDto: {
+      /** Format: uuid */
+      appointmentId: string;
+      /** Format: uuid */
+      clinicId: string;
+      clinicName: string;
+      /** @description The name the family uses. Never a full legal name. */
+      patientName: string;
+      /** Format: date-time */
+      startsAt: string;
+      appointmentType: string;
+      /**
+       * @description Checking in is deliberately **not** inferred from the ride completing. A completed ride says a car reached an address; a check-in says somebody inside the building saw the patient, and the gap between the two is the case this product exists for.
+       * @enum {string}
+       */
+      stage: 'expected' | 'checkedIn' | 'readyForReturn' | 'returning' | 'finished';
+      outboundStatus: string | null;
+      returnStatus: string | null;
+      /** @description Minutes until the car arrives, when one is on its way. */
+      etaMinutes: number | null;
+      driverName: string | null;
+      vehicleDescription: string | null;
+      wheelchairRequired: boolean;
+      /** Format: date-time */
+      checkedInAt: string | null;
+      /** Format: date-time */
+      readyForReturnAt: string | null;
+      /** @description How long since the clinic said the visit was over. Shown because the person who pressed the button is standing next to somebody in a coat by the door. */
+      waitingMinutes: number | null;
+      /** @description The wait has stopped being ordinary. Twenty-five minutes. */
+      overdue: boolean;
+      /** @description Whether the “send a car home” button should do anything. */
+      canDispatchReturn: boolean;
+      cannotDispatchReason: string | null;
+    };
+    ClinicDayDto: {
+      /** @description The clinic-local date, ISO. */
+      date: string;
+      arrivals: components['schemas']['ExpectedArrivalDto'][];
+      /** @description Patients the clinic has said are ready, still waiting for a car. */
+      waitingForReturn: number;
+      overdueReturns: number;
+    };
+    /** @enum {string} */
+    CaregiverStatus: 'applied' | 'verified' | 'suspended' | 'offboarded';
+    CaregiverCardDto: {
+      /** Format: uuid */
+      id: string;
+      /** @description First name and last initial. Never a full legal name. */
+      displayName: string;
+      bio: string;
+      yearsExperience: number;
+      languages: string[];
+      hourlyRateCents: number;
+      serviceArea: string;
+      status: components['schemas']['CaregiverStatus'];
+      /**
+       * Format: float
+       * @description Pulled towards a prior, so one bad review cannot halve a career. Null until there are enough reviews to say anything — a number from one opinion looks exactly like a number from a hundred.
+       */
+      rating: number | null;
+      /** Format: float */
+      rawAverage: number | null;
+      reviewCount: number;
+      /** @description What was checked and when, in a sentence. Deliberately not a badge: this platform does not assert that anybody is safe, and a tick would say exactly that. */
+      verificationStatement: string;
+      identityConfirmed: boolean;
+      backgroundCheckRun: boolean;
+      backgroundCheckAgeDays: number | null;
+    };
+    AvailabilityWindowDto: {
+      /** @description 1 = Monday, 7 = Sunday (ISO). */
+      weekday: number;
+      startMinute: number;
+      endMinute: number;
+      timeZone: string;
+    };
+    ReviewDto: {
+      /** Format: uuid */
+      id: string;
+      rating: number;
+      comment: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    CaregiverProfileDto: {
+      /** Format: uuid */
+      id: string;
+      /** @description First name and last initial. Never a full legal name. */
+      displayName: string;
+      bio: string;
+      yearsExperience: number;
+      languages: string[];
+      hourlyRateCents: number;
+      serviceArea: string;
+      status: components['schemas']['CaregiverStatus'];
+      /**
+       * Format: float
+       * @description Pulled towards a prior, so one bad review cannot halve a career. Null until there are enough reviews to say anything — a number from one opinion looks exactly like a number from a hundred.
+       */
+      rating: number | null;
+      /** Format: float */
+      rawAverage: number | null;
+      reviewCount: number;
+      /** @description What was checked and when, in a sentence. Deliberately not a badge: this platform does not assert that anybody is safe, and a tick would say exactly that. */
+      verificationStatement: string;
+      identityConfirmed: boolean;
+      backgroundCheckRun: boolean;
+      backgroundCheckAgeDays: number | null;
+      availability: components['schemas']['AvailabilityWindowDto'][];
+      reviews: components['schemas']['ReviewDto'][];
+    };
+    SaveCaregiverProfileDto: {
+      displayName: string;
+      bio: string;
+      yearsExperience: number;
+      languages: string[];
+      hourlyRateCents: number;
+      serviceAreaCity: string;
+      serviceAreaState: string;
+    };
+    /** @enum {string} */
+    BookingStatus:
+      | 'requested'
+      | 'confirmed'
+      | 'inProgress'
+      | 'completed'
+      | 'cancelledByFamily'
+      | 'cancelledByCaregiver'
+      | 'noShow';
+    BookingDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      caregiverId: string;
+      caregiverName: string;
+      /** Format: uuid */
+      patientId: string;
+      patientName: string;
+      /** Format: date-time */
+      startsAt: string;
+      /** Format: date-time */
+      endsAt: string;
+      status: components['schemas']['BookingStatus'];
+      /** @description The rate agreed at booking, not today’s. A caregiver raising their price must not re-price work somebody has already agreed to. */
+      hourlyRateCents: number;
+      /** Format: date-time */
+      checkedInAt: string | null;
+      /** Format: date-time */
+      checkedOutAt: string | null;
+      billableMinutes: number | null;
+      totalCents: number | null;
+      /** @description What the caregiver keeps. Derived by subtraction, so the two halves always add up. */
+      caregiverPayoutCents: number | null;
+      cancellationReason: string | null;
+      hasReview: boolean;
+      hasOpenDispute: boolean;
+    };
+    CreateBookingDto: {
+      /** Format: uuid */
+      caregiverId: string;
+      /** Format: uuid */
+      patientId: string;
+      /** Format: date-time */
+      startsAt: string;
+      /** Format: date-time */
+      endsAt: string;
+    };
+    CancellationQuoteDto: {
+      feeCents: number;
+      /** @description Shown before the family confirms, in their own words. */
+      explanation: string;
+    };
+    CancelBookingDto: {
+      /** @description Required. A cancellation with no reason is a dispute nobody can settle, and the caregiver has kept the time free. */
+      reason: string;
+    };
+    ReviewBookingDto: {
+      rating: number;
+      comment?: string;
+    };
+    RaiseDisputeDto: {
+      reason: string;
+    };
+    ResolveDisputeDto: {
+      /** @enum {string} */
+      outcome: 'upheld' | 'refunded' | 'waived';
+      /** @description Required. A decision with no reasoning is one nobody can defend when the same question is asked again. */
+      note: string;
+    };
+    /** @enum {string} */
+    ConversationKind:
+      | 'dispatchFamily'
+      | 'dispatchDriver'
+      | 'driverDriver'
+      | 'operatorDrivers';
+    /** @enum {string} */
+    ConversationRole: 'dispatcher' | 'family' | 'driver';
+    ConversationRideDto: {
+      /** Format: uuid */
+      id: string;
+      status: components['schemas']['RideStatus'];
+      direction: string;
+      /** Format: date-time */
+      scheduledPickupAt: string;
+      /** @description The passenger's preferred name. Everyone who can read the thread can already see it on the ride. */
+      patientName: string;
+    };
+    /** @enum {string} */
+    MessageSenderRole: 'dispatcher' | 'family' | 'driver' | 'system';
+    MessageDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      conversationId: string;
+      senderRole: components['schemas']['MessageSenderRole'];
+      /** @description Who wrote it, as they were labelled when they wrote it — "Dana · Dispatch", "Marcus T.", "Sarah (daughter)". "Former member" after an account is deleted. */
+      senderLabel: string;
+      body: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** @description Echoed back so a client can reconcile its optimistic copy with the stored one. */
+      clientMessageId: string;
+      /** @description Written by the caller. */
+      mine: boolean;
+    };
+    ConversationDto: {
+      /** Format: uuid */
+      id: string;
+      kind: components['schemas']['ConversationKind'];
+      /** Format: uuid */
+      organizationId: string;
+      organizationName: string;
+      /** Format: uuid */
+      patientId: string | null;
+      /** Format: uuid */
+      driverId: string | null;
+      /** Format: uuid */
+      peerDriverId: string | null;
+      /** Format: uuid */
+      rideId: string | null;
+      /** @description The other side, from the caller's point of view — "Meridian Transit dispatch" to a family, "Eleanor's family" to a dispatcher. */
+      title: string;
+      myRole: components['schemas']['ConversationRole'];
+      /** @description False for dispatch in a driver-to-driver thread, and for the family and driver once a finished ride's thread has closed. */
+      canPost: boolean;
+      ride: components['schemas']['ConversationRideDto'] | null;
+      lastMessage: components['schemas']['MessageDto'] | null;
+      /** Format: date-time */
+      lastMessageAt: string | null;
+      unreadCount: number;
+    };
+    UnreadSummaryDto: {
+      unreadConversations: number;
+      unreadMessages: number;
+    };
+    OpenConversationDto: {
+      kind: components['schemas']['ConversationKind'];
+      /** Format: uuid */
+      organizationId?: string;
+      /** Format: uuid */
+      patientId?: string;
+      /** Format: uuid */
+      driverId?: string;
+      /**
+       * Format: uuid
+       * @description `driverDriver`: the colleague. The caller is the other side.
+       */
+      peerDriverId?: string;
+      /**
+       * Format: uuid
+       * @description Tie the thread to one trip. `dispatchFamily` and `dispatchDriver` only.
+       */
+      rideId?: string;
+    };
+    MessagePageDto: {
+      /** @description Oldest first. */
+      messages: components['schemas']['MessageDto'][];
+      /** @description Whether there are older messages. Ask again with `before` set to the oldest `createdAt`. */
+      hasMore: boolean;
+    };
+    SendMessageDto: {
+      body: string;
+      /**
+       * Format: uuid
+       * @description Generated by the client once per message and reused on every retry of it. A resend with the same id returns the message already stored.
+       */
+      clientMessageId: string;
+    };
+    ColleagueDto: {
+      /** Format: uuid */
+      driverId: string;
+      displayName: string;
+      onShift: boolean;
+    };
+    /** @enum {string} */
+    CallPartyKind: 'patient' | 'familyMember' | 'driver' | 'dispatch';
+    CallTargetDto: {
+      kind: components['schemas']['CallPartyKind'];
+      /**
+       * Format: uuid
+       * @description Patient, user, driver or organisation id, as `kind` says.
+       */
+      id: string;
+      /** @description "Eleanor (patient)", "Sarah (daughter)", "Meridian Transit dispatch". */
+      label: string;
+      available: boolean;
+      /** @description Why not, in words to show: no number on file, calling not set up. */
+      unavailableReason: string | null;
+    };
+    CallCalleeDto: {
+      kind: components['schemas']['CallPartyKind'];
+      /**
+       * Format: uuid
+       * @description From the call target.
+       */
+      id: string;
+    };
+    StartCallDto: {
+      /** Format: uuid */
+      conversationId?: string;
+      /** Format: uuid */
+      rideId?: string;
+      callee: components['schemas']['CallCalleeDto'];
+    };
+    /** @enum {string} */
+    CallStatus:
+      | 'initiating'
+      | 'ringingCaller'
+      | 'ringingCallee'
+      | 'inProgress'
+      | 'completed'
+      | 'noAnswer'
+      | 'busy'
+      | 'failed'
+      | 'canceled';
+    CallSessionDto: {
+      /** Format: uuid */
+      id: string;
+      status: components['schemas']['CallStatus'];
+      calleeKind: components['schemas']['CallPartyKind'];
+      calleeLabel: string;
+      /** Format: uuid */
+      conversationId: string | null;
+      /** Format: uuid */
+      rideId: string | null;
+      /** Format: date-time */
+      startedAt: string;
+      /** Format: date-time */
+      answeredAt: string | null;
+      /** Format: date-time */
+      endedAt: string | null;
+      durationSeconds: number | null;
+    };
+    MyNumberDto: {
+      /** @description E.164, or null if none is set. */
+      phone: string | null;
+    };
+    SetMyNumberDto: {
+      /** @description Written any reasonable way; stored as E.164. An empty string removes it. */
+      phone: string;
+    };
+    RegisterDto: {
+      /** @example Ada Okonkwo */
+      fullName: string;
+      /**
+       * Format: email
+       * @example ada@example.com
+       */
+      email: string;
+      password: string;
+      /** @description Records a terms and privacy consent. Consent is an explicit act, never inferred from use of the app. */
+      acceptedTerms?: boolean;
+      /**
+       * @description IANA zone. Reminder scheduling is computed in it, so "the evening before" means the user’s evening.
+       * @example America/New_York
+       */
+      timeZone?: string;
+    };
+    SessionResponseDto: {
+      /** @description Short-lived JWT. Carries the user id, a token version and the session id — never patient ids or a permission list, which are resolved server-side per request so revocation takes effect on the next call. */
+      accessToken: string;
+      /** @description Opaque, single-use, rotated on every refresh. Store it in the platform keychain, never in shared preferences. */
+      refreshToken: string;
+      expiresInSeconds: number;
+      /** @description The whole snapshot, so the app has everything it needs to render its first screen without a second round trip. For a new account this is genuinely empty — the first-run experience should be the one a real user gets, not a seeded one. */
+      state: components['schemas']['CareStateDto'];
+    };
+    LoginDto: {
+      /** Format: email */
+      email: string;
+      password: string;
+      /** @description Six-digit authenticator code, or a recovery code. Required only for accounts with two-factor authentication confirmed. */
+      mfaCode?: string;
+    };
+    RefreshDto: {
+      refreshToken: string;
+    };
+    TokenPairDto: {
+      /** @description Short-lived JWT. Carries the user id, a token version and the session id — never patient ids or a permission list, which are resolved server-side per request so revocation takes effect on the next call. */
+      accessToken: string;
+      /** @description Opaque, single-use, rotated on every refresh. Store it in the platform keychain, never in shared preferences. */
+      refreshToken: string;
+      expiresInSeconds: number;
+    };
+    LogoutDto: {
+      refreshToken?: string;
+      /** @description Revoke every session for this account. Also raises the token version, so access tokens already issued stop working immediately rather than at their next expiry. */
+      allDevices?: boolean;
+    };
+    TokenDto: {
+      /** @description The single-use token from the emailed link. */
+      token: string;
+    };
+    EmailOnlyDto: {
+      /** Format: email */
+      email: string;
+    };
+    ResetPasswordDto: {
+      /** @description The single-use token from the emailed link. */
+      token: string;
+      newPassword: string;
+    };
+    ChangePasswordDto: {
+      currentPassword: string;
+      newPassword: string;
+    };
+    SessionSummaryDto: {
+      /** @description The refresh-token family id. Stable for the life of one sign-in, which is what makes it the thing a person recognises and revokes — individual tokens rotate every few minutes. */
+      id: string;
+      /** @example iPhone · Safari */
+      deviceLabel: string;
+      isCurrent: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      lastUsedAt: string;
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    DeletionStatusDto: {
+      /** @description Machine-readable reasons deletion is currently refused: `rideInFlight`, `lastOrganizationOwner`, `unpaidInvoice`. Empty when it would succeed. */
+      blockers: string[];
+      /** @description The same reasons, each with the remedy, as shown to the account holder. A refusal with no remedy is what makes somebody email support instead — which is the thing both app stores refuse to accept. */
+      blockerMessages: string[];
+      /**
+       * @description The grace period, in days, so the screen can say it.
+       * @example 30
+       */
+      graceDays: number;
+    };
+    DeletionReceiptDto: {
+      /** Format: date-time */
+      scheduledFor: string;
+      /** @example 30 */
+      graceDays: number;
+      /** @description True when a deletion was already pending. The request is idempotent — a second tap, or a retry after a dropped connection, is not a second deletion. */
+      alreadyPending: boolean;
+      /** @description Everything CareBridge holds about this account, taken before anything changed. Returned in the response rather than left behind an endpoint, because the request signs every device out — so this is the last moment the account holder can be handed their own data. Credentials are deliberately excluded. */
+      data: {
+        [key: string]: unknown;
+      };
+    };
+    PublicDeletionRequestDto: {
+      /**
+       * Format: email
+       * @description Always accepted, whatever the address turns out to be. Whether an address has an account is a fact about a person, and for this product that person has a vulnerable relative.
+       * @example ada@example.com
+       */
+      email: string;
+    };
+    DeletionTokenDto: {
+      /** @description The single-use token from the emailed link. */
+      token: string;
+    };
+    MfaStatusDto: {
+      enrolled: boolean;
+      /** Format: date-time */
+      confirmedAt: string | null;
+      recoveryCodesRemaining: number;
+    };
+    MfaEnrolmentDto: {
+      /** @description Rendered as a QR code by the client. Returned exactly once — it cannot be read back, because a re-readable second factor is not one. */
+      otpauthUri: string;
+      /** @description For manual entry when there is no camera. */
+      secretBase32: string;
+      /** @description Shown once, stored only as digests. Support cannot read them back, which is the point — a recoverable recovery code is a social-engineering path. */
+      recoveryCodes: string[];
+    };
+    MfaCodeDto: {
+      /** @description Six-digit authenticator code, or a recovery code. */
+      code: string;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    Billing_plans: {
-        parameters: {
-            query?: {
-                payer?: "family" | "dispatchOrganization";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubscriptionPlanDto"][];
-                };
-            };
-        };
-    };
-    Billing_account: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BillingAccountDto"];
-                };
-            };
-        };
-    };
-    Billing_subscribe: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubscribeDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BillingAccountDto"];
-                };
-            };
-        };
-    };
-    Billing_changeInterval: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangeIntervalDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BillingAccountDto"];
-                };
-            };
-        };
-    };
-    Billing_invoices: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InvoiceDto"][];
-                };
-            };
-        };
-    };
-    Billing_attachPaymentMethod: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttachPaymentMethodDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaymentMethodDto"];
-                };
-            };
-        };
-    };
-    Billing_detachPaymentMethod: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Billing_payInvoice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InvoiceDto"];
-                };
-            };
-        };
-    };
-    Billing_cancel: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BillingAccountDto"];
-                };
-            };
-        };
-    };
-    Organizations_mine: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationDto"][];
-                };
-            };
-        };
-    };
-    Organizations_organizationBilling: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BillingAccountDto"];
-                };
-            };
-        };
-    };
-    Organizations_subscribeOrganization: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubscribeDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BillingAccountDto"];
-                };
-            };
-        };
-    };
-    Organizations_changeOrganizationInterval: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangeIntervalDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BillingAccountDto"];
-                };
-            };
-        };
-    };
-    Organizations_cancelOrganization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BillingAccountDto"];
-                };
-            };
-        };
-    };
-    Organizations_organizationInvoices: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InvoiceDto"][];
-                };
-            };
-        };
-    };
-    Organizations_attachOrganizationPaymentMethod: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttachPaymentMethodDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaymentMethodDto"];
-                };
-            };
-        };
-    };
-    Organizations_detachOrganizationPaymentMethod: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                paymentMethodId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Organizations_payOrganizationInvoice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                invoiceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InvoiceDto"];
-                };
-            };
-        };
-    };
-    Organizations_seats: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationSeatsDto"];
-                };
-            };
-        };
-    };
-    Organizations_quote: {
-        parameters: {
-            query: {
-                planCode: string;
-                interval: "monthly" | "annual";
-                seats: number;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubscriptionQuoteDto"];
-                };
-            };
-        };
-    };
-    Care_state: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Me_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdatePreferencesDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Me_webPushKey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WebPushKeyDto"];
-                };
-            };
-        };
-    };
-    Me_listDevices: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeviceTokenDto"][];
-                };
-            };
-        };
-    };
-    Me_registerDevice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterDeviceDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeviceTokenDto"];
-                };
-            };
-        };
-    };
-    Me_revokeDevice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Patients_create: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SavePatientDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Patients_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SavePatientDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Patients_archive: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Patients_setPermissions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetPermissionsDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Patients_select: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Patients_listInvitations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InvitationDto"][];
-                };
-            };
-        };
-    };
-    Patients_invite: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateInvitationDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InvitationDto"];
-                };
-            };
-        };
-    };
-    Patients_revokeInvitation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                invitationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Clinics_create: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveClinicDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Appointments_create: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAppointmentDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Appointments_reschedule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RescheduleAppointmentDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Appointments_cancel: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CancelAppointmentDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Rides_request: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RequestTransportDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Rides_cancel: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CancelRideDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Rides_delay: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetDelayDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Rides_location: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReportLocationDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Rides_startPreview: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Rides_stopPreview: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Notifications_markAllRead: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Notifications_markRead: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-        };
-    };
-    Notifications_listPreferences: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationPreferenceDto"][];
-                };
-            };
-        };
-    };
-    Notifications_setPreference: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetNotificationPreferenceDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationPreferenceDto"][];
-                };
-            };
-        };
-    };
-    Invitations_accept: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AcceptInvitationDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CareStateDto"];
-                };
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Dispatch_vehicles: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VehicleDto"][];
-                };
-            };
-        };
-    };
-    Dispatch_addVehicle: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateVehicleDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VehicleDto"];
-                };
-            };
-        };
-    };
-    Dispatch_serviceArea: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationServiceAreaDto"];
-                };
-            };
-        };
-    };
-    Dispatch_setServiceArea: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetServiceAreaDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationServiceAreaDto"];
-                };
-            };
-        };
-    };
-    Dispatch_clearServiceArea: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationServiceAreaDto"];
-                };
-            };
-        };
-    };
-    Dispatch_drivers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverDto"][];
-                };
-            };
-        };
-    };
-    Dispatch_addDriver: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateDriverDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverDto"];
-                };
-            };
-        };
-    };
-    Dispatch_lookupDriverAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LookupDriverAccountDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverAccountMatchDto"];
-                };
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Dispatch_setDriverStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-                driverId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetDriverStatusDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverDto"];
-                };
-            };
-        };
-    };
-    Dispatch_setShift: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-                driverId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetShiftDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverDto"];
-                };
-            };
-        };
-    };
-    Dispatch_documentsFor: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-                driverId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverComplianceDto"];
-                };
-            };
-        };
-    };
-    Dispatch_viewDocument: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-                driverId: string;
-                documentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DocumentViewUrlDto"];
-                };
-            };
-        };
-    };
-    Dispatch_reviewDocument: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-                driverId: string;
-                documentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReviewDocumentDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverComplianceDto"];
-                };
-            };
-        };
-    };
-    Dispatch_queue: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DispatchQueueDto"];
-                };
-            };
-        };
-    };
-    Dispatch_liveBoard: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LiveBoardDto"];
-                };
-            };
-        };
-    };
-    Dispatch_assign: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                organizationId: string;
-                rideId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssignRideDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DispatchQueueDto"];
-                };
-            };
-        };
-    };
-    Driver_me: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverProfileDto"];
-                };
-            };
-        };
-    };
-    Driver_setShift: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DriverShiftDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverProfileDto"];
-                };
-            };
-        };
-    };
-    Driver_rides: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverRideDto"][];
-                };
-            };
-        };
-    };
-    Driver_advance: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                rideId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdvanceRideDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverRideDto"];
-                };
-            };
-        };
-    };
-    Driver_documents: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverDocumentsDto"];
-                };
-            };
-        };
-    };
-    Driver_requestUpload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RequestDocumentUploadDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PresignedUploadDto"];
-                };
-            };
-        };
-    };
-    Driver_confirmUpload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConfirmDocumentUploadDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DriverDocumentsDto"];
-                };
-            };
-        };
-    };
-    Driver_reportLocations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                rideId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReportLocationBatchDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LocationBatchResultDto"];
-                };
-            };
-        };
-    };
-    Admin_auditLog: {
-        parameters: {
-            query?: {
-                actorUserId?: string;
-                entityType?: string;
-                entityId?: string;
-                /** @description Matched as a prefix, so `driver.` returns everything about drivers. */
-                action?: string;
-                from?: string;
-                to?: string;
-                /** @description From the previous page. Keyset rather than an offset: an audit log is appended to constantly, and an offset would skip or repeat rows between pages. */
-                cursor?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditPageDto"];
-                };
-            };
-        };
-    };
-    Admin_stats: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PlatformStatsDto"];
-                };
-            };
-        };
-    };
-    Admin_flags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeatureFlagDto"][];
-                };
-            };
-        };
-    };
-    Admin_setFlag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                key: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetFeatureFlagDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeatureFlagDto"][];
-                };
-            };
-        };
-    };
-    Admin_refundable: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                invoiceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefundableInvoiceDto"];
-                };
-            };
-        };
-    };
-    Admin_issueRefund: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                invoiceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IssueRefundDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefundableInvoiceDto"];
-                };
-            };
-        };
-    };
-    Clinic_sites: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClinicSiteDto"][];
-                };
-            };
-        };
-    };
-    Clinic_claim: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-                clinicId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClaimClinicDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClinicSiteDto"][];
-                };
-            };
-        };
-    };
-    Clinic_day: {
-        parameters: {
-            query?: {
-                /** @description Clinic-local date. Defaults to today **in the clinic’s own zone**, not the server’s — a portal that showed yesterday’s list to a west-coast clinic every morning would be useless by nine o’clock. */
-                on?: string;
-                /** @description One site rather than all of them. */
-                clinicId?: string;
-            };
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClinicDayDto"];
-                };
-            };
-        };
-    };
-    Clinic_checkIn: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                organizationId: string;
-                appointmentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExpectedArrivalDto"];
-                };
-            };
-        };
-    };
-    Clinic_ready: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                organizationId: string;
-                appointmentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExpectedArrivalDto"];
-                };
-            };
-        };
-    };
-    Marketplace_search: {
-        parameters: {
-            query?: {
-                city?: string;
-                state?: string;
-                /** @description A language they speak. */
-                language?: string;
-                /** @description Integer cents per hour. */
-                maxHourlyRateCents?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CaregiverCardDto"][];
-                };
-            };
-        };
-    };
-    Marketplace_profile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                caregiverId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CaregiverProfileDto"];
-                };
-            };
-        };
-    };
-    Marketplace_saveProfile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveCaregiverProfileDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CaregiverProfileDto"];
-                };
-            };
-        };
-    };
-    Marketplace_setAvailability: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CaregiverProfileDto"];
-                };
-            };
-        };
-    };
-    Marketplace_bookings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"][];
-                };
-            };
-        };
-    };
-    Marketplace_book: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateBookingDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"];
-                };
-            };
-        };
-    };
-    Marketplace_accept: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"];
-                };
-            };
-        };
-    };
-    Marketplace_decline: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"];
-                };
-            };
-        };
-    };
-    Marketplace_quote: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CancellationQuoteDto"];
-                };
-            };
-        };
-    };
-    Marketplace_cancel: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CancelBookingDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"];
-                };
-            };
-        };
-    };
-    Marketplace_checkIn: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"];
-                };
-            };
-        };
-    };
-    Marketplace_checkOut: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"];
-                };
-            };
-        };
-    };
-    Marketplace_noShow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"];
-                };
-            };
-        };
-    };
-    Marketplace_review: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReviewBookingDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"];
-                };
-            };
-        };
-    };
-    Marketplace_dispute: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RaiseDisputeDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"];
-                };
-            };
-        };
-    };
-    MarketplaceAdmin_resolve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookingId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResolveDisputeDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingDto"];
-                };
-            };
-        };
-    };
-    Messaging_inbox: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConversationDto"][];
-                };
-            };
-        };
-    };
-    Messaging_open: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OpenConversationDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConversationDto"];
-                };
-            };
-        };
-    };
-    Messaging_unread: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UnreadSummaryDto"];
-                };
-            };
-        };
-    };
-    Messaging_conversation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                conversationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConversationDto"];
-                };
-            };
-        };
-    };
-    Messaging_messages: {
-        parameters: {
-            query?: {
-                before?: string;
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                conversationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessagePageDto"];
-                };
-            };
-        };
-    };
-    Messaging_send: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                conversationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SendMessageDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageDto"];
-                };
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Messaging_markRead: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                conversationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Messaging_colleagues: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ColleagueDto"][];
-                };
-            };
-        };
-    };
-    Calls_targets: {
-        parameters: {
-            query?: {
-                conversationId?: string;
-                rideId?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CallTargetDto"][];
-                };
-            };
-        };
-    };
-    Calls_start: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StartCallDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CallSessionDto"];
-                };
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Calls_myNumber: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MyNumberDto"];
-                };
-            };
-        };
-    };
-    Calls_setMyNumber: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetMyNumberDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MyNumberDto"];
-                };
-            };
-        };
-    };
-    Calls_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                callId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CallSessionDto"];
-                };
-            };
-        };
-    };
-    Auth_register: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SessionResponseDto"];
-                };
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_login: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SessionResponseDto"];
-                };
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_refresh: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenPairDto"];
-                };
-            };
-        };
-    };
-    Auth_logout: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LogoutDto"];
-            };
-        };
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_logoutAll: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_verifyEmail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TokenDto"];
-            };
-        };
-        responses: {
-            /** @description The address is confirmed. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_resendVerification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EmailOnlyDto"];
-            };
-        };
-        responses: {
-            /** @description Accepted, whatever the address turns out to be. */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_requestPasswordReset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EmailOnlyDto"];
-            };
-        };
-        responses: {
-            /** @description Accepted, whatever the address turns out to be. */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_confirmPasswordReset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResetPasswordDto"];
-            };
-        };
-        responses: {
-            /** @description The password is changed and every session revoked. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_changePassword: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangePasswordDto"];
-            };
-        };
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_listSessions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SessionSummaryDto"][];
-                };
-            };
-        };
-    };
-    Auth_revokeSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_deletionStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeletionStatusDto"];
-                };
-            };
-        };
-    };
-    Auth_exportAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Everything CareBridge holds about this account. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    Auth_deleteAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeletionReceiptDto"];
-                };
-            };
-        };
-    };
-    Auth_requestDeletionByEmail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PublicDeletionRequestDto"];
-            };
-        };
-        responses: {
-            /** @description Accepted, whatever the address turns out to be. */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_confirmDeletionByToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeletionTokenDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeletionReceiptDto"];
-                };
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_mfaStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MfaStatusDto"];
-                };
-            };
-        };
-    };
-    Auth_disableMfa: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Auth_beginMfaEnrolment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MfaEnrolmentDto"];
-                };
-            };
-        };
-    };
-    Auth_confirmMfa: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MfaCodeDto"];
-            };
-        };
-        responses: {
-            /** @description Two-factor authentication is now active. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Health_live: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Health_ready: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The Health Check is successful */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @example ok */
-                        status?: string;
-                        /**
-                         * @example {
-                         *       "database": {
-                         *         "status": "up"
-                         *       }
-                         *     }
-                         */
-                        info?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        } | null;
-                        /** @example {} */
-                        error?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        } | null;
-                        /**
-                         * @example {
-                         *       "database": {
-                         *         "status": "up"
-                         *       }
-                         *     }
-                         */
-                        details?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        };
-                    };
-                };
-            };
-            /** @description The Health Check is not successful */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @example error */
-                        status?: string;
-                        /**
-                         * @example {
-                         *       "database": {
-                         *         "status": "up"
-                         *       }
-                         *     }
-                         */
-                        info?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        } | null;
-                        /**
-                         * @example {
-                         *       "redis": {
-                         *         "status": "down",
-                         *         "message": "Could not connect"
-                         *       }
-                         *     }
-                         */
-                        error?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        } | null;
-                        /**
-                         * @example {
-                         *       "database": {
-                         *         "status": "up"
-                         *       },
-                         *       "redis": {
-                         *         "status": "down",
-                         *         "message": "Could not connect"
-                         *       }
-                         *     }
-                         */
-                        details?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-    Health_check: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The Health Check is successful */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @example ok */
-                        status?: string;
-                        /**
-                         * @example {
-                         *       "database": {
-                         *         "status": "up"
-                         *       }
-                         *     }
-                         */
-                        info?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        } | null;
-                        /** @example {} */
-                        error?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        } | null;
-                        /**
-                         * @example {
-                         *       "database": {
-                         *         "status": "up"
-                         *       }
-                         *     }
-                         */
-                        details?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        };
-                    };
-                };
-            };
-            /** @description The Health Check is not successful */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @example error */
-                        status?: string;
-                        /**
-                         * @example {
-                         *       "database": {
-                         *         "status": "up"
-                         *       }
-                         *     }
-                         */
-                        info?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        } | null;
-                        /**
-                         * @example {
-                         *       "redis": {
-                         *         "status": "down",
-                         *         "message": "Could not connect"
-                         *       }
-                         *     }
-                         */
-                        error?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        } | null;
-                        /**
-                         * @example {
-                         *       "database": {
-                         *         "status": "up"
-                         *       },
-                         *       "redis": {
-                         *         "status": "down",
-                         *         "message": "Could not connect"
-                         *       }
-                         *     }
-                         */
-                        details?: {
-                            [key: string]: {
-                                status: string;
-                            } & {
-                                [key: string]: unknown;
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
+  Billing_plans: {
+    parameters: {
+      query?: {
+        payer?: 'family' | 'dispatchOrganization';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SubscriptionPlanDto'][];
+        };
+      };
+    };
+  };
+  Billing_account: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BillingAccountDto'];
+        };
+      };
+    };
+  };
+  Billing_subscribe: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SubscribeDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BillingAccountDto'];
+        };
+      };
+    };
+  };
+  Billing_changeInterval: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChangeIntervalDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BillingAccountDto'];
+        };
+      };
+    };
+  };
+  Billing_invoices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvoiceDto'][];
+        };
+      };
+    };
+  };
+  Billing_attachPaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AttachPaymentMethodDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PaymentMethodDto'];
+        };
+      };
+    };
+  };
+  Billing_detachPaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Billing_payInvoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvoiceDto'];
+        };
+      };
+    };
+  };
+  Billing_cancel: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BillingAccountDto'];
+        };
+      };
+    };
+  };
+  Organizations_mine: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrganizationDto'][];
+        };
+      };
+    };
+  };
+  Organizations_organizationBilling: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BillingAccountDto'];
+        };
+      };
+    };
+  };
+  Organizations_subscribeOrganization: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SubscribeDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BillingAccountDto'];
+        };
+      };
+    };
+  };
+  Organizations_changeOrganizationInterval: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChangeIntervalDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BillingAccountDto'];
+        };
+      };
+    };
+  };
+  Organizations_cancelOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BillingAccountDto'];
+        };
+      };
+    };
+  };
+  Organizations_organizationInvoices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvoiceDto'][];
+        };
+      };
+    };
+  };
+  Organizations_attachOrganizationPaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AttachPaymentMethodDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PaymentMethodDto'];
+        };
+      };
+    };
+  };
+  Organizations_detachOrganizationPaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        paymentMethodId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Organizations_payOrganizationInvoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        invoiceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvoiceDto'];
+        };
+      };
+    };
+  };
+  Organizations_seats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrganizationSeatsDto'];
+        };
+      };
+    };
+  };
+  Organizations_quote: {
+    parameters: {
+      query: {
+        planCode: string;
+        interval: 'monthly' | 'annual';
+        seats: number;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SubscriptionQuoteDto'];
+        };
+      };
+    };
+  };
+  Care_state: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Me_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdatePreferencesDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Me_webPushKey: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WebPushKeyDto'];
+        };
+      };
+    };
+  };
+  Me_listDevices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DeviceTokenDto'][];
+        };
+      };
+    };
+  };
+  Me_registerDevice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RegisterDeviceDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DeviceTokenDto'];
+        };
+      };
+    };
+  };
+  Me_revokeDevice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Patients_create: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SavePatientDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Patients_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SavePatientDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Patients_archive: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Patients_setPermissions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetPermissionsDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Patients_select: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Patients_listInvitations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvitationDto'][];
+        };
+      };
+    };
+  };
+  Patients_invite: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateInvitationDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvitationDto'];
+        };
+      };
+    };
+  };
+  Patients_revokeInvitation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        invitationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Clinics_create: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveClinicDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Appointments_create: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateAppointmentDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Appointments_reschedule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RescheduleAppointmentDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Appointments_cancel: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CancelAppointmentDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Rides_request: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RequestTransportDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Rides_cancel: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CancelRideDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Rides_delay: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetDelayDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Rides_location: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReportLocationDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Rides_startPreview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Rides_stopPreview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Notifications_markAllRead: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Notifications_markRead: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+    };
+  };
+  Notifications_listPreferences: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationPreferenceDto'][];
+        };
+      };
+    };
+  };
+  Notifications_setPreference: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetNotificationPreferenceDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationPreferenceDto'][];
+        };
+      };
+    };
+  };
+  Invitations_accept: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AcceptInvitationDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CareStateDto'];
+        };
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Dispatch_vehicles: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VehicleDto'][];
+        };
+      };
+    };
+  };
+  Dispatch_addVehicle: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateVehicleDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VehicleDto'];
+        };
+      };
+    };
+  };
+  Dispatch_serviceArea: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrganizationServiceAreaDto'];
+        };
+      };
+    };
+  };
+  Dispatch_setServiceArea: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetServiceAreaDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrganizationServiceAreaDto'];
+        };
+      };
+    };
+  };
+  Dispatch_clearServiceArea: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrganizationServiceAreaDto'];
+        };
+      };
+    };
+  };
+  Dispatch_drivers: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverDto'][];
+        };
+      };
+    };
+  };
+  Dispatch_addDriver: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateDriverDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverDto'];
+        };
+      };
+    };
+  };
+  Dispatch_lookupDriverAccount: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LookupDriverAccountDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverAccountMatchDto'];
+        };
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Dispatch_setDriverStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+        driverId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetDriverStatusDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverDto'];
+        };
+      };
+    };
+  };
+  Dispatch_setShift: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+        driverId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetShiftDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverDto'];
+        };
+      };
+    };
+  };
+  Dispatch_documentsFor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+        driverId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverComplianceDto'];
+        };
+      };
+    };
+  };
+  Dispatch_viewDocument: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+        driverId: string;
+        documentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentViewUrlDto'];
+        };
+      };
+    };
+  };
+  Dispatch_reviewDocument: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+        driverId: string;
+        documentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReviewDocumentDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverComplianceDto'];
+        };
+      };
+    };
+  };
+  Dispatch_queue: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DispatchQueueDto'];
+        };
+      };
+    };
+  };
+  Dispatch_liveBoard: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LiveBoardDto'];
+        };
+      };
+    };
+  };
+  Dispatch_assign: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        organizationId: string;
+        rideId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AssignRideDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DispatchQueueDto'];
+        };
+      };
+    };
+  };
+  Driver_me: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverProfileDto'];
+        };
+      };
+    };
+  };
+  Driver_setShift: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DriverShiftDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverProfileDto'];
+        };
+      };
+    };
+  };
+  Driver_rides: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverRideDto'][];
+        };
+      };
+    };
+  };
+  Driver_advance: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        rideId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdvanceRideDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverRideDto'];
+        };
+      };
+    };
+  };
+  Driver_documents: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverDocumentsDto'];
+        };
+      };
+    };
+  };
+  Driver_requestUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RequestDocumentUploadDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PresignedUploadDto'];
+        };
+      };
+    };
+  };
+  Driver_confirmUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConfirmDocumentUploadDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverDocumentsDto'];
+        };
+      };
+    };
+  };
+  Driver_reportLocations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        rideId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReportLocationBatchDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LocationBatchResultDto'];
+        };
+      };
+    };
+  };
+  Admin_auditLog: {
+    parameters: {
+      query?: {
+        actorUserId?: string;
+        entityType?: string;
+        entityId?: string;
+        /** @description Matched as a prefix, so `driver.` returns everything about drivers. */
+        action?: string;
+        from?: string;
+        to?: string;
+        /** @description From the previous page. Keyset rather than an offset: an audit log is appended to constantly, and an offset would skip or repeat rows between pages. */
+        cursor?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuditPageDto'];
+        };
+      };
+    };
+  };
+  Admin_stats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PlatformStatsDto'];
+        };
+      };
+    };
+  };
+  Admin_flags: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FeatureFlagDto'][];
+        };
+      };
+    };
+  };
+  Admin_setFlag: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetFeatureFlagDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FeatureFlagDto'][];
+        };
+      };
+    };
+  };
+  Admin_refundable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        invoiceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RefundableInvoiceDto'];
+        };
+      };
+    };
+  };
+  Admin_issueRefund: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        invoiceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['IssueRefundDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RefundableInvoiceDto'];
+        };
+      };
+    };
+  };
+  Clinic_sites: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClinicSiteDto'][];
+        };
+      };
+    };
+  };
+  Clinic_claim: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+        clinicId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ClaimClinicDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClinicSiteDto'][];
+        };
+      };
+    };
+  };
+  Clinic_day: {
+    parameters: {
+      query?: {
+        /** @description Clinic-local date. Defaults to today **in the clinic’s own zone**, not the server’s — a portal that showed yesterday’s list to a west-coast clinic every morning would be useless by nine o’clock. */
+        on?: string;
+        /** @description One site rather than all of them. */
+        clinicId?: string;
+      };
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ClinicDayDto'];
+        };
+      };
+    };
+  };
+  Clinic_checkIn: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        organizationId: string;
+        appointmentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ExpectedArrivalDto'];
+        };
+      };
+    };
+  };
+  Clinic_ready: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        organizationId: string;
+        appointmentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ExpectedArrivalDto'];
+        };
+      };
+    };
+  };
+  Marketplace_search: {
+    parameters: {
+      query?: {
+        city?: string;
+        state?: string;
+        /** @description A language they speak. */
+        language?: string;
+        /** @description Integer cents per hour. */
+        maxHourlyRateCents?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CaregiverCardDto'][];
+        };
+      };
+    };
+  };
+  Marketplace_profile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        caregiverId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CaregiverProfileDto'];
+        };
+      };
+    };
+  };
+  Marketplace_saveProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SaveCaregiverProfileDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CaregiverProfileDto'];
+        };
+      };
+    };
+  };
+  Marketplace_setAvailability: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CaregiverProfileDto'];
+        };
+      };
+    };
+  };
+  Marketplace_bookings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'][];
+        };
+      };
+    };
+  };
+  Marketplace_book: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateBookingDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'];
+        };
+      };
+    };
+  };
+  Marketplace_accept: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'];
+        };
+      };
+    };
+  };
+  Marketplace_decline: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'];
+        };
+      };
+    };
+  };
+  Marketplace_quote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CancellationQuoteDto'];
+        };
+      };
+    };
+  };
+  Marketplace_cancel: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CancelBookingDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'];
+        };
+      };
+    };
+  };
+  Marketplace_checkIn: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'];
+        };
+      };
+    };
+  };
+  Marketplace_checkOut: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'];
+        };
+      };
+    };
+  };
+  Marketplace_noShow: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'];
+        };
+      };
+    };
+  };
+  Marketplace_review: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReviewBookingDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'];
+        };
+      };
+    };
+  };
+  Marketplace_dispute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RaiseDisputeDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'];
+        };
+      };
+    };
+  };
+  MarketplaceAdmin_resolve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ResolveDisputeDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookingDto'];
+        };
+      };
+    };
+  };
+  Messaging_inbox: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ConversationDto'][];
+        };
+      };
+    };
+  };
+  Messaging_open: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OpenConversationDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ConversationDto'];
+        };
+      };
+    };
+  };
+  Messaging_unread: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UnreadSummaryDto'];
+        };
+      };
+    };
+  };
+  Messaging_conversation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        conversationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ConversationDto'];
+        };
+      };
+    };
+  };
+  Messaging_messages: {
+    parameters: {
+      query?: {
+        before?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        conversationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MessagePageDto'];
+        };
+      };
+    };
+  };
+  Messaging_send: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Opaque, client-generated, 8–200 characters. Repeating a request with the same key returns the first response rather than performing it again. Same key with a different body is refused. Honoured for 24 hours. */
+        'Idempotency-Key'?: string;
+      };
+      path: {
+        conversationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SendMessageDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MessageDto'];
+        };
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Messaging_markRead: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        conversationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Messaging_colleagues: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ColleagueDto'][];
+        };
+      };
+    };
+  };
+  Calls_targets: {
+    parameters: {
+      query?: {
+        conversationId?: string;
+        rideId?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CallTargetDto'][];
+        };
+      };
+    };
+  };
+  Calls_start: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StartCallDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CallSessionDto'];
+        };
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Calls_myNumber: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MyNumberDto'];
+        };
+      };
+    };
+  };
+  Calls_setMyNumber: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetMyNumberDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MyNumberDto'];
+        };
+      };
+    };
+  };
+  Calls_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        callId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CallSessionDto'];
+        };
+      };
+    };
+  };
+  Auth_register: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RegisterDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SessionResponseDto'];
+        };
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_login: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LoginDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SessionResponseDto'];
+        };
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_refresh: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RefreshDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenPairDto'];
+        };
+      };
+    };
+  };
+  Auth_logout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LogoutDto'];
+      };
+    };
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_logoutAll: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_verifyEmail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TokenDto'];
+      };
+    };
+    responses: {
+      /** @description The address is confirmed. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_resendVerification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EmailOnlyDto'];
+      };
+    };
+    responses: {
+      /** @description Accepted, whatever the address turns out to be. */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_requestPasswordReset: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EmailOnlyDto'];
+      };
+    };
+    responses: {
+      /** @description Accepted, whatever the address turns out to be. */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_confirmPasswordReset: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ResetPasswordDto'];
+      };
+    };
+    responses: {
+      /** @description The password is changed and every session revoked. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_changePassword: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChangePasswordDto'];
+      };
+    };
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_listSessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SessionSummaryDto'][];
+        };
+      };
+    };
+  };
+  Auth_revokeSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_deletionStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DeletionStatusDto'];
+        };
+      };
+    };
+  };
+  Auth_exportAccount: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Everything CareBridge holds about this account. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+  };
+  Auth_deleteAccount: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DeletionReceiptDto'];
+        };
+      };
+    };
+  };
+  Auth_requestDeletionByEmail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PublicDeletionRequestDto'];
+      };
+    };
+    responses: {
+      /** @description Accepted, whatever the address turns out to be. */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_confirmDeletionByToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DeletionTokenDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DeletionReceiptDto'];
+        };
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_mfaStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MfaStatusDto'];
+        };
+      };
+    };
+  };
+  Auth_disableMfa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Auth_beginMfaEnrolment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MfaEnrolmentDto'];
+        };
+      };
+    };
+  };
+  Auth_confirmMfa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MfaCodeDto'];
+      };
+    };
+    responses: {
+      /** @description Two-factor authentication is now active. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Health_live: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  Health_ready: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The Health Check is successful */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @example ok */
+            status?: string;
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            info?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            } | null;
+            /** @example {} */
+            error?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            } | null;
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            details?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            };
+          };
+        };
+      };
+      /** @description The Health Check is not successful */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @example error */
+            status?: string;
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            info?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            } | null;
+            /**
+             * @example {
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     }
+             */
+            error?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            } | null;
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       },
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     }
+             */
+            details?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+  Health_check: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The Health Check is successful */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @example ok */
+            status?: string;
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            info?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            } | null;
+            /** @example {} */
+            error?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            } | null;
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            details?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            };
+          };
+        };
+      };
+      /** @description The Health Check is not successful */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @example error */
+            status?: string;
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            info?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            } | null;
+            /**
+             * @example {
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     }
+             */
+            error?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            } | null;
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       },
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     }
+             */
+            details?: {
+              [key: string]: {
+                status: string;
+              } & {
+                [key: string]: unknown;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
 }

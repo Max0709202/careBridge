@@ -29,7 +29,11 @@ export function RideTimeline({ events }: { events: RideEvent[] }) {
           const first = i === 0;
           const last = i === ordered.length - 1;
           const Icon = event.isException ? CircleAlert : first ? CircleDot : Circle;
-          const ink = event.isException ? 'ink-critical' : first ? 'ink-primary' : 'muted';
+          const ink = event.isException
+            ? 'ink-critical'
+            : first
+              ? 'ink-primary'
+              : 'muted';
           return (
             <li key={`${event.at.toISOString()}-${i}`} className="timeline-row">
               <div className="timeline-rail">

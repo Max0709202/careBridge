@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { careStateFromJson, invoiceFromJson, subscriptionFromJson } from '../src/api/codec';
+import {
+  careStateFromJson,
+  invoiceFromJson,
+  subscriptionFromJson,
+} from '../src/api/codec';
 import type { components } from '../src/api/schema';
 import {
   activeRideFor,
@@ -26,7 +30,9 @@ describe('care state snapshot', () => {
   it('decodes the signed-in user and their care circle', () => {
     const state = careStateFromJson(json);
     expect(state.user?.email).toBe('sarah@example.com');
-    expect(state.patients.map((p) => p.preferredName)).toEqual(expect.arrayContaining(['Eleanor', 'Frank']));
+    expect(state.patients.map((p) => p.preferredName)).toEqual(
+      expect.arrayContaining(['Eleanor', 'Frank']),
+    );
     expect(selectedPatient(state)?.preferredName).toBe('Eleanor');
   });
 
@@ -43,7 +49,9 @@ describe('care state snapshot', () => {
   it('keeps no date of birth anywhere', () => {
     const encoded = JSON.stringify(json);
     expect(encoded).not.toContain('dateOfBirth');
-    expect(patientById(careStateFromJson(json), Seeded.eleanor)?.ageBand).toBe('from75to84');
+    expect(patientById(careStateFromJson(json), Seeded.eleanor)?.ageBand).toBe(
+      'from75to84',
+    );
   });
 
   it('decodes money as integer cents and times as instants', () => {
@@ -57,7 +65,9 @@ describe('care state snapshot', () => {
   it('picks the ride and appointment the dashboard leads with', () => {
     const state = careStateFromJson(json);
     const now = new Date('2026-08-12T12:00:00Z');
-    expect(nextAppointmentFor(state, Seeded.eleanor, now)?.id).toBe(Seeded.nextAppointment);
+    expect(nextAppointmentFor(state, Seeded.eleanor, now)?.id).toBe(
+      Seeded.nextAppointment,
+    );
     expect(activeRideFor(state, Seeded.eleanor)?.status).toBe('awaitingAssignment');
     // Nothing moving: only the next ride requested, not every pending one.
     expect(activeRidesFor(state, Seeded.eleanor)).toHaveLength(1);

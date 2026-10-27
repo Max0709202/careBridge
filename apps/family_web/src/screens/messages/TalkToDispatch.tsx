@@ -31,9 +31,17 @@ export function TalkToDispatch({ rideId }: { rideId: string }) {
 
   return (
     <div className="mt-lg">
-      <SectionHeader title="Talk to dispatch" subtitle="About this ride — a late pickup, a gate code, a change of plan." />
+      <SectionHeader
+        title="Talk to dispatch"
+        subtitle="About this ride — a late pickup, a gate code, a change of plan."
+      />
       <AppCard>
-        <Button icon={MessageSquare} block disabled={opening} onClick={() => void open()}>
+        <Button
+          icon={MessageSquare}
+          block
+          disabled={opening}
+          onClick={() => void open()}
+        >
           Message dispatch
         </Button>
         <div className="mt-md">

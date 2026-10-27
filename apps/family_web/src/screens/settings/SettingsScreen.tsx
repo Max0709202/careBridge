@@ -1,8 +1,24 @@
-import { Bell, ChevronRight, Clock, CreditCard, LogOut, Phone, ShieldCheck, UserPlus } from 'lucide-react';
+import {
+  Bell,
+  ChevronRight,
+  Clock,
+  CreditCard,
+  LogOut,
+  Phone,
+  ShieldCheck,
+  UserPlus,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useConfirm, useFeedback } from '../../components/feedback';
-import { AppCard, Avatar, Button, Page, SectionHeader, SwitchRow } from '../../components/ui';
+import {
+  AppCard,
+  Avatar,
+  Button,
+  Page,
+  SectionHeader,
+  SwitchRow,
+} from '../../components/ui';
 import { VerificationBanner } from '../../components/VerificationBanner';
 import { addressShortLine, initialsOf, patientFirstInitial } from '../../domain/models';
 import { activePatients } from '../../state/careState';
@@ -57,18 +73,28 @@ export function SettingsScreen() {
           <SectionHeader title="People you care for" />
           <div className="stack gap-sm">
             {activePatients(state).map((patient) => (
-              <AppCard key={patient.id} onClick={() => navigate(`/patients/${patient.id}`)}>
+              <AppCard
+                key={patient.id}
+                onClick={() => navigate(`/patients/${patient.id}`)}
+              >
                 <div className="row">
                   <Avatar text={patientFirstInitial(patient)} />
                   <div className="grow">
                     <p className="t-body-lg">{patient.preferredName}</p>
-                    <p className="t-body muted">{addressShortLine(patient.homeAddress)}</p>
+                    <p className="t-body muted">
+                      {addressShortLine(patient.homeAddress)}
+                    </p>
                   </div>
                   <ChevronRight aria-hidden />
                 </div>
               </AppCard>
             ))}
-            <Button variant="outlined" icon={UserPlus} block onClick={() => navigate('/patients/new')}>
+            <Button
+              variant="outlined"
+              icon={UserPlus}
+              block
+              onClick={() => navigate('/patients/new')}
+            >
               Add someone
             </Button>
           </div>
@@ -108,11 +134,14 @@ export function SettingsScreen() {
           <SectionHeader title="Not built yet" />
           <AppCard>
             <p className="t-body muted">
-              These need more of the platform, and are listed here rather than shown as controls that
-              do nothing.
+              These need more of the platform, and are listed here rather than shown as
+              controls that do nothing.
             </p>
             <div className="mt-sm">
-              {['Push notifications in the browser', 'Downloading your data at any time'].map((item) => (
+              {[
+                'Push notifications in the browser',
+                'Downloading your data at any time',
+              ].map((item) => (
                 <div key={item} className="row tight" style={{ padding: '4px 0' }}>
                   <Clock size={18} className="muted" aria-hidden />
                   <p className="t-body grow">{item}</p>
@@ -125,8 +154,8 @@ export function SettingsScreen() {
         <AppCard className="mt-lg">
           <p className="t-title">Safety</p>
           <p className="t-body mt-xs">
-            CareBridge coordinates appointments and transport. It is not a medical service and not an
-            emergency service. In an emergency, call 911.
+            CareBridge coordinates appointments and transport. It is not a medical
+            service and not an emergency service. In an emergency, call 911.
           </p>
         </AppCard>
 
@@ -167,7 +196,11 @@ export function NavTile(props: {
   const Icon = props.icon;
   return (
     <button type="button" className="tile" onClick={props.onClick}>
-      <Icon aria-hidden className={props.danger ? 'error-text' : 'muted'} style={{ flex: '0 0 auto' }} />
+      <Icon
+        aria-hidden
+        className={props.danger ? 'error-text' : 'muted'}
+        style={{ flex: '0 0 auto' }}
+      />
       <span className="grow">
         <span className="tile-title" style={{ display: 'block' }}>
           {props.title}

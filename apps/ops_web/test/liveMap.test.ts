@@ -3,10 +3,19 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { liveBoardFromWire, queueItemFromWire, serviceAreaFromWire } from '../src/api/codec';
+import {
+  liveBoardFromWire,
+  queueItemFromWire,
+  serviceAreaFromWire,
+} from '../src/api/codec';
 import { InMemoryTokenStore } from '../src/api/tokens';
 import { TrackingSocket, type TrackingUpdate } from '../src/api/trackingSocket';
-import { freshnessOf, withPosition, type LivePosition, type LiveRide } from '../src/domain/liveMap';
+import {
+  freshnessOf,
+  withPosition,
+  type LivePosition,
+  type LiveRide,
+} from '../src/domain/liveMap';
 import { queueItem } from './support/fixtures';
 
 const now = new Date('2026-10-24T12:00:00Z');
@@ -46,7 +55,9 @@ describe('freshnessOf', () => {
 describe('withPosition', () => {
   it('takes a newer reading and ignores an older one arriving late', () => {
     const current = ride({ position: position(ago(5_000), 1), etaMinutes: 9 });
-    expect(withPosition(current, position(ago(1_000), 2), 8).position?.latitude).toBe(2);
+    expect(withPosition(current, position(ago(1_000), 2), 8).position?.latitude).toBe(
+      2,
+    );
     expect(withPosition(current, position(ago(20_000), 3), 12)).toBe(current);
   });
 });
@@ -54,17 +65,37 @@ describe('withPosition', () => {
 describe('the wire', () => {
   it('reads both kinds of area, and drops one missing what its kind needs', () => {
     const center = { latitude: 1, longitude: 2 };
-    expect(serviceAreaFromWire({ kind: 'radius', center, radiusMiles: 5, points: null })).toEqual({
+    expect(
+      serviceAreaFromWire({ kind: 'radius', center, radiusMiles: 5, points: null }),
+    ).toEqual({
       kind: 'radius',
       center,
       radiusMiles: 5,
     });
-    expect(serviceAreaFromWire({ kind: 'radius', center: null, radiusMiles: 5, points: null })).toBeNull();
     expect(
-      serviceAreaFromWire({ kind: 'polygon', center: null, radiusMiles: null, points: [center, center, center] })
-        ?.kind,
+      serviceAreaFromWire({
+        kind: 'radius',
+        center: null,
+        radiusMiles: 5,
+        points: null,
+      }),
+    ).toBeNull();
+    expect(
+      serviceAreaFromWire({
+        kind: 'polygon',
+        center: null,
+        radiusMiles: null,
+        points: [center, center, center],
+      })?.kind,
     ).toBe('polygon');
-    expect(serviceAreaFromWire({ kind: 'zip' as never, center: null, radiusMiles: null, points: null })).toBeNull();
+    expect(
+      serviceAreaFromWire({
+        kind: 'zip' as never,
+        center: null,
+        radiusMiles: null,
+        points: null,
+      }),
+    ).toBeNull();
   });
 
   it('reads a board, dating positions by when the device took them', () => {
@@ -81,10 +112,21 @@ describe('the wire', () => {
           scheduledPickupAt: now.toISOString(),
           pickup: { latitude: 1, longitude: 2 },
           destination: null,
-          position: { latitude: 3, longitude: 4, accuracyMeters: 5, capturedAt: ago(1_000).toISOString() },
+          position: {
+            latitude: 3,
+            longitude: 4,
+            accuracyMeters: 5,
+            capturedAt: ago(1_000).toISOString(),
+          },
           etaMinutes: 6,
           isDelayed: false,
-          route: { target: 'pickup', path: [{ latitude: 3, longitude: 4 }, { latitude: 1, longitude: 2 }] },
+          route: {
+            target: 'pickup',
+            path: [
+              { latitude: 3, longitude: 4 },
+              { latitude: 1, longitude: 2 },
+            ],
+          },
         },
       ],
     });
@@ -116,14 +158,26 @@ describe('the wire', () => {
         ],
       }).rides[0]?.route;
     expect(wire(null)).toBeNull();
-    expect(wire({ target: 'pickup', path: [{ latitude: 1, longitude: 2 }] })).toBeNull();
-    expect(wire({ target: 'home', path: [{ latitude: 1, longitude: 2 }, { latitude: 3, longitude: 4 }] })).toBeNull();
+    expect(
+      wire({ target: 'pickup', path: [{ latitude: 1, longitude: 2 }] }),
+    ).toBeNull();
+    expect(
+      wire({
+        target: 'home',
+        path: [
+          { latitude: 1, longitude: 2 },
+          { latitude: 3, longitude: 4 },
+        ],
+      }),
+    ).toBeNull();
   });
 
   it('treats a queue item with no area answer as unknown, not inside', () => {
     const { pickupInServiceArea: _omitted, ...older } = queueItem();
     expect(queueItemFromWire(older as never)?.pickupInServiceArea).toBeNull();
-    expect(queueItemFromWire(queueItem({ pickupInServiceArea: false }))?.pickupInServiceArea).toBe(false);
+    expect(
+      queueItemFromWire(queueItem({ pickupInServiceArea: false }))?.pickupInServiceArea,
+    ).toBe(false);
   });
 });
 
@@ -139,7 +193,10 @@ function fakeIo() {
     auth: (supply: (data: object) => void) => void;
   }> = [];
 
-  const connect = ((_url: string, options: { auth: (supply: (data: object) => void) => void }) => {
+  const connect = ((
+    _url: string,
+    options: { auth: (supply: (data: object) => void) => void },
+  ) => {
     const handlers = new Map<string, Handler>();
     const socket = {
       handlers,

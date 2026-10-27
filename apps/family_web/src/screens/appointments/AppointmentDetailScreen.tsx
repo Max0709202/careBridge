@@ -103,23 +103,52 @@ export function AppointmentDetailScreen() {
       <div className="stack">
         <AppCard>
           <div className="row">
-            <p className="t-title grow">{formatRelativeDay(appointment.startsAt, now)}</p>
+            <p className="t-title grow">
+              {formatRelativeDay(appointment.startsAt, now)}
+            </p>
             <AppointmentStatusPill status={appointment.status} />
           </div>
           <p className="t-display mt-xs">{formatTime(appointment.startsAt)}</p>
           <p className="t-body muted">
-            {appointment.timeZoneLabel} · {formatDuration(appointment.expectedDurationMinutes)}
+            {appointment.timeZoneLabel} ·{' '}
+            {formatDuration(appointment.expectedDurationMinutes)}
           </p>
           <Divider />
-          <InfoRow icon={User} label="For" value={patient?.preferredName ?? 'Unknown'} />
-          <InfoRow icon={Hospital} label="Clinic" value={clinic?.name ?? 'Unknown clinic'} />
-          {clinic && <InfoRow icon={MapPin} label="Address" value={addressSingleLine(clinic.address)} />}
-          {clinic?.entranceNotes && (
-            <InfoRow icon={DoorOpen} label="Where the car should stop" value={clinic.entranceNotes} />
+          <InfoRow
+            icon={User}
+            label="For"
+            value={patient?.preferredName ?? 'Unknown'}
+          />
+          <InfoRow
+            icon={Hospital}
+            label="Clinic"
+            value={clinic?.name ?? 'Unknown clinic'}
+          />
+          {clinic && (
+            <InfoRow
+              icon={MapPin}
+              label="Address"
+              value={addressSingleLine(clinic.address)}
+            />
           )}
-          <InfoRow icon={Tag} label="Visit type" value={appointmentTypeLabel[appointment.type]} />
+          {clinic?.entranceNotes && (
+            <InfoRow
+              icon={DoorOpen}
+              label="Where the car should stop"
+              value={clinic.entranceNotes}
+            />
+          )}
+          <InfoRow
+            icon={Tag}
+            label="Visit type"
+            value={appointmentTypeLabel[appointment.type]}
+          />
           {appointment.coordinationNotes && (
-            <InfoRow icon={StickyNote} label="Notes" value={appointment.coordinationNotes} />
+            <InfoRow
+              icon={StickyNote}
+              label="Notes"
+              value={appointment.coordinationNotes}
+            />
           )}
         </AppCard>
 
@@ -134,7 +163,11 @@ export function AppointmentDetailScreen() {
                   : 'Book one if they need a lift there and back.'}
               </p>
               {canTransport && upcoming && (
-                <Button icon={Car} className="mt-md" onClick={() => navigate(`/appointments/${id}/transport`)}>
+                <Button
+                  icon={Car}
+                  className="mt-md"
+                  onClick={() => navigate(`/appointments/${id}/transport`)}
+                >
                   Arrange transportation
                 </Button>
               )}
@@ -149,18 +182,33 @@ export function AppointmentDetailScreen() {
         </div>
 
         <div className="mt-lg">
-          <SectionHeader title="History" subtitle="Every change is recorded, with who made it." />
+          <SectionHeader
+            title="History"
+            subtitle="Every change is recorded, with who made it."
+          />
           <AppCard>
             {appointment.history.length === 0 ? (
               <p className="t-body muted">No changes recorded yet.</p>
             ) : (
               [...appointment.history].reverse().map((change, i) => (
-                <div key={i} className="row start" style={{ padding: '6px 0', gap: 12 }}>
-                  <History size={18} className="muted" aria-hidden style={{ marginTop: 3 }} />
+                <div
+                  key={i}
+                  className="row start"
+                  style={{ padding: '6px 0', gap: 12 }}
+                >
+                  <History
+                    size={18}
+                    className="muted"
+                    aria-hidden
+                    style={{ marginTop: 3 }}
+                  />
                   <div className="grow">
-                    <p className="t-body">{change.reason ?? `Status changed to ${change.to}`}</p>
+                    <p className="t-body">
+                      {change.reason ?? `Status changed to ${change.to}`}
+                    </p>
                     <p className="t-small muted">
-                      {formatShortDay(change.at)}, {formatTime(change.at)} · {change.actor}
+                      {formatShortDay(change.at)}, {formatTime(change.at)} ·{' '}
+                      {change.actor}
                     </p>
                   </div>
                 </div>
@@ -171,10 +219,20 @@ export function AppointmentDetailScreen() {
 
         {canSchedule && upcoming && (
           <div className="stack gap-sm mt-lg">
-            <Button variant="outlined" icon={CalendarClock} block onClick={() => setRescheduling(true)}>
+            <Button
+              variant="outlined"
+              icon={CalendarClock}
+              block
+              onClick={() => setRescheduling(true)}
+            >
               Reschedule
             </Button>
-            <Button variant="outlined-danger" icon={CalendarX2} block onClick={() => cancel(appointment)}>
+            <Button
+              variant="outlined-danger"
+              icon={CalendarX2}
+              block
+              onClick={() => cancel(appointment)}
+            >
               Cancel appointment
             </Button>
           </div>
@@ -208,7 +266,8 @@ function RescheduleDialog(props: {
   onSave: (startsAt: Date) => Promise<void>;
 }) {
   const { showFailure } = useFeedback();
-  const initial = props.appointment.startsAt > props.now ? props.appointment.startsAt : props.now;
+  const initial =
+    props.appointment.startsAt > props.now ? props.appointment.startsAt : props.now;
   const [date, setDate] = useState(toDateInput(initial));
   const [time, setTime] = useState(toTimeInput(props.appointment.startsAt));
   const [busy, setBusy] = useState(false);
@@ -236,7 +295,12 @@ function RescheduleDialog(props: {
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
-        <TextField label="New time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        <TextField
+          label="New time"
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+        />
         <div className="dialog-actions">
           <Button variant="text" onClick={props.onClose}>
             Cancel
@@ -253,7 +317,13 @@ function RescheduleDialog(props: {
 function RideSummaryCard({ ride, now }: { ride: Ride; now: Date }) {
   const navigate = useNavigate();
   return (
-    <AppCard onClick={() => navigate(rideIsTrackable(ride) ? `/rides/${ride.id}/track` : `/rides/${ride.id}`)}>
+    <AppCard
+      onClick={() =>
+        navigate(
+          rideIsTrackable(ride) ? `/rides/${ride.id}/track` : `/rides/${ride.id}`,
+        )
+      }
+    >
       <div className="row">
         <p className="t-title grow">{rideDirectionLabel[ride.direction]}</p>
         <RideStatusPill status={ride.status} />

@@ -10,11 +10,23 @@ import {
 
 import type { OpsApi } from '../api/opsApi';
 import { canDispatch, type Organization } from '../domain/models';
-import { keys, UNLOADED, type Loadable, type OpsStore, type SessionState } from './opsStore';
+import {
+  keys,
+  UNLOADED,
+  type Loadable,
+  type OpsStore,
+  type SessionState,
+} from './opsStore';
 
 const StoreContext = createContext<OpsStore | null>(null);
 
-export function StoreProvider({ store, children }: { store: OpsStore; children: ReactNode }) {
+export function StoreProvider({
+  store,
+  children,
+}: {
+  store: OpsStore;
+  children: ReactNode;
+}) {
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 }
 
@@ -95,12 +107,16 @@ export function useSelectedOrganization(): Organization | null {
   const { organizationId } = useSession();
   const organizations = useOrganizations();
   if (!organizationId || !organizations.value) return null;
-  return organizations.value.find((o) => o.id === organizationId && canDispatch(o)) ?? null;
+  return (
+    organizations.value.find((o) => o.id === organizationId && canDispatch(o)) ?? null
+  );
 }
 
 /** Whether to show the Administration door. Its own probe, so a slow dashboard cannot hide it. */
 export function usePlatformAccess(): boolean {
-  return useResource(keys.platformAccess, (api) => api.hasPlatformAccess()).value ?? false;
+  return (
+    useResource(keys.platformAccess, (api) => api.hasPlatformAccess()).value ?? false
+  );
 }
 
 /**

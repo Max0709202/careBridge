@@ -98,7 +98,8 @@ const locationSharing: ReadonlySet<RideStatus> = new Set([
  * The single definition of "tracking is legal right now". Tracking begins when
  * the driver sets off and ends the moment the ride reaches a terminal state.
  */
-export const rideAllowsLocationSharing = (status: RideStatus) => locationSharing.has(status);
+export const rideAllowsLocationSharing = (status: RideStatus) =>
+  locationSharing.has(status);
 
 /** Whether the patient is physically in the vehicle. */
 export const ridePassengerIsOnboard = (status: RideStatus) =>

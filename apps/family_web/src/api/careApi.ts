@@ -50,7 +50,12 @@ export interface PatientInput {
   preferredLanguage: string;
   mobilityNeeds: MobilityNeed[];
   mobilityNotes: string | null;
-  emergencyContacts: { name: string; relationship: string; phone: string; isPrimary: boolean }[];
+  emergencyContacts: {
+    name: string;
+    relationship: string;
+    phone: string;
+    isPrimary: boolean;
+  }[];
   preferredClinicId: string | null;
 }
 
@@ -85,7 +90,11 @@ export class CareApi extends ApiTransport {
     });
   }
 
-  signIn(input: { email: string; password: string; mfaCode?: string }): Promise<CareState> {
+  signIn(input: {
+    email: string;
+    password: string;
+    mfaCode?: string;
+  }): Promise<CareState> {
     return this.session('/auth/login', {
       email: input.email.trim(),
       password: input.password,
@@ -111,7 +120,9 @@ export class CareApi extends ApiTransport {
     const stored = this.tokens.read();
     try {
       if (stored) {
-        await this.send('POST', '/auth/logout', { body: { refreshToken: stored.refreshToken } });
+        await this.send('POST', '/auth/logout', {
+          body: { refreshToken: stored.refreshToken },
+        });
       }
     } catch {
       // Deliberately ignored — see above.
@@ -160,19 +171,27 @@ export class CareApi extends ApiTransport {
    */
   createPatient(patient: PatientInput): Promise<CareState> {
     return this.snapshot(
-      this.send('POST', '/patients', { body: patientToJson(patient), idempotencyKey: newId() }),
+      this.send('POST', '/patients', {
+        body: patientToJson(patient),
+        idempotencyKey: newId(),
+      }),
     );
   }
 
   updatePatient(patientId: string, patient: PatientInput): Promise<CareState> {
-    return this.snapshot(this.send('PUT', `/patients/${patientId}`, { body: patientToJson(patient) }));
+    return this.snapshot(
+      this.send('PUT', `/patients/${patientId}`, { body: patientToJson(patient) }),
+    );
   }
 
   archivePatient(patientId: string): Promise<CareState> {
     return this.snapshot(this.send('POST', `/patients/${patientId}/archive`));
   }
 
-  setPermissions(patientId: string, permissions: FamilyPermission[]): Promise<CareState> {
+  setPermissions(
+    patientId: string,
+    permissions: FamilyPermission[],
+  ): Promise<CareState> {
     return this.snapshot(
       this.send('PUT', `/patients/${patientId}/permissions`, { body: { permissions } }),
     );
@@ -201,7 +220,9 @@ export class CareApi extends ApiTransport {
   }
 
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await this.send('POST', '/auth/password', { body: { currentPassword, newPassword } });
+    await this.send('POST', '/auth/password', {
+      body: { currentPassword, newPassword },
+    });
   }
 
   deletionStatus(): Promise<DeletionStatus> {
@@ -245,7 +266,10 @@ export class CareApi extends ApiTransport {
   }
 
   async verifyEmail(token: string): Promise<void> {
-    await this.send('POST', '/auth/verify-email', { body: { token }, authenticated: false });
+    await this.send('POST', '/auth/verify-email', {
+      body: { token },
+      authenticated: false,
+    });
   }
 
   // ─── two-factor authentication ────────────────────────────────────────────
@@ -286,7 +310,10 @@ export class CareApi extends ApiTransport {
    * "choose a plan" is the honest answer to it, not "something went wrong".
    */
   async billingAccount(): Promise<BillingAccount | null> {
-    const json = await this.send<BillingAccount | Record<string, never>>('GET', '/billing/account');
+    const json = await this.send<BillingAccount | Record<string, never>>(
+      'GET',
+      '/billing/account',
+    );
     return Object.keys(json).length === 0 ? null : (json as BillingAccount);
   }
 
@@ -304,7 +331,9 @@ export class CareApi extends ApiTransport {
   }
 
   changeBillingInterval(interval: string): Promise<BillingAccount> {
-    return this.send<BillingAccount>('POST', '/billing/change-interval', { body: { interval } });
+    return this.send<BillingAccount>('POST', '/billing/change-interval', {
+      body: { interval },
+    });
   }
 
   cancelSubscription(): Promise<BillingAccount> {
@@ -372,7 +401,10 @@ export class CareApi extends ApiTransport {
 
   addClinic(clinic: ClinicInput): Promise<CareState> {
     return this.snapshot(
-      this.send('POST', '/clinics', { body: clinicToJson(clinic), idempotencyKey: newId() }),
+      this.send('POST', '/clinics', {
+        body: clinicToJson(clinic),
+        idempotencyKey: newId(),
+      }),
     );
   }
 
@@ -396,7 +428,9 @@ export class CareApi extends ApiTransport {
           startsAt: input.startsAt.toISOString(),
           expectedDurationMinutes: input.expectedDurationMinutes,
           type: input.type,
-          ...(input.coordinationNotes ? { coordinationNotes: input.coordinationNotes } : {}),
+          ...(input.coordinationNotes
+            ? { coordinationNotes: input.coordinationNotes }
+            : {}),
           transportRequired: input.transportRequired,
         },
       }),
@@ -443,7 +477,9 @@ export class CareApi extends ApiTransport {
   }
 
   cancelRide(rideId: string, reason: string): Promise<CareState> {
-    return this.snapshot(this.send('POST', `/rides/${rideId}/cancel`, { body: { reason } }));
+    return this.snapshot(
+      this.send('POST', `/rides/${rideId}/cancel`, { body: { reason } }),
+    );
   }
 
   setDelay(rideId: string, delayed: boolean, reason?: string): Promise<CareState> {
@@ -475,7 +511,9 @@ export class CareApi extends ApiTransport {
 
   // ─── plumbing ─────────────────────────────────────────────────────────────
 
-  private async snapshot(pending: Promise<Record<string, unknown>>): Promise<CareState> {
+  private async snapshot(
+    pending: Promise<Record<string, unknown>>,
+  ): Promise<CareState> {
     const json = await pending;
     if (!json || typeof json !== 'object' || !('user' in json)) {
       // A 2xx without a snapshot is a contract break, not "an empty family".
@@ -533,4 +571,3 @@ function clinicToJson(c: ClinicInput): Record<string, unknown> {
     ...(c.entranceNotes ? { entranceNotes: c.entranceNotes } : {}),
   };
 }
-

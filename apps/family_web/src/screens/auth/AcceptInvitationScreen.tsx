@@ -45,7 +45,9 @@ export function AcceptInvitationScreen() {
               icon={UserCheck}
               title="You are in"
               message="You can now see this person’s appointments and follow their rides."
-              action={<Button onClick={() => navigate('/')}>Go to the dashboard</Button>}
+              action={
+                <Button onClick={() => navigate('/')}>Go to the dashboard</Button>
+              }
             />
           </AppCard>
         ) : (
@@ -53,16 +55,17 @@ export function AcceptInvitationScreen() {
             <AppCard>
               <h2 className="t-title">Join a care circle</h2>
               <p className="t-body mt-sm">
-                Accepting gives you access to someone’s appointments, their home address, and where
-                they are during a ride. Only accept an invitation you were expecting.
+                Accepting gives you access to someone’s appointments, their home
+                address, and where they are during a ride. Only accept an invitation you
+                were expecting.
               </p>
               {user && (
                 <div className="mt-md">
                   <InfoRow label="Signed in as" value={user.email} />
                   {!userIsEmailVerified(user) && (
                     <p className="t-body error-text mt-sm">
-                      Confirm this address first — an invitation only works for an address its owner
-                      has proved they hold.
+                      Confirm this address first — an invitation only works for an
+                      address its owner has proved they hold.
                     </p>
                   )}
                 </div>

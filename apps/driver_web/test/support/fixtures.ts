@@ -14,7 +14,9 @@ export const address = (line1 = '400 Parkside Avenue'): S['AddressDto'] => ({
   longitude: -73.95,
 });
 
-export const ride = (overrides: Partial<S['DriverRideDto']> = {}): S['DriverRideDto'] => ({
+export const ride = (
+  overrides: Partial<S['DriverRideDto']> = {},
+): S['DriverRideDto'] => ({
   id: 'ride-1',
   status: 'driverArrived',
   scheduledPickupAt: '2026-06-15T14:00:00Z',
@@ -34,7 +36,9 @@ export const ride = (overrides: Partial<S['DriverRideDto']> = {}): S['DriverRide
   ...overrides,
 });
 
-export const profile = (overrides: Partial<S['DriverProfileDto']> = {}): S['DriverProfileDto'] => ({
+export const profile = (
+  overrides: Partial<S['DriverProfileDto']> = {},
+): S['DriverProfileDto'] => ({
   driverId: 'driver-1',
   organizationId: 'org-1',
   organizationName: 'Parkside Transport',
@@ -54,7 +58,9 @@ export const profile = (overrides: Partial<S['DriverProfileDto']> = {}): S['Driv
   ...overrides,
 });
 
-export const documents = (overrides: Partial<S['DriverDocumentsDto']> = {}): S['DriverDocumentsDto'] => ({
+export const documents = (
+  overrides: Partial<S['DriverDocumentsDto']> = {},
+): S['DriverDocumentsDto'] => ({
   compliant: false,
   missing: ['vehicleInsurance'],
   expiringSoon: [],

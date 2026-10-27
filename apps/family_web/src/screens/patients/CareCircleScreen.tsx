@@ -73,7 +73,8 @@ export function CareCircleScreen() {
   async function revoke(invitation: Invitation) {
     const confirmed = await confirm({
       title: 'Revoke this invitation?',
-      message: 'The link stops working immediately. You can send a new one at any time.',
+      message:
+        'The link stops working immediately. You can send a new one at any time.',
       confirmLabel: 'Revoke it',
       cancelLabel: 'Keep it',
     });
@@ -92,7 +93,11 @@ export function CareCircleScreen() {
           icon={CloudOff}
           title="Could not load invitations"
           message="Check your connection and try again."
-          action={<Button variant="outlined" onClick={load}>Retry</Button>}
+          action={
+            <Button variant="outlined" onClick={load}>
+              Retry
+            </Button>
+          }
         />
       </AppCard>
     );
@@ -119,7 +124,11 @@ export function CareCircleScreen() {
           const Icon = statusIcon[invitation.status];
           return (
             <div key={invitation.id} className="tile">
-              <Icon className={statusInk[invitation.status]} aria-hidden style={{ flex: '0 0 auto' }} />
+              <Icon
+                className={statusInk[invitation.status]}
+                aria-hidden
+                style={{ flex: '0 0 auto' }}
+              />
               <div className="grow">
                 {/* Masked by the server: enough for the invitee to recognise
                     their address, not enough for the circle to harvest one. */}
@@ -127,7 +136,12 @@ export function CareCircleScreen() {
                 <p className="tile-sub">{subtitle(invitation)}</p>
               </div>
               {invitation.status === 'pending' && (
-                <IconButton icon={Link2Off} label="Revoke" disabled={busy} onClick={() => revoke(invitation)} />
+                <IconButton
+                  icon={Link2Off}
+                  label="Revoke"
+                  disabled={busy}
+                  onClick={() => revoke(invitation)}
+                />
               )}
             </div>
           );
@@ -137,24 +151,32 @@ export function CareCircleScreen() {
   }
 
   return (
-    <Page title="Care circle" back actions={<IconButton icon={RefreshCw} label="Refresh" onClick={load} />}>
+    <Page
+      title="Care circle"
+      back
+      actions={<IconButton icon={RefreshCw} label="Refresh" onClick={load} />}
+    >
       <div className="stack">
         {!verified && (
           <AppCard className="mb-md">
             <div className="row">
-              <MailWarning className="error-text" aria-hidden style={{ flex: '0 0 auto' }} />
+              <MailWarning
+                className="error-text"
+                aria-hidden
+                style={{ flex: '0 0 auto' }}
+              />
               <p className="t-body grow">
-                Confirm your own email address before inviting anyone. An unconfirmed address is one
-                nobody has proved they own.
+                Confirm your own email address before inviting anyone. An unconfirmed
+                address is one nobody has proved they own.
               </p>
             </div>
           </AppCard>
         )}
         <AppCard>
           <p className="t-body muted">
-            Anyone you invite can see this person’s home address, their appointments, and where they
-            are during a ride. The link works once, expires in a week, and only works for the address
-            you send it to.
+            Anyone you invite can see this person’s home address, their appointments,
+            and where they are during a ride. The link works once, expires in a week,
+            and only works for the address you send it to.
           </p>
         </AppCard>
         <div className="mt-lg">
@@ -164,7 +186,12 @@ export function CareCircleScreen() {
         <div style={{ height: 'calc(var(--space-xl) * 2)' }} />
       </div>
 
-      <button type="button" className="fab no-nav" disabled={!verified} onClick={() => setInviting(true)}>
+      <button
+        type="button"
+        className="fab no-nav"
+        disabled={!verified}
+        onClick={() => setInviting(true)}
+      >
         <UserPlus aria-hidden /> Invite someone
       </button>
 
@@ -208,7 +235,13 @@ function subtitle(invitation: Invitation): string {
   }
 }
 
-function InviteSheet({ patientId, onClose }: { patientId: string; onClose: (sent: boolean) => void }) {
+function InviteSheet({
+  patientId,
+  onClose,
+}: {
+  patientId: string;
+  onClose: (sent: boolean) => void;
+}) {
   const api = useApi();
   const { showFailure } = useFeedback();
   const [email, setEmail] = useState('');
@@ -271,7 +304,9 @@ function InviteSheet({ patientId, onClose }: { patientId: string; onClose: (sent
               disabled={permission === 'viewProfile'}
               onChange={(checked) =>
                 setPermissions((current) =>
-                  checked ? [...current, permission] : current.filter((p) => p !== permission),
+                  checked
+                    ? [...current, permission]
+                    : current.filter((p) => p !== permission),
                 )
               }
               title={permissionLabel[permission]}

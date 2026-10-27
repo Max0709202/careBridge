@@ -3,15 +3,26 @@
  * in a windscreen cradle glanced at for under a second.
  */
 import { ArrowLeft, CloudOff, RefreshCw, type LucideIcon } from 'lucide-react';
-import { useEffect, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from 'react';
 
 import { failureMessage } from '../api/failures';
 import { useGoBack } from './navigation';
 
-const cx = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(' ');
+const cx = (...names: (string | false | null | undefined)[]) =>
+  names.filter(Boolean).join(' ');
 
 /** A labelled block of information, sized to be read at a glance. */
-export function InfoCard(props: { children: ReactNode; className?: string; label?: string }) {
+export function InfoCard(props: {
+  children: ReactNode;
+  className?: string;
+  label?: string;
+}) {
   return (
     <section className={cx('card', props.className)} aria-label={props.label}>
       {props.children}
@@ -34,7 +45,12 @@ export function RequirementChip(props: { icon: LucideIcon; label: string }) {
 }
 
 /** Nothing to do, said in words. */
-export function EmptyState(props: { icon: LucideIcon; title: string; message: string; action?: ReactNode }) {
+export function EmptyState(props: {
+  icon: LucideIcon;
+  title: string;
+  message: string;
+  action?: ReactNode;
+}) {
   const Icon = props.icon;
   return (
     <div className="empty">
@@ -64,8 +80,20 @@ export function FailureBlock(props: { error: unknown; onRetry?: () => void }) {
   );
 }
 
-export function Spinner({ label = 'Loading', small }: { label?: string; small?: boolean }) {
-  return <div className={cx('spinner', small && 'small')} role="progressbar" aria-label={label} />;
+export function Spinner({
+  label = 'Loading',
+  small,
+}: {
+  label?: string;
+  small?: boolean;
+}) {
+  return (
+    <div
+      className={cx('spinner', small && 'small')}
+      role="progressbar"
+      aria-label={label}
+    />
+  );
 }
 
 export function Centered({ children }: { children: ReactNode }) {
@@ -86,7 +114,11 @@ export function Button({
   children,
   disabled,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; icon?: LucideIcon; busy?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant;
+  icon?: LucideIcon;
+  busy?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -95,7 +127,11 @@ export function Button({
       aria-busy={busy || undefined}
       {...rest}
     >
-      {busy ? <Spinner small label="Working" /> : Icon && <Icon size={22} aria-hidden />}
+      {busy ? (
+        <Spinner small label="Working" />
+      ) : (
+        Icon && <Icon size={22} aria-hidden />
+      )}
       {children}
     </button>
   );
@@ -108,7 +144,13 @@ export function IconButton({
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { icon: LucideIcon; label: string }) {
   return (
-    <button type="button" className={cx('icon-btn', className)} aria-label={label} title={label} {...rest}>
+    <button
+      type="button"
+      className={cx('icon-btn', className)}
+      aria-label={label}
+      title={label}
+      {...rest}
+    >
       <Icon size={24} aria-hidden />
     </button>
   );
@@ -119,12 +161,21 @@ export function TextField({
   helper,
   error,
   ...input
-}: { label: string; helper?: string; error?: string | null } & InputHTMLAttributes<HTMLInputElement>) {
+}: {
+  label: string;
+  helper?: string;
+  error?: string | null;
+} & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
   return (
     <div className={cx('field', error && 'invalid')}>
       <label htmlFor={id}>{label}</label>
-      <input id={id} aria-invalid={!!error} aria-describedby={`${id}-desc`} {...input} />
+      <input
+        id={id}
+        aria-invalid={!!error}
+        aria-describedby={`${id}-desc`}
+        {...input}
+      />
       <div id={`${id}-desc`}>
         {error ? (
           <div className="field-error" role="alert">
@@ -149,13 +200,17 @@ export function Page(props: {
   const goBack = useGoBack(props.back);
 
   useEffect(() => {
-    document.title = props.title ? `${props.title} · CareBridge driver` : 'CareBridge driver';
+    document.title = props.title
+      ? `${props.title} · CareBridge driver`
+      : 'CareBridge driver';
   }, [props.title]);
 
   return (
     <div className="page">
       <header className="top-bar">
-        {props.back !== undefined && <IconButton icon={ArrowLeft} label="Back" onClick={goBack} />}
+        {props.back !== undefined && (
+          <IconButton icon={ArrowLeft} label="Back" onClick={goBack} />
+        )}
         <h1>{props.title}</h1>
         <div className="top-actions">{props.actions}</div>
       </header>

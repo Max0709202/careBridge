@@ -51,7 +51,11 @@ export function ConversationList() {
                 )}
               </span>
               <span className="stack center">
-                {at && <span className="t-small muted">{sameDay(at, new Date()) ? formatTime(at) : formatDay(at)}</span>}
+                {at && (
+                  <span className="t-small muted">
+                    {sameDay(at, new Date()) ? formatTime(at) : formatDay(at)}
+                  </span>
+                )}
                 {unread && <span className="count-badge">{c.unreadCount}</span>}
               </span>
               <ChevronRight size={20} aria-hidden className="muted" />

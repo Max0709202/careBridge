@@ -67,12 +67,31 @@ export const appointmentStatusVisual: Record<AppointmentStatus, StatusVisual> = 
   missed: { icon: CircleAlert, ink: 'critical' },
 };
 
-export function RideStatusPill({ status, outlined }: { status: RideStatus; outlined?: boolean }) {
+export function RideStatusPill({
+  status,
+  outlined,
+}: {
+  status: RideStatus;
+  outlined?: boolean;
+}) {
   const visual = rideStatusVisual[status];
-  return <StatusPill label={rideStatusLabel[status]} icon={visual.icon} ink={visual.ink} outlined={outlined} />;
+  return (
+    <StatusPill
+      label={rideStatusLabel[status]}
+      icon={visual.icon}
+      ink={visual.ink}
+      outlined={outlined}
+    />
+  );
 }
 
 export function AppointmentStatusPill({ status }: { status: AppointmentStatus }) {
   const visual = appointmentStatusVisual[status];
-  return <StatusPill label={appointmentStatusLabel[status]} icon={visual.icon} ink={visual.ink} />;
+  return (
+    <StatusPill
+      label={appointmentStatusLabel[status]}
+      icon={visual.icon}
+      ink={visual.ink}
+    />
+  );
 }

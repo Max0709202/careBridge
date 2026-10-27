@@ -24,7 +24,8 @@ export interface Vehicle {
 }
 
 /** The way a dispatcher would say it: "Silver Toyota Sienna". */
-export const vehicleLabel = (v: Pick<Vehicle, 'color' | 'make' | 'model'>) => `${v.color} ${v.make} ${v.model}`;
+export const vehicleLabel = (v: Pick<Vehicle, 'color' | 'make' | 'model'>) =>
+  `${v.color} ${v.make} ${v.model}`;
 
 export interface Driver {
   id: string;
@@ -45,7 +46,8 @@ export interface Driver {
 export const isFree = (d: Driver) => d.activeRideCount === 0;
 
 /** Whether this driver could take a trip needing no special vehicle. */
-export const isAvailableNow = (d: Driver) => isAssignable(d.status) && d.onShift && isFree(d);
+export const isAvailableNow = (d: Driver) =>
+  isAssignable(d.status) && d.onShift && isFree(d);
 
 /** A driver considered for one specific ride, with every reason they cannot take it. */
 export interface Candidate {
@@ -84,15 +86,18 @@ export interface QueueItem {
   candidates: Candidate[];
 }
 
-export const eligibleCandidates = (item: QueueItem) => item.candidates.filter((c) => c.eligible);
+export const eligibleCandidates = (item: QueueItem) =>
+  item.candidates.filter((c) => c.eligible);
 
-export const hasAnyoneAvailable = (item: QueueItem) => item.candidates.some((c) => c.eligible);
+export const hasAnyoneAvailable = (item: QueueItem) =>
+  item.candidates.some((c) => c.eligible);
 
 /**
  * Whether this ride is being taken off a driver who already had it. It needs a
  * reason, and the family's timeline records that the first driver dropped it.
  */
-export const isReassignment = (item: QueueItem) => item.status === 'reassignmentRequired';
+export const isReassignment = (item: QueueItem) =>
+  item.status === 'reassignmentRequired';
 
 export interface DispatchQueue {
   organizationId: string;
@@ -105,9 +110,11 @@ export interface DispatchQueue {
  * Rides nobody on the roster can currently take — the number a dispatcher acts
  * on first: trips that will not happen unless somebody makes a phone call.
  */
-export const strandedCount = (q: DispatchQueue) => q.items.filter((i) => !hasAnyoneAvailable(i)).length;
+export const strandedCount = (q: DispatchQueue) =>
+  q.items.filter((i) => !hasAnyoneAvailable(i)).length;
 
-export const overdueCount = (q: DispatchQueue) => q.items.filter((i) => i.urgency === 'overdue').length;
+export const overdueCount = (q: DispatchQueue) =>
+  q.items.filter((i) => i.urgency === 'overdue').length;
 
 /** An organisation the signed-in user holds a role in. */
 export interface Organization {
@@ -124,9 +131,11 @@ export interface Organization {
  * a driver moves a billable seat, which is an owner's or an admin's decision.
  * Mirrored from `requireMembership`; the server is what enforces it.
  */
-export const canAdminister = (o: Organization) => o.role === 'owner' || o.role === 'admin';
+export const canAdminister = (o: Organization) =>
+  o.role === 'owner' || o.role === 'admin';
 
-export const canDispatch = (o: Organization) => canAdminister(o) || o.role === 'dispatcher';
+export const canDispatch = (o: Organization) =>
+  canAdminister(o) || o.role === 'dispatcher';
 
 export interface SeatLedgerEntry {
   id: string;

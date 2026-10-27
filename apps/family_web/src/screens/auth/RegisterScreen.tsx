@@ -17,7 +17,11 @@ export function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+  }>({});
   const [busy, setBusy] = useState(false);
 
   async function submit(e: FormEvent) {
@@ -25,7 +29,8 @@ export function RegisterScreen() {
     const next: typeof errors = {};
     if (name.trim() === '') next.name = 'Enter your name.';
     if (email.trim() === '') next.email = 'Enter your email address.';
-    else if (!email.includes('@')) next.email = 'That does not look like an email address.';
+    else if (!email.includes('@'))
+      next.email = 'That does not look like an email address.';
     if (password === '') next.password = 'Choose a password.';
     else if (password.length < 10) next.password = 'Use at least 10 characters.';
     setErrors(next);
@@ -51,8 +56,8 @@ export function RegisterScreen() {
     <Page title="Create an account" back narrow>
       <form className="stack gap-md" onSubmit={submit} noValidate>
         <p className="t-body-lg muted">
-          You will be the organiser for the person you care for. You can invite other relatives
-          afterwards.
+          You will be the organiser for the person you care for. You can invite other
+          relatives afterwards.
         </p>
         <TextField
           label="Your name"
@@ -90,7 +95,11 @@ export function RegisterScreen() {
         <Button type="submit" block disabled={busy} className="mt-sm">
           {busy ? 'Creating your account…' : 'Create account'}
         </Button>
-        <Button variant="text" block onClick={() => navigate(`/sign-in${location.search}`)}>
+        <Button
+          variant="text"
+          block
+          onClick={() => navigate(`/sign-in${location.search}`)}
+        >
           I already have an account
         </Button>
       </form>

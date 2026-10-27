@@ -60,7 +60,8 @@ export const accessIsActive = (access: PatientAccess) => access.revokedAt === nu
  * The organiser who created the record: holds every permission, and cannot have
  * `manageAccess` removed — otherwise a family can lock itself out.
  */
-export const accessIsPrimary = (access: PatientAccess) => access.grantedByUserId === null;
+export const accessIsPrimary = (access: PatientAccess) =>
+  access.grantedByUserId === null;
 
 export const accessCan = (access: PatientAccess, permission: FamilyPermission) =>
   accessIsActive(access) && access.permissions.has(permission);

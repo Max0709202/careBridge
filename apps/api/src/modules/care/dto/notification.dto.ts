@@ -82,6 +82,10 @@ export class DeviceTokenDto {
 }
 
 export class WebPushKeyDto {
-  @ApiProperty({ type: String, nullable: true, description: 'base64url VAPID public key.' })
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'base64url VAPID public key.',
+  })
   publicKey!: string | null;
 }

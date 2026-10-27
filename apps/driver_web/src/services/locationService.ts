@@ -18,10 +18,19 @@
  * permit it; the server enforces that on arrival and this mirrors it.
  */
 import { LocationQueue } from '../data/locationQueue';
-import { batteryPressure, cadenceFor, type BatteryPressure } from '../domain/locationCadence';
+import {
+  batteryPressure,
+  cadenceFor,
+  type BatteryPressure,
+} from '../domain/locationCadence';
 import { jobSharesLocation, type Fix, type Job } from '../domain/models';
 import type { RideStatus } from '../domain/rideStatus';
-import type { BatterySource, LocationAccess, PositionSource, ScreenKeeper } from './positionSource';
+import type {
+  BatterySource,
+  LocationAccess,
+  PositionSource,
+  ScreenKeeper,
+} from './positionSource';
 
 export interface SharingState {
   /** The ride being followed, or null when nothing is being shared. */
@@ -125,7 +134,11 @@ export class LocationService {
     // Stopped, or moved to another ride, while the battery was being read.
     if (this.rideId !== job.id) return;
     this.pressure = batteryPressure(reading.percent, reading.charging);
-    this.cadenceMs = cadenceFor({ status: job.status, speedMetersPerSecond: this.speed, battery: this.pressure });
+    this.cadenceMs = cadenceFor({
+      status: job.status,
+      speedMetersPerSecond: this.speed,
+      battery: this.pressure,
+    });
     if (this.cadenceMs === null) {
       this.stop();
       return;
@@ -153,7 +166,8 @@ export class LocationService {
    * send exactly the readings the rule exists to stop.
    */
   stop(): void {
-    if (this.rideId === null && this.stopWatching === null && this.access === 'granted') return;
+    if (this.rideId === null && this.stopWatching === null && this.access === 'granted')
+      return;
     this.stopWatching?.();
     this.stopWatching = null;
     this.deps.screen?.release();
@@ -192,11 +206,19 @@ export class LocationService {
     this.speed = fix.speedMetersPerSecond ?? derivedSpeed(this.lastRaw, fix);
     this.lastRaw = fix;
 
-    this.cadenceMs = cadenceFor({ status: this.status, speedMetersPerSecond: this.speed, battery: this.pressure });
+    this.cadenceMs = cadenceFor({
+      status: this.status,
+      speedMetersPerSecond: this.speed,
+      battery: this.pressure,
+    });
     if (this.cadenceMs === null) return;
 
     const last = this.lastKept;
-    if (last && fix.capturedAt.getTime() - last.capturedAt.getTime() < this.cadenceMs - CADENCE_SLACK_MS) {
+    if (
+      last &&
+      fix.capturedAt.getTime() - last.capturedAt.getTime() <
+        this.cadenceMs - CADENCE_SLACK_MS
+    ) {
       return;
     }
     this.lastKept = fix;
@@ -227,7 +249,8 @@ export class LocationService {
       this.publish();
     }
     // A long backlog drains in several requests rather than waiting for fixes.
-    if (this.rideId === rideId && !this.queue.isEmpty && this.retry === null) void this.flush(rideId);
+    if (this.rideId === rideId && !this.queue.isEmpty && this.retry === null)
+      void this.flush(rideId);
   }
 
   private scheduleRetry(): void {
@@ -249,7 +272,12 @@ export class LocationService {
 
   /** A wake lock is dropped whenever the page is hidden; take it back on return. */
   private onVisibility = (): void => {
-    if (document.visibilityState !== 'visible' || this.rideId === null || !this.deps.screen) return;
+    if (
+      document.visibilityState !== 'visible' ||
+      this.rideId === null ||
+      !this.deps.screen
+    )
+      return;
     void this.deps.screen.acquire().then((kept) => {
       this.keptAwake = kept;
       this.publish();
@@ -283,6 +311,7 @@ function distanceMeters(a: Fix, b: Fix): number {
   const dLat = rad(b.latitude - a.latitude);
   const dLon = rad(b.longitude - a.longitude);
   const h =
-    Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.latitude)) * Math.cos(rad(b.latitude)) * Math.sin(dLon / 2) ** 2;
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(rad(a.latitude)) * Math.cos(rad(b.latitude)) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }

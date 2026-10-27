@@ -23,8 +23,15 @@ import { useNavigate } from 'react-router-dom';
 import { useFeedback } from '../../components/feedback';
 import { AppCard, Button, EmptyState, Page } from '../../components/ui';
 import { formatFreshness } from '../../core/formatting';
-import { notificationIsUrgent, type AppNotification, type NotificationKind } from '../../domain/models';
-import { notificationsNewestFirst, unreadNotificationCount } from '../../state/careState';
+import {
+  notificationIsUrgent,
+  type AppNotification,
+  type NotificationKind,
+} from '../../domain/models';
+import {
+  notificationsNewestFirst,
+  unreadNotificationCount,
+} from '../../state/careState';
 import { useCare, useNow, useStore } from '../../state/context';
 import { ConversationList } from '../messages/ConversationList';
 
@@ -86,8 +93,8 @@ export function NotificationsScreen() {
       ) : (
         <div className="stack gap-sm">
           <p className="t-small muted" style={{ marginBottom: 'var(--space-sm)' }}>
-            Updates never include a name, a clinic, an address or a time — a phone on a kitchen table
-            can be read by anyone in the room.
+            Updates never include a name, a clinic, an address or a time — a phone on a
+            kitchen table can be read by anyone in the room.
           </p>
           {notifications.map((n) => (
             <NotificationTile key={n.id} notification={n} now={now} />
@@ -98,7 +105,13 @@ export function NotificationsScreen() {
   );
 }
 
-function NotificationTile({ notification, now }: { notification: AppNotification; now: Date }) {
+function NotificationTile({
+  notification,
+  now,
+}: {
+  notification: AppNotification;
+  now: Date;
+}) {
   const store = useStore();
   const navigate = useNavigate();
   const unread = notification.readAt === null;
@@ -113,9 +126,11 @@ function NotificationTile({ notification, now }: { notification: AppNotification
         // Navigation does not wait on the read receipt: opening the update is
         // what was asked for; marking it read is bookkeeping.
         void store.markNotificationRead(notification.id).catch(() => undefined);
-        if (notification.conversationId) navigate(`/messages/${notification.conversationId}`);
+        if (notification.conversationId)
+          navigate(`/messages/${notification.conversationId}`);
         else if (notification.rideId) navigate(`/rides/${notification.rideId}`);
-        else if (notification.appointmentId) navigate(`/appointments/${notification.appointmentId}`);
+        else if (notification.appointmentId)
+          navigate(`/appointments/${notification.appointmentId}`);
       }}
     >
       <div className="row start">

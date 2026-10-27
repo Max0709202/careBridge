@@ -9,7 +9,12 @@
  */
 import type { ApiTransport } from '../api/transport';
 
-export type BackgroundPushStatus = 'unsupported' | 'unavailable' | 'blocked' | 'off' | 'on';
+export type BackgroundPushStatus =
+  | 'unsupported'
+  | 'unavailable'
+  | 'blocked'
+  | 'off'
+  | 'on';
 export type AppTarget = 'family' | 'driver' | 'ops';
 
 const DEVICE_KEY = 'carebridge.webPush.deviceId';
@@ -47,7 +52,9 @@ export class BackgroundPush {
     if (!key) return 'unavailable';
     if ((await Notification.requestPermission()) !== 'granted') return 'blocked';
 
-    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+    });
     await navigator.serviceWorker.ready;
     const subscription =
       (await registration.pushManager.getSubscription()) ??
@@ -57,7 +64,11 @@ export class BackgroundPush {
       }));
 
     const device = await this.transport.send<{ id?: string }>('POST', '/me/devices', {
-      body: { token: JSON.stringify(subscription.toJSON()), platform: 'web', appTarget: this.appTarget },
+      body: {
+        token: JSON.stringify(subscription.toJSON()),
+        platform: 'web',
+        appTarget: this.appTarget,
+      },
     });
     if (device.id) this.write(device.id);
     return 'on';
@@ -100,7 +111,10 @@ export class BackgroundPush {
 
   private async publicKey(): Promise<string | null> {
     try {
-      const json = await this.transport.send<{ publicKey?: string | null }>('GET', '/me/devices/web-push-key');
+      const json = await this.transport.send<{ publicKey?: string | null }>(
+        'GET',
+        '/me/devices/web-push-key',
+      );
       return json.publicKey ?? null;
     } catch {
       return null;
@@ -126,7 +140,10 @@ export class BackgroundPush {
 }
 
 function fromBase64Url(text: string): Uint8Array {
-  const padded = text.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(text.length / 4) * 4, '=');
+  const padded = text
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+    .padEnd(Math.ceil(text.length / 4) * 4, '=');
   const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);

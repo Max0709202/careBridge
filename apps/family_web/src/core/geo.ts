@@ -5,7 +5,11 @@ import type { Coordinates } from '../domain/models';
  * so everything derived from it is an estimate; `detourFactor` is a crude
  * stand-in for roads bending. Mirrors lib/core/geo.dart.
  */
-export function distanceMiles(a: Coordinates, b: Coordinates, detourFactor = 1.3): number {
+export function distanceMiles(
+  a: Coordinates,
+  b: Coordinates,
+  detourFactor = 1.3,
+): number {
   const earthRadiusMiles = 3958.8;
   const dLat = radians(b.latitude - a.latitude);
   const dLon = radians(b.longitude - a.longitude);

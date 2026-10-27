@@ -12,7 +12,12 @@ import type { Fix } from '../domain/models';
  * after a refusal, so the only way out is the site settings, and the screen
  * has to say so rather than show a button that silently fails.
  */
-export type LocationAccess = 'granted' | 'prompt' | 'blocked' | 'unavailable' | 'unsupported';
+export type LocationAccess =
+  | 'granted'
+  | 'prompt'
+  | 'blocked'
+  | 'unavailable'
+  | 'unsupported';
 
 export interface PositionSource {
   ensureAccess(): Promise<LocationAccess>;
@@ -21,13 +26,20 @@ export interface PositionSource {
    * cannot be asked for a rate — it delivers when the position changes — so
    * the cadence rule is applied by the caller, to what is kept and sent.
    */
-  watch(onFix: (fix: Fix) => void, onAccess: (access: LocationAccess) => void): () => void;
+  watch(
+    onFix: (fix: Fix) => void,
+    onAccess: (access: LocationAccess) => void,
+  ): () => void;
 }
 
 export class BrowserPositionSource implements PositionSource {
   async ensureAccess(): Promise<LocationAccess> {
     // Geolocation exists only in a secure context: HTTPS, or localhost.
-    if (typeof navigator === 'undefined' || !('geolocation' in navigator) || !window.isSecureContext) {
+    if (
+      typeof navigator === 'undefined' ||
+      !('geolocation' in navigator) ||
+      !window.isSecureContext
+    ) {
       return 'unsupported';
     }
     try {
@@ -41,7 +53,10 @@ export class BrowserPositionSource implements PositionSource {
     return 'prompt';
   }
 
-  watch(onFix: (fix: Fix) => void, onAccess: (access: LocationAccess) => void): () => void {
+  watch(
+    onFix: (fix: Fix) => void,
+    onAccess: (access: LocationAccess) => void,
+  ): () => void {
     const id = navigator.geolocation.watchPosition(
       (position) => {
         onAccess('granted');
@@ -88,8 +103,9 @@ interface BatteryManagerLike {
 export class BrowserBatterySource implements BatterySource {
   async read(): Promise<BatteryReading> {
     try {
-      const getBattery = (navigator as Navigator & { getBattery?: () => Promise<BatteryManagerLike> })
-        .getBattery;
+      const getBattery = (
+        navigator as Navigator & { getBattery?: () => Promise<BatteryManagerLike> }
+      ).getBattery;
       if (!getBattery) return { percent: null, charging: false };
       const battery = await getBattery.call(navigator);
       return { percent: Math.round(battery.level * 100), charging: battery.charging };
@@ -122,9 +138,11 @@ export class BrowserScreenKeeper implements ScreenKeeper {
   async acquire(): Promise<boolean> {
     if (this.sentinel && !this.sentinel.released) return true;
     try {
-      const wakeLock = (navigator as Navigator & {
-        wakeLock?: { request(type: 'screen'): Promise<WakeLockSentinelLike> };
-      }).wakeLock;
+      const wakeLock = (
+        navigator as Navigator & {
+          wakeLock?: { request(type: 'screen'): Promise<WakeLockSentinelLike> };
+        }
+      ).wakeLock;
       if (!wakeLock || document.visibilityState !== 'visible') return false;
       this.sentinel = await wakeLock.request('screen');
       return true;

@@ -90,7 +90,8 @@ export class CareStore {
     password: string;
     acceptedTerms?: boolean;
   }): Promise<void> {
-    if (input.fullName.trim() === '') throw validationFailure('Enter your name.', 'fullName');
+    if (input.fullName.trim() === '')
+      throw validationFailure('Enter your name.', 'fullName');
     if (!input.email.includes('@')) {
       throw validationFailure('Enter a valid email address.', 'email');
     }
@@ -155,7 +156,10 @@ export class CareStore {
     this.apply(await this.api.archivePatient(patientId));
   }
 
-  async setPermissions(patientId: string, permissions: FamilyPermission[]): Promise<void> {
+  async setPermissions(
+    patientId: string,
+    permissions: FamilyPermission[],
+  ): Promise<void> {
     this.apply(await this.api.setPermissions(patientId, permissions));
   }
 
@@ -180,7 +184,9 @@ export class CareStore {
     const found = match ?? added[0];
     if (found) return found;
 
-    throw networkFailure('The clinic was saved but could not be loaded. Pull to refresh.');
+    throw networkFailure(
+      'The clinic was saved but could not be loaded. Pull to refresh.',
+    );
   }
 
   // ─── appointments ─────────────────────────────────────────────────────────
@@ -295,7 +301,8 @@ export class CareStore {
   }
 
   private syncPolling(): void {
-    const every = this.previews.size > 0 ? POLL_MS : this.liveWatchers > 0 ? LIVE_POLL_MS : null;
+    const every =
+      this.previews.size > 0 ? POLL_MS : this.liveWatchers > 0 ? LIVE_POLL_MS : null;
     if (every === this.pollEveryMs) return;
     this.stopPolling();
     if (every === null) return;

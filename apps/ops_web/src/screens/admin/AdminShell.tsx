@@ -1,4 +1,11 @@
-import { ArrowLeft, LayoutDashboard, LogOut, ReceiptText, ToggleRight, Undo2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  LayoutDashboard,
+  LogOut,
+  ReceiptText,
+  ToggleRight,
+  Undo2,
+} from 'lucide-react';
 import { Outlet, useNavigate } from 'react-router-dom';
 
 import { IconButton } from '../../components/ui';
@@ -43,7 +50,11 @@ export function AdminShell() {
             label={hasOperator ? 'Back to dispatch' : 'Choose an operator'}
             onClick={() => navigate(hasOperator ? '/queue' : '/organizations')}
           />
-          <IconButton icon={LogOut} label="Sign out" onClick={() => void store.signOut()} />
+          <IconButton
+            icon={LogOut}
+            label="Sign out"
+            onClick={() => void store.signOut()}
+          />
         </div>
       </header>
       <div className="shell-body">

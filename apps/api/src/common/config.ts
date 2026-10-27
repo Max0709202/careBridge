@@ -210,7 +210,10 @@ const schema = z.object({
    */
   TELEPHONY_WEBHOOK_BASE_URL: z.string().url().optional(),
   /** Country code assumed for numbers written without one. */
-  TELEPHONY_DEFAULT_COUNTRY_CODE: z.string().regex(/^[1-9]\d{0,2}$/).default('1'),
+  TELEPHONY_DEFAULT_COUNTRY_CODE: z
+    .string()
+    .regex(/^[1-9]\d{0,2}$/)
+    .default('1'),
   /** `log` only: how long each simulated step takes. */
   TELEPHONY_LOG_STEP_MS: z.coerce.number().int().positive().default(1500),
 
@@ -395,19 +398,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     if (config.MAIL_DRIVER === 'log') localAdapters.push('MAIL_DRIVER=log');
     if (config.PUSH_DRIVER === 'log') localAdapters.push('PUSH_DRIVER=log');
     if (config.TELEPHONY_DRIVER === 'log') {
-      localAdapters.push('TELEPHONY_DRIVER=log (use twilio, or none to switch calling off)');
+      localAdapters.push(
+        'TELEPHONY_DRIVER=log (use twilio, or none to switch calling off)',
+      );
     }
     if (config.MAPS_DRIVER === 'deterministic') {
       localAdapters.push('MAPS_DRIVER=deterministic');
     }
     if (config.PAYMENTS_DRIVER === 'local' && !config.PAYMENTS_UNBILLED_PILOT) {
-      localAdapters.push('PAYMENTS_DRIVER=local (set PAYMENTS_UNBILLED_PILOT=true to run a pilot that charges nobody)');
+      localAdapters.push(
+        'PAYMENTS_DRIVER=local (set PAYMENTS_UNBILLED_PILOT=true to run a pilot that charges nobody)',
+      );
     }
     if (
       config.STORAGE_DRIVER === 'filesystem' &&
       !(config.STORAGE_LOCAL_DURABLE && isAbsolute(config.STORAGE_LOCAL_ROOT))
     ) {
-      localAdapters.push('STORAGE_DRIVER=filesystem (without STORAGE_LOCAL_DURABLE=true and an absolute STORAGE_LOCAL_ROOT)');
+      localAdapters.push(
+        'STORAGE_DRIVER=filesystem (without STORAGE_LOCAL_DURABLE=true and an absolute STORAGE_LOCAL_ROOT)',
+      );
     }
     if (localAdapters.length > 0) {
       throw new Error(
@@ -425,7 +434,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     throw new Error('MAIL_SMTP_HOST is required when MAIL_DRIVER=smtp.');
   }
   if (!config.WEB_PUSH_VAPID_PUBLIC_KEY !== !config.WEB_PUSH_VAPID_PRIVATE_KEY) {
-    throw new Error('WEB_PUSH_VAPID_PUBLIC_KEY and WEB_PUSH_VAPID_PRIVATE_KEY are set together, or not at all.');
+    throw new Error(
+      'WEB_PUSH_VAPID_PUBLIC_KEY and WEB_PUSH_VAPID_PRIVATE_KEY are set together, or not at all.',
+    );
   }
   if (config.TELEPHONY_DRIVER === 'twilio') {
     const missing = (

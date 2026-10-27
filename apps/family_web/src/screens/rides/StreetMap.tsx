@@ -35,7 +35,8 @@ export interface StreetMapProps {
 }
 
 const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 const latLng = (c: Coordinates): L.LatLngTuple => [c.latitude, c.longitude];
 
@@ -72,9 +73,15 @@ export default function StreetMap(props: StreetMapProps) {
     group.clearLayers();
 
     if (props.driver && props.route) {
-      L.polyline(props.route.map(latLng), { className: 'street-route', interactive: false }).addTo(group);
+      L.polyline(props.route.map(latLng), {
+        className: 'street-route',
+        interactive: false,
+      }).addTo(group);
     } else if (props.driver) {
-      L.polyline([latLng(props.driver), latLng(ahead)], { className: 'street-guide', interactive: false }).addTo(group);
+      L.polyline([latLng(props.driver), latLng(ahead)], {
+        className: 'street-guide',
+        interactive: false,
+      }).addTo(group);
     }
 
     stop(props.pickup, 'street-stop street-stop-pickup', 'Pickup').addTo(group);
@@ -87,7 +94,14 @@ export default function StreetMap(props: StreetMapProps) {
         interactive: false,
       }).addTo(group);
     }
-  }, [props.pickup, props.destination, props.driver, props.isStale, props.route, ahead]);
+  }, [
+    props.pickup,
+    props.destination,
+    props.driver,
+    props.isStale,
+    props.route,
+    ahead,
+  ]);
 
   // Keep the car and the stop it is heading for in view while following.
   useEffect(() => {
@@ -97,7 +111,11 @@ export default function StreetMap(props: StreetMapProps) {
       ? [props.driver, ahead, ...(props.route ?? [])]
       : [props.pickup, props.destination];
     fitting.current = true;
-    current.fitBounds(L.latLngBounds(points.map(latLng)), { padding: [36, 36], maxZoom: 16, animate: false });
+    current.fitBounds(L.latLngBounds(points.map(latLng)), {
+      padding: [36, 36],
+      maxZoom: 16,
+      animate: false,
+    });
     fitting.current = false;
   }, [following, props.driver, props.route, props.pickup, props.destination, ahead]);
 
@@ -109,7 +127,11 @@ export default function StreetMap(props: StreetMapProps) {
     <div className="street-map" role="region" aria-label={label}>
       <div ref={element} className="street-map-canvas" />
       {!following && (
-        <button type="button" className="street-recentre" onClick={() => setFollowing(true)}>
+        <button
+          type="button"
+          className="street-recentre"
+          onClick={() => setFollowing(true)}
+        >
           <LocateFixed size={18} aria-hidden />
           Re-centre
         </button>
@@ -119,7 +141,11 @@ export default function StreetMap(props: StreetMapProps) {
 }
 
 function stop(point: Coordinates, className: string, label: string): L.CircleMarker {
-  return L.circleMarker(latLng(point), { radius: 9, className, interactive: false }).bindTooltip(label, {
+  return L.circleMarker(latLng(point), {
+    radius: 9,
+    className,
+    interactive: false,
+  }).bindTooltip(label, {
     permanent: true,
     direction: 'top',
     offset: [0, -8],

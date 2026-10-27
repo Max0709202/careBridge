@@ -1,13 +1,29 @@
 /**
  * React access to the messaging store. Shared (see model.ts).
  */
-import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 
 import type { ApiTransport } from '../api/transport';
 import { Attention } from './attention';
-import { BackgroundPush, type AppTarget, type BackgroundPushStatus } from './backgroundPush';
+import {
+  BackgroundPush,
+  type AppTarget,
+  type BackgroundPushStatus,
+} from './backgroundPush';
 import { MessagingClient } from './client';
-import { totalUnread, type CallContext, type CallSession, type Conversation } from './model';
+import {
+  totalUnread,
+  type CallContext,
+  type CallSession,
+  type Conversation,
+} from './model';
 import { MessagingSocket } from './socket';
 import { MessagingStore, type MessagingState, type ThreadState } from './store';
 
@@ -44,7 +60,11 @@ export function MessagingProvider(props: {
       void BackgroundPush.forget();
     };
   }, [store, active]);
-  return <MessagingContext.Provider value={store}>{props.children}</MessagingContext.Provider>;
+  return (
+    <MessagingContext.Provider value={store}>
+      {props.children}
+    </MessagingContext.Provider>
+  );
 }
 
 export function useMessagingStore(): MessagingStore {
@@ -58,9 +78,17 @@ export function useMessagingState(): MessagingState {
   return useSyncExternalStore(store.subscribe, store.getState, store.getState);
 }
 
-export function useInbox(): { inbox: Conversation[] | null; error: unknown; unread: number } {
+export function useInbox(): {
+  inbox: Conversation[] | null;
+  error: unknown;
+  unread: number;
+} {
   const state = useMessagingState();
-  return { inbox: state.inbox, error: state.inboxError, unread: totalUnread(state.inbox) };
+  return {
+    inbox: state.inbox,
+    error: state.inboxError,
+    unread: totalUnread(state.inbox),
+  };
 }
 
 /** A thread on screen: loads it, keeps it read while visible, and lets go when left. */
@@ -72,7 +100,9 @@ export function useThread(conversationId: string | null): ThreadState | null {
     store.setActive(conversationId);
     return () => store.setActive(null);
   }, [store, conversationId]);
-  return conversationId ? (state.threads[conversationId] ?? store.thread(conversationId)) : null;
+  return conversationId
+    ? (state.threads[conversationId] ?? store.thread(conversationId))
+    : null;
 }
 
 export function useCallFor(context: CallContext | null): CallSession | null {

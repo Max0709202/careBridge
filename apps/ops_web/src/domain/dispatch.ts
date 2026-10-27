@@ -15,7 +15,9 @@ export const DISPATCH_URGENCIES = ['overdue', 'imminent', 'soon', 'later'] as co
 export type DispatchUrgency = (typeof DISPATCH_URGENCIES)[number];
 
 export function parseUrgency(value: unknown): DispatchUrgency | null {
-  return (DISPATCH_URGENCIES as readonly unknown[]).includes(value) ? (value as DispatchUrgency) : null;
+  return (DISPATCH_URGENCIES as readonly unknown[]).includes(value)
+    ? (value as DispatchUrgency)
+    : null;
 }
 
 /**
@@ -38,7 +40,8 @@ export const urgencyOrder: Record<DispatchUrgency, number> = {
   later: 3,
 };
 
-export const isPressing = (urgency: DispatchUrgency) => urgency === 'overdue' || urgency === 'imminent';
+export const isPressing = (urgency: DispatchUrgency) =>
+  urgency === 'overdue' || urgency === 'imminent';
 
 // ─── ineligibility ──────────────────────────────────────────────────────────
 
@@ -47,11 +50,18 @@ export const isPressing = (urgency: DispatchUrgency) => urgency === 'overdue' ||
  * just the first: "nobody is on shift" and "nobody has an accessible vehicle"
  * need different phone calls.
  */
-export const INELIGIBILITY_REASONS = ['notApproved', 'offShift', 'noAccessibleVehicle', 'alreadyOnARide'] as const;
+export const INELIGIBILITY_REASONS = [
+  'notApproved',
+  'offShift',
+  'noAccessibleVehicle',
+  'alreadyOnARide',
+] as const;
 export type IneligibilityReason = (typeof INELIGIBILITY_REASONS)[number];
 
 export function parseReason(value: unknown): IneligibilityReason | null {
-  return (INELIGIBILITY_REASONS as readonly unknown[]).includes(value) ? (value as IneligibilityReason) : null;
+  return (INELIGIBILITY_REASONS as readonly unknown[]).includes(value)
+    ? (value as IneligibilityReason)
+    : null;
 }
 
 export const reasonLabel: Record<IneligibilityReason, string> = {
@@ -75,11 +85,19 @@ export const reasonRemedy: Record<IneligibilityReason, string | null> = {
 
 // ─── driver status ──────────────────────────────────────────────────────────
 
-export const DRIVER_STATUSES = ['invited', 'pendingApproval', 'approved', 'suspended', 'offboarded'] as const;
+export const DRIVER_STATUSES = [
+  'invited',
+  'pendingApproval',
+  'approved',
+  'suspended',
+  'offboarded',
+] as const;
 export type DriverStatus = (typeof DRIVER_STATUSES)[number];
 
 export function parseDriverStatus(value: unknown): DriverStatus | null {
-  return (DRIVER_STATUSES as readonly unknown[]).includes(value) ? (value as DriverStatus) : null;
+  return (DRIVER_STATUSES as readonly unknown[]).includes(value)
+    ? (value as DriverStatus)
+    : null;
 }
 
 export const driverStatusLabel: Record<DriverStatus, string> = {
@@ -108,16 +126,19 @@ export const allowedDriverTransitions: Record<DriverStatus, readonly DriverStatu
   offboarded: [],
 };
 
-export const nextStatusesFor = (from: DriverStatus): readonly DriverStatus[] => allowedDriverTransitions[from];
+export const nextStatusesFor = (from: DriverStatus): readonly DriverStatus[] =>
+  allowedDriverTransitions[from];
 
-export const canTransitionDriver = (from: DriverStatus, to: DriverStatus) => nextStatusesFor(from).includes(to);
+export const canTransitionDriver = (from: DriverStatus, to: DriverStatus) =>
+  nextStatusesFor(from).includes(to);
 
 /**
  * Suspension and offboarding both end somebody's ability to earn, and a record
  * of one with no reason is unanswerable three months later. The server accepts
  * a reason on any transition; the console insists on one for these two.
  */
-export const transitionNeedsReason = (to: DriverStatus) => to === 'suspended' || to === 'offboarded';
+export const transitionNeedsReason = (to: DriverStatus) =>
+  to === 'suspended' || to === 'offboarded';
 
 /** The verb, not the destination state: a button is named for what it does. */
 export const transitionActionLabel: Record<DriverStatus, string> = {

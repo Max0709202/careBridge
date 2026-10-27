@@ -1,4 +1,12 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,7 +36,9 @@ vi.mock('../src/screens/rides/StreetMap', () => ({
 
 /** Signs in as a person would: the form starts empty. */
 function submitSignIn(email = 'ada@example.com', password = 'a-real-password') {
-  fireEvent.change(screen.getByLabelText('Email address'), { target: { value: email } });
+  fireEvent.change(screen.getByLabelText('Email address'), {
+    target: { value: email },
+  });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: password } });
   fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 }
@@ -47,8 +57,14 @@ function fakeIo() {
     emit: (event: string, data: unknown) => emitted.push([event, data]),
     disconnect: () => undefined,
   };
-  const connect = (() => socket) as unknown as ConstructorParameters<typeof TrackingSocket>[2];
-  return { connect, emitted, push: (event: string, data: unknown) => handlers.get(event)?.(data) };
+  const connect = (() => socket) as unknown as ConstructorParameters<
+    typeof TrackingSocket
+  >[2];
+  return {
+    connect,
+    emitted,
+    push: (event: string, data: unknown) => handlers.get(event)?.(data),
+  };
 }
 
 function LocationProbe() {
@@ -58,12 +74,18 @@ function LocationProbe() {
 
 async function renderApp(
   path: string,
-  options: { snapshot?: Snapshot; signedIn?: boolean; routes?: Record<string, Handler> } = {},
+  options: {
+    snapshot?: Snapshot;
+    signedIn?: boolean;
+    routes?: Record<string, Handler>;
+  } = {},
 ) {
   const snapshot = options.snapshot ?? loadSnapshot();
   const server = fakeServer({
     'GET /care/state': () => ({ body: snapshot }),
-    'POST /auth/login': () => ({ body: { accessToken: 'a', refreshToken: 'r', state: snapshot } }),
+    'POST /auth/login': () => ({
+      body: { accessToken: 'a', refreshToken: 'r', state: snapshot },
+    }),
     'POST /auth/logout': () => ({ status: 204 }),
     'GET /conversations': () => ({ body: [] }),
     'GET /calls/targets': () => ({ body: [] }),
@@ -80,7 +102,10 @@ async function renderApp(
 
   render(
     <ServicesProvider services={{ store, api, tracking }}>
-      <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter
+        initialEntries={[path]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <FeedbackProvider>
           <ConfirmProvider>
             <App messaging={messaging.store} />
@@ -127,7 +152,13 @@ describe('the family web app', () => {
       displayName,
       rating: 4.9,
       yearsDriving: 6,
-      vehicle: { make: 'Toyota', model: 'Sienna', color: 'Silver', licensePlate: 'ABC 123', isWheelchairAccessible: false },
+      vehicle: {
+        make: 'Toyota',
+        model: 'Sienna',
+        color: 'Silver',
+        licensePlate: 'ABC 123',
+        isWheelchairAccessible: false,
+      },
     });
     first.status = 'driverEnRoute';
     first.driver = driver('driver-1', 'Marcus T.');
@@ -142,7 +173,9 @@ describe('the family web app', () => {
 
     const marcus = screen.getByLabelText('Current ride for Eleanor with Marcus T.');
     const priya = screen.getByLabelText('Current ride for Eleanor with Priya N.');
-    expect(within(marcus).getByRole('button', { name: 'Follow the trip' })).toBeTruthy();
+    expect(
+      within(marcus).getByRole('button', { name: 'Follow the trip' }),
+    ).toBeTruthy();
     fireEvent.click(within(priya).getByRole('button', { name: 'Follow the trip' }));
     expect(await screen.findByRole('region', { name: 'Street map' })).toBeTruthy();
   });
@@ -160,7 +193,9 @@ describe('the family web app', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Accept the invitation' }));
     await screen.findByText('You are in');
-    expect(requests.find((r) => r.path === '/invitations/accept')?.body).toEqual({ token: 'inv-123' });
+    expect(requests.find((r) => r.path === '/invitations/accept')?.body).toEqual({
+      token: 'inv-123',
+    });
   });
 
   it('asks for the authenticator code when the account has two-factor on', async () => {
@@ -175,7 +210,13 @@ describe('the family web app', () => {
             ? { body: { accessToken: 'a', refreshToken: 'r', state: loadSnapshot() } }
             : {
                 status: 400,
-                body: { error: { code: 'validation', message: 'Enter the code from your authenticator app.', field: 'mfaCode' } },
+                body: {
+                  error: {
+                    code: 'validation',
+                    message: 'Enter the code from your authenticator app.',
+                    field: 'mfaCode',
+                  },
+                },
               };
         },
       },
@@ -188,7 +229,9 @@ describe('the family web app', () => {
 
     await screen.findByText('Caring for');
     expect(attempts).toBe(2);
-    expect(requests.filter((r) => r.path === '/auth/login')[1]!.body).toMatchObject({ mfaCode: '123456' });
+    expect(requests.filter((r) => r.path === '/auth/login')[1]!.body).toMatchObject({
+      mfaCode: '123456',
+    });
   });
 
   it('starts with an empty form — there is no demo account to pre-fill', async () => {
@@ -204,7 +247,12 @@ describe('the family web app', () => {
       routes: {
         'POST /auth/login': () => ({
           status: 401,
-          body: { error: { code: 'authentication', message: 'That email address and password do not match an account.' } },
+          body: {
+            error: {
+              code: 'authentication',
+              message: 'That email address and password do not match an account.',
+            },
+          },
         }),
       },
     });
@@ -214,9 +262,12 @@ describe('the family web app', () => {
   });
 
   it('books transport for the appointment day, 40 minutes ahead, with an idempotency key', async () => {
-    const { requests } = await renderApp(`/appointments/${Seeded.nextAppointment}/transport`, {
-      routes: { 'POST /rides': () => ({ body: loadSnapshot() }) },
-    });
+    const { requests } = await renderApp(
+      `/appointments/${Seeded.nextAppointment}/transport`,
+      {
+        routes: { 'POST /rides': () => ({ body: loadSnapshot() }) },
+      },
+    );
     expect(screen.getByText('Arrange transportation')).toBeTruthy();
     // Wheelchair is not among Eleanor's needs; escorting is, so the assistance surcharge shows.
     expect(screen.getByText('Door-through-door assistance')).toBeTruthy();
@@ -227,15 +278,23 @@ describe('the family web app', () => {
 
     const ride = requests.find((r) => r.method === 'POST' && r.path === '/rides')!;
     expect(ride.headers['idempotency-key']).toMatch(/^[0-9a-f-]{36}$/);
-    const body = ride.body as { pickupAt: string; roundTrip: boolean; appointmentId: string };
+    const body = ride.body as {
+      pickupAt: string;
+      roundTrip: boolean;
+      appointmentId: string;
+    };
     expect(body.appointmentId).toBe(Seeded.nextAppointment);
     expect(body.roundTrip).toBe(true);
-    expect(new Date(body.pickupAt).getTime()).toBe(new Date('2026-08-13T10:00:00.000Z').getTime());
+    expect(new Date(body.pickupAt).getTime()).toBe(
+      new Date('2026-08-13T10:00:00.000Z').getTime(),
+    );
   });
 
   it('hides controls a grant does not allow', async () => {
     const snapshot = loadSnapshot();
-    const grant = (snapshot.access as Record<string, { permissions: string[] }>)[Seeded.eleanor]!;
+    const grant = (snapshot.access as Record<string, { permissions: string[] }>)[
+      Seeded.eleanor
+    ]!;
     grant.permissions = ['viewProfile'];
     await renderApp('/', { snapshot });
     expect(screen.queryByRole('button', { name: 'Add appointment' })).toBeNull();
@@ -248,7 +307,9 @@ describe('the family web app', () => {
     delete (snapshot.access as Record<string, unknown>)[Seeded.frank];
     await renderApp(`/patients/${Seeded.frank}`, { snapshot });
     expect(screen.getByText('Not available')).toBeTruthy();
-    expect(screen.getByText('We could not find that, or you do not have access to it.')).toBeTruthy();
+    expect(
+      screen.getByText('We could not find that, or you do not have access to it.'),
+    ).toBeTruthy();
   });
 
   it('warns in words when the live position is going stale, and prefers the newer reading', async () => {
@@ -264,7 +325,9 @@ describe('the family web app', () => {
     };
     const { io } = await renderApp(`/rides/${Seeded.outboundRide}/track`, { snapshot });
 
-    expect(screen.getByText('Position last updated 1 minute ago. It may be out of date.')).toBeTruthy();
+    expect(
+      screen.getByText('Position last updated 1 minute ago. It may be out of date.'),
+    ).toBeTruthy();
     expect(screen.getByText('Driver is about 9 minutes away')).toBeTruthy();
     expect(io.emitted).toContainEqual(['watch', { rideId: Seeded.outboundRide }]);
 
@@ -301,7 +364,9 @@ describe('the family web app', () => {
       ],
     };
     await renderApp(`/rides/${Seeded.outboundRide}/track`, { snapshot });
-    expect((await screen.findByRole('region', { name: 'Street map' })).textContent).toBe('car · road of 3 points');
+    expect(
+      (await screen.findByRole('region', { name: 'Street map' })).textContent,
+    ).toBe('car · road of 3 points');
   });
 
   it('ages a position by the server clock, so a computer an hour fast does not show the car as lost', async () => {
@@ -320,17 +385,24 @@ describe('the family web app', () => {
     await renderApp(`/rides/${Seeded.outboundRide}/track`, {
       snapshot,
       routes: {
-        'GET /care/state': () => ({ body: snapshot, headers: { date: new Date(serverNowMs).toUTCString() } }),
+        'GET /care/state': () => ({
+          body: snapshot,
+          headers: { date: new Date(serverNowMs).toUTCString() },
+        }),
       },
     });
 
-    expect(await screen.findByText(/Position updated (just now|\d+ seconds ago)\./)).toBeTruthy();
+    expect(
+      await screen.findByText(/Position updated (just now|\d+ seconds ago)\./),
+    ).toBeTruthy();
     expect(screen.queryByText(/lost contact/)).toBeNull();
   });
 
   it('keeps a backup poll running only while the trip is on screen', async () => {
     const released = vi.fn();
-    const watch = vi.spyOn(CareStore.prototype, 'watchLiveTrip').mockReturnValue(released);
+    const watch = vi
+      .spyOn(CareStore.prototype, 'watchLiveTrip')
+      .mockReturnValue(released);
     const snapshot = loadSnapshot();
     snapshot.rides.find((r) => r.id === Seeded.outboundRide)!.status = 'driverEnRoute';
     await renderApp(`/rides/${Seeded.outboundRide}/track`, { snapshot });
@@ -361,7 +433,9 @@ describe('the family web app', () => {
       ],
     };
     await renderApp(`/rides/${Seeded.outboundRide}/track`, { snapshot });
-    expect((await screen.findByRole('region', { name: 'Street map' })).textContent).toBe('no car · guide line');
+    expect(
+      (await screen.findByRole('region', { name: 'Street map' })).textContent,
+    ).toBe('no car · guide line');
   });
 
   it('stops presenting a position once the ride has ended', async () => {
@@ -373,7 +447,10 @@ describe('the family web app', () => {
     const snapshot = loadSnapshot();
     snapshot.notifications[0]!.readAt = null;
     const read = loadSnapshot();
-    await renderApp('/notifications', { snapshot, routes: { 'POST /notifications/read-all': () => ({ body: read }) } });
+    await renderApp('/notifications', {
+      snapshot,
+      routes: { 'POST /notifications/read-all': () => ({ body: read }) },
+    });
     expect(screen.getByLabelText('1 unread')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
     await waitFor(() => expect(screen.queryByLabelText('1 unread')).toBeNull());
@@ -391,9 +468,13 @@ describe('the family web app', () => {
   it('turns simplified mode on for the whole document', async () => {
     const on = loadSnapshot();
     on.simplifiedMode = true;
-    await renderApp('/settings', { routes: { 'PATCH /me/preferences': () => ({ body: on }) } });
+    await renderApp('/settings', {
+      routes: { 'PATCH /me/preferences': () => ({ body: on }) },
+    });
     fireEvent.click(screen.getByRole('switch', { name: 'Simplified mode' }));
-    await waitFor(() => expect(document.documentElement.classList.contains('simplified')).toBe(true));
+    await waitFor(() =>
+      expect(document.documentElement.classList.contains('simplified')).toBe(true),
+    );
   });
 
   it('has a page for a link that goes nowhere', async () => {
@@ -401,7 +482,6 @@ describe('the family web app', () => {
     expect(screen.getByText('That page does not exist')).toBeTruthy();
   });
 });
-
 
 // ─── messaging and calls ────────────────────────────────────────────────────
 
@@ -433,19 +513,28 @@ function familyConversation(over: Record<string, unknown> = {}) {
 }
 
 describe('messaging dispatch and calling through the relay', () => {
-  it('opens the ride\'s own thread with dispatch from the ride', async () => {
-    const { requests } = await renderApp('/rides/00000000-0000-4000-8000-000000000062', {
-      routes: {
-        'POST /conversations': () => ({ body: familyConversation() }),
-        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+  it("opens the ride's own thread with dispatch from the ride", async () => {
+    const { requests } = await renderApp(
+      '/rides/00000000-0000-4000-8000-000000000062',
+      {
+        routes: {
+          'POST /conversations': () => ({ body: familyConversation() }),
+          'GET /conversations/:id/messages': () => ({
+            body: { messages: [], hasMore: false },
+          }),
+        },
       },
-    });
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Message dispatch' }));
-    expect(await screen.findByRole('heading', { name: 'Meridian Transit dispatch' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { name: 'Meridian Transit dispatch' }),
+    ).toBeTruthy();
     expect(screen.getByRole('note').textContent).toContain("Eleanor's ride");
     expect(location()).toBe('/messages/c-1');
-    expect(requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body).toEqual({
+    expect(
+      requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body,
+    ).toEqual({
       kind: 'dispatchFamily',
       rideId: '00000000-0000-4000-8000-000000000062',
     });
@@ -453,7 +542,9 @@ describe('messaging dispatch and calling through the relay', () => {
 
   it('calls the driver through the relay from the tracking screen, never showing a number', async () => {
     const snapshot = loadSnapshot();
-    const finished = snapshot.rides.find((r) => r.id === '00000000-0000-4000-8000-000000000062')!;
+    const finished = snapshot.rides.find(
+      (r) => r.id === '00000000-0000-4000-8000-000000000062',
+    )!;
     const ride = snapshot.rides.find((r) => r.id === Seeded.outboundRide)!;
     ride.status = 'driverEnRoute';
     ride.driver = finished.driver;
@@ -462,8 +553,20 @@ describe('messaging dispatch and calling through the relay', () => {
       routes: {
         'GET /calls/targets': () => ({
           body: [
-            { kind: 'dispatch', id: 'org-1', label: 'Meridian Transit dispatch', available: true, unavailableReason: null },
-            { kind: 'driver', id: 'd-1', label: 'Marcus T.', available: true, unavailableReason: null },
+            {
+              kind: 'dispatch',
+              id: 'org-1',
+              label: 'Meridian Transit dispatch',
+              available: true,
+              unavailableReason: null,
+            },
+            {
+              kind: 'driver',
+              id: 'd-1',
+              label: 'Marcus T.',
+              available: true,
+              unavailableReason: null,
+            },
           ],
         }),
         'POST /calls': () => ({
@@ -496,12 +599,23 @@ describe('messaging dispatch and calling through the relay', () => {
     await renderApp('/notifications', {
       routes: {
         'GET /conversations': () => ({
-          body: [familyConversation({ lastMessageAt: '2026-08-12T11:00:00Z', unreadCount: 2 })],
+          body: [
+            familyConversation({
+              lastMessageAt: '2026-08-12T11:00:00Z',
+              unreadCount: 2,
+            }),
+          ],
         }),
-        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+        'GET /conversations/:id/messages': () => ({
+          body: { messages: [], hasMore: false },
+        }),
       },
     });
-    fireEvent.click(await screen.findByRole('button', { name: /2 unread\. Meridian Transit dispatch/ }));
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: /2 unread\. Meridian Transit dispatch/,
+      }),
+    );
     expect(location()).toBe('/messages/c-1');
   });
 
@@ -518,7 +632,9 @@ describe('messaging dispatch and calling through the relay', () => {
       snapshot,
       routes: {
         'GET /conversations/:id': () => ({ body: familyConversation() }),
-        'GET /conversations/:id/messages': () => ({ body: { messages: [], hasMore: false } }),
+        'GET /conversations/:id/messages': () => ({
+          body: { messages: [], hasMore: false },
+        }),
       },
     });
     fireEvent.click(screen.getByRole('button', { name: /New message/ }));
@@ -537,6 +653,8 @@ describe('messaging dispatch and calling through the relay', () => {
     fireEvent.change(field, { target: { value: '(614) 555-0199' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save number' }));
     await waitFor(() => expect((field as HTMLInputElement).value).toBe('+16145550199'));
-    expect(requests.find((r) => r.method === 'PUT')?.body).toEqual({ phone: '(614) 555-0199' });
+    expect(requests.find((r) => r.method === 'PUT')?.body).toEqual({
+      phone: '(614) 555-0199',
+    });
   });
 });

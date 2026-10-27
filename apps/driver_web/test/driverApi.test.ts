@@ -12,7 +12,8 @@ function setup(storageStatus = 200) {
   const fetcher: typeof fetch = async (input, init = {}) => {
     const url = String(input);
     calls.push({ url, init });
-    if (url.startsWith('https://storage.example')) return new Response(null, { status: storageStatus });
+    if (url.startsWith('https://storage.example'))
+      return new Response(null, { status: storageStatus });
     if (url.endsWith('/driver/documents/confirm')) return Response.json(documents());
     return Response.json({});
   };
@@ -42,12 +43,16 @@ describe('uploading a document', () => {
 
   it('reports a storage refusal as a failure, not as success', async () => {
     const { api } = setup(403);
-    await expect(api.uploadBytes(slot, new Blob(['x']))).rejects.toBeInstanceOf(Failure);
+    await expect(api.uploadBytes(slot, new Blob(['x']))).rejects.toBeInstanceOf(
+      Failure,
+    );
   });
 
   it('refuses a file larger than the slot before sending it', async () => {
     const { api, calls } = setup();
-    await expect(api.uploadBytes(slot, new Blob([new Uint8Array(2048)]))).rejects.toBeInstanceOf(Failure);
+    await expect(
+      api.uploadBytes(slot, new Blob([new Uint8Array(2048)])),
+    ).rejects.toBeInstanceOf(Failure);
     expect(calls).toHaveLength(0);
   });
 });

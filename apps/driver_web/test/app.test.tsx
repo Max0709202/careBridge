@@ -1,4 +1,12 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -63,7 +71,10 @@ async function renderApp(
 
   render(
     <StoreProvider store={store}>
-      <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter
+        initialEntries={[path]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <FeedbackProvider>
           <ConfirmProvider>
             <App messaging={messaging.store} />
@@ -72,7 +83,13 @@ async function renderApp(
       </MemoryRouter>
     </StoreProvider>,
   );
-  return { ...server, store, tokens, messaging, setRides: (next: S['DriverRideDto'][]) => (rides = next) };
+  return {
+    ...server,
+    store,
+    tokens,
+    messaging,
+    setRides: (next: S['DriverRideDto'][]) => (rides = next),
+  };
 }
 
 afterEach(async () => {
@@ -82,11 +99,16 @@ afterEach(async () => {
 describe('signing in', () => {
   it('sends a signed-out driver to sign-in, and on to today', async () => {
     const { requests } = await renderApp('/today', { signedIn: false });
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'dev@example.com' } });
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'dev@example.com' },
+    });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'pw' } });
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(await screen.findByText('Dev Patel')).toBeTruthy();
-    expect(requests.find((r) => r.path === '/auth/login')?.body).toEqual({ email: 'dev@example.com', password: 'pw' });
+    expect(requests.find((r) => r.path === '/auth/login')?.body).toEqual({
+      email: 'dev@example.com',
+      password: 'pw',
+    });
   });
 });
 
@@ -115,7 +137,12 @@ describe('the shift', () => {
 
   it('treats "not on a roster" as a sentence, not an error', async () => {
     await renderApp('/today', {
-      routes: { 'GET /driver/me': () => ({ status: 404, body: { error: { code: 'not_found_or_forbidden' } } }) },
+      routes: {
+        'GET /driver/me': () => ({
+          status: 404,
+          body: { error: { code: 'not_found_or_forbidden' } },
+        }),
+      },
     });
     expect(await screen.findByText('No driver profile yet')).toBeTruthy();
   });
@@ -128,17 +155,25 @@ describe('the shift', () => {
 
 describe('the ride screen', () => {
   it('names the action, puts the passenger first, and offers the call as a button', async () => {
-    await renderApp('/job/ride-1', { rides: [ride({ status: 'driverEnRoute', availableTransitions: ['driverArrived'] })] });
+    await renderApp('/job/ride-1', {
+      rides: [
+        ride({ status: 'driverEnRoute', availableTransitions: ['driverArrived'] }),
+      ],
+    });
     expect(await screen.findByRole('button', { name: 'I have arrived' })).toBeTruthy();
     expect(screen.getByText('Margaret')).toBeTruthy();
     expect(screen.getByText(/400 Parkside Avenue/)).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Call Margaret' }).getAttribute('href')).toBe('tel:+1-555-0147');
+    expect(
+      screen.getByRole('link', { name: 'Call Margaret' }).getAttribute('href'),
+    ).toBe('tel:+1-555-0147');
     expect(screen.getByText('Wheelchair')).toBeTruthy();
   });
 
   it('moves the ride along, keyed against a double tap', async () => {
     const { requests, setRides } = await renderApp('/job/ride-1', {
-      rides: [ride({ status: 'driverEnRoute', availableTransitions: ['driverArrived'] })],
+      rides: [
+        ride({ status: 'driverEnRoute', availableTransitions: ['driverArrived'] }),
+      ],
       routes: {
         'POST /driver/rides/:id/advance': () => {
           setRides([ride({ status: 'driverArrived' })]);
@@ -147,7 +182,9 @@ describe('the ride screen', () => {
       },
     });
     fireEvent.click(await screen.findByRole('button', { name: 'I have arrived' }));
-    expect(await screen.findByRole('button', { name: 'Passenger is in the car' })).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: 'Passenger is in the car' }),
+    ).toBeTruthy();
     const advance = requests.find((r) => r.path.endsWith('/advance'))!;
     expect(advance.body).toEqual({ to: 'driverArrived' });
     expect(advance.headers['idempotency-key']).toBeTruthy();
@@ -164,23 +201,35 @@ describe('the ride screen', () => {
   });
 
   it('says it is sharing, and asks for the page to stay open', async () => {
-    await renderApp('/job/ride-1', { rides: [ride({ status: 'inProgress', availableTransitions: ['arrivedAtDestination'] })] });
-    expect(await screen.findByText('Sharing your location with the family')).toBeTruthy();
+    await renderApp('/job/ride-1', {
+      rides: [
+        ride({ status: 'inProgress', availableTransitions: ['arrivedAtDestination'] }),
+      ],
+    });
+    expect(
+      await screen.findByText('Sharing your location with the family'),
+    ).toBeTruthy();
     expect(screen.getByText(/Keep this page open/)).toBeTruthy();
   });
 });
 
 describe('the no-show', () => {
   it('refuses until the kerbside wait is served, and says so', async () => {
-    await renderApp('/job/ride-1', { rides: [ride({ noShowAvailableInSeconds: 120 })] });
-    const button = await screen.findByRole('button', { name: /Nobody came out — wait 2:00/ });
+    await renderApp('/job/ride-1', {
+      rides: [ride({ noShowAvailableInSeconds: 120 })],
+    });
+    const button = await screen.findByRole('button', {
+      name: /Nobody came out — wait 2:00/,
+    });
     expect((button as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('asks again before ending the ride', async () => {
     const { requests } = await renderApp('/job/ride-1', {
       rides: [ride({ noShowAvailableInSeconds: 0 })],
-      routes: { 'POST /driver/rides/:id/advance': () => ({ body: ride({ status: 'noShow' }) }) },
+      routes: {
+        'POST /driver/rides/:id/advance': () => ({ body: ride({ status: 'noShow' }) }),
+      },
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Nobody came out' }));
     const dialog = await screen.findByRole('dialog');
@@ -189,12 +238,24 @@ describe('the no-show', () => {
     expect(requests.some((r) => r.path.endsWith('/advance'))).toBe(false);
 
     fireEvent.click(screen.getByRole('button', { name: 'Nobody came out' }));
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Record no-show' }));
-    await waitFor(() => expect(requests.find((r) => r.path.endsWith('/advance'))?.body).toEqual({ to: 'noShow' }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: 'Record no-show',
+      }),
+    );
+    await waitFor(() =>
+      expect(requests.find((r) => r.path.endsWith('/advance'))?.body).toEqual({
+        to: 'noShow',
+      }),
+    );
   });
 
   it('is not offered before the driver has arrived', async () => {
-    await renderApp('/job/ride-1', { rides: [ride({ status: 'driverEnRoute', availableTransitions: ['driverArrived'] })] });
+    await renderApp('/job/ride-1', {
+      rides: [
+        ride({ status: 'driverEnRoute', availableTransitions: ['driverArrived'] }),
+      ],
+    });
     await screen.findByRole('button', { name: 'I have arrived' });
     expect(screen.queryByRole('button', { name: /Nobody came out/ })).toBeNull();
   });
@@ -251,11 +312,18 @@ describe('messages', () => {
     await renderApp('/today', {
       routes: {
         'GET /conversations': () => ({
-          body: [driverConversation({ lastMessageAt: '2026-10-01T09:00:00Z', unreadCount: 3 })],
+          body: [
+            driverConversation({
+              lastMessageAt: '2026-10-01T09:00:00Z',
+              unreadCount: 3,
+            }),
+          ],
         }),
       },
     });
-    expect(await screen.findByRole('button', { name: 'Messages, 3 unread' })).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: 'Messages, 3 unread' }),
+    ).toBeTruthy();
   });
 
   it('opens the thread with dispatch in one tap', async () => {
@@ -266,8 +334,12 @@ describe('messages', () => {
       },
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Dispatch' }));
-    expect(await screen.findByRole('heading', { name: 'Parkside Transport dispatch' })).toBeTruthy();
-    expect(requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body).toEqual({
+    expect(
+      await screen.findByRole('heading', { name: 'Parkside Transport dispatch' }),
+    ).toBeTruthy();
+    expect(
+      requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body,
+    ).toEqual({
       kind: 'dispatchDriver',
     });
   });
@@ -282,7 +354,12 @@ describe('messages', () => {
           ],
         }),
         'POST /conversations': () => ({
-          body: driverConversation({ id: 'c-2', kind: 'driverDriver', peerDriverId: 'driver-2', title: 'Dev P. · Priya S.' }),
+          body: driverConversation({
+            id: 'c-2',
+            kind: 'driverDriver',
+            peerDriverId: 'driver-2',
+            title: 'Dev P. · Priya S.',
+          }),
         }),
         'GET /conversations/:id/messages': emptyThread,
       },
@@ -290,11 +367,17 @@ describe('messages', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'A colleague' }));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByRole('button', { name: 'Olu A., off shift' }).hasAttribute('disabled')).toBe(true);
+    expect(
+      within(dialog)
+        .getByRole('button', { name: 'Olu A., off shift' })
+        .hasAttribute('disabled'),
+    ).toBe(true);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Priya S.' }));
 
     await screen.findByRole('heading', { name: 'Dev P. · Priya S.' });
-    expect(requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body).toEqual({
+    expect(
+      requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body,
+    ).toEqual({
       kind: 'driverDriver',
       peerDriverId: 'driver-2',
     });
@@ -302,7 +385,9 @@ describe('messages', () => {
 
   it('messages dispatch about the trip on screen', async () => {
     const { requests } = await renderApp('/job/ride-1', {
-      rides: [ride({ status: 'driverEnRoute', availableTransitions: ['driverArrived'] })],
+      rides: [
+        ride({ status: 'driverEnRoute', availableTransitions: ['driverArrived'] }),
+      ],
       routes: {
         'POST /conversations': () => ({
           body: driverConversation({
@@ -320,9 +405,15 @@ describe('messages', () => {
       },
     });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Message dispatch about this trip' }));
-    expect((await screen.findByRole('note')).textContent).toContain('Trip with Margaret');
-    expect(requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body).toEqual({
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Message dispatch about this trip' }),
+    );
+    expect((await screen.findByRole('note')).textContent).toContain(
+      'Trip with Margaret',
+    );
+    expect(
+      requests.find((r) => r.method === 'POST' && r.path === '/conversations')?.body,
+    ).toEqual({
       kind: 'dispatchDriver',
       rideId: 'ride-1',
     });

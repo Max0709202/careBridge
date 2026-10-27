@@ -85,10 +85,17 @@ export class ApiTransport {
     if (typeof json.accessToken !== 'string' || typeof json.refreshToken !== 'string') {
       throw networkFailure();
     }
-    this.tokens.write({ accessToken: json.accessToken, refreshToken: json.refreshToken });
+    this.tokens.write({
+      accessToken: json.accessToken,
+      refreshToken: json.refreshToken,
+    });
   }
 
-  private async sendRaw(method: Method, path: string, options: SendOptions): Promise<unknown> {
+  private async sendRaw(
+    method: Method,
+    path: string,
+    options: SendOptions,
+  ): Promise<unknown> {
     const authenticated = options.authenticated ?? true;
     let response = await this.request(method, path, options, authenticated);
 

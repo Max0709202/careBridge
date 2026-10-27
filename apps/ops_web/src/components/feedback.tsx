@@ -54,7 +54,11 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       show('error', failureMessage(error), 5_000);
       // A refresh that failed has already cleared the tokens; leaving the
       // screens up would only produce more of the same error. Drop to sign-in.
-      if (error instanceof Failure && error.kind === 'authentication' && !store.api.tokens.read()) {
+      if (
+        error instanceof Failure &&
+        error.kind === 'authentication' &&
+        !store.api.tokens.read()
+      ) {
         store.forgetSession();
       }
     },
@@ -66,8 +70,16 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="toast-region" aria-live="polite">
         {toast && (
-          <div key={toast.id} className={`toast ${toast.kind}`} role={toast.kind === 'error' ? 'alert' : 'status'}>
-            {toast.kind === 'error' ? <CircleAlert size={22} aria-hidden /> : <CircleCheck size={22} aria-hidden />}
+          <div
+            key={toast.id}
+            className={`toast ${toast.kind}`}
+            role={toast.kind === 'error' ? 'alert' : 'status'}
+          >
+            {toast.kind === 'error' ? (
+              <CircleAlert size={22} aria-hidden />
+            ) : (
+              <CircleCheck size={22} aria-hidden />
+            )}
             <span className="grow">{toast.message}</span>
           </div>
         )}
@@ -179,16 +191,18 @@ interface ConfirmOptions {
   destructive?: boolean;
 }
 
-const ConfirmContext = createContext<((options: ConfirmOptions) => Promise<boolean>) | null>(null);
+const ConfirmContext = createContext<
+  ((options: ConfirmOptions) => Promise<boolean>) | null
+>(null);
 
 /**
  * Confirmation before anything destructive or outward-facing. The confirming
  * button says what will happen rather than "OK".
  */
 export function ConfirmProvider({ children }: { children: ReactNode }) {
-  const [pending, setPending] = useState<(ConfirmOptions & { resolve: (v: boolean) => void }) | null>(
-    null,
-  );
+  const [pending, setPending] = useState<
+    (ConfirmOptions & { resolve: (v: boolean) => void }) | null
+  >(null);
 
   const confirm = useCallback(
     (options: ConfirmOptions) =>

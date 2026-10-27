@@ -3,7 +3,18 @@ import { useState } from 'react';
 
 import { useConfirm } from '../components/feedback';
 import { LiveMap } from '../components/LiveMap';
-import { Button, Card, EmptyState, LoadFailure, LoadingBlock, Note, RefreshButton, Screen, StaleBanner, TextField } from '../components/ui';
+import {
+  Button,
+  Card,
+  EmptyState,
+  LoadFailure,
+  LoadingBlock,
+  Note,
+  RefreshButton,
+  Screen,
+  StaleBanner,
+  TextField,
+} from '../components/ui';
 import { useRun } from '../components/useRun';
 import { formatClock, plural } from '../core/format';
 import {
@@ -15,7 +26,12 @@ import {
   type ServiceArea,
 } from '../domain/liveMap';
 import { canAdminister } from '../domain/models';
-import { useOperatorId, useResource, useSelectedOrganization, useStore } from '../state/context';
+import {
+  useOperatorId,
+  useResource,
+  useSelectedOrganization,
+  useStore,
+} from '../state/context';
 import { keys, LIVE_POLL_MS } from '../state/opsStore';
 import { useLiveRides, useNow } from '../state/tracking';
 
@@ -28,15 +44,21 @@ import { useLiveRides, useNow } from '../state/tracking';
  */
 export function LiveMapScreen() {
   const organizationId = useOperatorId();
-  const board = useResource(keys.liveBoard(organizationId), (api) => api.liveBoard(organizationId), {
-    pollMs: LIVE_POLL_MS,
-  });
+  const board = useResource(
+    keys.liveBoard(organizationId),
+    (api) => api.liveBoard(organizationId),
+    {
+      pollMs: LIVE_POLL_MS,
+    },
+  );
 
   let body;
   if (board.value) {
     body = (
       <>
-        {board.error ? <StaleBanner error={board.error} onRetry={board.reload} /> : null}
+        {board.error ? (
+          <StaleBanner error={board.error} onRetry={board.reload} />
+        ) : null}
         <LiveMapBody board={board.value} />
       </>
     );
@@ -79,9 +101,18 @@ function LiveMapBody({ board }: { board: LiveBoard }) {
         />
       </div>
       <div className="stack gap-sm live-side">
-        <ServiceAreaCard area={board.serviceArea} isAdmin={isAdmin} draft={draft} onDraft={setDraft} />
+        <ServiceAreaCard
+          area={board.serviceArea}
+          isAdmin={isAdmin}
+          draft={draft}
+          onDraft={setDraft}
+        />
         {rides.length === 0 ? (
-          <EmptyState icon={Navigation} title="No rides under way" message="Cars appear here once a ride is assigned." />
+          <EmptyState
+            icon={Navigation}
+            title="No rides under way"
+            message="Cars appear here once a ride is assigned."
+          />
         ) : (
           <>
             <div className="t-label">{plural(rides.length, 'ride')} under way</div>
@@ -92,7 +123,11 @@ function LiveMapBody({ board }: { board: LiveBoard }) {
                     ride={ride}
                     now={now}
                     selected={ride.rideId === selectedRideId}
-                    onSelect={() => setSelectedRideId(ride.rideId === selectedRideId ? null : ride.rideId)}
+                    onSelect={() =>
+                      setSelectedRideId(
+                        ride.rideId === selectedRideId ? null : ride.rideId,
+                      )
+                    }
                   />
                 </li>
               ))}
@@ -104,7 +139,12 @@ function LiveMapBody({ board }: { board: LiveBoard }) {
   );
 }
 
-function RideCard(props: { ride: LiveRide; now: Date; selected: boolean; onSelect: () => void }) {
+function RideCard(props: {
+  ride: LiveRide;
+  now: Date;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const { ride, now } = props;
   const freshness = freshnessOf(ride.position, now);
 
@@ -124,13 +164,17 @@ function RideCard(props: { ride: LiveRide; now: Date; selected: boolean; onSelec
       <div className="row">
         <span className="t-title grow">{ride.driverName}</span>
         {ride.etaMinutes != null && freshness !== 'lost' && (
-          <span className="t-label" aria-label={`Arriving in about ${ride.etaMinutes} minutes`}>
+          <span
+            className="t-label"
+            aria-label={`Arriving in about ${ride.etaMinutes} minutes`}
+          >
             ~{ride.etaMinutes} min
           </span>
         )}
       </div>
       <div className="t-small mt-xs">
-        {rideStatusLabel(ride.status)} · {ride.patientName} · pickup {formatClock(ride.scheduledPickupAt)}
+        {rideStatusLabel(ride.status)} · {ride.patientName} · pickup{' '}
+        {formatClock(ride.scheduledPickupAt)}
       </div>
       <div className="t-small mt-xs">
         {where}
@@ -149,7 +193,8 @@ interface RadiusDraft {
 
 function describeArea(area: ServiceArea | null): string {
   if (!area) return 'Not set — nothing in the queue is flagged.';
-  if (area.kind === 'radius') return `Within ${area.radiusMiles} miles of the point on the map.`;
+  if (area.kind === 'radius')
+    return `Within ${area.radiusMiles} miles of the point on the map.`;
   return `An outline of ${area.points.length} points.`;
 }
 
@@ -179,7 +224,11 @@ function ServiceAreaCard(props: {
     if (!draft?.center) return;
     const center = draft.center;
     const result = await run(() =>
-      store.api.setServiceArea(organizationId, { kind: 'radius', center, radiusMiles: draft.radiusMiles }),
+      store.api.setServiceArea(organizationId, {
+        kind: 'radius',
+        center,
+        radiusMiles: draft.radiusMiles,
+      }),
     );
     if (result.ok) {
       onDraft(null);
@@ -196,16 +245,22 @@ function ServiceAreaCard(props: {
     });
     if (!yes) return;
     const result = await run(() => store.api.clearServiceArea(organizationId));
-    if (result.ok) store.invalidate(keys.liveBoard(organizationId), keys.queue(organizationId));
+    if (result.ok)
+      store.invalidate(keys.liveBoard(organizationId), keys.queue(organizationId));
   };
 
   if (draft) {
-    const radiusError = draft.radiusMiles > 0 && draft.radiusMiles <= 250 ? null : 'Between 0 and 250 miles.';
+    const radiusError =
+      draft.radiusMiles > 0 && draft.radiusMiles <= 250
+        ? null
+        : 'Between 0 and 250 miles.';
     return (
       <Card label="Service area">
         <div className="t-title">Set the service area</div>
         <Note icon={MapPin}>
-          {draft.center ? 'Click the map again to move the centre.' : 'Click the map where the area is centred.'}
+          {draft.center
+            ? 'Click the map again to move the centre.'
+            : 'Click the map where the area is centred.'}
         </Note>
         <TextField
           label="Radius (miles)"
@@ -218,7 +273,11 @@ function ServiceAreaCard(props: {
           }}
         />
         <div className="row mt-sm">
-          <Button onClick={() => void save()} busy={busy} disabled={!draft.center || radiusError !== null}>
+          <Button
+            onClick={() => void save()}
+            busy={busy}
+            disabled={!draft.center || radiusError !== null}
+          >
             Save area
           </Button>
           <Button variant="text" onClick={() => onDraft(null)} disabled={busy}>
@@ -242,7 +301,12 @@ function ServiceAreaCard(props: {
             {props.area ? 'Change' : 'Set area'}
           </Button>
           {props.area && (
-            <Button variant="text" icon={Trash2} onClick={() => void remove()} busy={busy}>
+            <Button
+              variant="text"
+              icon={Trash2}
+              onClick={() => void remove()}
+              busy={busy}
+            >
               Remove
             </Button>
           )}

@@ -30,7 +30,12 @@ import {
   type DriverStatus,
 } from '../domain/dispatch';
 import { canAdminister, vehicleLabel, type Driver } from '../domain/models';
-import { useOperatorId, useResource, useSelectedOrganization, useStore } from '../state/context';
+import {
+  useOperatorId,
+  useResource,
+  useSelectedOrganization,
+  useStore,
+} from '../state/context';
 import { keys } from '../state/opsStore';
 import { DocumentReviewSheet } from './DocumentReviewSheet';
 import { useOpenThread } from './messages/useOpenThread';
@@ -49,7 +54,9 @@ export function RosterScreen() {
   const organizationId = useOperatorId();
   const organization = useSelectedOrganization();
   const administer = organization ? canAdminister(organization) : false;
-  const drivers = useResource(keys.drivers(organizationId), (api) => api.drivers(organizationId));
+  const drivers = useResource(keys.drivers(organizationId), (api) =>
+    api.drivers(organizationId),
+  );
   const [paperworkFor, setPaperworkFor] = useState<Driver | null>(null);
   const [adding, setAdding] = useState(false);
 
@@ -57,10 +64,16 @@ export function RosterScreen() {
   if (drivers.value) {
     body =
       drivers.value.length === 0 ? (
-        <EmptyState icon={Users} title="No drivers yet" message="Add a vehicle first, then the driver who will be in it." />
+        <EmptyState
+          icon={Users}
+          title="No drivers yet"
+          message="Add a vehicle first, then the driver who will be in it."
+        />
       ) : (
         <>
-          {drivers.error ? <StaleBanner error={drivers.error} onRetry={drivers.reload} /> : null}
+          {drivers.error ? (
+            <StaleBanner error={drivers.error} onRetry={drivers.reload} />
+          ) : null}
           <ul className="list">
             {drivers.value.map((driver) => (
               <li key={driver.id}>
@@ -96,7 +109,12 @@ export function RosterScreen() {
       }
     >
       {body}
-      {adding && <AddDriverDialog organizationId={organizationId} onClose={() => setAdding(false)} />}
+      {adding && (
+        <AddDriverDialog
+          organizationId={organizationId}
+          onClose={() => setAdding(false)}
+        />
+      )}
       {/*
         A sheet rather than a page: paperwork is reviewed *while* looking at
         the roster, and losing one's place in a list of forty drivers is how
@@ -135,7 +153,9 @@ function DriverRow(props: {
     act(() => store.api.setShift({ organizationId, driverId: driver.id, onShift }));
 
   const changeStatus = (to: DriverStatus, reason?: string) =>
-    act(() => store.api.setDriverStatus({ organizationId, driverId: driver.id, to, reason }));
+    act(() =>
+      store.api.setDriverStatus({ organizationId, driverId: driver.id, to, reason }),
+    );
 
   const thread = useOpenThread();
 
@@ -149,9 +169,15 @@ function DriverRow(props: {
         {vehicleLabel(driver.vehicle)} · {driver.vehicle.licensePlate}
         {driver.vehicle.isWheelchairAccessible ? ' · accessible' : ''}
       </div>
-      {driver.suspensionReason && <div className="t-small error-text mt-xs">Suspended: {driver.suspensionReason}</div>}
+      {driver.suspensionReason && (
+        <div className="t-small error-text mt-xs">
+          Suspended: {driver.suspensionReason}
+        </div>
+      )}
       {/* On the row, so an admin about to approve somebody sees it costs money before they click. */}
-      {driver.occupiesSeat && <div className="t-small mt-xs">Occupies a billable seat</div>}
+      {driver.occupiesSeat && (
+        <div className="t-small mt-xs">Occupies a billable seat</div>
+      )}
       <div className="row mt-sm">
         <Switch
           label="On shift"
@@ -167,7 +193,13 @@ function DriverRow(props: {
             icon={MessageSquare}
             busy={thread.busy}
             aria-label={`Message ${driver.displayName}`}
-            onClick={() => void thread.openThread({ kind: 'dispatchDriver', organizationId, driverId: driver.id })}
+            onClick={() =>
+              void thread.openThread({
+                kind: 'dispatchDriver',
+                organizationId,
+                driverId: driver.id,
+              })
+            }
           >
             Message
           </Button>
@@ -176,7 +208,12 @@ function DriverRow(props: {
       {props.canAdminister && (
         <div className="actions-row divided">
           {/* Paperwork first: approval is refused without it. */}
-          <Button variant="outlined" icon={FolderOpen} disabled={busy} onClick={props.onPaperwork}>
+          <Button
+            variant="outlined"
+            icon={FolderOpen}
+            disabled={busy}
+            onClick={props.onPaperwork}
+          >
             Paperwork
           </Button>
           {nextStatusesFor(driver.status).map((to) => (
@@ -184,7 +221,11 @@ function DriverRow(props: {
               key={to}
               variant="outlined"
               disabled={busy}
-              onClick={() => (transitionNeedsReason(to) ? setAskingReasonFor(to) : void changeStatus(to))}
+              onClick={() =>
+                transitionNeedsReason(to)
+                  ? setAskingReasonFor(to)
+                  : void changeStatus(to)
+              }
             >
               {transitionActionLabel[to]}
             </Button>
@@ -220,7 +261,9 @@ function AddDriverDialog(props: { organizationId: string; onClose: () => void })
   const store = useStore();
   const { showFailure } = useFeedback();
   const { run, busy } = useRun();
-  const vehicles = useResource(keys.vehicles(props.organizationId), (api) => api.vehicles(props.organizationId));
+  const vehicles = useResource(keys.vehicles(props.organizationId), (api) =>
+    api.vehicles(props.organizationId),
+  );
 
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -230,7 +273,11 @@ function AddDriverDialog(props: { organizationId: string; onClose: () => void })
   const [displayName, setDisplayName] = useState('');
   const [vehicleId, setVehicleId] = useState('');
   const [yearsDriving, setYearsDriving] = useState('');
-  const [errors, setErrors] = useState<{ displayName?: string; vehicleId?: string; yearsDriving?: string }>({});
+  const [errors, setErrors] = useState<{
+    displayName?: string;
+    vehicleId?: string;
+    yearsDriving?: string;
+  }>({});
 
   async function lookUp(e: FormEvent) {
     e.preventDefault();
@@ -249,7 +296,8 @@ function AddDriverDialog(props: { organizationId: string; onClose: () => void })
     } catch (error) {
       // "Nobody we can add" belongs under the field, not in a toast that
       // disappears before it is read. Everything else is a real failure.
-      if (error instanceof Failure && error.kind === 'validation') setEmailError(error.message);
+      if (error instanceof Failure && error.kind === 'validation')
+        setEmailError(error.message);
       else showFailure(error);
     } finally {
       setLooking(false);
@@ -263,7 +311,10 @@ function AddDriverDialog(props: { organizationId: string; onClose: () => void })
     const next: typeof errors = {};
     if (displayName.trim() === '') next.displayName = 'Required';
     if (vehicleId === '') next.vehicleId = 'Choose the vehicle they will drive';
-    if (years !== undefined && !(Number.isInteger(years) && years >= 0 && years <= 60)) {
+    if (
+      years !== undefined &&
+      !(Number.isInteger(years) && years >= 0 && years <= 60)
+    ) {
       next.yearsDriving = 'A whole number from 0 to 60';
     }
     setErrors(next);
@@ -340,7 +391,8 @@ function AddDriverDialog(props: { organizationId: string; onClose: () => void })
         />
         {vehicles.value && fleet.length === 0 ? (
           <div className="t-small error-text">
-            There are no vehicles yet. <Link to="/fleet">Add one on the Fleet screen</Link> first.
+            There are no vehicles yet.{' '}
+            <Link to="/fleet">Add one on the Fleet screen</Link> first.
           </div>
         ) : (
           <SelectField
@@ -370,7 +422,8 @@ function AddDriverDialog(props: { organizationId: string; onClose: () => void })
           onChange={(e) => setYearsDriving(e.target.value)}
         />
         <div className="t-small muted">
-          They join as pending approval. Once they have uploaded their paperwork in the driver app, approve them here.
+          They join as pending approval. Once they have uploaded their paperwork in the
+          driver app, approve them here.
         </div>
         <div className="dialog-actions">
           <Button variant="text" disabled={busy} onClick={props.onClose}>
@@ -398,7 +451,10 @@ function ReasonDialog(props: {
 }) {
   const [reason, setReason] = useState('');
   return (
-    <Modal title={`Why ${driverStatusLabel[props.to].toLowerCase()}?`} onClose={props.onCancel}>
+    <Modal
+      title={`Why ${driverStatusLabel[props.to].toLowerCase()}?`}
+      onClose={props.onCancel}
+    >
       <TextArea
         label="Reason"
         helper="Recorded against this driver and in the audit log."

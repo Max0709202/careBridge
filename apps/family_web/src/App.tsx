@@ -14,7 +14,10 @@ import { Button, EmptyState, Page } from './components/ui';
 import { isSignedIn, unreadNotificationCount } from './state/careState';
 import { useCare } from './state/context';
 import { AcceptInvitationScreen } from './screens/auth/AcceptInvitationScreen';
-import { ForgotPasswordScreen, ResetPasswordScreen } from './screens/auth/PasswordResetScreens';
+import {
+  ForgotPasswordScreen,
+  ResetPasswordScreen,
+} from './screens/auth/PasswordResetScreens';
 import { RegisterScreen } from './screens/auth/RegisterScreen';
 import { SignInScreen } from './screens/auth/SignInScreen';
 import { VerifyEmailScreen } from './screens/auth/VerifyEmailScreen';
@@ -48,7 +51,10 @@ import { IncomingCallBanner } from './screens/messages/IncomingCallBanner';
 export function App({ messaging }: { messaging: MessagingStore }) {
   const state = useCare();
   const navigate = useNavigate();
-  const openThread = useCallback((id: string) => navigate(`/messages/${id}`), [navigate]);
+  const openThread = useCallback(
+    (id: string) => navigate(`/messages/${id}`),
+    [navigate],
+  );
 
   // Simplified mode raises the text floor for the whole document.
   useEffect(() => {
@@ -56,49 +62,56 @@ export function App({ messaging }: { messaging: MessagingStore }) {
   }, [state.simplifiedMode]);
 
   return (
-    <MessagingProvider store={messaging} active={isSignedIn(state)} openThread={openThread}>
+    <MessagingProvider
+      store={messaging}
+      active={isSignedIn(state)}
+      openThread={openThread}
+    >
       <IncomingCallBanner />
       <Routes>
-      <Route element={<SignedOutOnly />}>
-        <Route path="/sign-in" element={<SignInScreen />} />
-        <Route path="/register" element={<RegisterScreen />} />
-      </Route>
-
-      {/* Reached from an email, signed in or not. */}
-      <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
-      <Route path="/reset-password" element={<ResetPasswordScreen />} />
-      <Route path="/verify-email" element={<VerifyEmailScreen />} />
-
-      <Route element={<SignedInOnly />}>
-        <Route element={<HomeShell />}>
-          <Route path="/" element={<DashboardScreen />} />
-          <Route path="/appointments" element={<AppointmentsScreen />} />
-          {/* Declared before ':id' in spirit — react-router ranks static segments first. */}
-          <Route path="/appointments/new" element={<AppointmentFormScreen />} />
-          <Route path="/appointments/:id" element={<AppointmentDetailScreen />} />
-          <Route path="/appointments/:id/transport" element={<RideRequestScreen />} />
-          <Route path="/notifications" element={<NotificationsScreen />} />
-          <Route path="/settings" element={<SettingsScreen />} />
-          <Route path="/settings/security" element={<AccountSecurityScreen />} />
-          <Route path="/settings/security/two-factor" element={<TwoFactorScreen />} />
-          <Route path="/settings/security/delete" element={<DeleteAccountScreen />} />
-          <Route path="/settings/notifications" element={<NotificationPreferencesScreen />} />
-          <Route path="/settings/plan" element={<PlanScreen />} />
-          <Route path="/settings/calls" element={<CallSettingsScreen />} />
+        <Route element={<SignedOutOnly />}>
+          <Route path="/sign-in" element={<SignInScreen />} />
+          <Route path="/register" element={<RegisterScreen />} />
         </Route>
 
-        {/* Full-screen: tracking and forms get the whole screen, no navigation bar. */}
-        <Route path="/accept-invitation" element={<AcceptInvitationScreen />} />
-        <Route path="/patients/new" element={<PatientFormScreen />} />
-        <Route path="/patients/:id" element={<PatientDetailScreen />} />
-        <Route path="/patients/:id/care-circle" element={<CareCircleScreen />} />
-        <Route path="/patients/:id/edit" element={<PatientFormScreen />} />
-        <Route path="/rides/:id" element={<RideDetailScreen />} />
-        <Route path="/rides/:id/track" element={<TrackingScreen />} />
-        <Route path="/messages/:conversationId" element={<ConversationScreen />} />
-      </Route>
+        {/* Reached from an email, signed in or not. */}
+        <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+        <Route path="/reset-password" element={<ResetPasswordScreen />} />
+        <Route path="/verify-email" element={<VerifyEmailScreen />} />
 
-      <Route path="*" element={<NotFound />} />
+        <Route element={<SignedInOnly />}>
+          <Route element={<HomeShell />}>
+            <Route path="/" element={<DashboardScreen />} />
+            <Route path="/appointments" element={<AppointmentsScreen />} />
+            {/* Declared before ':id' in spirit — react-router ranks static segments first. */}
+            <Route path="/appointments/new" element={<AppointmentFormScreen />} />
+            <Route path="/appointments/:id" element={<AppointmentDetailScreen />} />
+            <Route path="/appointments/:id/transport" element={<RideRequestScreen />} />
+            <Route path="/notifications" element={<NotificationsScreen />} />
+            <Route path="/settings" element={<SettingsScreen />} />
+            <Route path="/settings/security" element={<AccountSecurityScreen />} />
+            <Route path="/settings/security/two-factor" element={<TwoFactorScreen />} />
+            <Route path="/settings/security/delete" element={<DeleteAccountScreen />} />
+            <Route
+              path="/settings/notifications"
+              element={<NotificationPreferencesScreen />}
+            />
+            <Route path="/settings/plan" element={<PlanScreen />} />
+            <Route path="/settings/calls" element={<CallSettingsScreen />} />
+          </Route>
+
+          {/* Full-screen: tracking and forms get the whole screen, no navigation bar. */}
+          <Route path="/accept-invitation" element={<AcceptInvitationScreen />} />
+          <Route path="/patients/new" element={<PatientFormScreen />} />
+          <Route path="/patients/:id" element={<PatientDetailScreen />} />
+          <Route path="/patients/:id/care-circle" element={<CareCircleScreen />} />
+          <Route path="/patients/:id/edit" element={<PatientFormScreen />} />
+          <Route path="/rides/:id" element={<RideDetailScreen />} />
+          <Route path="/rides/:id/track" element={<TrackingScreen />} />
+          <Route path="/messages/:conversationId" element={<ConversationScreen />} />
+        </Route>
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </MessagingProvider>
   );
@@ -142,8 +155,18 @@ const tabs = [
     icon: CalendarDays,
     match: (p: string) => p.startsWith('/appointments'),
   },
-  { to: '/notifications', label: 'Updates', icon: Bell, match: (p: string) => p === '/notifications' },
-  { to: '/settings', label: 'Settings', icon: Settings, match: (p: string) => p.startsWith('/settings') },
+  {
+    to: '/notifications',
+    label: 'Updates',
+    icon: Bell,
+    match: (p: string) => p === '/notifications',
+  },
+  {
+    to: '/settings',
+    label: 'Settings',
+    icon: Settings,
+    match: (p: string) => p.startsWith('/settings'),
+  },
 ];
 
 /**

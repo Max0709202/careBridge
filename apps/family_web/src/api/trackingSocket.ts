@@ -89,7 +89,8 @@ export class TrackingSocket {
       transports: ['websocket'],
       // A function, so every (re)connect presents the token as it is now
       // rather than the one the page started with.
-      auth: (supply: (data: object) => void) => supply({ token: this.tokens.read()?.accessToken ?? '' }),
+      auth: (supply: (data: object) => void) =>
+        supply({ token: this.tokens.read()?.accessToken ?? '' }),
       forceNew: true,
     });
 

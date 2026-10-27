@@ -25,13 +25,17 @@ export function App({ messaging }: { messaging: MessagingStore }) {
   const store = useStore();
   const { signedIn } = useDriver();
   const navigate = useNavigate();
-  const openThread = useCallback((id: string) => navigate(`/messages/${id}`), [navigate]);
+  const openThread = useCallback(
+    (id: string) => navigate(`/messages/${id}`),
+    [navigate],
+  );
 
   // A phone that was locked for twenty minutes should not show twenty-minute
   // old work when it comes back: re-read the moment the page is on screen.
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState === 'visible' && store.getState().signedIn) void store.refreshJobs();
+      if (document.visibilityState === 'visible' && store.getState().signedIn)
+        void store.refreshJobs();
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
@@ -41,17 +45,20 @@ export function App({ messaging }: { messaging: MessagingStore }) {
     <MessagingProvider store={messaging} active={signedIn} openThread={openThread}>
       <IncomingCallBanner />
       <Routes>
-      <Route path="/sign-in" element={signedIn ? <Navigate to="/today" replace /> : <SignInScreen />} />
-      <Route element={<SignedInOnly />}>
-        <Route path="/" element={<Navigate to="/today" replace />} />
-        <Route path="/today" element={<TodayScreen />} />
-        <Route path="/documents" element={<DocumentsScreen />} />
-        <Route path="/job/:rideId" element={<JobScreen />} />
-        <Route path="/messages" element={<MessagesScreen />} />
-        <Route path="/messages/:conversationId" element={<ConversationScreen />} />
-        <Route path="/settings/calls" element={<CallSettingsScreen />} />
-      </Route>
-      <Route path="*" element={<NotFound />} />
+        <Route
+          path="/sign-in"
+          element={signedIn ? <Navigate to="/today" replace /> : <SignInScreen />}
+        />
+        <Route element={<SignedInOnly />}>
+          <Route path="/" element={<Navigate to="/today" replace />} />
+          <Route path="/today" element={<TodayScreen />} />
+          <Route path="/documents" element={<DocumentsScreen />} />
+          <Route path="/job/:rideId" element={<JobScreen />} />
+          <Route path="/messages" element={<MessagesScreen />} />
+          <Route path="/messages/:conversationId" element={<ConversationScreen />} />
+          <Route path="/settings/calls" element={<CallSettingsScreen />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </MessagingProvider>
   );

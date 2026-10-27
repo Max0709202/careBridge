@@ -75,7 +75,8 @@ export class MessagingSocket {
     const socket = this.connect(`${this.origin}/messaging`, {
       path: '/api/v1/socket.io',
       transports: ['websocket'],
-      auth: (supply: (data: object) => void) => supply({ token: this.tokens.read()?.accessToken ?? '' }),
+      auth: (supply: (data: object) => void) =>
+        supply({ token: this.tokens.read()?.accessToken ?? '' }),
       forceNew: true,
     });
 
@@ -121,7 +122,11 @@ export class MessagingSocket {
   }
 
   private onMessage(data: unknown): void {
-    const payload = data as { conversationId?: unknown; rideId?: unknown; message?: S['MessageDto'] } | null;
+    const payload = data as {
+      conversationId?: unknown;
+      rideId?: unknown;
+      message?: S['MessageDto'];
+    } | null;
     const message = payload?.message ? messageFromWire(payload.message) : null;
     if (!message || typeof payload?.conversationId !== 'string') return;
     this.emit({

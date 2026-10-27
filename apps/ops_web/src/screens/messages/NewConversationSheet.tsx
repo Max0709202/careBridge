@@ -12,9 +12,14 @@ import { keys } from '../../state/opsStore';
  * Start a thread with one driver, or post to the whole team. A family thread
  * starts from the queue, where the trip it is about is already in view.
  */
-export function NewConversationSheet(props: { organizationId: string; onClose: (opened: Conversation | null) => void }) {
+export function NewConversationSheet(props: {
+  organizationId: string;
+  onClose: (opened: Conversation | null) => void;
+}) {
   const store = useMessagingStore();
-  const drivers = useResource(keys.drivers(props.organizationId), (api) => api.drivers(props.organizationId));
+  const drivers = useResource(keys.drivers(props.organizationId), (api) =>
+    api.drivers(props.organizationId),
+  );
   const { run, busy } = useRun();
   const working = (drivers.value ?? []).filter((d) => d.status === 'approved');
 
@@ -29,7 +34,9 @@ export function NewConversationSheet(props: { organizationId: string; onClose: (
         variant="tonal"
         icon={Users}
         disabled={busy}
-        onClick={() => void open({ kind: 'operatorDrivers', organizationId: props.organizationId })}
+        onClick={() =>
+          void open({ kind: 'operatorDrivers', organizationId: props.organizationId })
+        }
       >
         Message every driver
       </Button>
@@ -46,7 +53,11 @@ export function NewConversationSheet(props: { organizationId: string; onClose: (
                 variant="text"
                 disabled={busy}
                 onClick={() =>
-                  void open({ kind: 'dispatchDriver', organizationId: props.organizationId, driverId: driver.id })
+                  void open({
+                    kind: 'dispatchDriver',
+                    organizationId: props.organizationId,
+                    driverId: driver.id,
+                  })
                 }
               >
                 {driver.displayName}

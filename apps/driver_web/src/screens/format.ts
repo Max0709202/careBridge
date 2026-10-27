@@ -17,5 +17,9 @@ export function formatCountdown(seconds: number): string {
 
 /** "Wed 1 Oct" — a day in a conversation, in the device's locale. */
 export function formatDay(at: Date): string {
-  return at.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+  return at.toLocaleDateString([], {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 }

@@ -21,13 +21,15 @@ export class Attention {
   private audio: AudioContext | null = null;
 
   constructor(private readonly storage: Storage | undefined = safeLocalStorage()) {
-    this.baseTitle = typeof document !== 'undefined' ? document.title.replace(/^\(\d+\)\s*/, '') : '';
+    this.baseTitle =
+      typeof document !== 'undefined' ? document.title.replace(/^\(\d+\)\s*/, '') : '';
   }
 
   /** "(3) CareBridge", or the plain title at zero. */
   setUnread(count: number): void {
     if (typeof document === 'undefined') return;
-    document.title = count > 0 ? `(${count > 99 ? '99+' : count}) ${this.baseTitle}` : this.baseTitle;
+    document.title =
+      count > 0 ? `(${count > 99 ? '99+' : count}) ${this.baseTitle}` : this.baseTitle;
   }
 
   get soundOn(): boolean {
@@ -63,15 +65,25 @@ export class Attention {
   }
 
   /** A new message or call. `urgent` rings twice — used for calls. */
-  alert(input: { title: string; body: string; tag: string; urgent?: boolean; onOpen?: () => void }): void {
+  alert(input: {
+    title: string;
+    body: string;
+    tag: string;
+    urgent?: boolean;
+    onOpen?: () => void;
+  }): void {
     if (this.soundOn) {
       this.chime();
       if (input.urgent) setTimeout(() => this.chime(), 400);
     }
-    if (typeof document === 'undefined' || document.visibilityState !== 'hidden') return;
+    if (typeof document === 'undefined' || document.visibilityState !== 'hidden')
+      return;
     if (!this.notificationsAllowed) return;
     try {
-      const notification = new Notification(input.title, { body: input.body, tag: input.tag });
+      const notification = new Notification(input.title, {
+        body: input.body,
+        tag: input.tag,
+      });
       notification.onclick = () => {
         window.focus();
         input.onOpen?.();
@@ -86,7 +98,8 @@ export class Attention {
     try {
       const AudioCtor =
         window.AudioContext ??
-        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
       if (!AudioCtor) return;
       this.audio ??= new AudioCtor();
       const ctx = this.audio;

@@ -15,7 +15,17 @@ import {
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { AppCard, Avatar, Button, Divider, IconButton, InfoRow, NotAvailable, Page, SectionHeader } from '../../components/ui';
+import {
+  AppCard,
+  Avatar,
+  Button,
+  Divider,
+  IconButton,
+  InfoRow,
+  NotAvailable,
+  Page,
+  SectionHeader,
+} from '../../components/ui';
 import { maskPhone } from '../../core/formatting';
 import {
   addressSingleLine,
@@ -55,7 +65,13 @@ export function PatientDetailScreen() {
       actions={
         // Hidden rather than shown-and-refused: offering a control the rules
         // reject teaches people the app is unreliable.
-        canEdit && <IconButton icon={Pencil} label="Edit profile" onClick={() => navigate(`/patients/${id}/edit`)} />
+        canEdit && (
+          <IconButton
+            icon={Pencil}
+            label="Edit profile"
+            onClick={() => navigate(`/patients/${id}/edit`)}
+          />
+        )
       }
     >
       <div className="stack">
@@ -64,17 +80,37 @@ export function PatientDetailScreen() {
             <Avatar text={patientFirstInitial(patient)} size="xl" />
             <div className="grow">
               <p className="t-headline">{patient.preferredName}</p>
-              {patient.legalName && <p className="t-small muted">Legal name: {patient.legalName}</p>}
+              {patient.legalName && (
+                <p className="t-small muted">Legal name: {patient.legalName}</p>
+              )}
             </div>
           </div>
           <Divider />
           <InfoRow icon={Phone} label="Phone" value={patient.phone} />
-          <InfoRow icon={House} label="Pickup address" value={addressSingleLine(patient.homeAddress)} />
+          <InfoRow
+            icon={House}
+            label="Pickup address"
+            value={addressSingleLine(patient.homeAddress)}
+          />
           {patient.homeAddress.accessNotes && (
-            <InfoRow icon={Info} label="How to find them" value={patient.homeAddress.accessNotes} />
+            <InfoRow
+              icon={Info}
+              label="How to find them"
+              value={patient.homeAddress.accessNotes}
+            />
           )}
-          {patient.ageBand && <InfoRow icon={Cake} label="Age range" value={ageBandLabel[patient.ageBand]} />}
-          <InfoRow icon={Languages} label="Preferred language" value={patient.preferredLanguage} />
+          {patient.ageBand && (
+            <InfoRow
+              icon={Cake}
+              label="Age range"
+              value={ageBandLabel[patient.ageBand]}
+            />
+          )}
+          <InfoRow
+            icon={Languages}
+            label="Preferred language"
+            value={patient.preferredLanguage}
+          />
         </AppCard>
 
         <div className="mt-lg">
@@ -95,7 +131,9 @@ export function PatientDetailScreen() {
                 })}
               </div>
             )}
-            {patient.mobilityNotes && <p className="t-body mt-sm">{patient.mobilityNotes}</p>}
+            {patient.mobilityNotes && (
+              <p className="t-body mt-sm">{patient.mobilityNotes}</p>
+            )}
           </AppCard>
         </div>
 
@@ -104,7 +142,8 @@ export function PatientDetailScreen() {
           {patient.emergencyContacts.length === 0 ? (
             <AppCard>
               <p className="t-body muted">
-                No emergency contact recorded. Add one so a driver or dispatcher knows who to call.
+                No emergency contact recorded. Add one so a driver or dispatcher knows
+                who to call.
               </p>
             </AppCard>
           ) : (
@@ -144,18 +183,30 @@ export function PatientDetailScreen() {
  * What this account may do for this person — shown even with every
  * permission, because the point is to make the per-person access model visible.
  */
-function AccessSection({ patientId, access }: { patientId: string; access: PatientAccess }) {
+function AccessSection({
+  patientId,
+  access,
+}: {
+  patientId: string;
+  access: PatientAccess;
+}) {
   const navigate = useNavigate();
   return (
     <>
       <SectionHeader
         title="Your access"
         subtitle={
-          accessIsPrimary(access) ? 'You are the organiser for this person.' : 'Granted by another family member.'
+          accessIsPrimary(access)
+            ? 'You are the organiser for this person.'
+            : 'Granted by another family member.'
         }
       />
       <AppCard>
-        <InfoRow icon={Users} label="Relationship" value={relationshipLabel[access.relationship]} />
+        <InfoRow
+          icon={Users}
+          label="Relationship"
+          value={relationshipLabel[access.relationship]}
+        />
         <Divider />
         {FAMILY_PERMISSIONS.map((permission) => {
           const granted = accessCan(access, permission);
@@ -166,14 +217,21 @@ function AccessSection({ patientId, access }: { patientId: string; access: Patie
               ) : (
                 <CircleMinus size={22} className="muted" aria-label="Not allowed" />
               )}
-              <p className={`t-body grow ${granted ? '' : 'muted'}`}>{permissionLabel[permission]}</p>
+              <p className={`t-body grow ${granted ? '' : 'muted'}`}>
+                {permissionLabel[permission]}
+              </p>
             </div>
           );
         })}
         {accessCan(access, 'manageAccess') && (
           <>
             <Divider />
-            <Button variant="outlined" icon={Users} block onClick={() => navigate(`/patients/${patientId}/care-circle`)}>
+            <Button
+              variant="outlined"
+              icon={Users}
+              block
+              onClick={() => navigate(`/patients/${patientId}/care-circle`)}
+            >
               Manage the care circle
             </Button>
           </>

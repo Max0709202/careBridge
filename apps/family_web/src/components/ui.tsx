@@ -17,7 +17,8 @@ import { useGoBack } from './navigation';
 
 export type Ink = 'positive' | 'caution' | 'critical' | 'info' | 'neutral';
 
-const cx = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(' ');
+const cx = (...names: (string | false | null | undefined)[]) =>
+  names.filter(Boolean).join(' ');
 
 // ─── cards ──────────────────────────────────────────────────────────────────
 
@@ -38,7 +39,12 @@ export function AppCard(props: {
   );
   if (props.onClick) {
     return (
-      <button type="button" className={className} onClick={props.onClick} aria-label={props.ariaLabel}>
+      <button
+        type="button"
+        className={className}
+        onClick={props.onClick}
+        aria-label={props.ariaLabel}
+      >
         {props.children}
       </button>
     );
@@ -50,7 +56,11 @@ export function AppCard(props: {
   );
 }
 
-export function SectionHeader(props: { title: string; subtitle?: string; action?: ReactNode }) {
+export function SectionHeader(props: {
+  title: string;
+  subtitle?: string;
+  action?: ReactNode;
+}) {
   return (
     <div className="section-header">
       <div className="grow">
@@ -97,8 +107,12 @@ export function NotAvailable() {
   );
 }
 
-
-export function InfoRow(props: { label: string; value: string; icon?: LucideIcon; valueClass?: string }) {
+export function InfoRow(props: {
+  label: string;
+  value: string;
+  icon?: LucideIcon;
+  valueClass?: string;
+}) {
   const Icon = props.icon;
   return (
     <div className="info-row">
@@ -139,7 +153,12 @@ export function StatusPill(props: {
   const Icon = props.icon;
   return (
     <span
-      className={cx('pill', `ink-${props.ink}`, `bg-${props.ink}`, props.outlined && 'outlined')}
+      className={cx(
+        'pill',
+        `ink-${props.ink}`,
+        `bg-${props.ink}`,
+        props.outlined && 'outlined',
+      )}
       role="status"
       aria-label={`Status: ${props.label}`}
     >
@@ -178,7 +197,11 @@ export function Button({
   const variantClass =
     variant === 'outlined-danger' ? 'btn-outlined danger' : `btn-${variant}`;
   return (
-    <button type="button" className={cx('btn', variantClass, block && 'block', className)} {...rest}>
+    <button
+      type="button"
+      className={cx('btn', variantClass, block && 'block', className)}
+      {...rest}
+    >
       {Icon && <Icon size={20} aria-hidden />}
       {children}
     </button>
@@ -192,7 +215,13 @@ export function IconButton({
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { icon: LucideIcon; label: string }) {
   return (
-    <button type="button" className={cx('icon-btn', className)} aria-label={label} title={label} {...rest}>
+    <button
+      type="button"
+      className={cx('icon-btn', className)}
+      aria-label={label}
+      title={label}
+      {...rest}
+    >
       <Icon size={22} aria-hidden />
     </button>
   );
@@ -215,7 +244,11 @@ export function TextField({
   trailing,
   ...input
 }: FieldChrome &
-  InputHTMLAttributes<HTMLInputElement> & { multiline?: boolean; rows?: number; trailing?: ReactNode }) {
+  InputHTMLAttributes<HTMLInputElement> & {
+    multiline?: boolean;
+    rows?: number;
+    trailing?: ReactNode;
+  }) {
   const id = useId();
   const described = `${id}-desc`;
   return (
@@ -231,7 +264,12 @@ export function TextField({
         />
       ) : trailing ? (
         <div className="input-affix">
-          <input id={id} aria-invalid={!!error} aria-describedby={described} {...input} />
+          <input
+            id={id}
+            aria-invalid={!!error}
+            aria-describedby={described}
+            {...input}
+          />
           {trailing}
         </div>
       ) : (
@@ -261,11 +299,20 @@ export function SelectField({
   return (
     <div className={cx('field', error && 'invalid')}>
       <label htmlFor={id}>{label}</label>
-      <select id={id} aria-invalid={!!error} aria-describedby={`${id}-desc`} {...select}>
+      <select
+        id={id}
+        aria-invalid={!!error}
+        aria-describedby={`${id}-desc`}
+        {...select}
+      >
         {children}
       </select>
       <div id={`${id}-desc`}>
-        {error ? <div className="field-error">{error}</div> : helper && <div className="helper">{helper}</div>}
+        {error ? (
+          <div className="field-error">{error}</div>
+        ) : (
+          helper && <div className="helper">{helper}</div>
+        )}
       </div>
     </div>
   );
@@ -373,13 +420,22 @@ export function Page(props: {
     <>
       {!props.bare && (
         <header className={cx('top-bar', scrolled && 'scrolled')}>
-          {props.back && <IconButton className="back" icon={ArrowLeft} label="Back" onClick={goBack} />}
+          {props.back && (
+            <IconButton
+              className="back"
+              icon={ArrowLeft}
+              label="Back"
+              onClick={goBack}
+            />
+          )}
           <h1>{props.title}</h1>
           {props.actions}
         </header>
       )}
       {props.below}
-      <main className={cx('screen-body', props.narrow && 'narrow')}>{props.children}</main>
+      <main className={cx('screen-body', props.narrow && 'narrow')}>
+        {props.children}
+      </main>
     </>
   );
 }

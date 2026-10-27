@@ -137,7 +137,11 @@ describe('configuration', () => {
       /STORAGE_LOCAL_DURABLE/,
     );
     expect(() =>
-      loadConfig({ ...fs, STORAGE_LOCAL_ROOT: './.storage', STORAGE_LOCAL_DURABLE: 'true' }),
+      loadConfig({
+        ...fs,
+        STORAGE_LOCAL_ROOT: './.storage',
+        STORAGE_LOCAL_DURABLE: 'true',
+      }),
     ).toThrow(/STORAGE_DRIVER=filesystem/);
   });
 
