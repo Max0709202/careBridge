@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Debug and profile builds get this from their own manifests; a release
+         build without it cannot reach the API at all. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:label="CareBridge"
         android:name="${applicationName}"
