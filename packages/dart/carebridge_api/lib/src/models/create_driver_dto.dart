@@ -12,6 +12,7 @@ class CreateDriverDto {
     required this.vehicleId,
     this.yearsDriving,
     this.email,
+    this.userId,
   });
 
   /// First name and last initial. Never a full legal name.
@@ -26,6 +27,12 @@ class CreateDriverDto {
   /// **and has verified it**, so writing it here grants nothing on its own.
   final String? email;
 
+  /// An existing account to drive as, from `POST drivers/account-lookup`. The
+  /// account is linked straight away and the driver starts as `pendingApproval`
+  /// rather than `invited`; approval still needs their paperwork. When set,
+  /// `email` is ignored and the account's own address is recorded.
+  final String? userId;
+
   factory CreateDriverDto.fromJson(Map<String, dynamic> json) =>
       CreateDriverDto(
         displayName: json['displayName'] as String,
@@ -34,6 +41,7 @@ class CreateDriverDto {
             ? null
             : (json['yearsDriving'] as num).toDouble(),
         email: json['email'] as String?,
+        userId: json['userId'] as String?,
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -41,5 +49,6 @@ class CreateDriverDto {
     'vehicleId': vehicleId,
     if (yearsDriving != null) 'yearsDriving': yearsDriving,
     if (email != null) 'email': email,
+    if (userId != null) 'userId': userId,
   };
 }

@@ -7,18 +7,15 @@
 
 /// WebPushKeyDto, from the CareBridge API.
 class WebPushKeyDto {
-  const WebPushKeyDto({
-    this.publicKey,
-  });
+  const WebPushKeyDto({this.publicKey});
 
   /// base64url VAPID public key.
   final String? publicKey;
 
-  factory WebPushKeyDto.fromJson(Map<String, dynamic> json) => WebPushKeyDto(
-        publicKey: json['publicKey'] as String?,
-      );
+  factory WebPushKeyDto.fromJson(Map<String, dynamic> json) =>
+      WebPushKeyDto(publicKey: json['publicKey'] as String?);
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        if (publicKey != null) 'publicKey': publicKey,
-      };
+    if (publicKey != null) 'publicKey': publicKey,
+  };
 }

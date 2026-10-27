@@ -9,11 +9,7 @@ import '../models.dart';
 
 /// StartCallDto, from the CareBridge API.
 class StartCallDto {
-  const StartCallDto({
-    this.conversationId,
-    this.rideId,
-    required this.callee,
-  });
+  const StartCallDto({this.conversationId, this.rideId, required this.callee});
 
   final String? conversationId;
 
@@ -22,14 +18,14 @@ class StartCallDto {
   final CallCalleeDto callee;
 
   factory StartCallDto.fromJson(Map<String, dynamic> json) => StartCallDto(
-        conversationId: json['conversationId'] as String?,
-        rideId: json['rideId'] as String?,
-        callee: CallCalleeDto.fromJson(json['callee'] as Map<String, dynamic>),
-      );
+    conversationId: json['conversationId'] as String?,
+    rideId: json['rideId'] as String?,
+    callee: CallCalleeDto.fromJson(json['callee'] as Map<String, dynamic>),
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        if (conversationId != null) 'conversationId': conversationId,
-        if (rideId != null) 'rideId': rideId,
-        'callee': callee.toJson(),
-      };
+    if (conversationId != null) 'conversationId': conversationId,
+    if (rideId != null) 'rideId': rideId,
+    'callee': callee.toJson(),
+  };
 }

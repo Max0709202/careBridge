@@ -32,7 +32,8 @@ class OpenConversationDto {
   /// Tie the thread to one trip. `dispatchFamily` and `dispatchDriver` only.
   final String? rideId;
 
-  factory OpenConversationDto.fromJson(Map<String, dynamic> json) => OpenConversationDto(
+  factory OpenConversationDto.fromJson(Map<String, dynamic> json) =>
+      OpenConversationDto(
         kind: ConversationKind.fromJson(json['kind'] as String),
         organizationId: json['organizationId'] as String?,
         patientId: json['patientId'] as String?,
@@ -42,11 +43,11 @@ class OpenConversationDto {
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'kind': kind.wireName,
-        if (organizationId != null) 'organizationId': organizationId,
-        if (patientId != null) 'patientId': patientId,
-        if (driverId != null) 'driverId': driverId,
-        if (peerDriverId != null) 'peerDriverId': peerDriverId,
-        if (rideId != null) 'rideId': rideId,
-      };
+    'kind': kind.wireName,
+    if (organizationId != null) 'organizationId': organizationId,
+    if (patientId != null) 'patientId': patientId,
+    if (driverId != null) 'driverId': driverId,
+    if (peerDriverId != null) 'peerDriverId': peerDriverId,
+    if (rideId != null) 'rideId': rideId,
+  };
 }

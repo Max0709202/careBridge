@@ -29,7 +29,8 @@ class ConversationRideDto {
   /// already see it on the ride.
   final String patientName;
 
-  factory ConversationRideDto.fromJson(Map<String, dynamic> json) => ConversationRideDto(
+  factory ConversationRideDto.fromJson(Map<String, dynamic> json) =>
+      ConversationRideDto(
         id: json['id'] as String,
         status: RideStatus.fromJson(json['status'] as String),
         direction: json['direction'] as String,
@@ -38,10 +39,10 @@ class ConversationRideDto {
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'status': status.wireName,
-        'direction': direction,
-        'scheduledPickupAt': scheduledPickupAt.toIso8601String(),
-        'patientName': patientName,
-      };
+    'id': id,
+    'status': status.wireName,
+    'direction': direction,
+    'scheduledPickupAt': scheduledPickupAt.toIso8601String(),
+    'patientName': patientName,
+  };
 }

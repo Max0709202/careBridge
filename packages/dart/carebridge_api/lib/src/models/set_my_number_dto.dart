@@ -7,18 +7,13 @@
 
 /// SetMyNumberDto, from the CareBridge API.
 class SetMyNumberDto {
-  const SetMyNumberDto({
-    required this.phone,
-  });
+  const SetMyNumberDto({required this.phone});
 
   /// Written any reasonable way; stored as E.164. An empty string removes it.
   final String phone;
 
-  factory SetMyNumberDto.fromJson(Map<String, dynamic> json) => SetMyNumberDto(
-        phone: json['phone'] as String,
-      );
+  factory SetMyNumberDto.fromJson(Map<String, dynamic> json) =>
+      SetMyNumberDto(phone: json['phone'] as String);
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'phone': phone,
-      };
+  Map<String, dynamic> toJson() => <String, dynamic>{'phone': phone};
 }

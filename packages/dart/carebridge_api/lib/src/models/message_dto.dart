@@ -43,24 +43,24 @@ class MessageDto {
   final bool mine;
 
   factory MessageDto.fromJson(Map<String, dynamic> json) => MessageDto(
-        id: json['id'] as String,
-        conversationId: json['conversationId'] as String,
-        senderRole: MessageSenderRole.fromJson(json['senderRole'] as String),
-        senderLabel: json['senderLabel'] as String,
-        body: json['body'] as String,
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        clientMessageId: json['clientMessageId'] as String,
-        mine: json['mine'] as bool,
-      );
+    id: json['id'] as String,
+    conversationId: json['conversationId'] as String,
+    senderRole: MessageSenderRole.fromJson(json['senderRole'] as String),
+    senderLabel: json['senderLabel'] as String,
+    body: json['body'] as String,
+    createdAt: DateTime.parse(json['createdAt'] as String),
+    clientMessageId: json['clientMessageId'] as String,
+    mine: json['mine'] as bool,
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'conversationId': conversationId,
-        'senderRole': senderRole.wireName,
-        'senderLabel': senderLabel,
-        'body': body,
-        'createdAt': createdAt.toIso8601String(),
-        'clientMessageId': clientMessageId,
-        'mine': mine,
-      };
+    'id': id,
+    'conversationId': conversationId,
+    'senderRole': senderRole.wireName,
+    'senderLabel': senderLabel,
+    'body': body,
+    'createdAt': createdAt.toIso8601String(),
+    'clientMessageId': clientMessageId,
+    'mine': mine,
+  };
 }

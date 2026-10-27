@@ -7,18 +7,15 @@
 
 /// MyNumberDto, from the CareBridge API.
 class MyNumberDto {
-  const MyNumberDto({
-    this.phone,
-  });
+  const MyNumberDto({this.phone});
 
   /// E.164, or null if none is set.
   final String? phone;
 
-  factory MyNumberDto.fromJson(Map<String, dynamic> json) => MyNumberDto(
-        phone: json['phone'] as String?,
-      );
+  factory MyNumberDto.fromJson(Map<String, dynamic> json) =>
+      MyNumberDto(phone: json['phone'] as String?);
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        if (phone != null) 'phone': phone,
-      };
+    if (phone != null) 'phone': phone,
+  };
 }

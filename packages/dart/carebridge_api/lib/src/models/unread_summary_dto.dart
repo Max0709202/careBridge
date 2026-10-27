@@ -16,13 +16,14 @@ class UnreadSummaryDto {
 
   final double unreadMessages;
 
-  factory UnreadSummaryDto.fromJson(Map<String, dynamic> json) => UnreadSummaryDto(
+  factory UnreadSummaryDto.fromJson(Map<String, dynamic> json) =>
+      UnreadSummaryDto(
         unreadConversations: (json['unreadConversations'] as num).toDouble(),
         unreadMessages: (json['unreadMessages'] as num).toDouble(),
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'unreadConversations': unreadConversations,
-        'unreadMessages': unreadMessages,
-      };
+    'unreadConversations': unreadConversations,
+    'unreadMessages': unreadMessages,
+  };
 }

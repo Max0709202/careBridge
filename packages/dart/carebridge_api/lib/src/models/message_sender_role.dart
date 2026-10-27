@@ -12,8 +12,7 @@ enum MessageSenderRole {
   dispatcher('dispatcher'),
   family('family'),
   driver('driver'),
-  system('system'),
-  ;
+  system('system');
 
   const MessageSenderRole(this.wireName);
 
@@ -26,7 +25,7 @@ enum MessageSenderRole {
   /// never heard of means the server is ahead of the app, and silently mapping
   /// it to a default would render a ride in the wrong state.
   static MessageSenderRole fromJson(String value) => values.firstWhere(
-        (e) => e.wireName == value,
-        orElse: () => throw CareBridgeUnknownEnumValue('MessageSenderRole', value),
-      );
+    (e) => e.wireName == value,
+    orElse: () => throw CareBridgeUnknownEnumValue('MessageSenderRole', value),
+  );
 }

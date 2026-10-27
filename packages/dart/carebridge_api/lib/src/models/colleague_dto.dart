@@ -20,14 +20,14 @@ class ColleagueDto {
   final bool onShift;
 
   factory ColleagueDto.fromJson(Map<String, dynamic> json) => ColleagueDto(
-        driverId: json['driverId'] as String,
-        displayName: json['displayName'] as String,
-        onShift: json['onShift'] as bool,
-      );
+    driverId: json['driverId'] as String,
+    displayName: json['displayName'] as String,
+    onShift: json['onShift'] as bool,
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'driverId': driverId,
-        'displayName': displayName,
-        'onShift': onShift,
-      };
+    'driverId': driverId,
+    'displayName': displayName,
+    'onShift': onShift,
+  };
 }

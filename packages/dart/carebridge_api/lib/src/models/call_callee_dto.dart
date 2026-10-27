@@ -9,10 +9,7 @@ import '../models.dart';
 
 /// CallCalleeDto, from the CareBridge API.
 class CallCalleeDto {
-  const CallCalleeDto({
-    required this.kind,
-    required this.id,
-  });
+  const CallCalleeDto({required this.kind, required this.id});
 
   final CallPartyKind kind;
 
@@ -20,12 +17,12 @@ class CallCalleeDto {
   final String id;
 
   factory CallCalleeDto.fromJson(Map<String, dynamic> json) => CallCalleeDto(
-        kind: CallPartyKind.fromJson(json['kind'] as String),
-        id: json['id'] as String,
-      );
+    kind: CallPartyKind.fromJson(json['kind'] as String),
+    id: json['id'] as String,
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'kind': kind.wireName,
-        'id': id,
-      };
+    'kind': kind.wireName,
+    'id': id,
+  };
 }

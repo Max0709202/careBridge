@@ -31,18 +31,18 @@ class CallTargetDto {
   final String? unavailableReason;
 
   factory CallTargetDto.fromJson(Map<String, dynamic> json) => CallTargetDto(
-        kind: CallPartyKind.fromJson(json['kind'] as String),
-        id: json['id'] as String,
-        label: json['label'] as String,
-        available: json['available'] as bool,
-        unavailableReason: json['unavailableReason'] as String?,
-      );
+    kind: CallPartyKind.fromJson(json['kind'] as String),
+    id: json['id'] as String,
+    label: json['label'] as String,
+    available: json['available'] as bool,
+    unavailableReason: json['unavailableReason'] as String?,
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'kind': kind.wireName,
-        'id': id,
-        'label': label,
-        'available': available,
-        if (unavailableReason != null) 'unavailableReason': unavailableReason,
-      };
+    'kind': kind.wireName,
+    'id': id,
+    'label': label,
+    'available': available,
+    if (unavailableReason != null) 'unavailableReason': unavailableReason,
+  };
 }

@@ -38,6 +38,56 @@ class DispatchApi {
     return VehicleDto.fromJson(response as Map<String, dynamic>);
   }
 
+  /// Where the operator works
+  Future<OrganizationServiceAreaDto> serviceArea({
+    required String organizationId,
+  }) async {
+    final response = await _client.send(
+      method: 'GET',
+      path:
+          '/organizations/${Uri.encodeComponent(organizationId)}/service-area',
+    );
+    return OrganizationServiceAreaDto.fromJson(
+      response as Map<String, dynamic>,
+    );
+  }
+
+  /// Set where the operator works
+  ///
+  /// A radius round a point, or an outline drawn on the map. Replaces any
+  /// previous area. The dispatch queue then flags pickups outside it;
+  /// assignment is not refused. Owners and admins only.
+  Future<OrganizationServiceAreaDto> setServiceArea({
+    required String organizationId,
+    required SetServiceAreaDto body,
+  }) async {
+    final response = await _client.send(
+      method: 'PUT',
+      path:
+          '/organizations/${Uri.encodeComponent(organizationId)}/service-area',
+      body: body.toJson(),
+    );
+    return OrganizationServiceAreaDto.fromJson(
+      response as Map<String, dynamic>,
+    );
+  }
+
+  /// Remove the service area
+  ///
+  /// Nothing is flagged afterwards. Owners and admins only.
+  Future<OrganizationServiceAreaDto> clearServiceArea({
+    required String organizationId,
+  }) async {
+    final response = await _client.send(
+      method: 'DELETE',
+      path:
+          '/organizations/${Uri.encodeComponent(organizationId)}/service-area',
+    );
+    return OrganizationServiceAreaDto.fromJson(
+      response as Map<String, dynamic>,
+    );
+  }
+
   /// The roster, with who is billable and who is free
   Future<List<DriverDto>> drivers({required String organizationId}) async {
     final response = await _client.send(
@@ -51,9 +101,10 @@ class DispatchApi {
 
   /// Add a driver
   ///
-  /// Created as `invited`. The billable seat moves at approval, so a roster can
-  /// be built without being charged for people who have not handed in a
-  /// licence.
+  /// Created as `invited`, or as `pendingApproval` with `userId` when an
+  /// existing account (from `account-lookup`) is linked directly. The billable
+  /// seat moves at approval, so a roster can be built without being charged for
+  /// people who have not handed in a licence.
   Future<DriverDto> addDriver({
     required String organizationId,
     required CreateDriverDto body,
@@ -64,6 +115,26 @@ class DispatchApi {
       body: body.toJson(),
     );
     return DriverDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Find an account to add as a driver
+  ///
+  /// Exact, verified address only — there is no browsing or partial match,
+  /// because every account, families included, is in the one table. Anything
+  /// that cannot be added (no account, unverified, already a driver, deletion
+  /// requested) is the same 400, so the answer never says where somebody
+  /// already drives. Owners and admins only.
+  Future<DriverAccountMatchDto> lookupDriverAccount({
+    required String organizationId,
+    required LookupDriverAccountDto body,
+  }) async {
+    final response = await _client.send(
+      method: 'POST',
+      path:
+          '/organizations/${Uri.encodeComponent(organizationId)}/drivers/account-lookup',
+      body: body.toJson(),
+    );
+    return DriverAccountMatchDto.fromJson(response as Map<String, dynamic>);
   }
 
   /// Move a driver through the lifecycle
@@ -168,6 +239,20 @@ class DispatchApi {
           '/organizations/${Uri.encodeComponent(organizationId)}/dispatch/queue',
     );
     return DispatchQueueDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Rides the operator's drivers are carrying now, for the live map
+  ///
+  /// A snapshot with the service area and each car's last position, if it is
+  /// recent enough to show. Live updates come from the tracking socket (`watch`
+  /// each ride id).
+  Future<LiveBoardDto> liveBoard({required String organizationId}) async {
+    final response = await _client.send(
+      method: 'GET',
+      path:
+          '/organizations/${Uri.encodeComponent(organizationId)}/dispatch/live',
+    );
+    return LiveBoardDto.fromJson(response as Map<String, dynamic>);
   }
 
   /// Give a ride to a driver, or move it to another one

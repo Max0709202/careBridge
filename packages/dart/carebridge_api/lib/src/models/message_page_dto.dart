@@ -9,10 +9,7 @@ import '../models.dart';
 
 /// MessagePageDto, from the CareBridge API.
 class MessagePageDto {
-  const MessagePageDto({
-    required this.messages,
-    required this.hasMore,
-  });
+  const MessagePageDto({required this.messages, required this.hasMore});
 
   /// Oldest first.
   final List<MessageDto> messages;
@@ -22,12 +19,14 @@ class MessagePageDto {
   final bool hasMore;
 
   factory MessagePageDto.fromJson(Map<String, dynamic> json) => MessagePageDto(
-        messages: (json['messages'] as List<dynamic>).map((e) => MessageDto.fromJson(e as Map<String, dynamic>)).toList(),
-        hasMore: json['hasMore'] as bool,
-      );
+    messages: (json['messages'] as List<dynamic>)
+        .map((e) => MessageDto.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    hasMore: json['hasMore'] as bool,
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'messages': messages.map((e) => e.toJson()).toList(),
-        'hasMore': hasMore,
-      };
+    'messages': messages.map((e) => e.toJson()).toList(),
+    'hasMore': hasMore,
+  };
 }

@@ -43,28 +43,34 @@ class CallSessionDto {
   final double? durationSeconds;
 
   factory CallSessionDto.fromJson(Map<String, dynamic> json) => CallSessionDto(
-        id: json['id'] as String,
-        status: CallStatus.fromJson(json['status'] as String),
-        calleeKind: CallPartyKind.fromJson(json['calleeKind'] as String),
-        calleeLabel: json['calleeLabel'] as String,
-        conversationId: json['conversationId'] as String?,
-        rideId: json['rideId'] as String?,
-        startedAt: DateTime.parse(json['startedAt'] as String),
-        answeredAt: json['answeredAt'] == null ? null : DateTime.parse(json['answeredAt'] as String),
-        endedAt: json['endedAt'] == null ? null : DateTime.parse(json['endedAt'] as String),
-        durationSeconds: json['durationSeconds'] == null ? null : (json['durationSeconds'] as num).toDouble(),
-      );
+    id: json['id'] as String,
+    status: CallStatus.fromJson(json['status'] as String),
+    calleeKind: CallPartyKind.fromJson(json['calleeKind'] as String),
+    calleeLabel: json['calleeLabel'] as String,
+    conversationId: json['conversationId'] as String?,
+    rideId: json['rideId'] as String?,
+    startedAt: DateTime.parse(json['startedAt'] as String),
+    answeredAt: json['answeredAt'] == null
+        ? null
+        : DateTime.parse(json['answeredAt'] as String),
+    endedAt: json['endedAt'] == null
+        ? null
+        : DateTime.parse(json['endedAt'] as String),
+    durationSeconds: json['durationSeconds'] == null
+        ? null
+        : (json['durationSeconds'] as num).toDouble(),
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'status': status.wireName,
-        'calleeKind': calleeKind.wireName,
-        'calleeLabel': calleeLabel,
-        if (conversationId != null) 'conversationId': conversationId,
-        if (rideId != null) 'rideId': rideId,
-        'startedAt': startedAt.toIso8601String(),
-        if (answeredAt != null) 'answeredAt': answeredAt?.toIso8601String(),
-        if (endedAt != null) 'endedAt': endedAt?.toIso8601String(),
-        if (durationSeconds != null) 'durationSeconds': durationSeconds,
-      };
+    'id': id,
+    'status': status.wireName,
+    'calleeKind': calleeKind.wireName,
+    'calleeLabel': calleeLabel,
+    if (conversationId != null) 'conversationId': conversationId,
+    if (rideId != null) 'rideId': rideId,
+    'startedAt': startedAt.toIso8601String(),
+    if (answeredAt != null) 'answeredAt': answeredAt?.toIso8601String(),
+    if (endedAt != null) 'endedAt': endedAt?.toIso8601String(),
+    if (durationSeconds != null) 'durationSeconds': durationSeconds,
+  };
 }

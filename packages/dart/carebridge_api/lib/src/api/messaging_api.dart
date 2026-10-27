@@ -16,11 +16,10 @@ class MessagingApi {
 
   /// Threads the caller is in, newest first, with unread counts
   Future<List<ConversationDto>> inbox() async {
-    final response = await _client.send(
-      method: 'GET',
-      path: '/conversations',
-    );
-    return (response as List<dynamic>).map((e) => ConversationDto.fromJson(e as Map<String, dynamic>)).toList();
+    final response = await _client.send(method: 'GET', path: '/conversations');
+    return (response as List<dynamic>)
+        .map((e) => ConversationDto.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// Find or open a thread
@@ -29,9 +28,7 @@ class MessagingApi {
   /// `organizationId`, `patientId` and `driverId` may be left out where a ride,
   /// or the caller being a driver, already says what they are. 409 when the
   /// colleague is off shift, or a finished trip's thread has closed.
-  Future<ConversationDto> open({
-    required OpenConversationDto body,
-  }) async {
+  Future<ConversationDto> open({required OpenConversationDto body}) async {
     final response = await _client.send(
       method: 'POST',
       path: '/conversations',
@@ -49,9 +46,7 @@ class MessagingApi {
     return UnreadSummaryDto.fromJson(response as Map<String, dynamic>);
   }
 
-  Future<ConversationDto> conversation({
-    required String conversationId,
-  }) async {
+  Future<ConversationDto> conversation({required String conversationId}) async {
     final response = await _client.send(
       method: 'GET',
       path: '/conversations/${Uri.encodeComponent(conversationId)}',
@@ -94,9 +89,7 @@ class MessagingApi {
   }
 
   /// Mark the thread read up to now
-  Future<void> markRead({
-    required String conversationId,
-  }) async {
+  Future<void> markRead({required String conversationId}) async {
     await _client.send(
       method: 'POST',
       path: '/conversations/${Uri.encodeComponent(conversationId)}/read',
@@ -114,6 +107,8 @@ class MessagingApi {
       method: 'GET',
       path: '/organizations/${Uri.encodeComponent(organizationId)}/colleagues',
     );
-    return (response as List<dynamic>).map((e) => ColleagueDto.fromJson(e as Map<String, dynamic>)).toList();
+    return (response as List<dynamic>)
+        .map((e) => ColleagueDto.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

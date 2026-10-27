@@ -12,8 +12,7 @@ enum CallPartyKind {
   patient('patient'),
   familyMember('familyMember'),
   driver('driver'),
-  dispatch('dispatch'),
-  ;
+  dispatch('dispatch');
 
   const CallPartyKind(this.wireName);
 
@@ -26,7 +25,7 @@ enum CallPartyKind {
   /// never heard of means the server is ahead of the app, and silently mapping
   /// it to a default would render a ride in the wrong state.
   static CallPartyKind fromJson(String value) => values.firstWhere(
-        (e) => e.wireName == value,
-        orElse: () => throw CareBridgeUnknownEnumValue('CallPartyKind', value),
-      );
+    (e) => e.wireName == value,
+    orElse: () => throw CareBridgeUnknownEnumValue('CallPartyKind', value),
+  );
 }

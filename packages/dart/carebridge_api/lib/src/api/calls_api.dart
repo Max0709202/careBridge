@@ -31,16 +31,16 @@ class CallsApi {
       path: '/calls/targets',
       query: query,
     );
-    return (response as List<dynamic>).map((e) => CallTargetDto.fromJson(e as Map<String, dynamic>)).toList();
+    return (response as List<dynamic>)
+        .map((e) => CallTargetDto.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// Place a relay call
   ///
   /// Your own phone rings first, from the relay number; answer it and you are
   /// put through. Progress arrives as `call.updated` on the messaging socket.
-  Future<CallSessionDto> start({
-    required StartCallDto body,
-  }) async {
+  Future<CallSessionDto> start({required StartCallDto body}) async {
     final response = await _client.send(
       method: 'POST',
       path: '/calls',
@@ -59,9 +59,7 @@ class CallsApi {
   }
 
   /// Set or clear it
-  Future<MyNumberDto> setMyNumber({
-    required SetMyNumberDto body,
-  }) async {
+  Future<MyNumberDto> setMyNumber({required SetMyNumberDto body}) async {
     final response = await _client.send(
       method: 'PUT',
       path: '/calls/my-number',
@@ -70,9 +68,7 @@ class CallsApi {
     return MyNumberDto.fromJson(response as Map<String, dynamic>);
   }
 
-  Future<CallSessionDto> get_({
-    required String callId,
-  }) async {
+  Future<CallSessionDto> get_({required String callId}) async {
     final response = await _client.send(
       method: 'GET',
       path: '/calls/${Uri.encodeComponent(callId)}',

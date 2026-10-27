@@ -32,6 +32,7 @@ class RideDto {
     required this.history,
     this.lastKnownPosition,
     this.etaMinutes,
+    this.route,
     required this.createdAt,
     required this.simulationActive,
   });
@@ -64,7 +65,7 @@ class RideDto {
 
   final String? notesForDriver;
 
-  final DriverDto? driver;
+  final RideDriverDto? driver;
 
   final PriceEstimateDto estimate;
 
@@ -88,6 +89,13 @@ class RideDto {
   /// field on the position report for a device to set it. Null while the car is
   /// standing at a kerb, and null when the address never geocoded.
   final int? etaMinutes;
+
+  /// The road the arrival estimate was computed along, to the stop the car is
+  /// heading for now. Only while location is shared and the last position is
+  /// recent; null otherwise, and null when the routing provider offered no
+  /// road. Never computed for this response — read from the route the ETA
+  /// already paid for.
+  final LiveRouteDto? route;
 
   final DateTime createdAt;
 
@@ -113,7 +121,7 @@ class RideDto {
     notesForDriver: json['notesForDriver'] as String?,
     driver: json['driver'] == null
         ? null
-        : DriverDto.fromJson(json['driver'] as Map<String, dynamic>),
+        : RideDriverDto.fromJson(json['driver'] as Map<String, dynamic>),
     estimate: PriceEstimateDto.fromJson(
       json['estimate'] as Map<String, dynamic>,
     ),
@@ -132,6 +140,9 @@ class RideDto {
             json['lastKnownPosition'] as Map<String, dynamic>,
           ),
     etaMinutes: json['etaMinutes'] as int?,
+    route: json['route'] == null
+        ? null
+        : LiveRouteDto.fromJson(json['route'] as Map<String, dynamic>),
     createdAt: DateTime.parse(json['createdAt'] as String),
     simulationActive: json['simulationActive'] as bool,
   );
@@ -160,6 +171,7 @@ class RideDto {
     if (lastKnownPosition != null)
       'lastKnownPosition': lastKnownPosition?.toJson(),
     if (etaMinutes != null) 'etaMinutes': etaMinutes,
+    if (route != null) 'route': route?.toJson(),
     'createdAt': createdAt.toIso8601String(),
     'simulationActive': simulationActive,
   };

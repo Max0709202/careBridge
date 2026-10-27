@@ -12,8 +12,7 @@ enum ConversationKind {
   dispatchFamily('dispatchFamily'),
   dispatchDriver('dispatchDriver'),
   driverDriver('driverDriver'),
-  operatorDrivers('operatorDrivers'),
-  ;
+  operatorDrivers('operatorDrivers');
 
   const ConversationKind(this.wireName);
 
@@ -26,7 +25,7 @@ enum ConversationKind {
   /// never heard of means the server is ahead of the app, and silently mapping
   /// it to a default would render a ride in the wrong state.
   static ConversationKind fromJson(String value) => values.firstWhere(
-        (e) => e.wireName == value,
-        orElse: () => throw CareBridgeUnknownEnumValue('ConversationKind', value),
-      );
+    (e) => e.wireName == value,
+    orElse: () => throw CareBridgeUnknownEnumValue('ConversationKind', value),
+  );
 }

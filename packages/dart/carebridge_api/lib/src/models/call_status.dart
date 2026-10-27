@@ -17,8 +17,7 @@ enum CallStatus {
   noAnswer('noAnswer'),
   busy('busy'),
   failed('failed'),
-  canceled('canceled'),
-  ;
+  canceled('canceled');
 
   const CallStatus(this.wireName);
 
@@ -31,7 +30,7 @@ enum CallStatus {
   /// never heard of means the server is ahead of the app, and silently mapping
   /// it to a default would render a ride in the wrong state.
   static CallStatus fromJson(String value) => values.firstWhere(
-        (e) => e.wireName == value,
-        orElse: () => throw CareBridgeUnknownEnumValue('CallStatus', value),
-      );
+    (e) => e.wireName == value,
+    orElse: () => throw CareBridgeUnknownEnumValue('CallStatus', value),
+  );
 }

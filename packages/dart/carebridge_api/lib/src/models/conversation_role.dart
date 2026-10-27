@@ -11,8 +11,7 @@ import '../api_client.dart';
 enum ConversationRole {
   dispatcher('dispatcher'),
   family('family'),
-  driver('driver'),
-  ;
+  driver('driver');
 
   const ConversationRole(this.wireName);
 
@@ -25,7 +24,7 @@ enum ConversationRole {
   /// never heard of means the server is ahead of the app, and silently mapping
   /// it to a default would render a ride in the wrong state.
   static ConversationRole fromJson(String value) => values.firstWhere(
-        (e) => e.wireName == value,
-        orElse: () => throw CareBridgeUnknownEnumValue('ConversationRole', value),
-      );
+    (e) => e.wireName == value,
+    orElse: () => throw CareBridgeUnknownEnumValue('ConversationRole', value),
+  );
 }

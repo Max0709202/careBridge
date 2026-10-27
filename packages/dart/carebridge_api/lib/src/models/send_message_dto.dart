@@ -7,10 +7,7 @@
 
 /// SendMessageDto, from the CareBridge API.
 class SendMessageDto {
-  const SendMessageDto({
-    required this.body,
-    required this.clientMessageId,
-  });
+  const SendMessageDto({required this.body, required this.clientMessageId});
 
   final String body;
 
@@ -19,12 +16,12 @@ class SendMessageDto {
   final String clientMessageId;
 
   factory SendMessageDto.fromJson(Map<String, dynamic> json) => SendMessageDto(
-        body: json['body'] as String,
-        clientMessageId: json['clientMessageId'] as String,
-      );
+    body: json['body'] as String,
+    clientMessageId: json['clientMessageId'] as String,
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'body': body,
-        'clientMessageId': clientMessageId,
-      };
+    'body': body,
+    'clientMessageId': clientMessageId,
+  };
 }

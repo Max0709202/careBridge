@@ -19,6 +19,7 @@ class DispatchQueueItemDto {
     required this.wheelchairRequired,
     required this.assistanceRequired,
     required this.urgency,
+    this.pickupInServiceArea,
     required this.candidates,
   });
 
@@ -43,6 +44,11 @@ class DispatchQueueItemDto {
   /// somebody is standing in a hallway waiting.
   final DispatchUrgency urgency;
 
+  /// Whether the pickup is inside this operator's service area. Null when the
+  /// operator has not set an area or the pickup address could not be located —
+  /// unknown, not inside. Advisory: assignment is not refused on it.
+  final bool? pickupInServiceArea;
+
   final List<DispatchCandidateDto> candidates;
 
   factory DispatchQueueItemDto.fromJson(Map<String, dynamic> json) =>
@@ -56,6 +62,7 @@ class DispatchQueueItemDto {
         wheelchairRequired: json['wheelchairRequired'] as bool,
         assistanceRequired: json['assistanceRequired'] as bool,
         urgency: DispatchUrgency.fromJson(json['urgency'] as String),
+        pickupInServiceArea: json['pickupInServiceArea'] as bool?,
         candidates: (json['candidates'] as List<dynamic>)
             .map(
               (e) => DispatchCandidateDto.fromJson(e as Map<String, dynamic>),
@@ -73,6 +80,7 @@ class DispatchQueueItemDto {
     'wheelchairRequired': wheelchairRequired,
     'assistanceRequired': assistanceRequired,
     'urgency': urgency.wireName,
+    if (pickupInServiceArea != null) 'pickupInServiceArea': pickupInServiceArea,
     'candidates': candidates.map((e) => e.toJson()).toList(),
   };
 }
