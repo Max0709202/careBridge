@@ -72,7 +72,7 @@ learn to re-run rather than fix.
 | No Nest or Prisma in `src/domain/` | ESLint. That purity is what makes the state machines exhaustively testable |
 | The OpenAPI document and Dart client are current | `make contract-drift`, in CI |
 | Migrations apply to a clean database | CI |
-| No "HIPAA compliant" claim | CI |
+| Never claim "HIPAA compliant" | CI |
 
 ## Writing a new endpoint
 
