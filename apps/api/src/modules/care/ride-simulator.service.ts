@@ -43,13 +43,23 @@ export class RideSimulatorService implements OnModuleInit, OnModuleDestroy {
 
   /** Picks simulations back up after a restart, rather than silently dropping them. */
   async onModuleInit(): Promise<void> {
-    const running = await this.prisma.ride.findMany({
-      where: {
-        simulationActive: true,
-        status: { notIn: ['completed', 'canceled', 'noShow'] },
-      },
-      select: { id: true },
-    });
+    // Logged rather than thrown, as reminders' rehydrate is: a database that is
+    // not up yet must not stop the process from booting.
+    let running: { id: string }[];
+    try {
+      running = await this.prisma.ride.findMany({
+        where: {
+          simulationActive: true,
+          status: { notIn: ['completed', 'canceled', 'noShow'] },
+        },
+        select: { id: true },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Could not resume preview trips: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
+      return;
+    }
 
     for (const ride of running) {
       this.schedule(ride.id);
