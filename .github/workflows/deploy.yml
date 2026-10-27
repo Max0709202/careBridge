@@ -32,6 +32,11 @@ env:
 jobs:
   build:
     name: Build and push
+    # Off until the AWS account exists: the VPS is deployed by hand with
+    # deploy/vps/carebridge-vps.sh. Set the repository variable
+    # AWS_DEPLOY_ENABLED to 'true', alongside the AWS_DEPLOY_ROLE_ARN secret,
+    # to turn this on. Staging and production need this job, so they skip too.
+    if: vars.AWS_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.tag.outputs.tag }}
