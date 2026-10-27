@@ -27,6 +27,7 @@ describe('normalizeE164', () => {
     ['call my daughter'],
     ['12345'],
     ['+1234567890123456'],
+    ['+0 20 7946 0000'], // no country code starts with zero
   ])('refuses %p', (raw) => {
     expect(normalizeE164(raw, '1')).toBeNull();
   });

@@ -58,6 +58,17 @@ describe('parseServiceArea', () => {
     ],
     ['two points', { kind: 'polygon', points: [depot, nearby] }, 'points'],
     [
+      'more points than an outline needs',
+      {
+        kind: 'polygon',
+        points: Array.from({ length: 501 }, (_, i) => ({
+          latitude: Math.sin((i / 501) * 2 * Math.PI),
+          longitude: Math.cos((i / 501) * 2 * Math.PI),
+        })),
+      },
+      'points',
+    ],
+    [
       'points on one line',
       {
         kind: 'polygon',

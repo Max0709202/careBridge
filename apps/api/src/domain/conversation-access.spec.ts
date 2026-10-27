@@ -125,6 +125,13 @@ describe('subject keys', () => {
       conversationSubjectKey({ ...familyThread, organizationId: OTHER_ORG }),
     );
   });
+
+  it('name the driver in a dispatch thread, and no one in the team thread', () => {
+    expect(conversationSubjectKey(driverThread)).toBe(
+      `dispatchDriver:${ORG}:d-marcus:general`,
+    );
+    expect(conversationSubjectKey(teamThread)).toBe(`operatorDrivers:${ORG}:general`);
+  });
 });
 
 describe('roleIn — who is in a thread', () => {
@@ -236,6 +243,26 @@ describe('canPost', () => {
 });
 
 describe('canStart — opening a line', () => {
+  it('lets dispatch and its working drivers open the team thread', () => {
+    expect(canStart(dispatcher, teamThread, null, startFacts(), NOW)).toEqual({
+      ok: true,
+      role: 'dispatcher',
+    });
+    expect(canStart(marcus, teamThread, null, startFacts(), NOW)).toEqual({
+      ok: true,
+      role: 'driver',
+    });
+    expect(canStart(stranger, teamThread, null, startFacts(), NOW).ok).toBe(false);
+  });
+
+  it('refuses a team thread that names a person', () => {
+    const named = { ...teamThread, driverId: 'd-marcus' };
+    expect(canStart(dispatcher, named, null, startFacts(), NOW)).toEqual({
+      ok: false,
+      reason: 'notFound',
+    });
+  });
+
   it('lets dispatch open a thread with the family of a patient it has carried', () => {
     expect(canStart(dispatcher, familyThread, null, startFacts(), NOW)).toEqual({
       ok: true,
@@ -323,6 +350,13 @@ describe('canStart — opening a line', () => {
         NOW,
       ).ok,
     ).toBe(false);
+  });
+
+  it('refuses a dispatch thread whose driver cannot be found', () => {
+    const missing = startFacts({ subjectDriver: null });
+    const someoneElse = startFacts({ subjectDriver: driver('d-priya') });
+    expect(canStart(dispatcher, driverThread, null, missing, NOW).ok).toBe(false);
+    expect(canStart(dispatcher, driverThread, null, someoneElse, NOW).ok).toBe(false);
   });
 
   describe('driver to driver', () => {
