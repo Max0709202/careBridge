@@ -190,4 +190,6 @@ String _label(NotificationKind kind) => switch (kind) {
   NotificationKind.rideCompleted => 'A ride is finished',
   NotificationKind.rideCanceled => 'A ride is cancelled',
   NotificationKind.accessGranted => 'Someone joins the care circle',
+  NotificationKind.messageReceived => 'Dispatch sends you a message',
+  NotificationKind.callMissed => 'You miss a call from dispatch or the driver',
 };
