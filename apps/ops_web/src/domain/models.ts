@@ -41,7 +41,18 @@ export interface Driver {
   activeRideCount: number;
   approvedAt: Date | null;
   suspensionReason: string | null;
+  /** When they applied with the join code; null for a driver the operator added. */
+  appliedAt: Date | null;
+  /** The full name on an applicant's account — what their licence should say. */
+  applicantName: string | null;
+  email: string | null;
+  phone: string | null;
+  rejectionReason: string | null;
 }
+
+/** An application still waiting for a decision. */
+export const isOpenApplication = (d: Driver) =>
+  d.appliedAt !== null && d.status === 'pendingApproval';
 
 export const isFree = (d: Driver) => d.activeRideCount === 0;
 

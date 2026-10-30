@@ -48,6 +48,38 @@ export class DriverProfileDto {
       'Why the operator stopped them. Shown to the driver: being locked out of your own job with no reason given is how support queues fill up.',
   })
   suspensionReason!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Why the operator turned down this application. Set only on an application that was never approved; the driver may then apply again.',
+  })
+  rejectionReason!: string | null;
+}
+
+/**
+ * Where a signed-in account stands before it is anybody's driver: whether it
+ * may apply yet, and with what name. What the driver app shows in place of a
+ * profile it does not have.
+ */
+export class DriverOnboardingDto {
+  @ApiProperty({ type: String }) email!: string;
+  @ApiProperty({ type: String }) fullName!: string;
+
+  @ApiProperty({
+    type: Boolean,
+    description:
+      'Applying needs a verified address, for the same reason the roster claim does.',
+  })
+  emailVerified!: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    description:
+      'Whether this account already has a driver profile, in which case the app should read /driver/me instead.',
+  })
+  hasDriverProfile!: boolean;
 }
 
 export class DriverRideDto {

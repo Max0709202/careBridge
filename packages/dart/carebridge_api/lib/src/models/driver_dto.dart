@@ -23,6 +23,10 @@ class DriverDto {
     required this.activeRideCount,
     this.invitedEmail,
     required this.hasAppAccount,
+    this.appliedAt,
+    this.applicantName,
+    this.phone,
+    this.rejectionReason,
   });
 
   final String id;
@@ -62,6 +66,20 @@ class DriverDto {
   /// shift nobody will answer for.
   final bool hasAppAccount;
 
+  /// When the driver applied with the join code. Null for a driver the operator
+  /// added.
+  final DateTime? appliedAt;
+
+  /// The full name on the account, for an applicant only — what the licence
+  /// they upload should say. A driver the operator added is known by their
+  /// roster name.
+  final String? applicantName;
+
+  /// E.164.
+  final String? phone;
+
+  final String? rejectionReason;
+
   factory DriverDto.fromJson(Map<String, dynamic> json) => DriverDto(
     id: json['id'] as String,
     displayName: json['displayName'] as String,
@@ -78,6 +96,12 @@ class DriverDto {
     activeRideCount: json['activeRideCount'] as int,
     invitedEmail: json['invitedEmail'] as String?,
     hasAppAccount: json['hasAppAccount'] as bool,
+    appliedAt: json['appliedAt'] == null
+        ? null
+        : DateTime.parse(json['appliedAt'] as String),
+    applicantName: json['applicantName'] as String?,
+    phone: json['phone'] as String?,
+    rejectionReason: json['rejectionReason'] as String?,
   );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -94,5 +118,9 @@ class DriverDto {
     'activeRideCount': activeRideCount,
     if (invitedEmail != null) 'invitedEmail': invitedEmail,
     'hasAppAccount': hasAppAccount,
+    if (appliedAt != null) 'appliedAt': appliedAt?.toIso8601String(),
+    if (applicantName != null) 'applicantName': applicantName,
+    if (phone != null) 'phone': phone,
+    if (rejectionReason != null) 'rejectionReason': rejectionReason,
   };
 }

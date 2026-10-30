@@ -37,6 +37,7 @@ export const profileFromWire = (dto: S['DriverProfileDto']): DriverProfile => ({
   canWork: dto.canWork,
   vehicle: vehicleFromWire(dto.vehicle),
   suspensionReason: dto.suspensionReason ?? null,
+  rejectionReason: dto.rejectionReason ?? null,
 });
 
 export const placeFromWire = (dto: S['AddressDto']): Place => ({

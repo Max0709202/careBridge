@@ -88,6 +88,36 @@ class DispatchApi {
     );
   }
 
+  /// The code drivers apply with
+  ///
+  /// Made on first request. A driver types it into the driver app to apply;
+  /// their application then waits here for approval. Owners and admins only.
+  Future<DriverJoinCodeDto> driverJoinCode({
+    required String organizationId,
+  }) async {
+    final response = await _client.send(
+      method: 'GET',
+      path:
+          '/organizations/${Uri.encodeComponent(organizationId)}/driver-join-code',
+    );
+    return DriverJoinCodeDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Replace the join code
+  ///
+  /// The old code stops working at once. Applications already made are kept.
+  /// Owners and admins only.
+  Future<DriverJoinCodeDto> rotateDriverJoinCode({
+    required String organizationId,
+  }) async {
+    final response = await _client.send(
+      method: 'POST',
+      path:
+          '/organizations/${Uri.encodeComponent(organizationId)}/driver-join-code/rotate',
+    );
+    return DriverJoinCodeDto.fromJson(response as Map<String, dynamic>);
+  }
+
   /// The roster, with who is billable and who is free
   Future<List<DriverDto>> drivers({required String organizationId}) async {
     final response = await _client.send(

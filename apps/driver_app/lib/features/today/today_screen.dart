@@ -68,15 +68,26 @@ class TodayScreen extends ConsumerWidget {
     if (error is NotFoundFailure) {
       return EmptyState(
         icon: Icons.badge_outlined,
-        title: 'No driver profile yet',
+        title: 'Apply to drive',
         message:
-            'This account is not on an operator’s roster. Ask your dispatcher '
-            'to add you with this email address, and make sure you have '
-            'confirmed it — we only join the two once the address is verified.',
-        action: OutlinedButton.icon(
-          onPressed: () => ref.invalidate(profileProvider),
-          icon: const Icon(Icons.refresh),
-          label: const Text('Check again'),
+            'This account is not a driver yet. Apply with the company code '
+            'your transport company gave you — or, if they have already added '
+            'you by email, verify your email address and check again.',
+        action: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FilledButton.icon(
+              onPressed: () => context.push('/apply'),
+              icon: const Icon(Icons.send_outlined),
+              label: const Text('Apply with a company code'),
+            ),
+            const SizedBox(height: DriverSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: () => ref.invalidate(profileProvider),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Check again'),
+            ),
+          ],
         ),
       );
     }
@@ -127,7 +138,26 @@ class _ShiftCard extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: DriverSpacing.md),
-          if (profile.canWork)
+          if (profile.isOffboarded) ...[
+            // Turned down, or no longer with this company. Either way the way
+            // forward is a new application, not a dead end.
+            Text(
+              profile.rejectionReason != null
+                  ? 'Your application was not accepted: '
+                        '${profile.rejectionReason}'
+                  : 'You are no longer on ${profile.organizationName}’s roster.',
+              style: TextStyle(
+                color: theme.colorScheme.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: DriverSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/apply'),
+              icon: const Icon(Icons.send_outlined),
+              label: const Text('Apply again'),
+            ),
+          ] else if (profile.canWork)
             FilledButton.icon(
               onPressed: busy ? null : () => _toggle(context, ref),
               icon: Icon(

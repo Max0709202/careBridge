@@ -55,6 +55,8 @@ export interface DriverProfile {
   canWork: boolean;
   vehicle: Vehicle;
   suspensionReason: string | null;
+  /** Why an application was turned down. The driver may apply again. */
+  rejectionReason: string | null;
 }
 
 export interface Place {

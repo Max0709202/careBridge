@@ -75,6 +75,7 @@ async function renderApp(
     'GET /organizations/:id/dispatch/queue': () => ({ body: queue() }),
     'GET /organizations/:id/drivers': () => ({ body: [driver()] }),
     'GET /organizations/:id/vehicles': () => ({ body: [driver().vehicle] }),
+    'GET /organizations/:id/driver-join-code': () => ({ body: { code: 'K7QM-2RXD' } }),
     'GET /organizations/:id/billing': () => ({ body: account() }),
     'GET /organizations/:id/billing/invoices': () => ({ body: [invoice()] }),
     'GET /billing/plans': () => ({ body: [plan()] }),
@@ -544,6 +545,97 @@ describe('the roster', () => {
       (within(sheet).getByRole('button', { name: 'Reject' }) as HTMLButtonElement)
         .disabled,
     ).toBe(false);
+  });
+});
+
+describe('driver applications', () => {
+  const applicant = driver({
+    id: 'driver-2',
+    displayName: 'Priya R.',
+    status: 'pendingApproval',
+    occupiesSeat: false,
+    approvedAt: null,
+    onShift: false,
+    appliedAt: '2026-10-29T12:00:00Z',
+    applicantName: 'Priya Raman',
+    invitedEmail: 'priya@example.com',
+    phone: '+15550100100',
+    yearsDriving: 6,
+  });
+
+  it('shows the company code, and replaces it only after a yes', async () => {
+    let code = 'K7QM-2RXD';
+    const { requests } = await renderApp('/roster', {
+      routes: {
+        'GET /organizations/:id/driver-join-code': () => ({ body: { code } }),
+        'POST /organizations/:id/driver-join-code/rotate': () => {
+          code = 'PW4H-9TNE';
+          return { body: { code } };
+        },
+      },
+    });
+    expect(await screen.findByText('K7QM-2RXD')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'New code' }));
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Make a new company code?',
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Make a new code' }));
+    expect(await screen.findByText('PW4H-9TNE')).toBeTruthy();
+    expect(requests.filter((r) => r.path.endsWith('/rotate'))).toHaveLength(1);
+  });
+
+  it('keeps the code from a dispatcher', async () => {
+    const { requests } = await renderApp('/roster', {
+      routes: {
+        'GET /organizations': () => ({ body: [organization({ role: 'dispatcher' })] }),
+      },
+    });
+    await screen.findByRole('switch', { name: 'On shift' });
+    expect(screen.queryByText('Company code for new drivers')).toBeNull();
+    expect(requests.some((r) => r.path.endsWith('/driver-join-code'))).toBe(false);
+  });
+
+  it('lists applications first, with who applied', async () => {
+    await renderApp('/roster', {
+      routes: {
+        'GET /organizations/:id/drivers': () => ({ body: [driver(), applicant] }),
+      },
+    });
+    expect(
+      await screen.findByRole('heading', { name: 'Applications (1)' }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/Priya Raman · priya@example.com · \+15550100100/),
+    ).toBeTruthy();
+    const names = screen
+      .getAllByText(/^(Marcus T\.|Priya R\.)$/)
+      .map((n) => n.textContent);
+    expect(names).toEqual(['Priya R.', 'Marcus T.']);
+  });
+
+  it('rejecting an application asks for a reason the applicant will see', async () => {
+    const { requests } = await renderApp('/roster', {
+      routes: {
+        'GET /organizations/:id/drivers': () => ({ body: [applicant] }),
+        'POST /organizations/:id/drivers/:d/status': () => ({
+          body: { ...applicant, status: 'offboarded' },
+        }),
+      },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Reject' }));
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Why is the application not accepted?',
+    });
+    fireEvent.change(within(dialog).getByLabelText('Reason'), {
+      target: { value: 'Licence photo was unreadable' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm' }));
+    await waitFor(() =>
+      expect(requests.find((r) => r.path.endsWith('/status'))?.body).toEqual({
+        to: 'offboarded',
+        reason: 'Licence photo was unreadable',
+      }),
+    );
   });
 });
 

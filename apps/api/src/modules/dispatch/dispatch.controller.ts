@@ -28,6 +28,7 @@ import {
   DriverAccountMatchDto,
   DriverComplianceDto,
   DriverDto,
+  DriverJoinCodeDto,
   LiveBoardDto,
   OrganizationServiceAreaDto,
   VehicleDto,
@@ -122,6 +123,38 @@ export class DispatchController {
     @Ctx() ctx: RequestContext,
   ): Promise<OrganizationServiceAreaDto> {
     return this.dispatch.clearServiceArea(userId, organizationId, ctx);
+  }
+
+  // ─── join code ────────────────────────────────────────────────────────────
+
+  @Get('driver-join-code')
+  @ApiOperation({
+    summary: 'The code drivers apply with',
+    description:
+      'Made on first request. A driver types it into the driver app to apply; their application then waits here for approval. Owners and admins only.',
+  })
+  @ApiOkResponse({ type: DriverJoinCodeDto })
+  driverJoinCode(
+    @CurrentUser() userId: string,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+  ): Promise<DriverJoinCodeDto> {
+    return this.dispatch.driverJoinCode(userId, organizationId);
+  }
+
+  @Post('driver-join-code/rotate')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Replace the join code',
+    description:
+      'The old code stops working at once. Applications already made are kept. Owners and admins only.',
+  })
+  @ApiOkResponse({ type: DriverJoinCodeDto })
+  rotateDriverJoinCode(
+    @CurrentUser() userId: string,
+    @Param('organizationId', ParseUUIDPipe) organizationId: string,
+    @Ctx() ctx: RequestContext,
+  ): Promise<DriverJoinCodeDto> {
+    return this.dispatch.rotateDriverJoinCode(userId, organizationId, ctx);
   }
 
   // ─── roster ───────────────────────────────────────────────────────────────

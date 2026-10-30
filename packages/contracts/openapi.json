@@ -2147,6 +2147,80 @@
         ]
       }
     },
+    "/organizations/{organizationId}/driver-join-code": {
+      "get": {
+        "description": "Made on first request. A driver types it into the driver app to apply; their application then waits here for approval. Owners and admins only.",
+        "operationId": "Dispatch_driverJoinCode",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverJoinCodeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The code drivers apply with",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
+    "/organizations/{organizationId}/driver-join-code/rotate": {
+      "post": {
+        "description": "The old code stops working at once. Applications already made are kept. Owners and admins only.",
+        "operationId": "Dispatch_rotateDriverJoinCode",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverJoinCodeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Replace the join code",
+        "tags": [
+          "dispatch"
+        ]
+      }
+    },
     "/organizations/{organizationId}/drivers": {
       "get": {
         "operationId": "Dispatch_drivers",
@@ -2722,6 +2796,75 @@
           }
         ],
         "summary": "The signed-in driver, claiming their roster place on first use",
+        "tags": [
+          "driver"
+        ]
+      }
+    },
+    "/driver/onboarding": {
+      "get": {
+        "description": "Whether the address is verified and whether a driver profile exists. Claims a roster place made for this address first, so a driver the operator added is never asked to apply.",
+        "operationId": "Driver_onboarding",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverOnboardingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Where an account stands before it drives for anybody",
+        "tags": [
+          "driver"
+        ]
+      }
+    },
+    "/driver/application": {
+      "post": {
+        "description": "Creates a driver profile pending approval, with the vehicle the applicant brings. Approval still needs their paperwork and a decision at the operator. Rate-limited per account, so the code cannot be guessed.",
+        "operationId": "Driver_apply",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyAsDriverDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverProfileDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account."
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Apply to an operator with its join code",
         "tags": [
           "driver"
         ]
@@ -8168,6 +8311,19 @@
           "kind"
         ]
       },
+      "DriverJoinCodeDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "K7QM-2RXD",
+            "description": "What a driver types into the driver app to apply."
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
       "DriverStatus": {
         "type": "string",
         "enum": [
@@ -8234,6 +8390,26 @@
           "hasAppAccount": {
             "type": "boolean",
             "description": "Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for."
+          },
+          "appliedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the driver applied with the join code. Null for a driver the operator added."
+          },
+          "applicantName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The full name on the account, for an applicant only — what the licence they upload should say. A driver the operator added is known by their roster name."
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "E.164."
+          },
+          "rejectionReason": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -8249,7 +8425,11 @@
           "occupiesSeat",
           "activeRideCount",
           "invitedEmail",
-          "hasAppAccount"
+          "hasAppAccount",
+          "appliedAt",
+          "applicantName",
+          "phone",
+          "rejectionReason"
         ]
       },
       "CreateDriverDto": {
@@ -8830,6 +9010,11 @@
             "type": "string",
             "nullable": true,
             "description": "Why the operator stopped them. Shown to the driver: being locked out of your own job with no reason given is how support queues fill up."
+          },
+          "rejectionReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the operator turned down this application. Set only on an application that was never approved; the driver may then apply again."
           }
         },
         "required": [
@@ -8841,7 +9026,67 @@
           "onShift",
           "vehicle",
           "canWork",
-          "suspensionReason"
+          "suspensionReason",
+          "rejectionReason"
+        ]
+      },
+      "DriverOnboardingDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean",
+            "description": "Applying needs a verified address, for the same reason the roster claim does."
+          },
+          "hasDriverProfile": {
+            "type": "boolean",
+            "description": "Whether this account already has a driver profile, in which case the app should read /driver/me instead."
+          }
+        },
+        "required": [
+          "email",
+          "fullName",
+          "emailVerified",
+          "hasDriverProfile"
+        ]
+      },
+      "ApplyAsDriverDto": {
+        "type": "object",
+        "properties": {
+          "joinCode": {
+            "type": "string",
+            "example": "K7QM-2RXD",
+            "description": "The operator's join code, from the ops console. Case, spaces and hyphens do not matter."
+          },
+          "phone": {
+            "type": "string",
+            "example": "(555) 010-0100",
+            "maxLength": 30
+          },
+          "yearsDriving": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60
+          },
+          "vehicle": {
+            "description": "The vehicle they will drive. Joins the operator's fleet.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreateVehicleDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "joinCode",
+          "phone",
+          "yearsDriving",
+          "vehicle"
         ]
       },
       "DriverShiftDto": {

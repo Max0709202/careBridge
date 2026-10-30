@@ -46,6 +46,36 @@ class DriverApi extends ApiTransport {
     await storeSession(json);
   }
 
+  /// Creates the account and signs it in — the same account as the family
+  /// app. A verification email goes out at once, and applying waits on it.
+  Future<void> register({
+    required String fullName,
+    required String email,
+    required String password,
+  }) async {
+    final json = await send(
+      'POST',
+      '/auth/register',
+      body: {
+        'fullName': fullName.trim(),
+        'email': email.trim(),
+        'password': password,
+        'acceptedTerms': true,
+      },
+      authenticated: false,
+    );
+    await storeSession(json);
+  }
+
+  Future<void> resendVerification(String email) async {
+    await send(
+      'POST',
+      '/auth/resend-verification',
+      body: {'email': email},
+      authenticated: false,
+    );
+  }
+
   Future<void> signOut() async {
     // Cleared first, and unconditionally. A driver handing a phone back at the
     // end of a shift must not stay signed in because a request timed out.
@@ -67,6 +97,45 @@ class DriverApi extends ApiTransport {
   /// a failure.
   Future<DriverProfile> profile() async => profileFromWire(
     wire.DriverProfileDto.fromJson(await send('GET', '/driver/me')),
+  );
+
+  /// Where an account stands before it is anybody's driver. Also claims a
+  /// roster place made for this address, so such a driver is never asked to
+  /// apply.
+  Future<wire.DriverOnboardingDto> onboarding() async =>
+      wire.DriverOnboardingDto.fromJson(
+        await send('GET', '/driver/onboarding'),
+      );
+
+  /// Applies to an operator with its join code, bringing a vehicle.
+  Future<DriverProfile> apply({
+    required String joinCode,
+    required String phone,
+    required int yearsDriving,
+    required String make,
+    required String model,
+    required String color,
+    required String licensePlate,
+    required bool isWheelchairAccessible,
+  }) async => profileFromWire(
+    wire.DriverProfileDto.fromJson(
+      await send(
+        'POST',
+        '/driver/application',
+        body: {
+          'joinCode': joinCode,
+          'phone': phone,
+          'yearsDriving': yearsDriving,
+          'vehicle': {
+            'make': make,
+            'model': model,
+            'color': color,
+            'licensePlate': licensePlate,
+            'isWheelchairAccessible': isWheelchairAccessible,
+          },
+        },
+      ),
+    ),
   );
 
   Future<DriverProfile> setShift(bool onShift) async => profileFromWire(

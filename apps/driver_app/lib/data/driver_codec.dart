@@ -29,6 +29,7 @@ DriverProfile profileFromWire(wire.DriverProfileDto dto) => DriverProfile(
   canWork: dto.canWork,
   vehicle: vehicleFromWire(dto.vehicle),
   suspensionReason: dto.suspensionReason,
+  rejectionReason: dto.rejectionReason,
 );
 
 Place placeFromWire(wire.AddressDto dto) => Place(

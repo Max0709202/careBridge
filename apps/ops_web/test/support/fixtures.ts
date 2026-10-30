@@ -38,6 +38,10 @@ export const driver = (overrides: Partial<S['DriverDto']> = {}): S['DriverDto'] 
   activeRideCount: 0,
   invitedEmail: null,
   hasAppAccount: true,
+  appliedAt: null,
+  applicantName: null,
+  phone: null,
+  rejectionReason: null,
   ...overrides,
 });
 

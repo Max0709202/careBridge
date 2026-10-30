@@ -444,6 +444,210 @@ describe('the driver app', () => {
     });
   });
 
+  describe('applying with a join code', () => {
+    // The third way onto a roster, and the only one the driver starts: they
+    // sign up, verify, and apply with the code the operator handed out. They
+    // land exactly where a driver the operator added does — pending approval,
+    // with approval still waiting on paperwork and a decision.
+
+    const vehicle = {
+      make: 'Honda',
+      model: 'Odyssey',
+      color: 'Blue',
+      licensePlate: 'oh-ab12',
+      isWheelchairAccessible: false,
+    };
+
+    async function joinCode(owner: TestUser, organizationId: string) {
+      const response = await authed(harness, owner.accessToken)
+        .get(`/api/v1/organizations/${organizationId}/driver-join-code`)
+        .expect(200);
+      return (response.body as { code: string }).code;
+    }
+
+    async function applicant() {
+      const person = await registerUser(harness, { fullName: 'Priya Raman' });
+      await verifyEmail(harness, person.userId);
+      return person;
+    }
+
+    function apply(person: TestUser, body: Record<string, unknown>) {
+      return authed(harness, person.accessToken)
+        .post('/api/v1/driver/application')
+        .send({ phone: '(555) 010-0100', yearsDriving: 6, vehicle, ...body });
+    }
+
+    it('keeps the same code until it is replaced', async () => {
+      const { owner, organizationId } = await operator();
+      const first = await joinCode(owner, organizationId);
+      expect(first).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+      expect(await joinCode(owner, organizationId)).toBe(first);
+
+      const rotated = await authed(harness, owner.accessToken)
+        .post(`/api/v1/organizations/${organizationId}/driver-join-code/rotate`)
+        .expect(200);
+      const second = (rotated.body as { code: string }).code;
+      expect(second).not.toBe(first);
+
+      const person = await applicant();
+      await apply(person, { joinCode: first }).expect(400);
+      await apply(person, { joinCode: second }).expect(201);
+    });
+
+    it('turns an application into a driver pending approval, with their vehicle', async () => {
+      const { owner, organizationId } = await operator();
+      const code = await joinCode(owner, organizationId);
+      const person = await applicant();
+
+      const before = await authed(harness, person.accessToken)
+        .get('/api/v1/driver/onboarding')
+        .expect(200);
+      expect(before.body).toEqual({
+        email: person.email,
+        fullName: 'Priya Raman',
+        emailVerified: true,
+        hasDriverProfile: false,
+      });
+
+      const applied = await apply(person, { joinCode: code.toLowerCase() }).expect(201);
+      expect(applied.body).toMatchObject({
+        organizationId,
+        displayName: 'Priya R.',
+        status: 'pendingApproval',
+        canWork: false,
+        vehicle: { make: 'Honda', licensePlate: 'OH-AB12' },
+      });
+
+      const roster = await authed(harness, owner.accessToken)
+        .get(`/api/v1/organizations/${organizationId}/drivers`)
+        .expect(200);
+      expect(only(roster.body as Array<Record<string, unknown>>)).toMatchObject({
+        status: 'pendingApproval',
+        applicantName: 'Priya Raman',
+        phone: '+15550100100',
+        invitedEmail: person.email,
+        hasAppAccount: true,
+        yearsDriving: 6,
+      });
+
+      const after = await authed(harness, person.accessToken)
+        .get('/api/v1/driver/onboarding')
+        .expect(200);
+      expect((after.body as { hasDriverProfile: boolean }).hasDriverProfile).toBe(true);
+    });
+
+    it('still needs paperwork and an approval before they can drive', async () => {
+      const { owner, organizationId } = await operator();
+      const person = await applicant();
+      const applied = await apply(person, {
+        joinCode: await joinCode(owner, organizationId),
+      }).expect(201);
+      const driverId = (applied.body as { driverId: string }).driverId;
+
+      await authed(harness, person.accessToken)
+        .put('/api/v1/driver/shift')
+        .send({ onShift: true })
+        .expect(400);
+      await authed(harness, owner.accessToken)
+        .post(`/api/v1/organizations/${organizationId}/drivers/${driverId}/status`)
+        .send({ to: 'approved' })
+        .expect(400);
+
+      await giveDriverPaperwork(harness, driverId, owner.userId);
+      await authed(harness, owner.accessToken)
+        .post(`/api/v1/organizations/${organizationId}/drivers/${driverId}/status`)
+        .send({ to: 'approved' })
+        .expect(201);
+      await authed(harness, person.accessToken)
+        .put('/api/v1/driver/shift')
+        .send({ onShift: true })
+        .expect(200);
+    });
+
+    it('needs a verified address', async () => {
+      const { owner, organizationId } = await operator();
+      const person = await registerUser(harness);
+
+      const onboarding = await authed(harness, person.accessToken)
+        .get('/api/v1/driver/onboarding')
+        .expect(200);
+      expect((onboarding.body as { emailVerified: boolean }).emailVerified).toBe(false);
+
+      await apply(person, { joinCode: await joinCode(owner, organizationId) }).expect(
+        400,
+      );
+      expect(await harness.prisma.driver.count()).toBe(0);
+    });
+
+    it('refuses a code nobody has, and a phone number that is not one', async () => {
+      const { owner, organizationId } = await operator();
+      const person = await applicant();
+
+      const unknown = await apply(person, { joinCode: 'ZZZZ-ZZZZ' }).expect(400);
+      expect(errorOf(unknown).field).toBe('joinCode');
+      const malformed = await apply(person, { joinCode: 'nope' }).expect(400);
+      expect(errorOf(malformed).field).toBe('joinCode');
+      const phone = await apply(person, {
+        joinCode: await joinCode(owner, organizationId),
+        phone: 'call me',
+      }).expect(400);
+      expect(errorOf(phone).field).toBe('phone');
+    });
+
+    it('refuses somebody who already drives', async () => {
+      const { account } = await rosteredDriver();
+      await authed(harness, account.accessToken).get('/api/v1/driver/me').expect(200);
+      const { owner, organizationId } = await operator();
+
+      await apply(account, { joinCode: await joinCode(owner, organizationId) }).expect(
+        400,
+      );
+    });
+
+    it('tells a turned-down applicant why, and lets them apply again', async () => {
+      const { owner, organizationId } = await operator();
+      const code = await joinCode(owner, organizationId);
+      const person = await applicant();
+      const applied = await apply(person, { joinCode: code }).expect(201);
+      const driverId = (applied.body as { driverId: string }).driverId;
+
+      await authed(harness, owner.accessToken)
+        .post(`/api/v1/organizations/${organizationId}/drivers/${driverId}/status`)
+        .send({ to: 'offboarded', reason: 'Licence photo was unreadable' })
+        .expect(201);
+
+      const me = await authed(harness, person.accessToken)
+        .get('/api/v1/driver/me')
+        .expect(200);
+      expect(me.body).toMatchObject({
+        status: 'offboarded',
+        rejectionReason: 'Licence photo was unreadable',
+      });
+
+      const again = await apply(person, { joinCode: code }).expect(201);
+      expect((again.body as { driverId: string }).driverId).not.toBe(driverId);
+      expect(
+        (again.body as { rejectionReason: string | null }).rejectionReason,
+      ).toBeNull();
+    });
+
+    it('keeps the code to the operator’s admins', async () => {
+      const { owner, organizationId } = await operator();
+      const dispatcher = await registerUser(harness);
+      await harness.prisma.organizationMembership.create({
+        data: { userId: dispatcher.userId, organizationId, role: 'dispatcher' },
+      });
+      const outsider = await registerUser(harness);
+
+      await joinCode(owner, organizationId);
+      for (const person of [dispatcher, outsider]) {
+        await authed(harness, person.accessToken)
+          .get(`/api/v1/organizations/${organizationId}/driver-join-code`)
+          .expect(404);
+      }
+    });
+  });
+
   // ─── the shift ────────────────────────────────────────────────────────────
 
   describe('the shift', () => {

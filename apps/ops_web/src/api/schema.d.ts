@@ -862,6 +862,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/organizations/{organizationId}/driver-join-code': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The code drivers apply with
+     * @description Made on first request. A driver types it into the driver app to apply; their application then waits here for approval. Owners and admins only.
+     */
+    get: operations['Dispatch_driverJoinCode'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{organizationId}/driver-join-code/rotate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Replace the join code
+     * @description The old code stops working at once. Applications already made are kept. Owners and admins only.
+     */
+    post: operations['Dispatch_rotateDriverJoinCode'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/organizations/{organizationId}/drivers': {
     parameters: {
       query?: never;
@@ -1077,6 +1117,46 @@ export interface paths {
     get: operations['Driver_me'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/driver/onboarding': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Where an account stands before it drives for anybody
+     * @description Whether the address is verified and whether a driver profile exists. Claims a roster place made for this address first, so a driver the operator added is never asked to apply.
+     */
+    get: operations['Driver_onboarding'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/driver/application': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Apply to an operator with its join code
+     * @description Creates a driver profile pending approval, with the vehicle the applicant brings. Approval still needs their paperwork and a decision at the operator. Rate-limited per account, so the code cannot be guessed.
+     */
+    post: operations['Driver_apply'];
     delete?: never;
     options?: never;
     head?: never;
@@ -3071,6 +3151,13 @@ export interface components {
       /** @description Required for `polygon`: the outline, 3 to 500 points, not closed (the last point joins the first). */
       points?: components['schemas']['CoordinatesInput'][];
     };
+    DriverJoinCodeDto: {
+      /**
+       * @description What a driver types into the driver app to apply.
+       * @example K7QM-2RXD
+       */
+      code: string;
+    };
     /** @enum {string} */
     DriverStatus:
       | 'invited'
@@ -3100,6 +3187,16 @@ export interface components {
       invitedEmail: string | null;
       /** @description Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for. */
       hasAppAccount: boolean;
+      /**
+       * Format: date-time
+       * @description When the driver applied with the join code. Null for a driver the operator added.
+       */
+      appliedAt: string | null;
+      /** @description The full name on the account, for an applicant only — what the licence they upload should say. A driver the operator added is known by their roster name. */
+      applicantName: string | null;
+      /** @description E.164. */
+      phone: string | null;
+      rejectionReason: string | null;
     };
     CreateDriverDto: {
       /** @description First name and last initial. Never a full legal name. */
@@ -3290,6 +3387,28 @@ export interface components {
       canWork: boolean;
       /** @description Why the operator stopped them. Shown to the driver: being locked out of your own job with no reason given is how support queues fill up. */
       suspensionReason: string | null;
+      /** @description Why the operator turned down this application. Set only on an application that was never approved; the driver may then apply again. */
+      rejectionReason: string | null;
+    };
+    DriverOnboardingDto: {
+      email: string;
+      fullName: string;
+      /** @description Applying needs a verified address, for the same reason the roster claim does. */
+      emailVerified: boolean;
+      /** @description Whether this account already has a driver profile, in which case the app should read /driver/me instead. */
+      hasDriverProfile: boolean;
+    };
+    ApplyAsDriverDto: {
+      /**
+       * @description The operator's join code, from the ops console. Case, spaces and hyphens do not matter.
+       * @example K7QM-2RXD
+       */
+      joinCode: string;
+      /** @example (555) 010-0100 */
+      phone: string;
+      yearsDriving: number;
+      /** @description The vehicle they will drive. Joins the operator's fleet. */
+      vehicle: components['schemas']['CreateVehicleDto'];
     };
     DriverShiftDto: {
       /** @description A driver may take themselves on and off shift. The dispatcher can too — they are the one who hears about the flat tyre first. */
@@ -5244,6 +5363,48 @@ export interface operations {
       };
     };
   };
+  Dispatch_driverJoinCode: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverJoinCodeDto'];
+        };
+      };
+    };
+  };
+  Dispatch_rotateDriverJoinCode: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverJoinCodeDto'];
+        };
+      };
+    };
+  };
   Dispatch_drivers: {
     parameters: {
       query?: never;
@@ -5536,6 +5697,55 @@ export interface operations {
         content: {
           'application/json': components['schemas']['DriverProfileDto'];
         };
+      };
+    };
+  };
+  Driver_onboarding: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverOnboardingDto'];
+        };
+      };
+    };
+  };
+  Driver_apply: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ApplyAsDriverDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DriverProfileDto'];
+        };
+      };
+      /** @description Too many attempts. `Retry-After` carries the wait in seconds. The body says nothing about which limit was reached — that would confirm whether an address has an account. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

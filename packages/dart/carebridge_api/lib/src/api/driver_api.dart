@@ -25,6 +25,33 @@ class DriverApi {
     return DriverProfileDto.fromJson(response as Map<String, dynamic>);
   }
 
+  /// Where an account stands before it drives for anybody
+  ///
+  /// Whether the address is verified and whether a driver profile exists.
+  /// Claims a roster place made for this address first, so a driver the
+  /// operator added is never asked to apply.
+  Future<DriverOnboardingDto> onboarding() async {
+    final response = await _client.send(
+      method: 'GET',
+      path: '/driver/onboarding',
+    );
+    return DriverOnboardingDto.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Apply to an operator with its join code
+  ///
+  /// Creates a driver profile pending approval, with the vehicle the applicant
+  /// brings. Approval still needs their paperwork and a decision at the
+  /// operator. Rate-limited per account, so the code cannot be guessed.
+  Future<DriverProfileDto> apply({required ApplyAsDriverDto body}) async {
+    final response = await _client.send(
+      method: 'POST',
+      path: '/driver/application',
+      body: body.toJson(),
+    );
+    return DriverProfileDto.fromJson(response as Map<String, dynamic>);
+  }
+
   /// Start or end a shift
   ///
   /// Refuses to end one mid-trip: dispatch reads “on shift” to decide who can

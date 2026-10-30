@@ -25,7 +25,12 @@ import { LiveTrackingService } from '../tracking/live-tracking.service';
 import { EtaService } from '../tracking/eta.service';
 import { DocumentsService } from '../dispatch/documents.service';
 import type { ReportLocationDto } from '../care/dto/ride.dto';
+import { normalizeJoinCode } from '../../domain/driver-join-code';
+import { normalizeE164 } from '../../domain/phone';
+import { rosterName } from '../dispatch/dispatch.service';
+import type { ApplyAsDriverDto } from './dto/driver.request.dto';
 import type {
+  DriverOnboardingDto,
   DriverProfileDto,
   DriverRideDto,
   LocationBatchResultDto,
@@ -151,6 +156,148 @@ export class DriverService {
       where: { id: candidate.id },
       include: DRIVER_INCLUDE,
     });
+  }
+
+  // ─── applying ─────────────────────────────────────────────────────────────
+
+  /**
+   * Where this account stands before it drives for anybody. Also claims a
+   * roster place the operator made for this address, so a driver who was
+   * added by email is never shown an application form they do not need.
+   */
+  async onboarding(userId: string): Promise<DriverOnboardingDto> {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { email: true, fullName: true, emailVerifiedAt: true },
+    });
+    let hasDriverProfile = true;
+    try {
+      await this.requireDriver(userId);
+    } catch (error) {
+      if (!(error instanceof AuthorizationError)) throw error;
+      hasDriverProfile = false;
+    }
+    return {
+      email: user.email,
+      fullName: user.fullName,
+      emailVerified: user.emailVerifiedAt !== null,
+      hasDriverProfile,
+    };
+  }
+
+  /**
+   * A driver applies to an operator with its join code, bringing their own
+   * vehicle. They arrive as `pendingApproval` — the same place a driver the
+   * operator added is in — so approval still waits on their paperwork and on
+   * somebody at the operator saying yes. Applying moves no seat.
+   *
+   * One driver profile per person still holds. An earlier profile that was
+   * offboarded, including a turned-down application, is let go of so the
+   * person can apply again; the old row keeps naming them on old rides.
+   */
+  async apply(
+    userId: string,
+    dto: ApplyAsDriverDto,
+    ctx: RequestContext,
+  ): Promise<DriverProfileDto> {
+    const code = normalizeJoinCode(dto.joinCode);
+    if (!code) {
+      throw new ValidationError(
+        'A company code is eight letters and numbers, like K7QM-2RXD.',
+        'joinCode',
+      );
+    }
+    const phone = normalizeE164(dto.phone, '1');
+    if (!phone) {
+      throw new ValidationError('That does not look like a phone number.', 'phone');
+    }
+
+    const created = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { email: true, fullName: true, emailVerifiedAt: true },
+      });
+      if (!user.emailVerifiedAt) {
+        throw new ValidationError(
+          'Verify your email address first — open the link we sent you.',
+        );
+      }
+
+      const organization = await tx.organization.findFirst({
+        where: { driverJoinCode: code, archivedAt: null },
+        select: { id: true },
+      });
+      if (!organization) {
+        throw new ValidationError(
+          'That company code was not recognised. Check it with your transport company.',
+          'joinCode',
+        );
+      }
+
+      const existing = await tx.driver.findUnique({ where: { userId } });
+      if (existing && existing.status !== 'offboarded') {
+        throw new ValidationError(
+          'You already have a driver profile. Sign out and in again to see it.',
+        );
+      }
+      if (existing) {
+        // The old row keeps naming somebody on old rides, but stops carrying
+        // their contact details: account erasure only finds the current one.
+        await tx.driver.update({
+          where: { id: existing.id },
+          data: { userId: null, invitedEmail: null, phone: null },
+        });
+      }
+
+      const vehicle = await tx.vehicle.create({
+        data: {
+          organizationId: organization.id,
+          make: dto.vehicle.make.trim(),
+          model: dto.vehicle.model.trim(),
+          color: dto.vehicle.color.trim(),
+          licensePlate: dto.vehicle.licensePlate.trim().toUpperCase(),
+          isWheelchairAccessible: dto.vehicle.isWheelchairAccessible,
+        },
+      });
+
+      const driver = await tx.driver.create({
+        data: {
+          organizationId: organization.id,
+          displayName: rosterName(user.fullName),
+          vehicleId: vehicle.id,
+          yearsDriving: dto.yearsDriving,
+          phone,
+          status: 'pendingApproval',
+          userId,
+          invitedEmail: user.email,
+          accountLinkedAt: new Date(),
+          appliedAt: new Date(),
+        },
+        include: DRIVER_INCLUDE,
+      });
+
+      await this.audit.record(
+        {
+          actorUserId: userId,
+          action: 'driver.applied',
+          entityType: 'Driver',
+          entityId: driver.id,
+          correlationId: ctx.correlationId,
+          ip: ctx.ip,
+          userAgent: ctx.userAgent,
+          changedFields: [
+            `organization:${organization.id}`,
+            `vehicle:${vehicle.id}`,
+            ...(existing ? [`replaces:${existing.id}`] : []),
+          ],
+        },
+        tx,
+      );
+
+      return driver;
+    });
+
+    return toProfile(created);
   }
 
   // ─── the shift ────────────────────────────────────────────────────────────
@@ -593,6 +740,7 @@ function toProfile(driver: DriverRow): DriverProfileDto {
     },
     canWork: isAssignable(driver.status),
     suspensionReason: driver.suspensionReason,
+    rejectionReason: driver.rejectionReason,
   };
 }
 

@@ -1,10 +1,19 @@
-import { FolderOpen, MessageSquare, Search, UserPlus, Users } from 'lucide-react';
+import {
+  Copy,
+  FolderOpen,
+  KeyRound,
+  MessageSquare,
+  RotateCw,
+  Search,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
 import type { DriverAccountMatch } from '../api/codec';
 import { Failure } from '../api/failures';
-import { Modal, useFeedback } from '../components/feedback';
+import { Modal, useConfirm, useFeedback } from '../components/feedback';
 import { DriverStatusPill } from '../components/pills';
 import {
   Button,
@@ -14,6 +23,7 @@ import {
   LoadingBlock,
   RefreshButton,
   Screen,
+  SectionHeader,
   SelectField,
   StaleBanner,
   Switch,
@@ -29,7 +39,12 @@ import {
   transitionNeedsReason,
   type DriverStatus,
 } from '../domain/dispatch';
-import { canAdminister, vehicleLabel, type Driver } from '../domain/models';
+import {
+  canAdminister,
+  isOpenApplication,
+  vehicleLabel,
+  type Driver,
+} from '../domain/models';
 import {
   useOperatorId,
   useResource,
@@ -60,32 +75,48 @@ export function RosterScreen() {
   const [paperworkFor, setPaperworkFor] = useState<Driver | null>(null);
   const [adding, setAdding] = useState(false);
 
+  const row = (driver: Driver) => (
+    <li key={driver.id}>
+      <DriverRow
+        driver={driver}
+        organizationId={organizationId}
+        canAdminister={administer}
+        onPaperwork={() => setPaperworkFor(driver)}
+      />
+    </li>
+  );
+
   let body;
   if (drivers.value) {
+    // Applications first: they are the part of the roster waiting on somebody
+    // here, and a driver who applied on Monday should not find out on Friday
+    // that nobody scrolled down.
+    const applications = drivers.value.filter(isOpenApplication);
+    const roster = drivers.value.filter((driver) => !isOpenApplication(driver));
     body =
       drivers.value.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No drivers yet"
-          message="Add a vehicle first, then the driver who will be in it."
+          message={
+            administer
+              ? 'Give drivers your company code above so they can apply from the driver app, or add one yourself.'
+              : 'Drivers appear here once an admin adds them or approves their application.'
+          }
         />
       ) : (
         <>
           {drivers.error ? (
             <StaleBanner error={drivers.error} onRetry={drivers.reload} />
           ) : null}
-          <ul className="list">
-            {drivers.value.map((driver) => (
-              <li key={driver.id}>
-                <DriverRow
-                  driver={driver}
-                  organizationId={organizationId}
-                  canAdminister={administer}
-                  onPaperwork={() => setPaperworkFor(driver)}
-                />
-              </li>
-            ))}
-          </ul>
+          {applications.length > 0 && (
+            <>
+              <SectionHeader title={`Applications (${applications.length})`} />
+              <ul className="list">{applications.map(row)}</ul>
+              <SectionHeader title="Roster" />
+            </>
+          )}
+          <ul className="list">{roster.map(row)}</ul>
         </>
       );
   } else if (drivers.error) {
@@ -108,6 +139,7 @@ export function RosterScreen() {
         </>
       }
     >
+      {administer && <JoinCodeCard organizationId={organizationId} />}
       {body}
       {adding && (
         <AddDriverDialog
@@ -169,6 +201,20 @@ function DriverRow(props: {
         {vehicleLabel(driver.vehicle)} · {driver.vehicle.licensePlate}
         {driver.vehicle.isWheelchairAccessible ? ' · accessible' : ''}
       </div>
+      {driver.appliedAt && driver.status === 'pendingApproval' && (
+        <div className="t-small mt-xs">
+          Applied {driver.appliedAt.toLocaleDateString()}
+          {driver.applicantName ? ` · ${driver.applicantName}` : ''}
+          {driver.email ? ` · ${driver.email}` : ''}
+          {driver.phone ? ` · ${driver.phone}` : ''} · {driver.yearsDriving} years
+          driving
+        </div>
+      )}
+      {driver.rejectionReason && driver.status === 'offboarded' && (
+        <div className="t-small error-text mt-xs">
+          Not accepted: {driver.rejectionReason}
+        </div>
+      )}
       {driver.suspensionReason && (
         <div className="t-small error-text mt-xs">
           Suspended: {driver.suspensionReason}
@@ -227,7 +273,7 @@ function DriverRow(props: {
                   : void changeStatus(to)
               }
             >
-              {transitionActionLabel[to]}
+              {actionLabel(driver, to)}
             </Button>
           ))}
         </div>
@@ -235,6 +281,16 @@ function DriverRow(props: {
       {askingReasonFor && (
         <ReasonDialog
           to={askingReasonFor}
+          title={
+            isRejection(driver, askingReasonFor)
+              ? 'Why is the application not accepted?'
+              : undefined
+          }
+          helper={
+            isRejection(driver, askingReasonFor)
+              ? 'Shown to the applicant in the driver app, so they can put it right and apply again.'
+              : undefined
+          }
           onCancel={() => setAskingReasonFor(null)}
           onConfirm={async (reason) => {
             if (await changeStatus(askingReasonFor, reason)) setAskingReasonFor(null);
@@ -242,6 +298,90 @@ function DriverRow(props: {
           busy={busy}
         />
       )}
+    </Card>
+  );
+}
+
+/**
+ * Offboarding somebody who was never approved is turning their application
+ * down; the button says so, and the reason reaches them.
+ */
+const isRejection = (driver: Driver, to: DriverStatus) =>
+  to === 'offboarded' && driver.approvedAt === null && driver.status !== 'invited';
+
+const actionLabel = (driver: Driver, to: DriverStatus) =>
+  isRejection(driver, to) ? 'Reject' : transitionActionLabel[to];
+
+/**
+ * The code drivers type into the driver app to apply. On the roster because
+ * that is where their applications then arrive.
+ */
+function JoinCodeCard({ organizationId }: { organizationId: string }) {
+  const store = useStore();
+  const confirm = useConfirm();
+  const { showConfirmation } = useFeedback();
+  const { run, busy } = useRun();
+  const code = useResource(keys.joinCode(organizationId), (api) =>
+    api.driverJoinCode(organizationId),
+  );
+
+  async function copy() {
+    if (!code.value) return;
+    try {
+      await navigator.clipboard.writeText(code.value);
+      showConfirmation('Company code copied');
+    } catch {
+      // No clipboard (an insecure context, or permission refused): the code is
+      // on screen to read out instead.
+    }
+  }
+
+  async function rotate() {
+    const ok = await confirm({
+      title: 'Make a new company code?',
+      message:
+        'The current code stops working straight away. Drivers who already applied are not affected.',
+      confirmLabel: 'Make a new code',
+    });
+    if (!ok) return;
+    const result = await run(() =>
+      store.guard(() => store.api.rotateDriverJoinCode(organizationId)),
+    );
+    if (result.ok) store.invalidate(keys.joinCode(organizationId));
+  }
+
+  return (
+    <Card className="mb-md">
+      <div className="row">
+        <KeyRound aria-hidden />
+        <div className="grow">
+          <div className="t-small muted">Company code for new drivers</div>
+          <div className="t-title mono">
+            {code.value ?? (code.error ? 'Could not load' : '…')}
+          </div>
+        </div>
+        <Button
+          variant="text"
+          icon={Copy}
+          disabled={!code.value}
+          onClick={() => void copy()}
+        >
+          Copy
+        </Button>
+        <Button
+          variant="text"
+          icon={RotateCw}
+          busy={busy}
+          disabled={!code.value}
+          onClick={() => void rotate()}
+        >
+          New code
+        </Button>
+      </div>
+      <div className="t-small muted mt-xs">
+        Drivers create an account in the driver app and apply with this code. Their
+        application appears here; approve them once their paperwork is checked.
+      </div>
     </Card>
   );
 }
@@ -445,6 +585,8 @@ function AddDriverDialog(props: { organizationId: string; onClose: () => void })
  */
 function ReasonDialog(props: {
   to: DriverStatus;
+  title?: string;
+  helper?: string;
   busy: boolean;
   onCancel: () => void;
   onConfirm: (reason: string) => void;
@@ -452,12 +594,12 @@ function ReasonDialog(props: {
   const [reason, setReason] = useState('');
   return (
     <Modal
-      title={`Why ${driverStatusLabel[props.to].toLowerCase()}?`}
+      title={props.title ?? `Why ${driverStatusLabel[props.to].toLowerCase()}?`}
       onClose={props.onCancel}
     >
       <TextArea
         label="Reason"
-        helper="Recorded against this driver and in the audit log."
+        helper={props.helper ?? 'Recorded against this driver and in the audit log.'}
         counter={300}
         value={reason}
         onChange={(e) => setReason(e.target.value)}

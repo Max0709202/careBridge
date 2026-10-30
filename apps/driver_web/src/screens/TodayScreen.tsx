@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Play,
   RefreshCw,
+  Send,
   CircleStop,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -105,20 +106,26 @@ export function TodayScreen() {
  */
 function ProfileError({ error }: { error: unknown }) {
   const store = useStore();
+  const navigate = useNavigate();
   if (error instanceof Failure && error.kind === 'notFound') {
     return (
       <EmptyState
         icon={BadgeInfo}
-        title="No driver profile yet"
-        message="This account is not on an operator’s roster. Ask your dispatcher to add you with this email address, and make sure you have confirmed it — we only join the two once the address is verified."
+        title="Apply to drive"
+        message="This account is not a driver yet. Apply with the company code your transport company gave you — or, if they have already added you by email, verify your email address and check again."
         action={
-          <Button
-            variant="outlined"
-            icon={RefreshCw}
-            onClick={() => void store.refreshProfile()}
-          >
-            Check again
-          </Button>
+          <div className="stack gap-sm">
+            <Button icon={Send} onClick={() => navigate('/apply')}>
+              Apply with a company code
+            </Button>
+            <Button
+              variant="outlined"
+              icon={RefreshCw}
+              onClick={() => void store.refreshProfile()}
+            >
+              Check again
+            </Button>
+          </div>
         }
       />
     );
@@ -144,7 +151,25 @@ function ShiftCard({ profile }: { profile: DriverProfile }) {
         <p className="error-text bold mt-md">Suspended: {profile.suspensionReason}</p>
       )}
       <div className="mt-md">
-        {profile.canWork ? (
+        {profile.status === 'offboarded' ? (
+          // Turned down, or no longer with this company. Either way the way
+          // forward is a new application, not a dead end.
+          <>
+            <p className="error-text bold">
+              {profile.rejectionReason
+                ? `Your application was not accepted: ${profile.rejectionReason}`
+                : `You are no longer on ${profile.organizationName}’s roster.`}
+            </p>
+            <Button
+              variant="outlined"
+              icon={Send}
+              className="mt-sm"
+              onClick={() => navigate('/apply')}
+            >
+              Apply again
+            </Button>
+          </>
+        ) : profile.canWork ? (
           <Button
             variant={profile.onShift ? 'quiet' : 'primary'}
             icon={profile.onShift ? CircleStop : Play}

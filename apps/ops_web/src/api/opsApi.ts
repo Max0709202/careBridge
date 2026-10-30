@@ -201,6 +201,26 @@ export class OpsApi extends ApiTransport {
       .filter(notNull);
   }
 
+  /** The code drivers apply with. Made on first request; admins only. */
+  async driverJoinCode(organizationId: string): Promise<string> {
+    return (
+      await this.send<S['DriverJoinCodeDto']>(
+        'GET',
+        this.org(organizationId, '/driver-join-code'),
+      )
+    ).code;
+  }
+
+  /** Replaces the code; the old one stops working at once. */
+  async rotateDriverJoinCode(organizationId: string): Promise<string> {
+    return (
+      await this.send<S['DriverJoinCodeDto']>(
+        'POST',
+        this.org(organizationId, '/driver-join-code/rotate'),
+      )
+    ).code;
+  }
+
   async setDriverStatus(input: {
     organizationId: string;
     driverId: string;

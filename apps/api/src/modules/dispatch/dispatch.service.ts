@@ -6,6 +6,7 @@ import { AuditService } from '../audit/audit.service';
 import { DocumentsService } from './documents.service';
 import type {
   DocumentViewUrlDto,
+  DriverJoinCodeDto,
   DriverAccountMatchDto,
   DriverComplianceDto,
   LiveBoardDto,
@@ -38,6 +39,7 @@ import {
   RIDE_STATUSES,
 } from '../../domain/ride-status';
 import { TrackingFreshness } from '../../domain/tracking';
+import { formatJoinCode, generateJoinCode } from '../../domain/driver-join-code';
 import { EtaService } from '../tracking/eta.service';
 import {
   parseServiceArea,
@@ -60,7 +62,10 @@ import type {
 
 type Tx = Prisma.TransactionClient;
 
-const DRIVER_INCLUDE = { vehicle: true } satisfies Prisma.DriverInclude;
+const DRIVER_INCLUDE = {
+  vehicle: true,
+  user: { select: { fullName: true } },
+} satisfies Prisma.DriverInclude;
 
 /** Roles that may change what the company is, as opposed to run its day. */
 const ADMIN_ROLES = ['owner', 'admin'] as const;
@@ -264,6 +269,77 @@ export class DispatchService {
     });
     if (!organization) throw new NotFoundError();
     return organization;
+  }
+
+  // ─── the join code ────────────────────────────────────────────────────────
+
+  /**
+   * The code drivers apply with, made the first time anybody asks for it.
+   * Admins only: whoever holds it can put an application in front of the
+   * operator, and the people who decide who drives are the ones to hand it out.
+   */
+  async driverJoinCode(
+    userId: string,
+    organizationId: string,
+  ): Promise<DriverJoinCodeDto> {
+    await this.organizations.requireMembership(userId, organizationId, ADMIN_ROLES);
+    const organization = await this.findOrganization(organizationId);
+    if (organization.driverJoinCode) {
+      return { code: formatJoinCode(organization.driverJoinCode) };
+    }
+    return { code: formatJoinCode(await this.writeJoinCode(organizationId, true)) };
+  }
+
+  /**
+   * Replaces the code. Applications already made stay; the old code simply
+   * stops working, which is the point when it has been passed round too far.
+   */
+  async rotateDriverJoinCode(
+    userId: string,
+    organizationId: string,
+    ctx: RequestContext,
+  ): Promise<DriverJoinCodeDto> {
+    await this.organizations.requireMembership(userId, organizationId, ADMIN_ROLES);
+    await this.findOrganization(organizationId);
+    const code = await this.writeJoinCode(organizationId, false);
+
+    await this.audit.record({
+      actorUserId: userId,
+      action: 'dispatch.driver_join_code_rotated',
+      entityType: 'Organization',
+      entityId: organizationId,
+      correlationId: ctx.correlationId,
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+      changedFields: ['driverJoinCode'],
+    });
+    return { code: formatJoinCode(code) };
+  }
+
+  /**
+   * Writes a fresh code, retrying on the vanishingly rare collision. With
+   * `onlyIfUnset`, two admins opening the screen at once end up with the same
+   * code rather than the second overwriting the first.
+   */
+  private async writeJoinCode(organizationId: string, onlyIfUnset: boolean) {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = generateJoinCode();
+      try {
+        const written = await this.prisma.organization.updateMany({
+          where: {
+            id: organizationId,
+            ...(onlyIfUnset ? { driverJoinCode: null } : {}),
+          },
+          data: { driverJoinCode: code },
+        });
+        if (written.count === 1) return code;
+        const current = await this.findOrganization(organizationId);
+        if (current.driverJoinCode) return current.driverJoinCode;
+      } catch (error) {
+        if (!isUniqueViolation(error)) throw error;
+      }
+    }
+    throw new Error('Could not generate a unique driver join code');
   }
 
   // ─── the roster ───────────────────────────────────────────────────────────
@@ -476,6 +552,12 @@ export class DispatchService {
               ? (current.approvedByUserId ?? userId)
               : current.approvedByUserId,
           suspensionReason: to === 'suspended' ? (reason?.trim() ?? null) : null,
+          // Offboarding somebody who was never approved is turning down their
+          // application, and they are told why so they can put it right.
+          rejectionReason:
+            to === 'offboarded' && current.approvedAt === null
+              ? (reason?.trim() ?? null)
+              : current.rejectionReason,
           deactivatedAt: holds ? null : (current.deactivatedAt ?? now),
           // A driver who stops being approved stops being on shift. Leaving
           // the flag set would offer dispatch somebody who cannot drive.
@@ -1044,7 +1126,7 @@ function eligibleDriverAccount(
 }
 
 /** "Marcus Thompson" → "Marcus T.". The roster shows no more than that. */
-function rosterName(fullName: string): string {
+export function rosterName(fullName: string): string {
   const [first, ...rest] = fullName.trim().split(/\s+/);
   const last = rest.at(-1);
   if (!first) return '';
@@ -1078,6 +1160,10 @@ function toDriverDto(
     // A dispatcher needs to know a driver can be reached through the app, not
     // who the account belongs to.
     hasAppAccount: row.userId !== null,
+    appliedAt: row.appliedAt?.toISOString() ?? null,
+    applicantName: row.appliedAt ? (row.user?.fullName ?? null) : null,
+    phone: row.phone,
+    rejectionReason: row.rejectionReason,
   };
 }
 

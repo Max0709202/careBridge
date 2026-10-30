@@ -87,6 +87,24 @@ export class DriverStore {
     void this.refreshJobs();
   }
 
+  async signUp(input: {
+    fullName: string;
+    email: string;
+    password: string;
+    acceptedTerms: boolean;
+  }): Promise<void> {
+    await this.api.register(input);
+    this.set({ ...signedOut, signedIn: true });
+    this.startPolling();
+  }
+
+  /** Applies with a join code; the new profile replaces "no profile yet". */
+  async apply(input: Parameters<DriverApi['apply']>[0]): Promise<void> {
+    const profile = await this.guard(() => this.api.apply(input));
+    this.set({ profile: { value: profile, error: null, loading: false } });
+    void this.refreshJobs();
+  }
+
   /**
    * Sampling stops before the session does: a service still holding a queue
    * after sign-out would try to flush it with a token that no longer exists.

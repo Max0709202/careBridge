@@ -238,6 +238,14 @@ p {
 .mt-md {
   margin-top: var(--space-md);
 }
+.mb-md {
+  margin-bottom: var(--space-md);
+}
+.mono {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+}
 
 .list {
   list-style: none;

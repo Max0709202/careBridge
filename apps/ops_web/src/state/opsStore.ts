@@ -46,6 +46,7 @@ export const keys = {
   queue: (org: string) => `org/${org}/queue`,
   liveBoard: (org: string) => `org/${org}/live`,
   drivers: (org: string) => `org/${org}/drivers`,
+  joinCode: (org: string) => `org/${org}/driver-join-code`,
   vehicles: (org: string) => `org/${org}/vehicles`,
   seats: (org: string) => `org/${org}/seats`,
   billing: (org: string) => `org/${org}/billing`,

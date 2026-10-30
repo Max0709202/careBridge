@@ -159,6 +159,12 @@ model Organization {
   serviceArea          Json?
   serviceAreaUpdatedAt DateTime?
 
+  /// What a driver types into the driver app to apply to this operator. Made
+  /// on first request and replaceable, so a code that has been passed round
+  /// too widely can be withdrawn. Format and rules in
+  /// src/domain/driver-join-code.ts.
+  driverJoinCode String? @unique
+
   archivedAt DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -800,6 +806,18 @@ model Driver {
   invitedEmail String?
 
   accountLinkedAt DateTime?
+
+  /// Set when the driver applied themselves with the operator's join code,
+  /// rather than being put on the roster by the operator. The console lists
+  /// these as applications to review.
+  appliedAt DateTime?
+
+  /// A number dispatch can ring. Given by the driver when they apply.
+  phone String?
+
+  /// Why an application was turned down, shown to the applicant. Only set
+  /// when a driver who was never approved is offboarded.
+  rejectionReason String?
 
   /// Whether the driver is working right now. A scheduling fact that changes
   /// several times a day, deliberately separate from `status`, which is the

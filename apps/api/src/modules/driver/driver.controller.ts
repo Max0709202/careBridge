@@ -9,10 +9,12 @@ import {
 
 import { Ctx, CurrentUser, RequestContext } from '../../common/request-context';
 import { Idempotent } from '../../common/idempotency.interceptor';
+import { RateLimit } from '../../common/rate-limit.guard';
 import type { RideStatus } from '../../domain/ride-status';
 import { DriverService } from './driver.service';
 import {
   DriverDocumentsDto,
+  DriverOnboardingDto,
   DriverProfileDto,
   DriverRideDto,
   LocationBatchResultDto,
@@ -22,6 +24,7 @@ import { RequestDocumentUploadDto } from '../dispatch/dto/dispatch.request.dto';
 import type { DriverDocumentKind } from '../../domain/driver-documents';
 import {
   AdvanceRideDto,
+  ApplyAsDriverDto,
   ConfirmDocumentUploadDto,
   DriverShiftDto,
   ReportLocationBatchDto,
@@ -52,6 +55,33 @@ export class DriverController {
   @ApiOkResponse({ type: DriverProfileDto })
   me(@CurrentUser() userId: string): Promise<DriverProfileDto> {
     return this.driver.profile(userId);
+  }
+
+  @Get('onboarding')
+  @ApiOperation({
+    summary: 'Where an account stands before it drives for anybody',
+    description:
+      'Whether the address is verified and whether a driver profile exists. Claims a roster place made for this address first, so a driver the operator added is never asked to apply.',
+  })
+  @ApiOkResponse({ type: DriverOnboardingDto })
+  onboarding(@CurrentUser() userId: string): Promise<DriverOnboardingDto> {
+    return this.driver.onboarding(userId);
+  }
+
+  @Post('application')
+  @RateLimit('accountLookup')
+  @ApiOperation({
+    summary: 'Apply to an operator with its join code',
+    description:
+      'Creates a driver profile pending approval, with the vehicle the applicant brings. Approval still needs their paperwork and a decision at the operator. Rate-limited per account, so the code cannot be guessed.',
+  })
+  @ApiCreatedResponse({ type: DriverProfileDto })
+  apply(
+    @CurrentUser() userId: string,
+    @Body() body: ApplyAsDriverDto,
+    @Ctx() ctx: RequestContext,
+  ): Promise<DriverProfileDto> {
+    return this.driver.apply(userId, body, ctx);
   }
 
   @Put('shift')

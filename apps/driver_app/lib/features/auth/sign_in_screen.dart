@@ -1,6 +1,7 @@
 import 'package:carebridge_client/carebridge_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../state/providers.dart';
@@ -124,6 +125,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Sign in'),
+                    ),
+                    const SizedBox(height: DriverSpacing.md),
+                    TextButton(
+                      onPressed: _busy ? null : () => context.go('/sign-up'),
+                      child: const Text('New driver? Create an account'),
                     ),
                   ],
                 ),

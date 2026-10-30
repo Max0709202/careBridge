@@ -3,9 +3,11 @@ import { useCallback, useEffect } from 'react';
 import { Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 
 import { Button, EmptyState, Page } from './components/ui';
+import { ApplyScreen } from './screens/ApplyScreen';
 import { DocumentsScreen } from './screens/DocumentsScreen';
 import { JobScreen } from './screens/JobScreen';
 import { SignInScreen } from './screens/SignInScreen';
+import { SignUpScreen } from './screens/SignUpScreen';
 import { TodayScreen } from './screens/TodayScreen';
 import { useDriver, useStore } from './state/context';
 import { MessagingProvider } from './messaging/react';
@@ -49,7 +51,12 @@ export function App({ messaging }: { messaging: MessagingStore }) {
           path="/sign-in"
           element={signedIn ? <Navigate to="/today" replace /> : <SignInScreen />}
         />
+        <Route
+          path="/sign-up"
+          element={signedIn ? <Navigate to="/today" replace /> : <SignUpScreen />}
+        />
         <Route element={<SignedInOnly />}>
+          <Route path="/apply" element={<ApplyScreen />} />
           <Route path="/" element={<Navigate to="/today" replace />} />
           <Route path="/today" element={<TodayScreen />} />
           <Route path="/documents" element={<DocumentsScreen />} />

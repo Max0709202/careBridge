@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/apply/apply_screen.dart';
 import '../features/auth/sign_in_screen.dart';
+import '../features/auth/sign_up_screen.dart';
 import '../features/documents/documents_screen.dart';
 import '../features/job/job_screen.dart';
 import '../features/today/today_screen.dart';
@@ -19,10 +21,13 @@ GoRouter buildRouter(Ref ref) => GoRouter(
   refreshListenable: _Refresh(ref),
   redirect: (context, state) {
     final signedIn = ref.read(sessionProvider);
-    final onSignIn = state.matchedLocation == '/sign-in';
+    final location = state.matchedLocation;
+    final public = location == '/sign-in' || location == '/sign-up';
 
-    if (!signedIn) return onSignIn ? null : '/sign-in';
-    if (onSignIn) return '/today';
+    if (!signedIn) return public ? null : '/sign-in';
+    // A new account goes straight on to applying; a returning one to today.
+    if (location == '/sign-up') return '/apply';
+    if (location == '/sign-in') return '/today';
     return null;
   },
   routes: [
@@ -30,6 +35,11 @@ GoRouter buildRouter(Ref ref) => GoRouter(
       path: '/sign-in',
       builder: (context, state) => const SignInScreen(),
     ),
+    GoRoute(
+      path: '/sign-up',
+      builder: (context, state) => const SignUpScreen(),
+    ),
+    GoRoute(path: '/apply', builder: (context, state) => const ApplyScreen()),
     GoRoute(path: '/today', builder: (context, state) => const TodayScreen()),
     GoRoute(
       path: '/documents',

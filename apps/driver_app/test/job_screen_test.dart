@@ -59,12 +59,14 @@ Job job({
 DriverProfile profile({
   bool onShift = true,
   bool canWork = true,
+  String? status,
   String? suspensionReason,
+  String? rejectionReason,
 }) => DriverProfile(
   driverId: 'driver-1',
   organizationName: 'Meridian Transit Partners',
   displayName: 'Marcus T.',
-  status: canWork ? 'approved' : 'pendingApproval',
+  status: status ?? (canWork ? 'approved' : 'pendingApproval'),
   onShift: onShift,
   canWork: canWork,
   vehicle: const Vehicle(
@@ -75,6 +77,7 @@ DriverProfile profile({
     isWheelchairAccessible: true,
   ),
   suspensionReason: suspensionReason,
+  rejectionReason: rejectionReason,
 );
 
 Future<void> pumpJob(
@@ -328,8 +331,32 @@ void main() {
         ),
       );
 
-      expect(find.text('No driver profile yet'), findsOneWidget);
-      expect(find.textContaining('verified'), findsOneWidget);
+      expect(find.text('Apply to drive'), findsOneWidget);
+      expect(find.text('Apply with a company code'), findsOneWidget);
+      expect(find.textContaining('verify'), findsOneWidget);
+    });
+
+    testWidgets('says why an application was turned down, and offers another', (
+      tester,
+    ) async {
+      await pumpToday(
+        tester,
+        profileValue: AsyncData(
+          profile(
+            canWork: false,
+            status: 'offboarded',
+            rejectionReason: 'Licence photo was unreadable',
+          ),
+        ),
+      );
+
+      expect(
+        find.text(
+          'Your application was not accepted: Licence photo was unreadable',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Apply again'), findsOneWidget);
     });
 
     testWidgets('says an empty list refreshes itself', (tester) async {

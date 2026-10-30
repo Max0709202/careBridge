@@ -144,7 +144,30 @@ describe('the shift', () => {
         }),
       },
     });
-    expect(await screen.findByText('No driver profile yet')).toBeTruthy();
+    expect(await screen.findByText('Apply to drive')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Apply with a company code' }),
+    ).toBeTruthy();
+  });
+
+  it('says why an application was turned down, and offers another', async () => {
+    await renderApp('/today', {
+      routes: {
+        'GET /driver/me': () => ({
+          body: profile({
+            status: 'offboarded',
+            canWork: false,
+            rejectionReason: 'Licence photo was unreadable',
+          }),
+        }),
+      },
+    });
+    expect(
+      await screen.findByText(
+        'Your application was not accepted: Licence photo was unreadable',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Apply again' })).toBeTruthy();
   });
 
   it('says an empty list refreshes itself', async () => {
@@ -417,5 +440,132 @@ describe('messages', () => {
       kind: 'dispatchDriver',
       rideId: 'ride-1',
     });
+  });
+});
+
+describe('becoming a driver', () => {
+  const onboarding = (over: Record<string, unknown> = {}) => ({
+    body: {
+      email: 'priya@example.com',
+      fullName: 'Priya Raman',
+      emailVerified: true,
+      hasDriverProfile: false,
+      ...over,
+    },
+  });
+
+  it('creates an account and goes on to apply', async () => {
+    const { requests } = await renderApp('/sign-up', {
+      signedIn: false,
+      routes: {
+        'POST /auth/register': () => ({
+          body: { accessToken: 'a', refreshToken: 'r' },
+        }),
+        'GET /driver/onboarding': () => onboarding({ emailVerified: false }),
+      },
+    });
+    fireEvent.change(screen.getByLabelText('Full name'), {
+      target: { value: 'Priya Raman' },
+    });
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'priya@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'long-enough-password' },
+    });
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+
+    expect(await screen.findByText('Verify your email first')).toBeTruthy();
+    expect(requests.find((r) => r.path === '/auth/register')?.body).toMatchObject({
+      fullName: 'Priya Raman',
+      email: 'priya@example.com',
+      acceptedTerms: true,
+    });
+  });
+
+  it('will not create an account without agreeing to the terms', async () => {
+    const { requests } = await renderApp('/sign-up', { signedIn: false });
+    fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'P R' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'p@x.io' } });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'long-enough-password' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByText('Agree to the terms to continue')).toBeTruthy();
+    expect(requests.some((r) => r.path === '/auth/register')).toBe(false);
+  });
+
+  it('sends the application, then asks for the paperwork', async () => {
+    const { requests } = await renderApp('/apply', {
+      routes: {
+        'GET /driver/onboarding': () => onboarding(),
+        'POST /driver/application': () => ({
+          status: 201,
+          body: profile({ status: 'pendingApproval', canWork: false }),
+        }),
+      },
+    });
+    expect(await screen.findByText('Priya Raman')).toBeTruthy();
+    const fill = (label: string, value: string) =>
+      fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    fill('Company code', 'k7qm-2rxd');
+    fill('Phone number', '555 010 0100');
+    fill('Years driving', '6');
+    fill('Make', 'Honda');
+    fill('Model', 'Odyssey');
+    fill('Colour', 'Blue');
+    fill('Licence plate', 'OH-AB12');
+    fireEvent.click(screen.getByRole('button', { name: 'Send application' }));
+
+    expect(
+      await screen.findByText('Your paperwork', {}, { timeout: 3000 }),
+    ).toBeTruthy();
+    expect(requests.find((r) => r.path === '/driver/application')?.body).toEqual({
+      joinCode: 'k7qm-2rxd',
+      phone: '555 010 0100',
+      yearsDriving: 6,
+      vehicle: {
+        make: 'Honda',
+        model: 'Odyssey',
+        color: 'Blue',
+        licensePlate: 'OH-AB12',
+        isWheelchairAccessible: false,
+      },
+    });
+  });
+
+  it('shows a code the server did not recognise under the field', async () => {
+    await renderApp('/apply', {
+      routes: {
+        'GET /driver/onboarding': () => onboarding(),
+        'POST /driver/application': () => ({
+          status: 400,
+          body: {
+            error: {
+              code: 'validation',
+              message: 'That company code was not recognised.',
+              field: 'joinCode',
+            },
+          },
+        }),
+      },
+    });
+    await screen.findByText('Priya Raman');
+    for (const [label, value] of [
+      ['Company code', 'ZZZZ-ZZZZ'],
+      ['Phone number', '5550100100'],
+      ['Years driving', '2'],
+      ['Make', 'Ford'],
+      ['Model', 'Transit'],
+      ['Colour', 'White'],
+      ['Licence plate', 'X1'],
+    ] as const) {
+      fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Send application' }));
+    expect(
+      await screen.findByText('That company code was not recognised.'),
+    ).toBeTruthy();
   });
 });

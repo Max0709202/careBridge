@@ -889,6 +889,8 @@ export class AccountDeletionService {
       data: {
         userId: null,
         invitedEmail: null,
+        phone: null,
+        rejectionReason: null,
         displayName: 'Former driver',
         status: 'offboarded',
         deactivatedAt: now,

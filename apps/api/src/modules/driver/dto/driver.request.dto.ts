@@ -6,14 +6,19 @@ import {
   ArrayNotEmpty,
   IsBoolean,
   IsIn,
+  IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
 import { DRIVER_TRANSITIONS } from '../../../domain/driver-authority';
 import { ReportLocationDto } from '../../care/dto/ride.dto';
+import { CreateVehicleDto } from '../../dispatch/dto/dispatch.request.dto';
 
 export class DriverShiftDto {
   @ApiProperty({
@@ -72,4 +77,43 @@ export class ConfirmDocumentUploadDto {
   })
   @IsUUID()
   documentId!: string;
+}
+
+/**
+ * A driver applying to an operator themselves.
+ *
+ * The name comes from the account rather than from here: it is the name the
+ * person signed up and verified with, and the operator checks it against the
+ * licence they upload next.
+ */
+export class ApplyAsDriverDto {
+  @ApiProperty({
+    example: 'K7QM-2RXD',
+    description:
+      "The operator's join code, from the ops console. Case, spaces and hyphens do not matter.",
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Enter the company code your transport company gave you.' })
+  @MaxLength(20)
+  joinCode!: string;
+
+  @ApiProperty({ example: '(555) 010-0100', maxLength: 30 })
+  @IsString()
+  @IsNotEmpty({ message: 'Enter a phone number dispatch can reach you on.' })
+  @MaxLength(30)
+  phone!: string;
+
+  @ApiProperty({ minimum: 0, maximum: 60 })
+  @IsInt()
+  @Min(0)
+  @Max(60)
+  yearsDriving!: number;
+
+  @ApiProperty({
+    type: () => CreateVehicleDto,
+    description: "The vehicle they will drive. Joins the operator's fleet.",
+  })
+  @ValidateNested()
+  @Type(() => CreateVehicleDto)
+  vehicle!: CreateVehicleDto;
 }

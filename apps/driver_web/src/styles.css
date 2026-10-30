@@ -831,3 +831,15 @@ ul.list {
   color: var(--on-secondary-container);
   font-size: 1.0625rem;
 }
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 48px;
+}
+.check-row input {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--primary);
+}

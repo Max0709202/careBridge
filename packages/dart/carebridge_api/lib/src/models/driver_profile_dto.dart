@@ -19,6 +19,7 @@ class DriverProfileDto {
     required this.vehicle,
     required this.canWork,
     this.suspensionReason,
+    this.rejectionReason,
   });
 
   final String driverId;
@@ -45,6 +46,10 @@ class DriverProfileDto {
   /// your own job with no reason given is how support queues fill up.
   final String? suspensionReason;
 
+  /// Why the operator turned down this application. Set only on an application
+  /// that was never approved; the driver may then apply again.
+  final String? rejectionReason;
+
   factory DriverProfileDto.fromJson(Map<String, dynamic> json) =>
       DriverProfileDto(
         driverId: json['driverId'] as String,
@@ -56,6 +61,7 @@ class DriverProfileDto {
         vehicle: VehicleDto.fromJson(json['vehicle'] as Map<String, dynamic>),
         canWork: json['canWork'] as bool,
         suspensionReason: json['suspensionReason'] as String?,
+        rejectionReason: json['rejectionReason'] as String?,
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -68,5 +74,6 @@ class DriverProfileDto {
     'vehicle': vehicle.toJson(),
     'canWork': canWork,
     if (suspensionReason != null) 'suspensionReason': suspensionReason,
+    if (rejectionReason != null) 'rejectionReason': rejectionReason,
   };
 }

@@ -115,6 +115,11 @@ export function driverFromWire(dto: S['DriverDto']): Driver | null {
     activeRideCount: dto.activeRideCount,
     approvedAt: maybeDate(dto.approvedAt),
     suspensionReason: dto.suspensionReason ?? null,
+    appliedAt: maybeDate(dto.appliedAt),
+    applicantName: dto.applicantName ?? null,
+    email: dto.invitedEmail ?? null,
+    phone: dto.phone ?? null,
+    rejectionReason: dto.rejectionReason ?? null,
   };
 }
 

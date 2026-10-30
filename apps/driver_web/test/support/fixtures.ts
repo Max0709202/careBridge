@@ -47,6 +47,7 @@ export const profile = (
   onShift: false,
   canWork: true,
   suspensionReason: null,
+  rejectionReason: null,
   vehicle: {
     id: 'vehicle-1',
     make: 'Toyota',

@@ -136,6 +136,37 @@ export class DriverDto {
       'Whether the driver has actually opened the app and claimed this roster place. A roster full of approved drivers who have never signed in is a shift nobody will answer for.',
   })
   hasAppAccount!: boolean;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description:
+      'When the driver applied with the join code. Null for a driver the operator added.',
+  })
+  appliedAt!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'The full name on the account, for an applicant only — what the licence they upload should say. A driver the operator added is known by their roster name.',
+  })
+  applicantName!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'E.164.' })
+  phone!: string | null;
+
+  @ApiProperty({ type: String, nullable: true }) rejectionReason!: string | null;
+}
+
+export class DriverJoinCodeDto {
+  @ApiProperty({
+    type: String,
+    example: 'K7QM-2RXD',
+    description: 'What a driver types into the driver app to apply.',
+  })
+  code!: string;
 }
 
 export class DispatchCandidateDto {

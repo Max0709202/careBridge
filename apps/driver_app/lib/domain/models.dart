@@ -69,6 +69,7 @@ class DriverProfile {
     required this.canWork,
     required this.vehicle,
     this.suspensionReason,
+    this.rejectionReason,
   });
 
   final String driverId;
@@ -84,6 +85,11 @@ class DriverProfile {
 
   final Vehicle vehicle;
   final String? suspensionReason;
+
+  /// Why an application was turned down. The driver may apply again.
+  final String? rejectionReason;
+
+  bool get isOffboarded => status == 'offboarded';
 }
 
 /// A postal address, with the note that stops a driver waiting at the wrong

@@ -65,6 +65,18 @@ class SessionController extends Notifier<bool> {
     state = true;
   }
 
+  Future<void> signUp({
+    required String fullName,
+    required String email,
+    required String password,
+  }) async {
+    await ref
+        .read(driverApiProvider)
+        .register(fullName: fullName, email: email, password: password);
+    ref.invalidate(profileProvider);
+    state = true;
+  }
+
   Future<void> signOut() async {
     // Sampling stops before the session does. A service still holding a queue
     // after sign-out would try to flush it with a token that no longer exists.

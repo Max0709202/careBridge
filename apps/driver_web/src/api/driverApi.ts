@@ -56,6 +56,40 @@ export class DriverApi extends ApiTransport {
   }
 
   /**
+   * Creates the account and signs it in. The same account as the family app;
+   * a verification email goes out at once, and applying waits on it.
+   */
+  async register(input: {
+    fullName: string;
+    email: string;
+    password: string;
+    acceptedTerms: boolean;
+  }): Promise<void> {
+    const json = await this.send<{ accessToken?: unknown; refreshToken?: unknown }>(
+      'POST',
+      '/auth/register',
+      {
+        body: {
+          fullName: input.fullName.trim(),
+          email: input.email.trim(),
+          password: input.password,
+          acceptedTerms: input.acceptedTerms,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        authenticated: false,
+      },
+    );
+    this.storeSession(json);
+  }
+
+  async resendVerification(email: string): Promise<void> {
+    await this.send('POST', '/auth/resend-verification', {
+      body: { email },
+      authenticated: false,
+    });
+  }
+
+  /**
    * Ends the session on the server and, whatever happens there, on this
    * device. A driver handing a phone back at the end of a shift must not stay
    * signed in because a request timed out.
@@ -83,6 +117,20 @@ export class DriverApi extends ApiTransport {
    */
   async profile(): Promise<DriverProfile> {
     return profileFromWire(await this.send<S['DriverProfileDto']>('GET', '/driver/me'));
+  }
+
+  /** Where an account stands before it is anybody's driver. */
+  onboarding(): Promise<S['DriverOnboardingDto']> {
+    return this.send<S['DriverOnboardingDto']>('GET', '/driver/onboarding');
+  }
+
+  /** Applies to an operator with its join code, bringing a vehicle. */
+  async apply(input: S['ApplyAsDriverDto']): Promise<DriverProfile> {
+    return profileFromWire(
+      await this.send<S['DriverProfileDto']>('POST', '/driver/application', {
+        body: input,
+      }),
+    );
   }
 
   async setShift(onShift: boolean): Promise<DriverProfile> {
